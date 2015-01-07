@@ -4,5 +4,8 @@
  */
 
 
-var api = {};
-
+!(function(global) {
+	global.api = (function() {
+		
+	})();
+})(window);
