@@ -3,10 +3,10 @@
  * 브라우저 정보, 해상도, 사용자 정보 등 확인
  */
 
-void function() {
-	'use strict';
-	if(typeof this.api !== 'undefined') return false;
-	this.api = (function() {
+void function(global) {
+	'use strict'; // ES5
+	if(typeof global === 'undefined' || typeof global.api !== 'undefined') return false;
+	global.api = (function() {
 		// JS정보: http://www.quirksmode.org/js/detect.html
 		// 해상도, 이벤트, 모바일, 브라우저 환경
 
@@ -110,4 +110,4 @@ void function() {
 	// api.core 수정하지 못하도록 제어
 	
 
-}.call(window);
+}(window);
