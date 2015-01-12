@@ -1,14 +1,33 @@
 /**
  * core
  * 브라우저 정보, 해상도, 사용자 정보 등 확인
+ * api 제공여부 확인 js: http://modernizr.com/download/
+ * 비동기 JS 모듈 (Asynchronous Module Definition) 지원
  */
 
-void function(global) {
+;void function(global) {
 	'use strict'; // ES5
 	if(typeof global === 'undefined' || typeof global.api !== 'undefined') return false;
 	global.api = (function() {
 		// JS정보: http://www.quirksmode.org/js/detect.html
 		// 해상도, 이벤트, 모바일, 브라우저 환경
+
+		var include = function(file, callback) { // 동적로딩 추가
+			//node.attachEvent('onreadystatechange', context.onScriptLoad);
+			//node.addEventListener('load', context.onScriptLoad, false);
+			/*
+			if(isBrowser) {
+
+			}else if(isWebWorker) {
+				try {
+					importScripts(url);
+					context.completeLoad(moduleName);
+				}catch(e) {
+
+				}
+			}
+			*/
+		};
 
 		var core = {
 			"screen": {
@@ -104,7 +123,10 @@ void function(global) {
 		core.block.outer_height = core.block.height + (core.block.margin * 2);
 		core.block.max_width_count = core.grid.width / (core.block.width + (core.block.margin * 2)); //block.margin * 2 이유 : 여백이 왼쪽, 오른쪽이 있기 때문
 
-		return {"core": core};
+		return {
+			"include": include,
+			"core": core
+		};
 	})();
 
 	// api.core 수정하지 못하도록 제어
