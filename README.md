@@ -1,6 +1,7 @@
+#####The MIT License (MIT)<br />Copyright (c) Sung-min Yu
 ==
 ###Thinking (코딩 이슈)
-==
+
 - ';' 시작하는 이유
 
 >자바스크립트 파일을 합칠 때 이전 파일에 ;(세미콜론)이 빠졌을 경우
