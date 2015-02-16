@@ -124,7 +124,6 @@ code
 
 >- *api.dom.js 를 사용합니다.*
 
-
-The MIT License (MIT)
-
-Copyright (c) Sung-min Yu
+==
+#####The MIT License (MIT)
+#####Copyright (c) Sung-min Yu
