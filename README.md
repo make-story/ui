@@ -105,12 +105,14 @@ code
 
 ==
 ##### plugin: api.popup.js
-> api.dom.js 를 사용합니다.
+>- *api.dom.js 를 사용합니다.*
 
 
 ##### plugin: api.slide.js
-> api.dom.js 를 사용합니다.
+>- *api.dom.js 를 사용합니다.*
 
 
 ##### plugin: api.validate.js (설계 진행)
-> api.dom.js 를 사용합니다.
+>- *api.dom.js 를 사용합니다.*
+
+
