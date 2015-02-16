@@ -1,4 +1,4 @@
-#####The MIT License (MIT)<br />Copyright (c) Sung-min Yu
+
 ==
 ###Thinking (코딩 이슈)
 
@@ -96,24 +96,35 @@ code
 
 ==
 ####1. library: api.core.js
+
 >- *브라우저 정보, 해상도, 사용자 정보 등 확인*
 
+==
 ####2. library: api.dom.js
+
 >- *DOM 제어*
 
+==
 ####3. library: api.ajax.js
+
 >- *Ajax 사용*
 
 ==
 ##### plugin: api.popup.js
+
 >- *api.dom.js 를 사용합니다.*
 
-
+==
 ##### plugin: api.slide.js
+
 >- *api.dom.js 를 사용합니다.*
 
-
+==
 ##### plugin: api.validate.js (설계 진행)
+
 >- *api.dom.js 를 사용합니다.*
 
 
+The MIT License (MIT)
+
+Copyright (c) Sung-min Yu
