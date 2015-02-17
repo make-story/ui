@@ -117,35 +117,35 @@ API
 
 ###1. library: api.core.js
 ---
->- *브라우저 정보, 해상도, 사용자 정보 등 확인*
+- *브라우저 정보, 해상도, 사용자 정보 등 확인*
 
 
 ###2. library: api.dom.js
 ---
->- *DOM 제어*
+- *DOM 제어*
 
 
 ###3. library: api.ajax.js
 ---
->- *Ajax 사용*
+- *Ajax 사용*
 
 
 #### plugin: api.popup.js
 ---
->- *api.dom.js 를 사용합니다.*
->- div 팝업 기능을 제공합니다.
+- *api.dom.js 를 사용합니다.*
+- div 팝업 기능을 제공합니다.
 
 
 #### plugin: api.slide.js
 ---
->- *api.dom.js 를 사용합니다.*
->- div 슬라이드 기능을 제공합니다.
+- *api.dom.js 를 사용합니다.*
+- div 슬라이드 기능을 제공합니다.
 
 
 #### plugin: api.validate.js (설계 진행)
 ---
->- *api.dom.js 를 사용합니다.*
->- input 등 유효성 검사 기능을 제공합니다.
+- *api.dom.js 를 사용합니다.*
+- input 등 유효성 검사 기능을 제공합니다.
 
 ====
 
