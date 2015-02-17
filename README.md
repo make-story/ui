@@ -101,6 +101,7 @@ api.ajax ...
 2. 함수 안의 전체코드에서 함수선언문의 함수를 Function Object 로 생성
 3. 다시 함수의 처음으로 올라가 변수를 바인딩(undefined)
 4. 다시 함수의 처음으로 돌아가 코드를 실행
+
 <pre>
 code
 </pre>
