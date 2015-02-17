@@ -100,8 +100,8 @@ code
 
 > html5 마크업 사용
 
-
-
+<br />
+====
 
 ###1. library: api.core.js
 ---
@@ -135,6 +135,7 @@ code
 >- *api.dom.js 를 사용합니다.*
 >- input 등 유효성 검사 기능을 제공합니다.
 
-==
+====
+
 #####The MIT License (MIT)
 #####Copyright (c) Sung-min Yu
