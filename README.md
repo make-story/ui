@@ -4,12 +4,6 @@ Thinking
 _작업시 고민했던 부분_
 
 <br />
-### 사람을 생각하다
-* 잔꾀를 부리지 않고 언어가 가진 기본패턴을 유지하면서 최적의 알고리즘을 대입하는 효율적인 코드를 만든다.
-* 기초를 알고 있는 개발자라면 내가 개발한 코드를 읽어 내려가는데 큰 무리가 없도록 가독성을 높여야 한다.
-* 언제나 기본적인 확상성은 두고 설계를 해야 한다.
-
-<br />
 ### ';' 시작하는 이유
 
 >자바스크립트 파일을 합칠 때 이전 파일에 ;(세미콜론)이 빠졌을 경우
@@ -119,16 +113,74 @@ API
 ---
 - *브라우저 정보, 해상도, 사용자 정보 등 확인*
 
+> api.core.screen: 해상도
+> api.core.browser: 브라우저
+> api.core.device: pc | tablet | mobile
+> api.core.mobile: true | false
+> api.core.touch: true | false
+> api.core.event: 이벤트
+> api.core.css: 벤더프리픽스
+> api.core.script: script 동적로딩, 의존성관리, 모듈화
+
+<pre>
+api.script(
+	['./test1.js', './test2.js', 'test3.js'], 
+	function() {
+		// 성공콜백
+	}, 
+	function() {
+		// 에러콜백
+	}
+);
+api.script('test.js', function() {
+	// 성공콜백
+});
+api.script('test1.js', function() {
+	api.script(['test2.js'], function() {
+		// ...
+	});
+})
+</pre>
+
 
 ###2. library: api.dom.js
 ---
 - *DOM 제어*
 
+> selector: querySelectorAll 사용
+> api.$(selector), api.dom.$(selector)
+
+> api.ready(): readystatechange
+> api.html(): createDocumentFragment html 동적생
+
+> api.$(selector).find(): 하위 dom 검색
+> api.$(selector).closest(): 상위 dom 검색 (비효율)
+> api.$(selector).children(): 자식 리스트
+> api.$(selector).childElementCount(): 자식 리스트 count
+> api.$(selector).live(): 동적 이벤트
+> api.$(selector).on(): 이벤트 설정
+> api.$(selector).off(): 이벤트 해제
+> api.$(selector).trigger(): 이벤트 강제실행
+> api.$(selector).each(): element 순회
+> api.$(selector).attr(): element 속성 확인/수정
+> api.$(selector).removeAttr(): element 속성 삭제
+> api.$(selector).hasAttr(): element 속성 존재여부
+> api.$(selector).prop(): element property 확인/수정
+> api.$(selector).removeProp(): element property 삭제
+> api.$(selector).html(): element html 확인/수정
+> api.$(selector).text(): element text 확인/수정
+> api.$(selector).val(): element value 확인/수정
+append(): 하위 요소 삽입
+appendHtml(): 위치지정 html 삽입
+css(): css 확인/수정
+
+그밖의...
 
 ###3. library: api.ajax.js
 ---
 - *Ajax 사용*
 
+> api.ajax()
 
 #### plugin: api.popup.js
 ---

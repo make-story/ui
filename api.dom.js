@@ -469,7 +469,7 @@ Copyright (c) Sung-min Yu
 					}
 				});
 			},
-			before: function(element) { // 작업 진행중 - 좀더 보강이 필요하다!!
+			before: function(element) {
 				// api.$(기준이 되는 대상).before(이동할 대상);
 				// 기준이 되는 element 바로 전으로 이동할 element가 이동(또는 삽입)한다.
 				// querySelectorAll 또는 api.$() length 가 있으나, querySelector 는 length 가 없다.
