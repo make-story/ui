@@ -114,12 +114,19 @@ API
 - *브라우저 정보, 해상도, 사용자 정보 등 확인*
 
 > api.core.screen: 해상도
+
 > api.core.browser: 브라우저
+
 > api.core.device: pc | tablet | mobile
+
 > api.core.mobile: true | false
+
 > api.core.touch: true | false
+
 > api.core.event: 이벤트
+
 > api.core.css: 벤더프리픽스
+
 > api.core.script: script 동적로딩, 의존성관리, 모듈화
 
 <pre>
@@ -148,33 +155,58 @@ api.script('test1.js', function() {
 - *DOM 제어*
 
 > selector: querySelectorAll 사용
+
 > api.$(selector), api.dom.$(selector)
 
+
 > api.ready(): readystatechange
-> api.html(): createDocumentFragment html 동적생
+
+> api.html(): createDocumentFragment html 동적생성
+
 
 > api.$(selector).find(): 하위 dom 검색
+
 > api.$(selector).closest(): 상위 dom 검색 (비효율)
+
 > api.$(selector).children(): 자식 리스트
+
 > api.$(selector).childElementCount(): 자식 리스트 count
+
 > api.$(selector).live(): 동적 이벤트
+
 > api.$(selector).on(): 이벤트 설정
+
 > api.$(selector).off(): 이벤트 해제
+
 > api.$(selector).trigger(): 이벤트 강제실행
+
 > api.$(selector).each(): element 순회
+
 > api.$(selector).attr(): element 속성 확인/수정
+
 > api.$(selector).removeAttr(): element 속성 삭제
+
 > api.$(selector).hasAttr(): element 속성 존재여부
+
 > api.$(selector).prop(): element property 확인/수정
+
 > api.$(selector).removeProp(): element property 삭제
+
 > api.$(selector).html(): element html 확인/수정
+
 > api.$(selector).text(): element text 확인/수정
+
 > api.$(selector).val(): element value 확인/수정
-append(): 하위 요소 삽입
-appendHtml(): 위치지정 html 삽입
-css(): css 확인/수정
+
+> api.$(selector).append(): 하위 요소 삽입
+
+> api.$(selector).appendHtml(): 위치지정 html 삽입
+
+> api.$(selector).css(): css 확인/수정
+
 
 그밖의...
+
 
 ###3. library: api.ajax.js
 ---
