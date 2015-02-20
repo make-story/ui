@@ -67,28 +67,30 @@ void function(global) {
 	fn.init = function() {
 		var that = this;
 
-		// target
+		// element 생성 
 		var selector = $('#' + that.settings.selector);
-		var fragment = document.createDocumentFragment();
+		var fragment = $(document.createDocumentFragment());
+		var container, popup, header, content;
 		
 
+		container = api.$('<div>').attr({'style': 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 100000; overflow: auto;'});
+		popup = api.$('<div>').attr({'class': that.settings.css_selector, 'style': 'position: relative; z-index: 10000; width: ' + selector.width() + 'px;'});
 		// header
-		var header = [];
 		if(that.settings.header === 'Y') {
-
-			var div1 = $(document.createElement(child[index].tag));
-
-			header.push('<div class="' + that.settings.css_header + '">');
+			header = api.$('<div>').attr({'class': that.settings.css_header});
+			// title
 			if(typeof that.settings.title === 'string' && that.settings.title !== '') {
-				header.push('<div class="' + that.settings.css_title + '">' + that.settings.title + '</div>');
+				header.append(api.$('<div>').attr({'class': that.settings.css_title}).text(that.settings.title));
 			}
+			// close btn
 			if(typeof that.settings.img_close === 'string' && that.settings.img_close !== '') {
-				header.push('<div class="' + that.settings.css_close + '"><img src="' + that.settings.img_close + '" class="' + that.settings.close + '" style="cursor: pointer;" /></div>');
+				header.append(api.$('<div>').attr({'class': that.settings.css_close}).html('<img src="' + that.settings.img_close + '" class="' + that.settings.close + '" style="cursor: pointer;" />'));	
 			}else {
-				header.push('<div class="' + that.settings.css_close + '"><a href="#none" class="' + that.settings.close + '">닫기</a></div>');
+				header.append(api.$('<div>').attr({'class': that.settings.css_close}).html('<a href="#none" class="' + that.settings.close + '">닫기</a>'));	
 			}
-			header.push('</div>');
+			popup.append(header);
 		}
+
 
 		var html = '';
 		// container

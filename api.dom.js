@@ -363,14 +363,23 @@ Copyright (c) Sung-min Yu
 					callback.apply(this[i], [i, this[i]]); // i:key, this[i]:element
 				}
 			},
-			// 
-			attr: function(name, value) { // attribute
-				if(typeof value === 'undefined') { // get
+			// attribute
+			attr: function(name, value) { 
+				if(typeof name === 'string' && typeof value === 'undefined') { // get
 					return this[0].getAttribute(name);
 				}else { // set
-					this.each(function() {
-						this.setAttribute(name, value);
-					});
+					if(typeof name === 'object') {
+						this.each(function() {
+							for(var key in name) {
+
+								this.setAttribute(key, name[key]);
+							}
+						});
+					}else if(typeof value !== 'undefined') {
+						this.each(function() {
+							this.setAttribute(name, value);
+						});
+					}
 					return this;
 				}
 			},
@@ -384,8 +393,8 @@ Copyright (c) Sung-min Yu
 				// x.hasAttribute('href');
 				return this[0].hasAttribute(name);
 			},
-			// 
-			prop: function(name, value) { // property
+			// property
+			prop: function(name, value) { 
 				if(typeof value === 'undefined') { //get
 					return this[0][name];
 				}else { //set
@@ -435,12 +444,25 @@ Copyright (c) Sung-min Yu
 					this.value = value;
 				});
 			},
+			//
+			prepend: function(element) {
+				var element = typeof element.length !== 'undefined' ? element[0] : element;
+				this.each(function() {
+					if(this.nodeType === 1 || this.nodeType === 9 || this.nodeType === 11) {
+						this.insertBefore(element, this.firstChild);
+					}
+				});
+				return this;
+			},
 			// 최후의 자식 요소로 추가
 			append: function(element) {
 				// x.appendChild(y); // 표준
-				if(this[0].nodeType === 1 || this[0].nodeType === 9 || this[0].nodeType === 11) {
-					this[0].appendChild(element);
-				}
+				var element = typeof element.length !== 'undefined' ? element[0] : element;
+				this.each(function() {
+					if(this.nodeType === 1 || this.nodeType === 9 || this.nodeType === 11) {
+						this.appendChild(element);
+					}
+				});
 				return this;
 			},
 			// 시작 태그의 앞, 시작 태그의 뒤, 종료 태그 앞, 종료 태그 뒤
@@ -476,7 +498,7 @@ Copyright (c) Sung-min Yu
 				var element = typeof element.length !== 'undefined' ? element[0] : element;
 				this.each(function() {
 					if(this.parentNode) {
-						this.parentNode.insertBefore(element, this); // parentNode 는 document 의 경우 어떻게 처리?
+						this.parentNode.insertBefore(element, this); 
 					}
 				});
 				return this;

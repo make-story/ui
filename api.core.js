@@ -162,15 +162,6 @@ null: 변수는 선언되어 있으나 초기화되었을 때를 판단
 		core.block.outer_width = core.block.width + (core.block.margin * 2);
 		core.block.outer_height = core.block.height + (core.block.margin * 2);
 		core.block.max_width_count = core.grid.width / (core.block.width + (core.block.margin * 2)); //block.margin * 2 이유 : 여백이 왼쪽, 오른쪽이 있기 때문
-		/*
-		// 스크롤바 가로 크기
-		var scroll_div = document.createElement("div");
-		var scrollbar_size;
-		scroll_div.style.cssText = 'width: 99px; height: 99px; overflow: scroll; position: absolute; top: -9999px;';
-		document.body.appendChild(scroll_div);
-		scrollbar_size = scroll_div.offsetWidth - scroll_div.clientWidth;
-		document.body.removeChild(scroll_div);
-		*/
 
 		// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 

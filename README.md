@@ -155,6 +155,7 @@ api.script('test1.js', function() {
 ###2. library: api.dom.js
 ---
 - *DOM 제어*
+- 대표적인 UI 컴포넌트 jQuery 의 기능(메소드)을 네이티브로 구현해 보는 것에 목적이 있음
 
 > selector: querySelectorAll 사용
 
@@ -280,13 +281,13 @@ api.ajax({
 - div 팝업 기능을 제공합니다.
 
 
-#### plugin: api.slide.js (설계 진)
+#### plugin: api.slide.js
 ---
 - *api.dom.js 를 사용합니다.*
 - div 슬라이드 기능을 제공합니다.
 
 
-#### plugin: api.validate.js (설계 진행)
+#### plugin: api.validate.js
 ---
 - *api.dom.js 를 사용합니다.*
 - input 등 유효성 검사 기능을 제공합니다.
