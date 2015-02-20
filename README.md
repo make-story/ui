@@ -174,7 +174,7 @@ api.dom.html({
 			"attr": {"id": "a", "class": "a"}, // 속성
 			"css": {"width": "100px", "height": "100px"}, // style
 			"data": {"type": "folder", "instance": "a"}, // data-* (html5 표준)
-			"html": "<p>a</p>", // html
+			"html": "", // html
 			"callback": function(element) { // element 만든 후 작업
 				// ...
 			},
@@ -280,7 +280,7 @@ api.ajax({
 - div 팝업 기능을 제공합니다.
 
 
-#### plugin: api.slide.js
+#### plugin: api.slide.js (설계 진)
 ---
 - *api.dom.js 를 사용합니다.*
 - div 슬라이드 기능을 제공합니다.
