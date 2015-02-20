@@ -139,9 +139,11 @@ api.script(
 		// 에러콜백
 	}
 );
+
 api.script('test.js', function() {
 	// 성공콜백
 });
+
 api.script('test1.js', function() {
 	api.script(['test2.js'], function() {
 		// ...
@@ -162,6 +164,27 @@ api.script('test1.js', function() {
 > api.ready(): readystatechange
 
 > api.html(): createDocumentFragment html 동적생성
+
+<pre>
+api.dom.html({
+	"parent": "#ysm", // 작업영역
+	"child": [
+		{
+			"tag": "div", // Tag 명
+			"attr": {"id": "a", "class": "a"}, // 속성
+			"css": {"width": "100px", "height": "100px"}, // style
+			"data": {"type": "folder", "instance": "a"}, // data-* (html5 표준)
+			"html": "<p>a</p>", // html
+			"callback": function(element) { // element 만든 후 작업
+				// ...
+			},
+			"child": [ // 내부 자식 element 리스트
+				// ... 
+			]
+		}
+	]
+});
+</pre>
 
 
 > api.$(selector).find(): 하위 dom 검색
@@ -202,10 +225,23 @@ api.script('test1.js', function() {
 
 > api.$(selector).appendHtml(): 위치지정 html 삽입
 
+> api.$(selector).remove(): 요소 삭제 
+
 > api.$(selector).css(): css 확인/수정
 
+> api.$(selector).getClass(): class 속성 확인
 
-그밖의...
+> api.$(selector).hasClass(): class 특성 속성값 존재여부
+
+> api.$(selector).addClass(): class 속성값 추가
+
+> api.$(selector).removeClass(): class 속성값 삭제
+
+> api.$(selector).toggleClass(): class 속성값 toggle
+
+> api.$(selector).data(): data (html5 data 속성) 
+
+> 그밖의 계속 추가중...
 
 
 ###3. library: api.ajax.js
@@ -213,6 +249,30 @@ api.script('test1.js', function() {
 - *Ajax 사용*
 
 > api.ajax()
+
+<pre>
+api.ajax({
+	'type': 'GET', // GET이나 POST 같은 HTTP 메서드 타입
+	'url': '', // 요청할 URL 주소
+	'async': true, // 동기/비동기 방식
+
+	'data': undefined, // 서버에 보낼 문자열 값이나 자바스크립트 데이터 객체
+	'context': window, // 콜백함수 내부에서 this 키워드로 사용할 객체
+	'dataType': 'text', // 서버 측에서 응답반을 데이터의 혁식을 문자열로 지정 (json, xml, text)
+
+	'beforeSend': undefined, // 요청하기 전 실행할 콜백 함수
+	'complete': undefined, // 요청이 끝난 후 실행할 콜백 함수
+	'success': undefined // 요청이 성공했을 때 실행할 콜백 함수
+});
+
+api.ajax({
+	'url': 'test.js',
+	'success': function(data) {
+		
+	}
+});
+</pre>
+
 
 #### plugin: api.popup.js
 ---
