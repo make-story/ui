@@ -12,7 +12,7 @@ undefined: 변수가 선언되어 있지 않았을 때를 판단
 null: 변수는 선언되어 있으나 초기화되었을 때를 판단
 */
 
-;void function(config, global) {
+;void function(config, global) { // 사용자 config에 따른 설정 추후 추가 
 	'use strict'; // ES5
 	if(typeof global === 'undefined' || typeof window === 'undefined' || typeof window.document === 'undefined') return false;
 	
