@@ -113,17 +113,15 @@ API
 ---
 - *브라우저 정보, 해상도, 사용자 정보 등 확인*
 
-> api.core.screen: 해상도
-
-> api.core.browser: 브라우저
+> api.core.check: 모바일, 터치 등 정보 (true | false)
 
 > api.core.device: pc | tablet | mobile
 
-> api.core.mobile: true | false
+> api.core.browser: 브라우저명, 버전 등 정보
 
-> api.core.touch: true | false
+> api.core.screen: 해상도 정보
 
-> api.core.event: 이벤트
+> api.core.event: 이벤트 정보
 
 > api.core.css: 벤더프리픽스
 
@@ -160,7 +158,6 @@ api.script('test1.js', function() {
 > selector: querySelectorAll 사용
 
 > api.$(selector), api.dom.$(selector)
-
 
 > api.ready(): readystatechange
 
@@ -242,6 +239,8 @@ api.dom.html({
 
 > api.$(selector).data(): data (html5 data 속성) 
 
+> api.$(selector).animate(): color, css3 적용 작업 진행중
+
 > 그밖의 계속 추가중...
 
 
@@ -277,18 +276,21 @@ api.ajax({
 
 #### plugin: api.popup.js
 ---
+- *작업 진행중 입니다.*
 - *api.dom.js 를 사용합니다.*
 - div 팝업 기능을 제공합니다.
 
 
 #### plugin: api.slide.js
 ---
+- *작업 진행중 입니다.*
 - *api.dom.js 를 사용합니다.*
 - div 슬라이드 기능을 제공합니다.
 
 
 #### plugin: api.validate.js
 ---
+- *작업 진행중 입니다.*
 - *api.dom.js 를 사용합니다.*
 - input 등 유효성 검사 기능을 제공합니다.
 

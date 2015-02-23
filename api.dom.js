@@ -35,7 +35,7 @@ Copyright (c) Sung-min Yu
 			return new Dom(selector, context);
 		};
 		function Dom(selector, context) {
-			if(typeof selector === 'object' && (selector.nodeType || selector === window)) { //DOMElement, window
+			if(typeof selector === 'object' && selector !== null && (selector.nodeType || selector === window)) { //DOMElement, window
 				/*
 				nodeType
 				1 : Element 노드를 의미
@@ -61,12 +61,12 @@ Copyright (c) Sung-min Yu
 				// /^<(\w+)\s*\/?>(?:<\/\1>|)$/.test(selector)
 				// /^<([a-z]+)([^<]+)*(?:>(.*)<\/\1>|\s*\/>)$/.test(selector)
 				var match = /<(\w+)[^>]*>/.exec(selector);
-				if(match && match[1]) {
+				if(match && match[1]) { // create element
 					this.element = (context || document).createElement(match[1]);
 					this.length = 1;
 					this[0] = this.element;
 					return this;
-				}else {
+				}else { // search element
 					this.query(selector, context);
 				}
 			}else {
@@ -93,6 +93,7 @@ Copyright (c) Sung-min Yu
 					element = context.querySelectorAll(selector), // querySelectorAll: length 있음, querySelector: length 없음
 					arr = this.elementsToArray(element);
 
+				// instance 에 this 바인딩
 				this.element = element;
 				this.length = arr.length;
 				for(var key in arr) {
@@ -336,6 +337,18 @@ Copyright (c) Sung-min Yu
 
 				return func;
 			})(),
+			one: function(events, handlers, capture) {
+				var that = this;
+				// new Date().getUTCMilliseconds();
+				// new Date().getTime() + Math.random();
+				var key = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+				var callback = function() {
+					that.off('.' + key);
+					handlers.apply(this, Array.prototype.slice.call(arguments));
+				};
+				// on
+				that.on(events + '.' + key, callback, capture);
+			},
 			trigger: (function() {
 				if(document.createEvent) {
 					return function(events) {
@@ -510,7 +523,7 @@ Copyright (c) Sung-min Yu
 				var element = typeof element.length !== 'undefined' ? element[0] : element;
 				this.each(function() {
 					if(this.parentNode) {
-						element.parentNode.insertBefore(this, element); // parentNode 는 document 의 경우 어떻게 처리?
+						element.parentNode.insertBefore(this, element);
 					}
 				});
 				return this;
@@ -518,9 +531,18 @@ Copyright (c) Sung-min Yu
 			// 지정한 콘텐츠로 대체
 			replaceWith: function(value) {
 				// x.replaceChild(y,z); // 표준
+				/*
 				return this.each(function() {
-					this.outerHTML = value;
+					this.outerHTML = value; // outerHTML 일부 브라우저 미지원
 				});
+				*/
+				var element = typeof element.length !== 'undefined' ? element[0] : element;
+				this.each(function() {
+					if(this.parentNode) {
+						this.parentNode.replaceChild(element, this);
+					}
+				});
+				return this;
 			},
 			// 
 			remove: function() {
@@ -541,11 +563,10 @@ Copyright (c) Sung-min Yu
 			},
 			//
 			css: function(value) {
-				var type = typeof value,
-					CSS3Browsers = ['', '-webkit-', '-moz-', '-ms-', '-o-'],
+				var CSS3Browsers = ['', '-webkit-', '-moz-', '-ms-', '-o-'],
 					CSS3RegExp = /^(transition|border-radius|transform|box-shadow|perspective|flex-direction)/i; // 사용자가 수동으로 -webkit- , -moz- , -o- , -ms- 입력하는 것들은 제외시킨다.
 
-				if(type === 'string') { // get
+				if(typeof value === 'string') { // get
 
 					// return this[0].style[value]; // 방법1(CSS 속성과 JS 에서의 CSS 속성형식이 다르므로 사용불가능)
 					// return this[0].style.getPropertyValue(value); // 방법2(CSS 속성명을 사용하여 정상적 출력가능)
@@ -580,8 +601,8 @@ Copyright (c) Sung-min Yu
 
 					return tmp;
 
-				}else if(type === 'object'){ // set - 형태: {"속성명": "값", ... } 
-
+				}else if(typeof value === 'object') { // set - 형태: {"속성명": "값", ... } 
+					
 					for(var key in value) {
 						this.each(function() {
 							var element = this;
@@ -727,7 +748,213 @@ Copyright (c) Sung-min Yu
 						return this;
 					};
 				}
-			})()
+			})(),
+			animate: function(properties, duration, easing, complete) {
+				/*
+				color 관련 작업 진행중
+				["backgroundColor", "borderBottomColor", "borderLeftColor", "borderRightColor", "borderTopColor", "color", "outlineColor"]
+				*/
+
+				var max = Object.keys(properties).length;
+				var set = {};
+				var css = {};
+				var key;
+				var element = this;
+				for(key in properties) {
+					set[key] = {};
+					set[key]['start'] = element.css(key);
+					if(set[key]['start']) {
+						set[key]['start'] = Number(set[key]['start'].replace(/[^0-9]/g, ''));
+					}
+					set[key]['end'] = Number(properties[key]);
+					set[key]['change'] = set[key]['end'] - set[key]['start'];
+				}
+				var current = 0;
+				var increment = 20;
+				var duration = duration || 500;
+				var easing = easing || 'swing';
+
+				/*
+				easing functions
+				t = current time
+				b = start value
+				c = change in value
+				d = duration
+				*/
+				var easing_func = {
+					/*
+					 * easing 계산식은 아래 저작권에 따릅니다.
+					 * jQuery Easing v1.3 - http://gsgd.co.uk/sandbox/jquery/easing/
+					 * TERMS OF USE - jQuery Easing
+					 * 
+					 * Open source under the BSD License. 
+					 * 
+					 * Copyright © 2008 George McGinley Smith
+					 * All rights reserved.
+					 */
+					linear: function(t, b, c, d) {
+						return t;
+					},
+					swing: function (t, b, c, d) {
+						//return 0.5 - Math.cos( t*Math.PI ) / 2;
+						return this['easeOutQuad'](t, b, c, d);
+					},
+					easeInQuad: function (t, b, c, d) {
+						return c*(t/=d)*t + b;
+					},
+					easeOutQuad: function (t, b, c, d) {
+						return -c *(t/=d)*(t-2) + b;
+					},
+					easeInOutQuad: function (t, b, c, d) {
+						if ((t/=d/2) < 1) return c/2*t*t + b;
+						return -c/2 * ((--t)*(t-2) - 1) + b;
+					},
+					easeInCubic: function (t, b, c, d) {
+						return c*(t/=d)*t*t + b;
+					},
+					easeOutCubic: function (t, b, c, d) {
+						return c*((t=t/d-1)*t*t + 1) + b;
+					},
+					easeInOutCubic: function (t, b, c, d) {
+						if ((t/=d/2) < 1) return c/2*t*t*t + b;
+						return c/2*((t-=2)*t*t + 2) + b;
+					},
+					easeInQuart: function (t, b, c, d) {
+						return c*(t/=d)*t*t*t + b;
+					},
+					easeOutQuart: function (t, b, c, d) {
+						return -c * ((t=t/d-1)*t*t*t - 1) + b;
+					},
+					easeInOutQuart: function (t, b, c, d) {
+						if ((t/=d/2) < 1) return c/2*t*t*t*t + b;
+						return -c/2 * ((t-=2)*t*t*t - 2) + b;
+					},
+					easeInQuint: function (t, b, c, d) {
+						return c*(t/=d)*t*t*t*t + b;
+					},
+					easeOutQuint: function (t, b, c, d) {
+						return c*((t=t/d-1)*t*t*t*t + 1) + b;
+					},
+					easeInOutQuint: function (t, b, c, d) {
+						if ((t/=d/2) < 1) return c/2*t*t*t*t*t + b;
+						return c/2*((t-=2)*t*t*t*t + 2) + b;
+					},
+					easeInSine: function (t, b, c, d) {
+						return -c * Math.cos(t/d * (Math.PI/2)) + c + b;
+					},
+					easeOutSine: function (t, b, c, d) {
+						return c * Math.sin(t/d * (Math.PI/2)) + b;
+					},
+					easeInOutSine: function (t, b, c, d) {
+						return -c/2 * (Math.cos(Math.PI*t/d) - 1) + b;
+					},
+					easeInExpo: function (t, b, c, d) {
+						return (t==0) ? b : c * Math.pow(2, 10 * (t/d - 1)) + b;
+					},
+					easeOutExpo: function (t, b, c, d) {
+						return (t==d) ? b+c : c * (-Math.pow(2, -10 * t/d) + 1) + b;
+					},
+					easeInOutExpo: function (t, b, c, d) {
+						if (t==0) return b;
+						if (t==d) return b+c;
+						if ((t/=d/2) < 1) return c/2 * Math.pow(2, 10 * (t - 1)) + b;
+						return c/2 * (-Math.pow(2, -10 * --t) + 2) + b;
+					},
+					easeInCirc: function (t, b, c, d) {
+						return -c * (Math.sqrt(1 - (t/=d)*t) - 1) + b;
+					},
+					easeOutCirc: function (t, b, c, d) {
+						return c * Math.sqrt(1 - (t=t/d-1)*t) + b;
+					},
+					easeInOutCirc: function (t, b, c, d) {
+						if ((t/=d/2) < 1) return -c/2 * (Math.sqrt(1 - t*t) - 1) + b;
+						return c/2 * (Math.sqrt(1 - (t-=2)*t) + 1) + b;
+					},
+					easeInElastic: function (t, b, c, d) {
+						var s=1.70158;var p=0;var a=c;
+						if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.3;
+						if (a < Math.abs(c)) { a=c; var s=p/4; }
+						else var s = p/(2*Math.PI) * Math.asin (c/a);
+						return -(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
+					},
+					easeOutElastic: function (t, b, c, d) {
+						var s=1.70158;var p=0;var a=c;
+						if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.3;
+						if (a < Math.abs(c)) { a=c; var s=p/4; }
+						else var s = p/(2*Math.PI) * Math.asin (c/a);
+						return a*Math.pow(2,-10*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b;
+					},
+					easeInOutElastic: function (t, b, c, d) {
+						var s=1.70158;var p=0;var a=c;
+						if (t==0) return b;  if ((t/=d/2)==2) return b+c;  if (!p) p=d*(.3*1.5);
+						if (a < Math.abs(c)) { a=c; var s=p/4; }
+						else var s = p/(2*Math.PI) * Math.asin (c/a);
+						if (t < 1) return -.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
+						return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*.5 + c + b;
+					},
+					easeInBack: function (t, b, c, d, s) {
+						if (s == undefined) s = 1.70158;
+						return c*(t/=d)*t*((s+1)*t - s) + b;
+					},
+					easeOutBack: function (t, b, c, d, s) {
+						if (s == undefined) s = 1.70158;
+						return c*((t=t/d-1)*t*((s+1)*t + s) + 1) + b;
+					},
+					easeInOutBack: function (t, b, c, d, s) {
+						if (s == undefined) s = 1.70158;
+						if ((t/=d/2) < 1) return c/2*(t*t*(((s*=(1.525))+1)*t - s)) + b;
+						return c/2*((t-=2)*t*(((s*=(1.525))+1)*t + s) + 2) + b;
+					},
+					easeInBounce: function (t, b, c, d) {
+						return c - this.easeOutBounce (x, d-t, 0, c, d) + b;
+					},
+					easeOutBounce: function (t, b, c, d) {
+						if ((t/=d) < (1/2.75)) {
+							return c*(7.5625*t*t) + b;
+						} else if (t < (2/2.75)) {
+							return c*(7.5625*(t-=(1.5/2.75))*t + .75) + b;
+						} else if (t < (2.5/2.75)) {
+							return c*(7.5625*(t-=(2.25/2.75))*t + .9375) + b;
+						} else {
+							return c*(7.5625*(t-=(2.625/2.75))*t + .984375) + b;
+						}
+					},
+					easeInOutBounce: function (t, b, c, d) {
+						if (t < d/2) return this.easeInBounce (t*2, 0, c, d) * .5 + b;
+						return this.easeOutBounce (t*2-d, 0, c, d) * .5 + c*.5 + b;
+					}
+				}
+
+				// requestAnimationFrame for Smart Animating http://goo.gl/sx5sts
+				var setAnimationFrame = (function(){
+					return  window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || function(callback) { window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
+				})();
+
+				var frame_func = function() {
+					// increment the time
+					current += increment;
+
+					// css
+					var val;
+					for(key in set) {
+						// easing
+						val = easing_func[easing](current, set[key]['start'], set[key]['change'], duration); // easing_func[easing](current time, start value, change in value, duration)
+						val = Math.round(val); // 반올림
+						// css
+						css[key] = val + 'px';
+						element.css(css);
+					}
+
+					if(current < duration) {
+						// frame
+						setAnimationFrame(frame_func);
+					} else if(complete && typeof complete === 'function') {
+						// the animation is done so lets callback
+						complete();
+					}
+				};
+				frame_func();
+			}
 		};
 
 		// DOM Ready

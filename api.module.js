@@ -206,6 +206,7 @@ Copyright (c) Sung-min Yu
 			scrollIntoView: function(element, is) {
 				return element.scrollIntoView(is || true);
 			},
+			// 스크롤 위치 
 			scrollOffset: function() {
 				var top = null, left = null;
 				if(typeof(window.pageYOffset) == 'number') {
@@ -305,9 +306,11 @@ Copyright (c) Sung-min Yu
 			type: function(value) {
 				return ({}).toString.call(value).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
 			},
+			// 좌우 공백 제거 
 			trim: function(text) {
 				return text.replace(/(^\s*)|(\s*$)/g, "");
 			},
+			// 키보드 이벤트 정보 
 			keyboardCode: function(event) {
 				var event = event || window.event;
 				var code = event.which || event.keyCode;
@@ -442,6 +445,17 @@ Copyright (c) Sung-min Yu
 			    }else {
 			    	return false;
 			    }
+			},
+			// 스크롤바 width 값 (각 브라우저마다 다름, DOMContentLoaded 이후 실행)
+			scrollbarWidth: function() {
+				var div = document.createElement("div");
+				var scrollbar;
+				div.style.cssText = 'width: 99px; height: 99px; overflow: scroll; position: absolute; top: -9999px;';
+				document.body.appendChild(div);
+				scrollbar = div.offsetWidth - div.clientWidth;
+				document.body.removeChild(div);
+
+				return scrollbar;
 			}
 		};
 	})();
