@@ -11,12 +11,16 @@ Copyright (c) Sung-min Yu
 
 	// jQuery
 	//if(!document.querySelectorAll && !window.jQuery) document.write('<script src="//code.jquery.com/jquery-1.11.0.min.js"><\/script>');
+
+	// jquery.support()
 	
 	global.api.dom = (function() {
+
 		//cache
 		var cache = {
 			'event': {}
 		};
+
 		//dom
 		var $ = function() {
 			var arr = Array.prototype.slice.call(arguments),
@@ -563,16 +567,16 @@ Copyright (c) Sung-min Yu
 			},
 			//
 			css: function(value) {
-				var CSS3Browsers = ['', '-webkit-', '-moz-', '-ms-', '-o-'],
-					CSS3RegExp = /^(transition|border-radius|transform|box-shadow|perspective|flex-direction)/i; // 사용자가 수동으로 -webkit- , -moz- , -o- , -ms- 입력하는 것들은 제외시킨다.
+				var prefixes = ['', '-webkit-', '-moz-', '-ms-', '-o-'],
+					regexp_css3 = /^(transition|border-radius|transform|box-shadow|perspective|flex-direction)/i, // 사용자가 수동으로 -webkit- , -moz- , -o- , -ms- 입력하는 것들은 제외시킨다.
+					tmp = null,
+					dv = document.defaultView;
 
 				if(typeof value === 'string') { // get
 
 					// return this[0].style[value]; // 방법1(CSS 속성과 JS 에서의 CSS 속성형식이 다르므로 사용불가능)
 					// return this[0].style.getPropertyValue(value); // 방법2(CSS 속성명을 사용하여 정상적 출력가능)
 					// 방법3
-					var tmp = null;
-					var dv = document.defaultView;
 					if(value == 'opacity' && this[0].filters) { // IE opacity
 						tmp = 1;
 						try {
@@ -602,22 +606,29 @@ Copyright (c) Sung-min Yu
 					return tmp;
 
 				}else if(typeof value === 'object') { // set - 형태: {"속성명": "값", ... } 
-					
+
 					for(var key in value) {
 						this.each(function() {
 							var element = this;
-							if(CSS3RegExp.test(key)) { // CSS3
-								for(var tmp in CSS3Browsers) {
-									// element.style[CSS3Browsers[tmp].concat(key)] = value[key]; // 방법1
-									element.style.setProperty(CSS3Browsers[tmp].concat(key), value[key]); // 방법2
+							if(!element || element.nodeType === 3 || element.nodeType === 8 || !element.style ) {
+								return;
+							}
+							if(regexp_css3.test(key)) { // CSS3
+								for(var tmp in prefixes) {
+									// element.style[prefixes[tmp].concat(key)] = value[key]; // 방법1
+									element.style.setProperty(prefixes[tmp].concat(key), value[key]); // 방법2
 								}
-							}else {
-								// 단위(예:px)까지 명확하게 입력해줘야 한다.	
-								// this.style[key] = value[key]; // 방법1
-								element.style.setProperty(key, value[key]); // 방법2
+							}else if(key in element.style) {
+								// 단위(예:px)까지 명확하게 입력해줘야 한다.
+								// 방법1
+								element.style[key] = value[key];
+							}else if(typeof element.style.setProperty !== 'undefined') {
+								// 방법2 (Internet Explorer version 9)
+								element.style.setProperty(key, value[key]);	
 							}
 						});
 					}
+
 					return this;
 
 				}
@@ -625,9 +636,15 @@ Copyright (c) Sung-min Yu
 			width: function(value) {
 				if(typeof value === 'undefined') { // get
 					if(this[0] == window) { // window
-						// window.outerWidth; // IE9 이상가능
+						// 1. WindowView properties
+						// window.outerWidth; // IE9 이상가능 
 						// window.innerWidth; // all browsers, except IE before
 						// document.documentElement.clientWidth; // Internet Explorer before version 9
+
+						// 2. ScreenView properties
+						// availWidth; //screen.availWidth; //표준
+						// availHeight; //screen.availHeight; //표준
+
 						return window.innerWidth || document.documentElement.clientWidth;
 					}else if(this[0].nodeType == 9) { // document
 						return Math.max(
@@ -646,9 +663,15 @@ Copyright (c) Sung-min Yu
 			height: function(value) {
 				if(typeof value === 'undefined') { // get
 					if(this[0] == window) {
+						// 1. WindowView properties
 						// window.outerHeight; // IE9 이상가능
 						// window.innerHeight; // all browsers, except IE before 
 						// document.documentElement.clientHeight; // Internet Explorer before version 9
+
+						// 2. ScreenView properties
+						// availWidth; //screen.availWidth; //표준
+						// availHeight; //screen.availHeight; //표준
+
 						return window.innerHeight || document.documentElement.clientHeight;
 					}else if(this[0].nodeType == 9) { // document
 						return Math.max(
@@ -749,417 +772,678 @@ Copyright (c) Sung-min Yu
 					};
 				}
 			})(),
-			animate: function(properties, duration, easing, complete) {
-				/*
-				color 관련 작업 진행중
-				["backgroundColor", "borderBottomColor", "borderLeftColor", "borderRightColor", "borderTopColor", "color", "outlineColor"]
-				*/
-
-				var max = Object.keys(properties).length;
-				var set = {};
-				var css = {};
-				var key;
-				var element = this;
-				for(key in properties) {
-					set[key] = {};
-					set[key]['start'] = element.css(key);
-					if(set[key]['start']) {
-						set[key]['start'] = Number(set[key]['start'].replace(/[^0-9]/g, ''));
-					}
-					set[key]['end'] = Number(properties[key]);
-					set[key]['change'] = set[key]['end'] - set[key]['start'];
-				}
-				var current = 0;
-				var increment = 20;
-				var duration = duration || 500;
-				var easing = easing || 'swing';
-
-				/*
-				easing functions
-				t = current time
-				b = start value
-				c = change in value
-				d = duration
-				*/
-				var easing_func = {
-					/*
-					 * easing 계산식은 아래 저작권에 따릅니다.
-					 * jQuery Easing v1.3 - http://gsgd.co.uk/sandbox/jquery/easing/
-					 * TERMS OF USE - jQuery Easing
-					 * 
-					 * Open source under the BSD License. 
-					 * 
-					 * Copyright © 2008 George McGinley Smith
-					 * All rights reserved.
-					 */
-					linear: function(t, b, c, d) {
-						return t;
-					},
-					swing: function (t, b, c, d) {
-						//return 0.5 - Math.cos( t*Math.PI ) / 2;
-						return this['easeOutQuad'](t, b, c, d);
-					},
-					easeInQuad: function (t, b, c, d) {
-						return c*(t/=d)*t + b;
-					},
-					easeOutQuad: function (t, b, c, d) {
-						return -c *(t/=d)*(t-2) + b;
-					},
-					easeInOutQuad: function (t, b, c, d) {
-						if ((t/=d/2) < 1) return c/2*t*t + b;
-						return -c/2 * ((--t)*(t-2) - 1) + b;
-					},
-					easeInCubic: function (t, b, c, d) {
-						return c*(t/=d)*t*t + b;
-					},
-					easeOutCubic: function (t, b, c, d) {
-						return c*((t=t/d-1)*t*t + 1) + b;
-					},
-					easeInOutCubic: function (t, b, c, d) {
-						if ((t/=d/2) < 1) return c/2*t*t*t + b;
-						return c/2*((t-=2)*t*t + 2) + b;
-					},
-					easeInQuart: function (t, b, c, d) {
-						return c*(t/=d)*t*t*t + b;
-					},
-					easeOutQuart: function (t, b, c, d) {
-						return -c * ((t=t/d-1)*t*t*t - 1) + b;
-					},
-					easeInOutQuart: function (t, b, c, d) {
-						if ((t/=d/2) < 1) return c/2*t*t*t*t + b;
-						return -c/2 * ((t-=2)*t*t*t - 2) + b;
-					},
-					easeInQuint: function (t, b, c, d) {
-						return c*(t/=d)*t*t*t*t + b;
-					},
-					easeOutQuint: function (t, b, c, d) {
-						return c*((t=t/d-1)*t*t*t*t + 1) + b;
-					},
-					easeInOutQuint: function (t, b, c, d) {
-						if ((t/=d/2) < 1) return c/2*t*t*t*t*t + b;
-						return c/2*((t-=2)*t*t*t*t + 2) + b;
-					},
-					easeInSine: function (t, b, c, d) {
-						return -c * Math.cos(t/d * (Math.PI/2)) + c + b;
-					},
-					easeOutSine: function (t, b, c, d) {
-						return c * Math.sin(t/d * (Math.PI/2)) + b;
-					},
-					easeInOutSine: function (t, b, c, d) {
-						return -c/2 * (Math.cos(Math.PI*t/d) - 1) + b;
-					},
-					easeInExpo: function (t, b, c, d) {
-						return (t==0) ? b : c * Math.pow(2, 10 * (t/d - 1)) + b;
-					},
-					easeOutExpo: function (t, b, c, d) {
-						return (t==d) ? b+c : c * (-Math.pow(2, -10 * t/d) + 1) + b;
-					},
-					easeInOutExpo: function (t, b, c, d) {
-						if (t==0) return b;
-						if (t==d) return b+c;
-						if ((t/=d/2) < 1) return c/2 * Math.pow(2, 10 * (t - 1)) + b;
-						return c/2 * (-Math.pow(2, -10 * --t) + 2) + b;
-					},
-					easeInCirc: function (t, b, c, d) {
-						return -c * (Math.sqrt(1 - (t/=d)*t) - 1) + b;
-					},
-					easeOutCirc: function (t, b, c, d) {
-						return c * Math.sqrt(1 - (t=t/d-1)*t) + b;
-					},
-					easeInOutCirc: function (t, b, c, d) {
-						if ((t/=d/2) < 1) return -c/2 * (Math.sqrt(1 - t*t) - 1) + b;
-						return c/2 * (Math.sqrt(1 - (t-=2)*t) + 1) + b;
-					},
-					easeInElastic: function (t, b, c, d) {
-						var s=1.70158;var p=0;var a=c;
-						if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.3;
-						if (a < Math.abs(c)) { a=c; var s=p/4; }
-						else var s = p/(2*Math.PI) * Math.asin (c/a);
-						return -(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
-					},
-					easeOutElastic: function (t, b, c, d) {
-						var s=1.70158;var p=0;var a=c;
-						if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.3;
-						if (a < Math.abs(c)) { a=c; var s=p/4; }
-						else var s = p/(2*Math.PI) * Math.asin (c/a);
-						return a*Math.pow(2,-10*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b;
-					},
-					easeInOutElastic: function (t, b, c, d) {
-						var s=1.70158;var p=0;var a=c;
-						if (t==0) return b;  if ((t/=d/2)==2) return b+c;  if (!p) p=d*(.3*1.5);
-						if (a < Math.abs(c)) { a=c; var s=p/4; }
-						else var s = p/(2*Math.PI) * Math.asin (c/a);
-						if (t < 1) return -.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
-						return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*.5 + c + b;
-					},
-					easeInBack: function (t, b, c, d, s) {
-						if (s == undefined) s = 1.70158;
-						return c*(t/=d)*t*((s+1)*t - s) + b;
-					},
-					easeOutBack: function (t, b, c, d, s) {
-						if (s == undefined) s = 1.70158;
-						return c*((t=t/d-1)*t*((s+1)*t + s) + 1) + b;
-					},
-					easeInOutBack: function (t, b, c, d, s) {
-						if (s == undefined) s = 1.70158;
-						if ((t/=d/2) < 1) return c/2*(t*t*(((s*=(1.525))+1)*t - s)) + b;
-						return c/2*((t-=2)*t*(((s*=(1.525))+1)*t + s) + 2) + b;
-					},
-					easeInBounce: function (t, b, c, d) {
-						return c - this.easeOutBounce (x, d-t, 0, c, d) + b;
-					},
-					easeOutBounce: function (t, b, c, d) {
-						if ((t/=d) < (1/2.75)) {
-							return c*(7.5625*t*t) + b;
-						} else if (t < (2/2.75)) {
-							return c*(7.5625*(t-=(1.5/2.75))*t + .75) + b;
-						} else if (t < (2.5/2.75)) {
-							return c*(7.5625*(t-=(2.25/2.75))*t + .9375) + b;
-						} else {
-							return c*(7.5625*(t-=(2.625/2.75))*t + .984375) + b;
-						}
-					},
-					easeInOutBounce: function (t, b, c, d) {
-						if (t < d/2) return this.easeInBounce (t*2, 0, c, d) * .5 + b;
-						return this.easeOutBounce (t*2-d, 0, c, d) * .5 + c*.5 + b;
-					}
-				}
-
-				// requestAnimationFrame for Smart Animating http://goo.gl/sx5sts
-				var setAnimationFrame = (function(){
-					return  window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || function(callback) { window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
-				})();
-
-				var frame_func = function() {
-					// increment the time
-					current += increment;
-
-					// css
-					var val;
-					for(key in set) {
-						// easing
-						val = easing_func[easing](current, set[key]['start'], set[key]['change'], duration); // easing_func[easing](current time, start value, change in value, duration)
-						val = Math.round(val); // 반올림
-						// css
-						css[key] = val + 'px';
-						element.css(css);
-					}
-
-					if(current < duration) {
-						// frame
-						setAnimationFrame(frame_func);
-					} else if(complete && typeof complete === 'function') {
-						// the animation is done so lets callback
-						complete();
-					}
+			animate: (function() {
+				//var prefixes = ['transform', 'WebkitTransform', 'MozTransform', 'OTransform', 'msTransform'];
+				var prefixes = {
+					'transform': 'transitionend', 
+					'WebkitTransform': 'webkitTransitionEnd', 
+					'MozTransform': 'transitionend', 
+					'OTransform': 'oTransitionEnd', 
+					'msTransform': 'MSTransitionEnd'
 				};
-				frame_func();
-			}
-		};
+				var temp_element = document.createElement('div');
+				var event_transform = "transitionend";
+				var support = false;
+				var key;
 
-		// DOM Ready
-		var ready = function(callback) {
-			if(document.addEventListener) { // Mozilla, Opera, Webkit 
-				document.addEventListener("DOMContentLoaded", function() {
-					callback();
-				}, false);
-			}else if(document.attachEvent) { // IE
-				document.attachEvent("onreadystatechange", function() {
-					if(document.readyState === "complete") {
-						callback();
+				// CSS3 지원여부 판단
+				for(key in prefixes) {
+					if(temp_element.style[key] !== undefined) {
+						support = true; // CSS3 지원
+						event_transform = prefixes[key];
+						break;
 					}
-				});
-			}
-			/*
-			if(document.addEventListener) {
-				//DOMContentLoaded : HTML(DOM) 해석이 끝난 직후에 발생하는 이벤트
-				document.addEventListener('DOMContentLoaded', function() {
-					//alert(document.getElementById('test').innerHTML);
-					callback();
-				});
-			}else {
-				(function recursive() {
-					try {
-						document.documentElement.doScroll('left');
-					} catch(error) {
-						setTimeout(recursive, 0);
-						return;
-						callback();
-					}
-				}());
-			}
-			*/
-		};
-
-		// Create HTML
-		var html = function(parameter) {
-			/*
-			// 기본구조
-			api.dom.html({
-				"parent": "#ysm", // 작업영역
-				"child": [
-					{
-						"tag": "div", // Tag 명
-						"attr": {"id": "a", "class": "a"}, // 속성
-						"css": {"width": "100px", "height": "100px"}, // style
-						"data": {"type": "folder", "instance": "a"}, // data-* (html5 표준)
-						"html": "<p>a</p>", // html
-						"callback": function(element) { // element 만든 후 작업
-							//api.module.Slide.call({'instance': this.data.instance}, {'element': element});
-						},
-						"child": [ // 내부 자식 element 리스트
-							... 
-						]
-					}
-				]
-			});
-			// 사용예
-			api.dom.html({
-				"parent": "#ysm",
-				"child": [
-					{
-						"tag": "div",
-						"attr": {"id": "a", "class": "a"},
-						"css": {"width": "100px", "height": "100px"}, 
-						"data": {"type": "folder", "instance": "a"}, 
-						"html": "<p>a</p>",
-						"callback": function(element) {
-							//api.module.Slide.call({'instance': this.data.instance}, {'element': element});
-						},
-						"child": [
-							{
-								"tag": "div",
-								"attr": {"id": "a1", "class": "a1"},
-								"css": {"width": "", "height": ""},
-								"data": {"type": "slide", "instance": "a1"}
-							},
-							{
-								"tag": "div",
-								"attr": {"id": "a2", "class": "a2"},
-								"css": {"width": "", "height": ""}, 
-								"data": {"type": "slide", "instance": "a2"}
-							}
-						]
-					},
-					{
-						"tag": "div",
-						"attr": {"id": "b", "class": "b"},
-						"css": {"width": "", "height": ""}, 
-						"data": {"type": "b", "instance": "b"}, 
-						"child": [
-							{
-								"tag": "div",
-								"attr": {"id": "b1", "class": "b1"},
-								"css": {"width": "", "height": ""}, 
-								"data": {"type": "b1", "instance": "b1"},
-								"child": [
-									{
-										"tag": "div",
-										"attr": {"id": "b11", "class": "b11"},
-										"css": {"width": "", "height": ""}, 
-										"data": {"type": "", "instance": ""}
-									}
-								]
-							}
-						]
-					}
-				]
-			});
-			*/
-
-			// html
-			var callback_arr = []; // element 가 렌더링 된 후 콜백을 실행
-			var func = { // element에 필요한 각 기능별 함수
-				"attr": function(element, obj) {
-					var attr = obj.attr;
-					var key;
-					for(key in attr) {
-						element.attr(key, attr[key]);
-					}
-					return element;
-				},
-				"css": function(element, obj) {
-					element.css(obj.css);
-					return element;
-				},
-				"data": function(element, obj) {
-					var data = obj.data;
-					var key;
-					for(key in data) {
-						element.data(key, data[key]);
-					}
-					return element;
-				},
-				"html": function(element, obj) {
-					element.html(obj.html);
-					return element;
-				},
-				"callback": function(element, obj) {
-					if(obj.callback && typeof obj.callback === 'function') {
-						// 속도개선: callback_arr[callback_arr.length++] = '값';
-						callback_arr.push(
-							function() {
-								// this 는 현재 tag의 정보(tag, attr, css, data 등)
-								return obj.callback.call(obj, element[0]); // element[0]: 옵션에 따라 생성된 해당 element 값
-							}
-						);
-						/*
-						var call = function() {
-							// this 는 현재 tag의 정보(tag, attr, css, data 등)
-							return child[index1].callback.call(child[index1], element[0]); // element[0]: 옵션에 따라 생성된 해당 element 값
-						};
-						*/
-						/*
-						// this 는 현재 tag의 정보(tag, attr, css, data 등)
-						child[index1].callback.call(child[index1], element[0]); // element[0]: 옵션에 따라 생성된 해당 element 값
-						*/
-					}
-					return element;
 				}
-			};
-			function setCreate(child, parent) {
-				var fragment = parent || document.createDocumentFragment();
-				var index1, index2, element;
-				
-				// child [] 반복문
-				for(index1 in child) { 
-					// tag
-					element = $(document.createElement(child[index1].tag));
-					// child {} 반복문 
-					for(index2 in child[index1]) { 
-						if(func[index2]) {
-							element = func[index2](element, child[index1]);
+
+				if(support === true) {
+					return function(properties, options) { // CSS3 지원
+						var element = this;
+						var duration = options.duration || 400;
+						var easing = options.easing || 'ease';
+						var complete = options.complete;
+						/*
+						transition-property: background; // 트랜지션할 속성
+						transition-duration: 0.3s; // 트랜지션 지속 시간
+						transition-timing-function: ease; // 지정한 시간 동안 트랜지션 속도
+						transition-delay: 0.5s; // 트랜지션할 지연
+						*/
+						// 기존 css3 관련 값을 변수에 저장해 두고,
+						// 트랜지션이 끝나면 기존 값으로 다시 변경해야 겠다! (즉, 기존 트랜지션 설정값을 바꾸지 않도록 하자)
+						element.css({
+							"transition-property": Object.keys(properties).join(','),
+							"transition-duration": Number(duration) / 1000 + 's',
+							"transition-timing-function": "ease"
+						});
+
+						element.css(properties);
+
+						// callback
+						if(complete && typeof complete === 'function') {
+							element.one(event_transform, function() {
+								complete();
+							});
 						}
-					}
-					// child 가 있으면 break(코드 순차 실행에 따른 개념) 하고, child 생성
-					if(child[index1].child) { 
-						setCreate(child[index1].child, element[0]);
-					}
-					$(fragment).append(element[0]);
-				}
-				return fragment;
-			}
-
-			// 생성
-			if(parameter.child) {
-				if(parameter.parent) { // 부모 element 에 삽입할 경우
-					$(parameter.parent).append(setCreate(parameter.child));	
+					};
 				}else {
-					return setCreate(parameter.child);
-				}
-				//$(parameter.parent || 'body').append(setCreate(parameter.child));
-			}
+					return function(properties, options) { // CSS3 미지원
+						var element = this;
+						var duration = options.duration || 400;
+						var easing = options.easing || 'swing';
+						var complete = options.complete;
 
-			// 콜백실행
-			for(var index in callback_arr) {
-				callback_arr[index]();
-			}
+						var max = Object.keys(properties).length;
+						var set = {};
+						var current = 0;
+						var increment = 20;
+
+						var regexp_color = /(backgroundColor|borderBottomColor|borderLeftColor|borderRightColor|borderTopColor|color|outlineColor)/ig;
+						var regexp_reg = /^rgb/i;
+						var regexp_hex = /^#/i;
+						var regexp_num = /[^0-9]/g; // 숫자 제외값
+						var regexp_transparent = /transparent/i;
+						var regexp_opacity = /opacity/i;
+
+						var colornames = {
+							aqua: '#00ffff', black: '#000000', blue: '#0000ff', fuchsia: '#ff00ff',
+							gray: '#808080', green: '#008000', lime: '#00ff00', maroon: '#800000',
+							navy: '#000080', olive: '#808000', purple: '#800080', red: '#ff0000',
+							silver: '#c0c0c0', teal: '#008080', white: '#ffffff', yellow: '#ffff00'
+						};
+						
+						// HEX -> RBG
+						var setHexToRgb = function(hex) {
+							if(regexp_reg.test(hex)) {
+								return hex;
+							}
+							// Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+							var regexp_shorthand = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+							var hex = hex.replace(regexp_shorthand, function(m, r, g, b) {
+								return r + r + g + g + b + b;
+							});
+							var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+							return result ? 'rgb(' + parseInt(result[1], 16) + ', ' + parseInt(result[2], 16) + ', ' + parseInt(result[3], 16) + ')' : 'rgb(0, 0, 0)';
+						}
+						// RBG -> HEX
+						var setRgbToHex = function(color) {
+							if(regexp_hex.test(color)) {
+								return color;
+							}
+							var digits = /(.*?)rgb\((\d+), (\d+), (\d+)\)/.exec(color);
+							var red = parseInt(digits[2]);
+							var green = parseInt(digits[3]);
+							var blue = parseInt(digits[4]);
+							var rgb = blue | (green << 8) | (red << 16);
+							return '#' + rgb.toString(16);
+						};
+						// HEX
+						var getBlendHEXColors = function(c0, c1, p) {
+							var f = parseInt(c0.slice(1), 16),
+								t = parseInt(c1.slice(1), 16),
+								R1 = f>>16,
+								G1 = f>>8&0x00FF, 
+								B1 = f&0x0000FF, 
+								R2 = t>>16,
+								G2 = t>>8&0x00FF,
+								B2 = t&0x0000FF;
+							return "#"+(0x1000000+(Math.round((R2-R1)*p)+R1)*0x10000+(Math.round((G2-G1)*p)+G1)*0x100+(Math.round((B2-B1)*p)+B1)).toString(16).slice(1);
+						};
+						var getShadeHEXColor = function(color, percent) {   
+							var f = parseInt(color.slice(1), 16),
+								t = percent < 0 ? 0 : 255,
+								p = percent < 0 ? percent * -1 : percent,
+								R = f>>16,
+								G = f>>8&0x00FF,
+								B = f&0x0000FF;
+							return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
+						};
+						// RGB
+						var getBlendRGBColors = function(c0, c1, p) {
+							var f = c0.split(","),
+								t = c1.split(","),
+								R = parseInt(f[0].slice(4)),
+								G = parseInt(f[1]),
+								B = parseInt(f[2]);
+							return "rgb("+(Math.round((parseInt(t[0].slice(4))-R)*p)+R)+","+(Math.round((parseInt(t[1])-G)*p)+G)+","+(Math.round((parseInt(t[2])-B)*p)+B)+")";
+						}
+						var getShadeRGBColor = function(color, percent) {
+							var f = color.split(","),
+								t = percent < 0 ? 0 : 255,
+								p = percent < 0 ? percent * -1 : percent,
+								R = parseInt(f[0].slice(4)),
+								G = parseInt(f[1]),
+								B = parseInt(f[2]);
+							return "rgb("+(Math.round((t-R)*p)+R)+","+(Math.round((t-G)*p)+G)+","+(Math.round((t-B)*p)+B)+")";
+						}
+						// http://stackoverflow.com/questions/5560248/programmatically-lighten-or-darken-a-hex-color-or-rgb-and-blend-colors
+						function setShade(color, percent) { // 투명도
+							if(color.length > 7 ) {
+								return shadeRGBColor(color, percent);
+							}else {
+								return shadeColor(color, percent);
+							}
+						}
+						function setBlend(color1, color2, percent) { // 색혼합
+							if(color1.length > 7) {
+								return getBlendRGBColors(color1, color2, percent);
+							}else {
+								return getBlendHEXColors(color1, color2, percent);
+							}
+						}
+						/*function setShadeBlend(p,c0,c1) {
+							var n = p < 0 ? p * -1 : p,
+								u = Math.round,
+								w = parseInt;
+							if(c0.length > 7) {
+								var f = c0.split(","),
+									t = (c1 ? c1 : p < 0 ? "rgb(0,0,0)" : "rgb(255,255,255)").split(","),
+									R = w(f[0].slice(4)),
+									G = w(f[1]),
+									B = w(f[2]);
+								return "rgb("+(u((w(t[0].slice(4))-R)*n)+R)+","+(u((w(t[1])-G)*n)+G)+","+(u((w(t[2])-B)*n)+B)+")";
+							}else {
+								var f = w(c0.slice(1), 16),
+									t = w((c1 ? c1 : p < 0 ? "#000000" : "#FFFFFF").slice(1), 16),
+									R1 = f>>16,
+									G1 = f>>8&0x00FF,
+									B1 = f&0x0000FF;
+								return "#"+(0x1000000+(u(((t>>16)-R1)*n)+R1)*0x10000+(u(((t>>8&0x00FF)-G1)*n)+G1)*0x100+(u(((t&0x0000FF)-B1)*n)+B1)).toString(16).slice(1);
+							}
+						}*/
+
+						// requestAnimationFrame for Smart Animating http://goo.gl/sx5sts
+						var setAnimationFrame = (function(){ 
+							return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback) { window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
+							//return  window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || function(callback) { window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
+						})();
+
+						/*
+						easing functions
+						t = current time
+						b = start value
+						c = change in value
+						d = duration
+						*/
+						var easing_func = {
+							/*
+							 * easing 계산식은 아래 저작권에 따릅니다.
+							 * jQuery Easing v1.3 - http://gsgd.co.uk/sandbox/jquery/easing/
+							 * TERMS OF USE - jQuery Easing
+							 * 
+							 * Open source under the BSD License. 
+							 * 
+							 * Copyright © 2008 George McGinley Smith
+							 * All rights reserved.
+							 */
+							linear: function(t, b, c, d) {
+								return t;
+							},
+							swing: function (t, b, c, d) {
+								//return 0.5 - Math.cos( t*Math.PI ) / 2;
+								return this['easeOutQuad'](t, b, c, d);
+							},
+							easeInQuad: function (t, b, c, d) {
+								return c*(t/=d)*t + b;
+							},
+							easeOutQuad: function (t, b, c, d) {
+								return -c *(t/=d)*(t-2) + b;
+							},
+							easeInOutQuad: function (t, b, c, d) {
+								if ((t/=d/2) < 1) return c/2*t*t + b;
+								return -c/2 * ((--t)*(t-2) - 1) + b;
+							},
+							easeInCubic: function (t, b, c, d) {
+								return c*(t/=d)*t*t + b;
+							},
+							easeOutCubic: function (t, b, c, d) {
+								return c*((t=t/d-1)*t*t + 1) + b;
+							},
+							easeInOutCubic: function (t, b, c, d) {
+								if ((t/=d/2) < 1) return c/2*t*t*t + b;
+								return c/2*((t-=2)*t*t + 2) + b;
+							},
+							easeInQuart: function (t, b, c, d) {
+								return c*(t/=d)*t*t*t + b;
+							},
+							easeOutQuart: function (t, b, c, d) {
+								return -c * ((t=t/d-1)*t*t*t - 1) + b;
+							},
+							easeInOutQuart: function (t, b, c, d) {
+								if ((t/=d/2) < 1) return c/2*t*t*t*t + b;
+								return -c/2 * ((t-=2)*t*t*t - 2) + b;
+							},
+							easeInQuint: function (t, b, c, d) {
+								return c*(t/=d)*t*t*t*t + b;
+							},
+							easeOutQuint: function (t, b, c, d) {
+								return c*((t=t/d-1)*t*t*t*t + 1) + b;
+							},
+							easeInOutQuint: function (t, b, c, d) {
+								if ((t/=d/2) < 1) return c/2*t*t*t*t*t + b;
+								return c/2*((t-=2)*t*t*t*t + 2) + b;
+							},
+							easeInSine: function (t, b, c, d) {
+								return -c * Math.cos(t/d * (Math.PI/2)) + c + b;
+							},
+							easeOutSine: function (t, b, c, d) {
+								return c * Math.sin(t/d * (Math.PI/2)) + b;
+							},
+							easeInOutSine: function (t, b, c, d) {
+								return -c/2 * (Math.cos(Math.PI*t/d) - 1) + b;
+							},
+							easeInExpo: function (t, b, c, d) {
+								return (t==0) ? b : c * Math.pow(2, 10 * (t/d - 1)) + b;
+							},
+							easeOutExpo: function (t, b, c, d) {
+								return (t==d) ? b+c : c * (-Math.pow(2, -10 * t/d) + 1) + b;
+							},
+							easeInOutExpo: function (t, b, c, d) {
+								if (t==0) return b;
+								if (t==d) return b+c;
+								if ((t/=d/2) < 1) return c/2 * Math.pow(2, 10 * (t - 1)) + b;
+								return c/2 * (-Math.pow(2, -10 * --t) + 2) + b;
+							},
+							easeInCirc: function (t, b, c, d) {
+								return -c * (Math.sqrt(1 - (t/=d)*t) - 1) + b;
+							},
+							easeOutCirc: function (t, b, c, d) {
+								return c * Math.sqrt(1 - (t=t/d-1)*t) + b;
+							},
+							easeInOutCirc: function (t, b, c, d) {
+								if ((t/=d/2) < 1) return -c/2 * (Math.sqrt(1 - t*t) - 1) + b;
+								return c/2 * (Math.sqrt(1 - (t-=2)*t) + 1) + b;
+							},
+							easeInElastic: function (t, b, c, d) {
+								var s=1.70158;var p=0;var a=c;
+								if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.3;
+								if (a < Math.abs(c)) { a=c; var s=p/4; }
+								else var s = p/(2*Math.PI) * Math.asin (c/a);
+								return -(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
+							},
+							easeOutElastic: function (t, b, c, d) {
+								var s=1.70158;var p=0;var a=c;
+								if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.3;
+								if (a < Math.abs(c)) { a=c; var s=p/4; }
+								else var s = p/(2*Math.PI) * Math.asin (c/a);
+								return a*Math.pow(2,-10*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b;
+							},
+							easeInOutElastic: function (t, b, c, d) {
+								var s=1.70158;var p=0;var a=c;
+								if (t==0) return b;  if ((t/=d/2)==2) return b+c;  if (!p) p=d*(.3*1.5);
+								if (a < Math.abs(c)) { a=c; var s=p/4; }
+								else var s = p/(2*Math.PI) * Math.asin (c/a);
+								if (t < 1) return -.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
+								return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*.5 + c + b;
+							},
+							easeInBack: function (t, b, c, d, s) {
+								if (s == undefined) s = 1.70158;
+								return c*(t/=d)*t*((s+1)*t - s) + b;
+							},
+							easeOutBack: function (t, b, c, d, s) {
+								if (s == undefined) s = 1.70158;
+								return c*((t=t/d-1)*t*((s+1)*t + s) + 1) + b;
+							},
+							easeInOutBack: function (t, b, c, d, s) {
+								if (s == undefined) s = 1.70158;
+								if ((t/=d/2) < 1) return c/2*(t*t*(((s*=(1.525))+1)*t - s)) + b;
+								return c/2*((t-=2)*t*(((s*=(1.525))+1)*t + s) + 2) + b;
+							},
+							easeInBounce: function (t, b, c, d) {
+								return c - this.easeOutBounce (x, d-t, 0, c, d) + b;
+							},
+							easeOutBounce: function (t, b, c, d) {
+								if ((t/=d) < (1/2.75)) {
+									return c*(7.5625*t*t) + b;
+								} else if (t < (2/2.75)) {
+									return c*(7.5625*(t-=(1.5/2.75))*t + .75) + b;
+								} else if (t < (2.5/2.75)) {
+									return c*(7.5625*(t-=(2.25/2.75))*t + .9375) + b;
+								} else {
+									return c*(7.5625*(t-=(2.625/2.75))*t + .984375) + b;
+								}
+							},
+							easeInOutBounce: function (t, b, c, d) {
+								if (t < d/2) return this.easeInBounce (t*2, 0, c, d) * .5 + b;
+								return this.easeOutBounce (t*2-d, 0, c, d) * .5 + c*.5 + b;
+							}
+						};
+
+
+						// start, end 값 추출
+						for(key in properties) {
+							// 설정할 스타일 생성
+							set[key] = {};
+							if(regexp_color.test(key)) { // color 관련
+								set[key]['start'] = element.css(key); // 기존 설정값
+								set[key]['end'] = properties[key]; // 사용자 설정값
+								if((regexp_hex.test(set[key]['start']) || regexp_reg.test(set[key]['start'])) && (regexp_hex.test(set[key]['end']) || regexp_reg.test(set[key]['end']))) {
+									if(regexp_hex.test(set[key]['end'])) {
+										// RBG -> HEX
+										set[key]['start'] = setRgbToHex(set[key]['start']);
+									}else if(regexp_reg.test(set[key]['end'])) {
+										// HEX -> RBG
+										set[key]['start'] = setHexToRgb(set[key]['start']);
+									}
+									continue;
+								}
+							}else {
+								set[key]['start'] = element.css(key);
+								if(set[key]['start']) {
+									set[key]['start'] = Number(set[key]['start'].replace(regexp_num, '')); // px 등 단위를 분리해서 가지고 있다가, 적용을 해야 한다.
+								}
+								set[key]['end'] = Number(String(properties[key]).replace(regexp_num, '')) - set[key]['start']; // 변경 스타일값 - 시작 스타일값
+								continue;
+							}
+							// 위 조건문에서 continue; 가 발생하지 않았을 경우, 해당 설정 스타일 초기화
+							max -= 1;
+							delete properties[key]; 
+						}
+						var frame_func = function() {
+							// increment the time
+							current += increment;
+
+							// css
+							var val;
+							var css = {};
+							for(key in set) {
+								if(regexp_color.test(key)) { // color 관련
+									val = easing_func[easing](current, 0, 100, duration);
+									if(/(transparent)/ig.test(set[key]['start'])) { // 투명도 처리 (작업중)
+										val = Number(val) / 100;
+										css[key] = setShade(set[key]['end'], val); 
+									}else {
+										val = Number(val) / 100; // 0 ~ 1
+										css[key] = setBlend(set[key]['start'], set[key]['end'], val);
+									}
+								}else {
+									// easing
+									val = easing_func[easing](current, set[key]['start'], set[key]['end'], duration); // easing_func[easing](current time, start value, change in value, duration)
+									val = Math.round(val); // 반올림
+									// css
+									css[key] = val + 'px';
+								}
+							}
+							element.css(css);
+
+							if(current < duration) {
+								// frame
+								setAnimationFrame(frame_func);
+							}else if(complete && typeof complete === 'function') {
+								// callback
+								complete();
+							}
+						};
+						frame_func();
+					};
+				}
+			})()
 		};
 
+		// return
 		return {
 			"$": $,
-			"ready": ready,
-			"html": html
+			// DOM Ready
+			"ready": function(callback) { 
+				if(document.addEventListener) { // Mozilla, Opera, Webkit 
+					document.addEventListener("DOMContentLoaded", function() {
+						callback();
+					}, false);
+				}else if(document.attachEvent) { // IE
+					document.attachEvent("onreadystatechange", function() {
+						if(document.readyState === "complete") {
+							callback();
+						}
+					});
+				}
+				/*
+				if(document.addEventListener) {
+					//DOMContentLoaded : HTML(DOM) 해석이 끝난 직후에 발생하는 이벤트
+					document.addEventListener('DOMContentLoaded', function() {
+						//alert(document.getElementById('test').innerHTML);
+						callback();
+					});
+				}else {
+					(function recursive() {
+						try {
+							document.documentElement.doScroll('left');
+						} catch(error) {
+							setTimeout(recursive, 0);
+							return;
+							callback();
+						}
+					}());
+				}
+				*/
+			},
+			// Create HTML
+			"html": function(parameter) {
+				/*
+				// 기본구조
+				api.dom.html({
+					"parent": "#ysm", // 작업영역
+					"child": [
+						{
+							"tag": "div", // Tag 명
+							"attr": {"id": "a", "class": "a"}, // 속성
+							"css": {"width": "100px", "height": "100px"}, // style
+							"data": {"type": "folder", "instance": "a"}, // data-* (html5 표준)
+							"html": "<p>a</p>", // html
+							"callback": function(element) { // element 만든 후 작업
+								//api.module.Slide.call({'instance': this.data.instance}, {'element': element});
+							},
+							"child": [ // 내부 자식 element 리스트
+								... 
+							]
+						}
+					]
+				});
+				// 사용예
+				api.dom.html({
+					"parent": "#ysm",
+					"child": [
+						{
+							"tag": "div",
+							"attr": {"id": "a", "class": "a"},
+							"css": {"width": "100px", "height": "100px"}, 
+							"data": {"type": "folder", "instance": "a"}, 
+							"html": "<p>a</p>",
+							"callback": function(element) {
+								//api.module.Slide.call({'instance': this.data.instance}, {'element': element});
+							},
+							"child": [
+								{
+									"tag": "div",
+									"attr": {"id": "a1", "class": "a1"},
+									"css": {"width": "", "height": ""},
+									"data": {"type": "slide", "instance": "a1"}
+								},
+								{
+									"tag": "div",
+									"attr": {"id": "a2", "class": "a2"},
+									"css": {"width": "", "height": ""}, 
+									"data": {"type": "slide", "instance": "a2"}
+								}
+							]
+						},
+						{
+							"tag": "div",
+							"attr": {"id": "b", "class": "b"},
+							"css": {"width": "", "height": ""}, 
+							"data": {"type": "b", "instance": "b"}, 
+							"child": [
+								{
+									"tag": "div",
+									"attr": {"id": "b1", "class": "b1"},
+									"css": {"width": "", "height": ""}, 
+									"data": {"type": "b1", "instance": "b1"},
+									"child": [
+										{
+											"tag": "div",
+											"attr": {"id": "b11", "class": "b11"},
+											"css": {"width": "", "height": ""}, 
+											"data": {"type": "", "instance": ""}
+										}
+									]
+								}
+							]
+						}
+					]
+				});
+				*/
+
+				// html
+				var callback_arr = []; // element 가 렌더링 된 후 콜백을 실행
+				var func = { // element에 필요한 각 기능별 함수
+					"attr": function(element, obj) {
+						var attr = obj.attr;
+						var key;
+						for(key in attr) {
+							element.attr(key, attr[key]);
+						}
+						return element;
+					},
+					"css": function(element, obj) {
+						element.css(obj.css);
+						return element;
+					},
+					"data": function(element, obj) {
+						var data = obj.data;
+						var key;
+						for(key in data) {
+							element.data(key, data[key]);
+						}
+						return element;
+					},
+					"html": function(element, obj) {
+						element.html(obj.html);
+						return element;
+					},
+					"callback": function(element, obj) {
+						if(obj.callback && typeof obj.callback === 'function') {
+							// 속도개선: callback_arr[callback_arr.length++] = '값';
+							callback_arr.push(
+								function() {
+									// this 는 현재 tag의 정보(tag, attr, css, data 등)
+									return obj.callback.call(obj, element[0]); // element[0]: 옵션에 따라 생성된 해당 element 값
+								}
+							);
+							/*
+							var call = function() {
+								// this 는 현재 tag의 정보(tag, attr, css, data 등)
+								return child[index1].callback.call(child[index1], element[0]); // element[0]: 옵션에 따라 생성된 해당 element 값
+							};
+							*/
+							/*
+							// this 는 현재 tag의 정보(tag, attr, css, data 등)
+							child[index1].callback.call(child[index1], element[0]); // element[0]: 옵션에 따라 생성된 해당 element 값
+							*/
+						}
+						return element;
+					}
+				};
+				function setCreate(child, parent) {
+					var fragment = parent || document.createDocumentFragment();
+					var index1, index2, element;
+					
+					// child [] 반복문
+					for(index1 in child) { 
+						// tag
+						element = $(document.createElement(child[index1].tag));
+						// child {} 반복문 
+						for(index2 in child[index1]) { 
+							if(func[index2]) {
+								element = func[index2](element, child[index1]);
+							}
+						}
+						// child 가 있으면 break(코드 순차 실행에 따른 개념) 하고, child 생성
+						if(child[index1].child) { 
+							setCreate(child[index1].child, element[0]);
+						}
+						$(fragment).append(element[0]);
+					}
+					return fragment;
+				}
+
+				// 생성
+				if(parameter.child) {
+					if(parameter.parent) { // 부모 element 에 삽입할 경우
+						$(parameter.parent).append(setCreate(parameter.child));	
+					}else {
+						return setCreate(parameter.child);
+					}
+					//$(parameter.parent || 'body').append(setCreate(parameter.child));
+				}
+
+				// 콜백실행
+				for(var index in callback_arr) {
+					callback_arr[index]();
+				}
+			},
+			// 문서내 포커스를 가지고 있거나 활성 상태인 노드
+			activeElement: function() {
+				return document.activeElement;
+			},
+			// 문서 혹은 문서 내의 특정 노드가 포커스를 가지고 있는지 판별
+			hasFocus: function(element) {
+				return (element || document).hasFocus();
+			},
+			// element를 View로 스크롤
+			scrollIntoView: function(element, is) {
+				return element.scrollIntoView(is || true);
+			},
+			// 스크롤 위치 
+			scrollOffset: function() {
+				var top = null, left = null;
+				if(typeof(window.pageYOffset) == 'number') {
+					//Netscape compliant
+					top = window.pageYOffset;
+					left = window.pageXOffset;
+				}else if(document.body && (document.body.scrollLeft || document.body.scrollTop)) {
+					//DOM compliant
+					top = document.body.scrollTop;
+					left = document.body.scrollLeft;
+				} else if(document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
+					//IE6 standards compliant mode
+					top = document.documentElement.scrollTop;
+					left = document.documentElement.scrollLeft;
+				}
+
+				return {"top": top, "left": left};
+			},
+			// 두 node 가 동일한지 판단
+			isEqualNode: function(element1, element2) {
+				return element1.isEqualNode(element2);
+			},
+			// element의 Top, Right, Bottom, Left, Width, Height 값
+			elementOffset: function(element) {
+				return element.getBoundingClientRect();
+				//var offset = element.getBoundingClientRect();
+				//return {"top":offset.top, "right":offset.right, "bottom":offset.bottom, "left":offset.left};
+			},
+			// 뷰포트의 즉정 지점에서 최상단 element 얻기
+			elementFromPoint: function(top, left) {
+				return document.elementFromPoint(top, left);
+			},
+			// 스크롤될 element의 크기를 얻기 (문서 전체크기를 알 수 있음)
+			elementScrollSize: function(element) {
+				var height = null, width = null;
+				if(element) {
+					height = element.scrollHeight;
+					width = element.scrollWidth;
+				}else {
+					height = document.documentElement.scrollHeight;
+					width = document.documentElement.scrollWidth;
+				}
+				return {"height": height, "width": width};
+			},
+			// top, left로 부터 스크롤된 픽셀을 가져오거나 설정하기
+			elementScrollTopLeft: function(element, top, left) { //get, set 동시 작업
+				if(top || left) {
+					if(top) element.scrollTop = top;
+					if(left) element.scrollTop = left;
+				}else {
+					return {"top": element.scrollTop, "left": element.scrollLeft};
+				}
+			}
 		};
 	})();
 
