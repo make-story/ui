@@ -8,11 +8,6 @@ Copyright (c) Sung-min Yu
 ;void function(global) {
 	'use strict'; // ES5
 	if(typeof global === 'undefined' || typeof global.api === 'undefined' || typeof global.api.dom !== 'undefined' || typeof document.querySelectorAll === 'undefined') return false;
-
-	// jQuery
-	//if(!document.querySelectorAll && !window.jQuery) document.write('<script src="//code.jquery.com/jquery-1.11.0.min.js"><\/script>');
-
-	// jquery.support()
 	
 	global.api.dom = (function() {
 
@@ -107,31 +102,6 @@ Copyright (c) Sung-min Yu
 				return this;
 			},
 			/*
-			query: function(name, context) {
-				var context = context || document,
-					element, arr;
-
-				if(document.querySelectorAll) { // IE7 이하 사용 불가능
-					element = context.querySelectorAll(name),
-					arr = this.elementsToArray(element);
-
-					this.element = element;
-					this.length = arr.length;
-					for(var key in arr) {
-						this[key] = arr[key];
-					}
-				}else {
-					// jQuery 호출
-					element = jQuery(name, context);
-					this.element = element[0];
-					this[0] = element[0];
-					this.length = 1;
-				}
-
-				return this;
-			},
-			*/
-			/*
 			// getElementById
 			getElementById: function(name, context) {
 				var context = context || document;
@@ -207,8 +177,8 @@ Copyright (c) Sung-min Yu
 					length = this.length,
 					element, search;
 
-				for ( ; i<length; i++) { // this[] 연관배열
-					for (search = this[i].parentNode; search && search !== context; search = search.parentNode) { 
+				for( ; i<length; i++) { // this[] 연관배열
+					for(search = this[i].parentNode; search && search !== context; search = search.parentNode) { 
 						// 현재 element 부터 검사하기 위해 
 						// 현재 노드의 parentNode 를 search 초기값으로 바인딩하고
 						// search.querySelector() 로 확인 한다.
@@ -570,7 +540,7 @@ Copyright (c) Sung-min Yu
 				var prefixes = ['', '-webkit-', '-moz-', '-ms-', '-o-'],
 					regexp_css3 = /^(transition|border-radius|transform|box-shadow|perspective|flex-direction)/i, // 사용자가 수동으로 -webkit- , -moz- , -o- , -ms- 입력하는 것들은 제외시킨다.
 					tmp = null,
-					dv = document.defaultView;
+					default_view = document.defaultView;
 
 				if(typeof value === 'string') { // get
 
@@ -585,11 +555,15 @@ Copyright (c) Sung-min Yu
 							console.log(e);
 						}
 					}else if(this[0].style[value]) { // style로 값을 구할 수 있는 경우
+						// HTML DOM Style Object (CSS 속성방식이 아닌 Jvascript property 방식)
+						// (예: background-color -> backgroundColor)
 						tmp = this[0].style[value];
 					}else if(this[0].currentStyle && this[0].currentStyle[value]) { // IE의 경우
 						tmp = this[0].currentStyle[value];
-					}else if(dv && dv.getComputedStyle) {
-						// 대문자를 소문자로 변환하고 그 앞에 '-'를 붙인다.
+					}else if(default_view && default_view.getComputedStyle) {
+						// CSS 속성명으로 값을 구한다.
+						// Javascript property 의 경우 대문자를 소문자로 변환하고 그 앞에 '-'를 붙인다. 
+						// (예: backgroundColor -> background-color, zIndex -> z-index, fontSize -> font-size)
 						var converted = '';
 						for(var i = 0, len = value.length; i < len; ++i) {
 							if(value.charAt(i) == value.charAt(i).toUpperCase()) {
@@ -598,8 +572,8 @@ Copyright (c) Sung-min Yu
 								converted = converted + value.charAt(i);
 							}
 						}
-						if(dv.getComputedStyle(this[0], '').getPropertyValue(converted)) {
-							tmp = dv.getComputedStyle(this[0], '').getPropertyValue(converted);
+						if(default_view.getComputedStyle(this[0], null).getPropertyValue(converted)) {
+							tmp = default_view.getComputedStyle(this[0], null).getPropertyValue(converted);
 						}
 					}
 
@@ -633,7 +607,9 @@ Copyright (c) Sung-min Yu
 
 				}
 			},
+			// padding, border, margin 제외
 			width: function(value) {
+				var regexp_num = /[^0-9]/g; // 숫자 제외값
 				if(typeof value === 'undefined') { // get
 					if(this[0] == window) { // window
 						// 1. WindowView properties
@@ -651,16 +627,69 @@ Copyright (c) Sung-min Yu
 							document.body.scrollWidth, document.documentElement.scrollWidth,
 							document.body.offsetWidth, document.documentElement.offsetWidth,
 							document.documentElement.clientWidth
-						);
+						); 
 					}else {
-						return this[0].clientWidth;
+						//return this[0].clientWidth;
+						return Number(this.css('width').replace(regexp_num, ''));
 					}
 				}else { // set
-					this.css.call(this, {'width': value});
-					return this;
+					//this.css.call(this, {'width': value});
+					//return this;
+					this.css({'width': value});
 				}
 			},
+			// border 안쪽 크기 (padding 포함)
+			innerWidth: function() {
+				var default_view = document.defaultView;
+				var regexp_num = /[^0-9]/g; // 숫자 제외값
+				var tmp;
+				var width = 0;
+				
+				// inner
+				if(this[0] == window || this[0].nodeType == 9) { // window, document
+					width = this.width();
+				}else if(this[0].style.paddingLeft && this[0].style.paddingRight) {
+					width += Number(this[0].style.width.replace(regexp_num, ''));
+					width += Number(this[0].style.paddingLeft.replace(regexp_num, '')) + Number(this[0].style.paddingRight.replace(regexp_num, ''));
+				}else if(window.getComputedStyle) {
+					tmp = default_view.getComputedStyle(this[0], null);
+					width += Number(tmp.getPropertyValue('width').replace(regexp_num, ''));
+					width += Number(tmp.getPropertyValue('padding-left').replace(regexp_num, '')) + Number(tmp.getPropertyValue('padding-right').replace(regexp_num, ''));
+				}
+
+				return width;
+			},
+			// border 포함 크기 (padding + border 포함, 파라미터가 true 경우 margin 값까지 포함)
+			outerWidth: function(is) {
+				var default_view = document.defaultView;
+				var regexp_num = /[^0-9]/g; // 숫자 제외값
+				var tmp;
+				var width = 0;
+
+				// outer
+				if(this[0] == window || this[0].nodeType == 9) { // window, document
+					width = this.width();
+				}else if((this[0].style.paddingLeft && this[0].style.paddingRight) && (this[0].style.borderLeftWidth && this[0].style.borderRightWidth)) {
+					width += Number(this[0].style.width.replace(regexp_num, ''));
+					width += Number(this[0].style.paddingLeft.replace(regexp_num, '')) + Number(this[0].style.paddingRight.replace(regexp_num, ''));
+					width += Number(this[0].style.borderLeftWidth.replace(regexp_num, '')) + Number(this[0].style.borderRightWidth.replace(regexp_num, ''));
+
+					// margin
+					if(is === true) width += Number(this[0].style.marginLeft.replace(regexp_num, '')) + Number(this[0].style.marginRight.replace(regexp_num, ''));
+				}else if(window.getComputedStyle) {
+					tmp = default_view.getComputedStyle(this[0], null);
+					width += Number(tmp.getPropertyValue('width').replace(regexp_num, ''));
+					width += Number(tmp.getPropertyValue('padding-left').replace(regexp_num, '')) + Number(tmp.getPropertyValue('padding-right').replace(regexp_num, ''));
+					width += Number(tmp.getPropertyValue('border-left-width').replace(regexp_num, '')) + Number(tmp.getPropertyValue('border-right-width').replace(regexp_num, ''));
+
+					// margin
+					if(is === true) width += Number(tmp.getPropertyValue('margin-left').replace(regexp_num, '')) + Number(tmp.getPropertyValue('margin-right').replace(regexp_num, ''));
+				}
+
+				return width;
+			},
 			height: function(value) {
+				var regexp_num = /[^0-9]/g; // 숫자 제외값
 				if(typeof value === 'undefined') { // get
 					if(this[0] == window) {
 						// 1. WindowView properties
@@ -680,12 +709,64 @@ Copyright (c) Sung-min Yu
 							document.documentElement.clientHeight
 						);
 					}else {
-						return this[0].clientHeight;
+						//return this[0].clientHeight;
+						return Number(this.css('height').replace(regexp_num, ''));
 					}
 				}else { // set
-					this.css.call(this, {"height": value});
-					return this;
+					//this.css.call(this, {"height": value});
+					//return this;
+					this.css({"height": value});
 				}
+			},
+			// border 안쪽 크기 (padding 포함)
+			innerHeight: function() {
+				var default_view = document.defaultView;
+				var regexp_num = /[^0-9]/g; // 숫자 제외값
+				var tmp;
+				var height = 0;
+				
+				// inner
+				if(this[0] == window || this[0].nodeType == 9) { // window, document
+					height = this.height();
+				}else if(this[0].style.paddingTop && this[0].style.paddingBottom) {
+					height += Number(this[0].style.height.replace(regexp_num, ''));
+					height += Number(this[0].style.paddingTop.replace(regexp_num, '')) + Number(this[0].style.paddingBottom.replace(regexp_num, ''));
+				}else if(window.getComputedStyle) {
+					tmp = default_view.getComputedStyle(this[0], null);
+					height += Number(tmp.getPropertyValue('height').replace(regexp_num, ''));
+					height += Number(tmp.getPropertyValue('padding-top').replace(regexp_num, '')) + Number(tmp.getPropertyValue('padding-bottom').replace(regexp_num, ''));
+				}
+
+				return height;
+			},
+			// border 포함 크기 (padding + border 포함, 파라미터가 true 경우 margin 값까지 포함)
+			outerHeight: function(is) {
+				var default_view = document.defaultView;
+				var regexp_num = /[^0-9]/g; // 숫자 제외값
+				var tmp;
+				var height = 0;
+
+				// outer
+				if(this[0] == window || this[0].nodeType == 9) { // window, document
+					height = this.height();
+				}else if((this[0].style.paddingTop && this[0].style.paddingBottom) && (this[0].style.borderTopWidth && this[0].style.borderBottomWidth)) {
+					height += Number(this[0].style.height.replace(regexp_num, ''));
+					height += Number(this[0].style.paddingTop.replace(regexp_num, '')) + Number(this[0].style.paddingBottom.replace(regexp_num, ''));
+					height += Number(this[0].style.borderTopWidth.replace(regexp_num, '')) + Number(this[0].style.borderBottomWidth.replace(regexp_num, ''));
+
+					// margin
+					if(is === true) height += Number(this[0].style.marginTop.replace(regexp_num, '')) + Number(this[0].style.marginBottom.replace(regexp_num, ''));
+				}else if(window.getComputedStyle) {
+					tmp = default_view.getComputedStyle(this[0], null);
+					height += Number(tmp.getPropertyValue('height').replace(regexp_num, ''));
+					height += Number(tmp.getPropertyValue('padding-top').replace(regexp_num, '')) + Number(tmp.getPropertyValue('padding-bottom').replace(regexp_num, ''));
+					height += Number(tmp.getPropertyValue('border-top-width').replace(regexp_num, '')) + Number(tmp.getPropertyValue('border-bottom-width').replace(regexp_num, ''));
+
+					// margin
+					if(is === true) height += Number(tmp.getPropertyValue('margin-top').replace(regexp_num, '')) + Number(tmp.getPropertyValue('margin-bottom').replace(regexp_num, ''));
+				}
+
+				return height;
 			},
 			//
 			getClass: function() {
@@ -693,8 +774,8 @@ Copyright (c) Sung-min Yu
 			},
 			hasClass: function(name) { 
 				// element.classList; // 클래스 리스트 출력
-				var regex = new RegExp('(?:\\s|^)' + name + '(?:\\s|$)');
-				return !!this[0].className.match(regex); // !! 느낌표가 2개 이유는 type 를 boolean 으로 만들기 위함
+				var regexp = new RegExp('(?:\\s|^)' + name + '(?:\\s|$)');
+				return !!this[0].className.match(regexp); // !! 느낌표가 2개 이유는 type 를 boolean 으로 만들기 위함
 			},
 			addClass: function(name) {
 				// element.classList.add('');
@@ -712,11 +793,11 @@ Copyright (c) Sung-min Yu
 			},
 			removeClass: function(name) { 
 				// element.classList.remove('');
-				var // regex = new RegExp('(?:\\s|^)' + name + '(?:\\s|$)'),
+				var // regexp = new RegExp('(?:\\s|^)' + name + '(?:\\s|$)'),
 					arr = name.split(' '),
 					element;
 				this.each(function() {
-					// this.className = this.className.replace(regex, ' '); // 방법1
+					// this.className = this.className.replace(regexp, ' '); // 방법1
 					// this.classList.remove(name); // 방법2 (한번에 하나의 클래스만 삭제 가능하다. 죽, 띄어쓰기로 여러 클래스 삭제 불가능)
 					element = this;
 					for(var key in arr) {
@@ -745,9 +826,8 @@ Copyright (c) Sung-min Yu
 				data-* 속성값에서 -(hyphen) 다음의 첫글자는 무조건 대문자로 들어가야 한다.
 				http://www.sitepoint.com/managing-custom-data-html5-dataset-api/
 				*/
-				var element = document.createElement('div');
-				var html5 = (element.dataset ? true : false);
-				if(html5) { // html5 지원
+				var support = ('dataset' in document.createElement('div') ? true : false);
+				if(support) { // html5 지원
 					return function(name, value) {
 						name = name.replace(/-([a-z])/g, function(name) {
 							return name[1].toUpperCase(); // -(하이픈) 다음 첫글자 대문자로 변환
@@ -764,9 +844,11 @@ Copyright (c) Sung-min Yu
 				}else { // attr
 					return function(name, value) {
 						if(typeof value === 'undefined') {
-							return this.attr.call(this, 'data-' + name);
+							//return this.attr.call(this, 'data-' + name);
+							this.attr('data-' + name);
 						}else {
-							this.attr.call(this, 'data-' + name, value);
+							//this.attr.call(this, 'data-' + name, value);
+							this.attr('data-' + name, value);
 						}
 						return this;
 					};
@@ -842,14 +924,14 @@ Copyright (c) Sung-min Yu
 						var regexp_num = /[^0-9]/g; // 숫자 제외값
 						var regexp_transparent = /transparent/i;
 						var regexp_opacity = /opacity/i;
-
+						/*
 						var colornames = {
 							aqua: '#00ffff', black: '#000000', blue: '#0000ff', fuchsia: '#ff00ff',
 							gray: '#808080', green: '#008000', lime: '#00ff00', maroon: '#800000',
 							navy: '#000080', olive: '#808000', purple: '#800080', red: '#ff0000',
 							silver: '#c0c0c0', teal: '#008080', white: '#ffffff', yellow: '#ffff00'
 						};
-						
+						*/
 						// HEX -> RBG
 						var setHexToRgb = function(hex) {
 							if(regexp_reg.test(hex)) {
@@ -951,9 +1033,11 @@ Copyright (c) Sung-min Yu
 						}*/
 
 						// requestAnimationFrame for Smart Animating http://goo.gl/sx5sts
-						var setAnimationFrame = (function(){ 
+						var setRequestAnimFrame = (function() { 
 							return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback) { window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
-							//return  window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || function(callback) { window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
+						})();
+						var setCancelAnimFrame = (function() {
+							return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function(id) { return window.clearTimeout(id); };
 						})();
 
 						/*
@@ -988,7 +1072,7 @@ Copyright (c) Sung-min Yu
 								return -c *(t/=d)*(t-2) + b;
 							},
 							easeInOutQuad: function (t, b, c, d) {
-								if ((t/=d/2) < 1) return c/2*t*t + b;
+								if((t/=d/2) < 1) return c/2*t*t + b;
 								return -c/2 * ((--t)*(t-2) - 1) + b;
 							},
 							easeInCubic: function (t, b, c, d) {
@@ -998,7 +1082,7 @@ Copyright (c) Sung-min Yu
 								return c*((t=t/d-1)*t*t + 1) + b;
 							},
 							easeInOutCubic: function (t, b, c, d) {
-								if ((t/=d/2) < 1) return c/2*t*t*t + b;
+								if((t/=d/2) < 1) return c/2*t*t*t + b;
 								return c/2*((t-=2)*t*t + 2) + b;
 							},
 							easeInQuart: function (t, b, c, d) {
@@ -1008,7 +1092,7 @@ Copyright (c) Sung-min Yu
 								return -c * ((t=t/d-1)*t*t*t - 1) + b;
 							},
 							easeInOutQuart: function (t, b, c, d) {
-								if ((t/=d/2) < 1) return c/2*t*t*t*t + b;
+								if((t/=d/2) < 1) return c/2*t*t*t*t + b;
 								return -c/2 * ((t-=2)*t*t*t - 2) + b;
 							},
 							easeInQuint: function (t, b, c, d) {
@@ -1018,7 +1102,7 @@ Copyright (c) Sung-min Yu
 								return c*((t=t/d-1)*t*t*t*t + 1) + b;
 							},
 							easeInOutQuint: function (t, b, c, d) {
-								if ((t/=d/2) < 1) return c/2*t*t*t*t*t + b;
+								if((t/=d/2) < 1) return c/2*t*t*t*t*t + b;
 								return c/2*((t-=2)*t*t*t*t + 2) + b;
 							},
 							easeInSine: function (t, b, c, d) {
@@ -1037,9 +1121,9 @@ Copyright (c) Sung-min Yu
 								return (t==d) ? b+c : c * (-Math.pow(2, -10 * t/d) + 1) + b;
 							},
 							easeInOutExpo: function (t, b, c, d) {
-								if (t==0) return b;
-								if (t==d) return b+c;
-								if ((t/=d/2) < 1) return c/2 * Math.pow(2, 10 * (t - 1)) + b;
+								if(t==0) return b;
+								if(t==d) return b+c;
+								if((t/=d/2) < 1) return c/2 * Math.pow(2, 10 * (t - 1)) + b;
 								return c/2 * (-Math.pow(2, -10 * --t) + 2) + b;
 							},
 							easeInCirc: function (t, b, c, d) {
@@ -1049,60 +1133,60 @@ Copyright (c) Sung-min Yu
 								return c * Math.sqrt(1 - (t=t/d-1)*t) + b;
 							},
 							easeInOutCirc: function (t, b, c, d) {
-								if ((t/=d/2) < 1) return -c/2 * (Math.sqrt(1 - t*t) - 1) + b;
+								if((t/=d/2) < 1) return -c/2 * (Math.sqrt(1 - t*t) - 1) + b;
 								return c/2 * (Math.sqrt(1 - (t-=2)*t) + 1) + b;
 							},
 							easeInElastic: function (t, b, c, d) {
 								var s=1.70158;var p=0;var a=c;
-								if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.3;
-								if (a < Math.abs(c)) { a=c; var s=p/4; }
+								if(t==0) return b;  if((t/=d)==1) return b+c;  if(!p) p=d*.3;
+								if(a < Math.abs(c)) { a=c; var s=p/4; }
 								else var s = p/(2*Math.PI) * Math.asin (c/a);
 								return -(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
 							},
 							easeOutElastic: function (t, b, c, d) {
 								var s=1.70158;var p=0;var a=c;
-								if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.3;
-								if (a < Math.abs(c)) { a=c; var s=p/4; }
+								if(t==0) return b;  if((t/=d)==1) return b+c;  if(!p) p=d*.3;
+								if(a < Math.abs(c)) { a=c; var s=p/4; }
 								else var s = p/(2*Math.PI) * Math.asin (c/a);
 								return a*Math.pow(2,-10*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b;
 							},
 							easeInOutElastic: function (t, b, c, d) {
 								var s=1.70158;var p=0;var a=c;
-								if (t==0) return b;  if ((t/=d/2)==2) return b+c;  if (!p) p=d*(.3*1.5);
-								if (a < Math.abs(c)) { a=c; var s=p/4; }
+								if(t==0) return b;  if((t/=d/2)==2) return b+c;  if(!p) p=d*(.3*1.5);
+								if(a < Math.abs(c)) { a=c; var s=p/4; }
 								else var s = p/(2*Math.PI) * Math.asin (c/a);
-								if (t < 1) return -.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
+								if(t < 1) return -.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
 								return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*.5 + c + b;
 							},
 							easeInBack: function (t, b, c, d, s) {
-								if (s == undefined) s = 1.70158;
+								if(s == undefined) s = 1.70158;
 								return c*(t/=d)*t*((s+1)*t - s) + b;
 							},
 							easeOutBack: function (t, b, c, d, s) {
-								if (s == undefined) s = 1.70158;
+								if(s == undefined) s = 1.70158;
 								return c*((t=t/d-1)*t*((s+1)*t + s) + 1) + b;
 							},
 							easeInOutBack: function (t, b, c, d, s) {
-								if (s == undefined) s = 1.70158;
-								if ((t/=d/2) < 1) return c/2*(t*t*(((s*=(1.525))+1)*t - s)) + b;
+								if(s == undefined) s = 1.70158;
+								if((t/=d/2) < 1) return c/2*(t*t*(((s*=(1.525))+1)*t - s)) + b;
 								return c/2*((t-=2)*t*(((s*=(1.525))+1)*t + s) + 2) + b;
 							},
 							easeInBounce: function (t, b, c, d) {
 								return c - this.easeOutBounce (x, d-t, 0, c, d) + b;
 							},
 							easeOutBounce: function (t, b, c, d) {
-								if ((t/=d) < (1/2.75)) {
+								if((t/=d) < (1/2.75)) {
 									return c*(7.5625*t*t) + b;
-								} else if (t < (2/2.75)) {
+								} else if(t < (2/2.75)) {
 									return c*(7.5625*(t-=(1.5/2.75))*t + .75) + b;
-								} else if (t < (2.5/2.75)) {
+								} else if(t < (2.5/2.75)) {
 									return c*(7.5625*(t-=(2.25/2.75))*t + .9375) + b;
 								} else {
 									return c*(7.5625*(t-=(2.625/2.75))*t + .984375) + b;
 								}
 							},
 							easeInOutBounce: function (t, b, c, d) {
-								if (t < d/2) return this.easeInBounce (t*2, 0, c, d) * .5 + b;
+								if(t < d/2) return this.easeInBounce (t*2, 0, c, d) * .5 + b;
 								return this.easeOutBounce (t*2-d, 0, c, d) * .5 + c*.5 + b;
 							}
 						};
@@ -1130,7 +1214,7 @@ Copyright (c) Sung-min Yu
 								if(set[key]['start']) {
 									set[key]['start'] = Number(set[key]['start'].replace(regexp_num, '')); // px 등 단위를 분리해서 가지고 있다가, 적용을 해야 한다.
 								}
-								set[key]['end'] = Number(String(properties[key]).replace(regexp_num, '')) - set[key]['start']; // 변경 스타일값 - 시작 스타일값
+								set[key]['end'] = Number(String(properties[key]).replace(regexp_num, '')) - set[key]['start']; // 계산: 변경 스타일값 - 현재 스타일값
 								continue;
 							}
 							// 위 조건문에서 continue; 가 발생하지 않았을 경우, 해당 설정 스타일 초기화
@@ -1166,7 +1250,7 @@ Copyright (c) Sung-min Yu
 
 							if(current < duration) {
 								// frame
-								setAnimationFrame(frame_func);
+								setRequestAnimFrame(frame_func);
 							}else if(complete && typeof complete === 'function') {
 								// callback
 								complete();
@@ -1194,25 +1278,6 @@ Copyright (c) Sung-min Yu
 						}
 					});
 				}
-				/*
-				if(document.addEventListener) {
-					//DOMContentLoaded : HTML(DOM) 해석이 끝난 직후에 발생하는 이벤트
-					document.addEventListener('DOMContentLoaded', function() {
-						//alert(document.getElementById('test').innerHTML);
-						callback();
-					});
-				}else {
-					(function recursive() {
-						try {
-							document.documentElement.doScroll('left');
-						} catch(error) {
-							setTimeout(recursive, 0);
-							return;
-							callback();
-						}
-					}());
-				}
-				*/
 			},
 			// Create HTML
 			"html": function(parameter) {
@@ -1393,14 +1458,14 @@ Copyright (c) Sung-min Yu
 			// 스크롤 위치 
 			scrollOffset: function() {
 				var top = null, left = null;
-				if(typeof(window.pageYOffset) == 'number') {
+				if(typeof window.pageYOffset == 'number') {
 					//Netscape compliant
 					top = window.pageYOffset;
 					left = window.pageXOffset;
 				}else if(document.body && (document.body.scrollLeft || document.body.scrollTop)) {
 					//DOM compliant
 					top = document.body.scrollTop;
-					left = document.body.scrollLeft;
+					left = document.body.scrollLeft; 
 				} else if(document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
 					//IE6 standards compliant mode
 					top = document.documentElement.scrollTop;
@@ -1419,7 +1484,7 @@ Copyright (c) Sung-min Yu
 				//var offset = element.getBoundingClientRect();
 				//return {"top":offset.top, "right":offset.right, "bottom":offset.bottom, "left":offset.left};
 			},
-			// 뷰포트의 즉정 지점에서 최상단 element 얻기
+			// 뷰포트의 특정 지점(좌표)의 최상단 element 정보
 			elementFromPoint: function(top, left) {
 				return document.elementFromPoint(top, left);
 			},
@@ -1435,7 +1500,7 @@ Copyright (c) Sung-min Yu
 				}
 				return {"height": height, "width": width};
 			},
-			// top, left로 부터 스크롤된 픽셀을 가져오거나 설정하기
+			// top, left로 부터 스크롤된 픽셀을 가져오거나 설정하기 - 추후 scrollOffset 과 통합하는 작업 필요!
 			elementScrollTopLeft: function(element, top, left) { //get, set 동시 작업
 				if(top || left) {
 					if(top) element.scrollTop = top;

@@ -8,6 +8,7 @@ Copyright (c) Sung-min Yu
 ;void function(global) {
 	'use strict'; // ES5
 	if(typeof global === 'undefined' || typeof global.api === 'undefined' || typeof global.api.module !== 'undefined') return false;
+	
 	global.api.module = (function() {
 		return {
 			// 상속 - 추후 Object.create() 로 변경하자!

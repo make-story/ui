@@ -12,7 +12,7 @@ _작업시 고민했던 부분_
 <pre>
 ;void function(global) {   ...
 </pre>
-
+ 
 <br />
 ### 'ECMAScript 5' 환경을 위해 'use strict' 를 사용하였습니다. (전역으로 사용하지 않음)
 
@@ -113,7 +113,7 @@ API
 ---
 - *브라우저 정보, 해상도, 사용자 정보 등 확인*
 
-> api.core.check: 모바일, 터치 등 정보 (true | false)
+> api.core.check: 모바일, 터치, CSS3 등 정보 (true | false)
 
 > api.core.device: pc | tablet | mobile
 
@@ -125,7 +125,7 @@ API
 
 > api.core.css: 벤더프리픽스
 
-> api.core.script: script 동적로딩, 의존성관리, 모듈화
+> api.core.script: script 동적로딩, 의존성관리
 
 <pre>
 api.script(
@@ -149,6 +149,8 @@ api.script('test1.js', function() {
 })
 </pre>
 
+> api.core.resize: 브라우저 리사이즈 통합 콜백
+
 
 ###2. library: api.dom.js
 ---
@@ -158,32 +160,6 @@ api.script('test1.js', function() {
 > selector: querySelectorAll 사용
 
 > api.$(selector), api.dom.$(selector)
-
-> api.ready(): readystatechange
-
-> api.html(): createDocumentFragment html 동적생성
-
-<pre>
-api.dom.html({
-	"parent": "#ysm", // 작업영역
-	"child": [
-		{
-			"tag": "div", // Tag 명
-			"attr": {"id": "a", "class": "a"}, // 속성
-			"css": {"width": "100px", "height": "100px"}, // style
-			"data": {"type": "folder", "instance": "a"}, // data-* (html5 표준)
-			"html": "", // html
-			"callback": function(element) { // element 만든 후 작업
-				// ...
-			},
-			"child": [ // 내부 자식 element 리스트
-				// ... 
-			]
-		}
-	]
-});
-</pre>
-
 
 > api.$(selector).find(): 하위 dom 검색
 
@@ -198,6 +174,8 @@ api.dom.html({
 > api.$(selector).on(): 이벤트 설정
 
 > api.$(selector).off(): 이벤트 해제
+
+> api.$(selector).one(): 일회성 이벤트
 
 > api.$(selector).trigger(): 이벤트 강제실행
 
@@ -227,6 +205,18 @@ api.dom.html({
 
 > api.$(selector).css(): css 확인/수정
 
+> api.$(selector).width(): element width 값
+
+> api.$(selector).innerWidth(): element width + padding 값
+
+> api.$(selector).outerWidth(): element width + padding + border + [margin] 값
+
+> api.$(selector).height(): element height 값
+
+> api.$(selector).innerHeight(): element height + padding 값
+
+> api.$(selector).outerHeight(): element height + padding + border + [margin] 값
+
 > api.$(selector).getClass(): class 속성 확인
 
 > api.$(selector).hasClass(): class 특성 속성값 존재여부
@@ -239,9 +229,54 @@ api.dom.html({
 
 > api.$(selector).data(): data (html5 data 속성) 
 
-> api.$(selector).animate(): color, css3 적용 작업 진행중
+> api.$(selector).animate(): 애니메이션 (CSS3 또는 frame 함수)
 
 > 그밖의 계속 추가중...
+
+---
+
+> api.dom.ready(): readystatechange
+
+> api.dom.html(): createDocumentFragment html 동적생성
+
+<pre>
+api.dom.html({
+	"parent": "#ysm", // 작업영역
+	"child": [
+		{
+			"tag": "div", // Tag 명
+			"attr": {"id": "a", "class": "a"}, // 속성
+			"css": {"width": "100px", "height": "100px"}, // style
+			"data": {"type": "folder", "instance": "a"}, // data-* (html5 표준)
+			"html": "", // html
+			"callback": function(element) { // element 만든 후 작업
+				// ...
+			},
+			"child": [ // 내부 자식 element 리스트
+				// ... 
+			]
+		}
+	]
+});
+</pre>
+
+
+> api.dom.activeElement(): 문서내 포커스를 가지고 있거나 활성 상태인 노드
+
+> api.dom.hasFocus(): 문서 혹은 문서 내의 특정 노드가 포커스를 가지고 있는지 판별
+
+> api.dom.scrollIntoView(): element를 View로 스크롤
+
+> api.dom.scrollOffset(): 스크롤 위치
+
+> api.dom.isEqualNode(): 두 node 가 동일한지 판단
+
+> api.dom.elementOffset(): element의 Top, Right, Bottom, Left, Width, Height 값
+
+> api.dom.elementFromPoint(): 뷰포트의 특정 지점(좌표)의 최상단 element 정보
+
+> api.dom.elementScrollSize(): 스크롤될 element의 크기를 얻기 (문서 전체크기를 알 수 있음)
+
 
 
 ###3. library: api.ajax.js

@@ -36,7 +36,7 @@ null: 변수는 선언되어 있으나 초기화되었을 때를 판단
 		var element = document.createElement('div');
 		var nameOffset, verOffset, key;
 		var core = {
-			"check": { // true, false
+			"check": { // true, false 
 				"mobile": null,
 				"touch": null,
 				"transform" : false
@@ -489,11 +489,64 @@ null: 변수는 선언되어 있으나 초기화되었을 때를 판단
 		};
 		var instance_script = new Script();
 
+		// resize callback 관리
+		var Resize = function() {
+			var that = this;
+			that.callback = [];
+			that.time = null;
+			that.func = function() {
+				window.clearTimeout(that.time);
+				that.time = window.setTimeout(function(){ 
+					for(var index in that.callback) {
+						that.callback[index]();
+					}
+				}, 500);
+			};
+			that.on();
+		};
+		Resize.prototype = {
+			add: function(callback) { // callback 추가
+				if(!callback || typeof callback !== 'function') return false;
+				this.callback.push(callback);
+			},
+			del: function(callback) { // callback 제거
+				if(!callback || typeof callback !== 'function') return false;
+				var index = (this.callback.length > 0) ? this.callback.indexOf(callback) : -1; // 존재여부 확인
+				if(index > -1) {
+					this.callback.splice(index, 1); // 대기 리스트 요소 제거
+				}
+			},
+			on: (function() { // resize 이벤트 작동
+				if(typeof window.addEventListener === 'function') {
+					return function() {
+						window.addEventListener(core.event.resize, this.func, false);
+					}
+				}else if(typeof document.attachEvent === 'function') { // IE
+					return function() {
+						document.attachEvent('on' + core.event.resize, this.func);
+					}
+				}
+			})(),
+			off: (function() { // resize 이벤트 정지
+				if(typeof window.removeEventListener === 'function') {
+					return function() {
+						window.removeEventListener(core.event.resize, this.func, false);
+					}
+				}else if(typeof document.detachEvent === 'function') { // IE
+					return function() {
+						document.detachEvent('on' + core.event.resize, this.func);
+					}
+				}
+			})()
+		};
+		var instance_resize = new Resize();
+
 		// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 
 		return {
 			"core": core,
-			"script": instance_script.init.bind(instance_script)
+			"script": instance_script.init.bind(instance_script),
+			"resize": instance_resize
 		};
 	})();
 	
