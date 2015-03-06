@@ -227,6 +227,12 @@ api.script('test1.js', function() {
 
 > api.$(selector).toggleClass(): class 속성값 toggle
 
+> api.$(selector).scrollInfo(): 스크롤 x, y 정보
+
+> api.$(selector).scrollTop(): 스크롤 y 정보/설정
+
+> api.$(selector).scrollLeft(): 스크롤 x 정보/설정
+
 > api.$(selector).data(): data (html5 data 속성) 
 
 > api.$(selector).animate(): 애니메이션 (CSS3 또는 frame 함수)
@@ -266,8 +272,6 @@ api.dom.html({
 > api.dom.hasFocus(): 문서 혹은 문서 내의 특정 노드가 포커스를 가지고 있는지 판별
 
 > api.dom.scrollIntoView(): element를 View로 스크롤
-
-> api.dom.scrollOffset(): 스크롤 위치
 
 > api.dom.isEqualNode(): 두 node 가 동일한지 판단
 

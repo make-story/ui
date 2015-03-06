@@ -1,0 +1,52 @@
+
+/* popup 전체 */
+.popup_selector {
+	border: 1px solid #292E32;
+	
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	/*border-radius: 5px;*/
+	border-radius: 5px 5px 5px 5px;
+	
+	-webkit-box-shadow: 0 0 1em rgba(0,0,0,0.3);
+	-moz-box-shadow: 0 0 1em rgba(0,0,0,0.3);
+	box-shadow: 0 0 1em rgba(0,0,0,0.3);
+}
+/* header */
+.popup_header {
+	height: 30px;
+	background-color: #3B4346;
+	border-bottom: 1px solid #2E3639;
+}
+/* title */
+.popup_title {
+	position: absolute;
+	left: 10px;
+	top: 9px;
+	color: #DADBDC;
+}
+/* close */
+.popup_close {
+	position: absolute;
+	right: 10px;
+	top: 9px;
+	color: #DADBDC;
+}
+.popup_close a {
+	color: #DADBDC;
+}
+/* mask */
+.popup_mask { 
+	/* IE 8 */
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+	/* IE 5-7 */
+	filter: alpha(opacity=50);
+	/* Netscape */
+	-moz-opacity: 0.5;
+	/* Safari 1.x */
+	-khtml-opacity: 0.5;
+	/* Good browsers */
+	opacity: 0.5;
+	
+	background-color: #FFF;
+}

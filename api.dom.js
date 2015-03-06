@@ -11,13 +11,344 @@ Copyright (c) Sung-min Yu
 	
 	global.api.dom = (function() {
 
-		//cache
+		// cache
 		var cache = {
 			'event': {}
 		};
 
-		//dom
-		var $ = function() {
+		// regexp
+		var regexp = {
+			tag: /<(\w+)[^>]*>/,
+			animate_types: /^(?:toggle|show|hide)$/,
+			pixel_unit_list: /width$|height$|top|right|bottom|left|font-size|letter-spacing|line-height|^margin*|^padding*/i, // 단위 px 해당되는 것
+			time_unit_list: /.+(-duration|-delay)$/i, // seconds (s) or milliseconds (ms)
+			position_list: /^(top|right|bottom|left)$/,
+			display_list: /^(display|visibility|opacity|)$/i,
+			//opacity: /opacity\s*=\s*([^)]*)/, // IE
+			num_unit: /^([0-9]+)(\D+)$/i, // 단위
+			text: /^(\D+)$/i, // 텍스트
+			num: /^[+-]?\d+(\.\d+)?$/, // 숫자
+			trim: /(^\s*)|(\s*$)/g, // 양쪽 여백
+			color_js: /(backgroundColor|borderBottomColor|borderLeftColor|borderRightColor|borderTopColor|color|outlineColor)/ig,
+			color_css: /(background-color|border-bottom-color|border-left-color|border-right-color|border-top-color|color|outline-color)/ig,
+			reg: /^rgb/i,
+			hex: /^#/i
+		};
+
+		// module
+		var module = {
+			colornames: {
+				aqua: '#00ffff', black: '#000000', blue: '#0000ff', fuchsia: '#ff00ff',
+				gray: '#808080', green: '#008000', lime: '#00ff00', maroon: '#800000',
+				navy: '#000080', olive: '#808000', purple: '#800080', red: '#ff0000',
+				silver: '#c0c0c0', teal: '#008080', white: '#ffffff', yellow: '#ffff00'
+			},
+			// HEX -> RBG
+			setHexToRgb: function(hex) {
+				if(regexp.reg.test(hex)) {
+					return hex;
+				}
+				// Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+				var regexp_shorthand = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+				var hex = hex.replace(regexp_shorthand, function(m, r, g, b) {
+					return r + r + g + g + b + b;
+				});
+				var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+				return result ? 'rgb(' + parseInt(result[1], 16) + ', ' + parseInt(result[2], 16) + ', ' + parseInt(result[3], 16) + ')' : 'rgb(0, 0, 0)';
+			},
+			// RBG -> HEX
+			setRgbToHex: function(color) {
+				if(regexp.hex.test(color)) {
+					return color;
+				}
+				var digits = /(.*?)rgb\((\d+), (\d+), (\d+)\)/.exec(color);
+				var red = parseInt(digits[2]);
+				var green = parseInt(digits[3]);
+				var blue = parseInt(digits[4]);
+				var rgb = blue | (green << 8) | (red << 16);
+				return '#' + rgb.toString(16);
+			},
+			// HEX
+			getBlendHEXColors: function(c0, c1, p) {
+				var f = parseInt(c0.slice(1), 16),
+					t = parseInt(c1.slice(1), 16),
+					R1 = f>>16,
+					G1 = f>>8&0x00FF, 
+					B1 = f&0x0000FF, 
+					R2 = t>>16,
+					G2 = t>>8&0x00FF,
+					B2 = t&0x0000FF;
+				return "#"+(0x1000000+(Math.round((R2-R1)*p)+R1)*0x10000+(Math.round((G2-G1)*p)+G1)*0x100+(Math.round((B2-B1)*p)+B1)).toString(16).slice(1);
+			},
+			getShadeHEXColor: function(color, percent) {   
+				var f = parseInt(color.slice(1), 16),
+					t = percent < 0 ? 0 : 255,
+					p = percent < 0 ? percent * -1 : percent,
+					R = f>>16,
+					G = f>>8&0x00FF,
+					B = f&0x0000FF;
+				return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
+			},
+			// RGB
+			getBlendRGBColors: function(c0, c1, p) {
+				var f = c0.split(","),
+					t = c1.split(","),
+					R = parseInt(f[0].slice(4)),
+					G = parseInt(f[1]),
+					B = parseInt(f[2]);
+				return "rgb("+(Math.round((parseInt(t[0].slice(4))-R)*p)+R)+","+(Math.round((parseInt(t[1])-G)*p)+G)+","+(Math.round((parseInt(t[2])-B)*p)+B)+")";
+			},
+			getShadeRGBColor: function(color, percent) {
+				var f = color.split(","),
+					t = percent < 0 ? 0 : 255,
+					p = percent < 0 ? percent * -1 : percent,
+					R = parseInt(f[0].slice(4)),
+					G = parseInt(f[1]),
+					B = parseInt(f[2]);
+				return "rgb("+(Math.round((t-R)*p)+R)+","+(Math.round((t-G)*p)+G)+","+(Math.round((t-B)*p)+B)+")";
+			},
+			// http://stackoverflow.com/questions/5560248/programmatically-lighten-or-darken-a-hex-color-or-rgb-and-blend-colors
+			setShade: function(color, percent) { // 투명도
+				if(color.length > 7) {
+					return this.getShadeRGBColor(color, percent);
+				}else {
+					return this.getShadeHEXColor(color, percent);
+				}
+			},
+			setBlend: function(color1, color2, percent) { // 색혼합
+				if(color1.length > 7) {
+					return this.getBlendRGBColors(color1, color2, percent);
+				}else {
+					return this.getBlendHEXColors(color1, color2, percent);
+				}
+			},
+			/*
+			setShadeBlend: function(p,c0,c1) {
+				var n = p < 0 ? p * -1 : p,
+					u = Math.round,
+					w = parseInt;
+				if(c0.length > 7) {
+					var f = c0.split(","),
+						t = (c1 ? c1 : p < 0 ? "rgb(0,0,0)" : "rgb(255,255,255)").split(","),
+						R = w(f[0].slice(4)),
+						G = w(f[1]),
+						B = w(f[2]);
+					return "rgb("+(u((w(t[0].slice(4))-R)*n)+R)+","+(u((w(t[1])-G)*n)+G)+","+(u((w(t[2])-B)*n)+B)+")";
+				}else {
+					var f = w(c0.slice(1), 16),
+						t = w((c1 ? c1 : p < 0 ? "#000000" : "#FFFFFF").slice(1), 16),
+						R1 = f>>16,
+						G1 = f>>8&0x00FF,
+						B1 = f&0x0000FF;
+					return "#"+(0x1000000+(u(((t>>16)-R1)*n)+R1)*0x10000+(u(((t>>8&0x00FF)-G1)*n)+G1)*0x100+(u(((t&0x0000FF)-B1)*n)+B1)).toString(16).slice(1);
+				}
+			},*/
+			/*
+			easing functions
+			t = current time
+			b = start value
+			c = change in value
+			d = duration
+			*/
+			easing: {
+				/*
+				 * easing 계산식은 아래 저작권에 따릅니다.
+				 * jQuery Easing v1.3 - http://gsgd.co.uk/sandbox/jquery/easing/
+				 * TERMS OF USE - jQuery Easing
+				 * 
+				 * Open source under the BSD License. 
+				 * 
+				 * Copyright © 2008 George McGinley Smith
+				 * All rights reserved.
+				 */
+				swing: function (t, b, c, d) {
+					//return 0.5 - Math.cos( t*Math.PI ) / 2;
+					return this['easeOutQuad'](t, b, c, d);
+				},
+				easeInQuad: function (t, b, c, d) {
+					return c*(t/=d)*t + b;
+				},
+				easeOutQuad: function (t, b, c, d) {
+					return -c *(t/=d)*(t-2) + b;
+				},
+				easeInOutQuad: function (t, b, c, d) {
+					if((t/=d/2) < 1) return c/2*t*t + b;
+					return -c/2 * ((--t)*(t-2) - 1) + b;
+				},
+				easeInCubic: function (t, b, c, d) {
+					return c*(t/=d)*t*t + b;
+				},
+				easeOutCubic: function (t, b, c, d) {
+					return c*((t=t/d-1)*t*t + 1) + b;
+				},
+				easeInOutCubic: function (t, b, c, d) {
+					if((t/=d/2) < 1) return c/2*t*t*t + b;
+					return c/2*((t-=2)*t*t + 2) + b;
+				},
+				easeInQuart: function (t, b, c, d) {
+					return c*(t/=d)*t*t*t + b;
+				},
+				easeOutQuart: function (t, b, c, d) {
+					return -c * ((t=t/d-1)*t*t*t - 1) + b;
+				},
+				easeInOutQuart: function (t, b, c, d) {
+					if((t/=d/2) < 1) return c/2*t*t*t*t + b;
+					return -c/2 * ((t-=2)*t*t*t - 2) + b;
+				},
+				easeInQuint: function (t, b, c, d) {
+					return c*(t/=d)*t*t*t*t + b;
+				},
+				easeOutQuint: function (t, b, c, d) {
+					return c*((t=t/d-1)*t*t*t*t + 1) + b;
+				},
+				easeInOutQuint: function (t, b, c, d) {
+					if((t/=d/2) < 1) return c/2*t*t*t*t*t + b;
+					return c/2*((t-=2)*t*t*t*t + 2) + b;
+				},
+				easeInSine: function (t, b, c, d) {
+					return -c * Math.cos(t/d * (Math.PI/2)) + c + b;
+				},
+				easeOutSine: function (t, b, c, d) {
+					return c * Math.sin(t/d * (Math.PI/2)) + b;
+				},
+				easeInOutSine: function (t, b, c, d) {
+					return -c/2 * (Math.cos(Math.PI*t/d) - 1) + b;
+				},
+				easeInExpo: function (t, b, c, d) {
+					return (t==0) ? b : c * Math.pow(2, 10 * (t/d - 1)) + b;
+				},
+				easeOutExpo: function (t, b, c, d) {
+					return (t==d) ? b+c : c * (-Math.pow(2, -10 * t/d) + 1) + b;
+				},
+				easeInOutExpo: function (t, b, c, d) {
+					if(t==0) return b;
+					if(t==d) return b+c;
+					if((t/=d/2) < 1) return c/2 * Math.pow(2, 10 * (t - 1)) + b;
+					return c/2 * (-Math.pow(2, -10 * --t) + 2) + b;
+				},
+				easeInCirc: function (t, b, c, d) {
+					return -c * (Math.sqrt(1 - (t/=d)*t) - 1) + b;
+				},
+				easeOutCirc: function (t, b, c, d) {
+					return c * Math.sqrt(1 - (t=t/d-1)*t) + b;
+				},
+				easeInOutCirc: function (t, b, c, d) {
+					if((t/=d/2) < 1) return -c/2 * (Math.sqrt(1 - t*t) - 1) + b;
+					return c/2 * (Math.sqrt(1 - (t-=2)*t) + 1) + b;
+				},
+				easeInElastic: function (t, b, c, d) {
+					var s=1.70158;var p=0;var a=c;
+					if(t==0) return b;  if((t/=d)==1) return b+c;  if(!p) p=d*.3;
+					if(a < Math.abs(c)) { a=c; var s=p/4; }
+					else var s = p/(2*Math.PI) * Math.asin (c/a);
+					return -(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
+				},
+				easeOutElastic: function (t, b, c, d) {
+					var s=1.70158;var p=0;var a=c;
+					if(t==0) return b;  if((t/=d)==1) return b+c;  if(!p) p=d*.3;
+					if(a < Math.abs(c)) { a=c; var s=p/4; }
+					else var s = p/(2*Math.PI) * Math.asin (c/a);
+					return a*Math.pow(2,-10*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b;
+				},
+				easeInOutElastic: function (t, b, c, d) {
+					var s=1.70158;var p=0;var a=c;
+					if(t==0) return b;  if((t/=d/2)==2) return b+c;  if(!p) p=d*(.3*1.5);
+					if(a < Math.abs(c)) { a=c; var s=p/4; }
+					else var s = p/(2*Math.PI) * Math.asin (c/a);
+					if(t < 1) return -.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
+					return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*.5 + c + b;
+				},
+				easeInBack: function (t, b, c, d, s) {
+					if(s == undefined) s = 1.70158;
+					return c*(t/=d)*t*((s+1)*t - s) + b;
+				},
+				easeOutBack: function (t, b, c, d, s) {
+					if(s == undefined) s = 1.70158;
+					return c*((t=t/d-1)*t*((s+1)*t + s) + 1) + b;
+				},
+				easeInOutBack: function (t, b, c, d, s) {
+					if(s == undefined) s = 1.70158;
+					if((t/=d/2) < 1) return c/2*(t*t*(((s*=(1.525))+1)*t - s)) + b;
+					return c/2*((t-=2)*t*(((s*=(1.525))+1)*t + s) + 2) + b;
+				},
+				easeInBounce: function (t, b, c, d) {
+					return c - this.easeOutBounce (x, d-t, 0, c, d) + b;
+				},
+				easeOutBounce: function (t, b, c, d) {
+					if((t/=d) < (1/2.75)) {
+						return c*(7.5625*t*t) + b;
+					} else if(t < (2/2.75)) {
+						return c*(7.5625*(t-=(1.5/2.75))*t + .75) + b;
+					} else if(t < (2.5/2.75)) {
+						return c*(7.5625*(t-=(2.25/2.75))*t + .9375) + b;
+					} else {
+						return c*(7.5625*(t-=(2.625/2.75))*t + .984375) + b;
+					}
+				},
+				easeInOutBounce: function (t, b, c, d) {
+					if(t < d/2) return this.easeInBounce (t*2, 0, c, d) * .5 + b;
+					return this.easeOutBounce (t*2-d, 0, c, d) * .5 + c*.5 + b;
+				}
+			},
+			// width, height 등 사이즈 정보 반환
+			getElementWidthHeight: function(element, property) {
+				if(!element || !property || property !== 'width' && property !== 'height') return '0px';
+				//var is_border_box = (element.css('boxSizing') === 'border-box') ? true : false;
+				var is_display = (element.css('display') === 'none') ? false : true;
+				var result = '0px', key, tmp;
+				var queue = { 
+					/*
+					// 기본값
+					position: static
+					visibility: visible
+					display: inline | block
+					*/
+					'position': /^(static)$/i,
+					'visibility': /^(visible)$/i,
+					'display': /^(inline|block)$/i
+				};
+				var queue_delete = {};
+				var queue_update = {};
+
+				// display가 none 경우 width, height 추출에 오차가 발생한다.
+				if(is_display === false) {
+					// 현재 설정된 css 값 확인
+					for(key in queue) {
+						if(tmp = element.css(key)) {
+							if(queue[key].test(tmp)) { // 기본값과 동일하므로 작업 후 해당 property 초기화
+								queue_delete[key] = null;
+							}else { // 해당값 기본값이 아니므로 작업 후 복구
+								queue_update[key] = tmp; 
+							}
+						}
+					}
+					element.css({'position': 'absolute', 'visibility': 'hidden', 'display': 'block'});
+				}
+
+				// property 값 반환
+				if(property in element[0].style && element[0].style[property] !== '') {
+					result = element[0].style[property];
+				}else if(window.getComputedStyle) {
+					result = document.defaultView.getComputedStyle(element[0], null).getPropertyValue(property);
+				}
+
+				// 값 반환을 위해 임시 수정했던 style 복구
+				if(is_display === false) {
+					// queue
+					if(Object.keys(queue_delete).length > 0) {
+						element.css(queue_delete);	
+					}
+					if(Object.keys(queue_update).length > 0) {
+						element.css(queue_update);	
+					}
+				}
+
+				return result;
+			}
+		};
+
+		// dom
+		function $() {
 			var arr = Array.prototype.slice.call(arguments),
 				selector,
 				context;
@@ -59,7 +390,7 @@ Copyright (c) Sung-min Yu
 				// /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/.test(selector)
 				// /^<(\w+)\s*\/?>(?:<\/\1>|)$/.test(selector)
 				// /^<([a-z]+)([^<]+)*(?:>(.*)<\/\1>|\s*\/>)$/.test(selector)
-				var match = /<(\w+)[^>]*>/.exec(selector);
+				var match = regexp.tag.exec(selector);
 				if(match && match[1]) { // create element
 					this.element = (context || document).createElement(match[1]);
 					this.length = 1;
@@ -77,12 +408,16 @@ Copyright (c) Sung-min Yu
 			// Array 기본 메소드 사용이 가능해진다.
 			elementsToArray: function(elements) {
 				var arr = [];
-				if(elements instanceof NodeList) {
-					arr = Array.prototype.slice.call(elements);
-				}else if(elements instanceof HTMLCollection) {
-					for(var i = 0, max = elements.length; i < max; i++) {
-						arr[i] = elements[i];
+				try {
+					if(elements instanceof NodeList) {
+						arr = Array.prototype.slice.call(elements);
+					}else if(elements instanceof HTMLCollection) {
+						for(var i = 0, max = elements.length; i < max; i++) {
+							arr[i] = elements[i];
+						}
 					}
+				}catch(e) {
+
 				}
 				return arr;
 			},
@@ -206,7 +541,7 @@ Copyright (c) Sung-min Yu
 				return this[0].childElementCount;
 			},
 			// event
-			live: function(selector, events, handlers, capture) {
+			live: function(selector, events, handlers, capture) { // off 설정 불가능(미구현)
 				// 매번 dom을 탐색하여, 해당 element를 발견하면,
 				// 콜백을 실행하는 방식이다. (비효율)
 				this.each(function() {
@@ -215,7 +550,7 @@ Copyright (c) Sung-min Yu
 						var type = event.type;
 						var target = event.target;
 						$(this).find(selector).each(function() {
-							if(target.isEqualNode(this)) {
+							if(target.isEqualNode(this)) { // 동일 노드 여부 확인
 								handlers.call(this);
 							}
 						});
@@ -358,7 +693,6 @@ Copyright (c) Sung-min Yu
 					if(typeof name === 'object') {
 						this.each(function() {
 							for(var key in name) {
-
 								this.setAttribute(key, name[key]);
 							}
 						});
@@ -378,12 +712,20 @@ Copyright (c) Sung-min Yu
 			},
 			hasAttr: function(name) {
 				// x.hasAttribute('href');
-				return this[0].hasAttribute(name);
+				try {
+					return this[0].hasAttribute(name);
+				}catch(e) {
+
+				}
 			},
 			// property
 			prop: function(name, value) { 
 				if(typeof value === 'undefined') { //get
-					return this[0][name];
+					try {
+						return this[0][name];
+					}catch(e) {
+
+					}
 				}else { //set
 					this.each(function() {
 						this[name] = value;
@@ -396,7 +738,9 @@ Copyright (c) Sung-min Yu
 					try {
 						this[name] = undefined;
 						delete this[name];
-					} catch( e ) {}
+					}catch(e) {
+
+					}
 				});
 				return this;	
 			},
@@ -405,8 +749,19 @@ Copyright (c) Sung-min Yu
 				var i = 0,
 					length = this.length;
 				if(typeof value === 'undefined') { // get
-					// return this[i].outerHTML; // IE만 지원
-					return this[0].innerHTML;
+					try {
+						//return this[i].outerHTML; // IE만 지원
+						//return this[0].innerHTML;
+						if(this[0].outerHTML) {
+							return this[0].outerHTML;
+						}else {
+							var dummy = document.createElement("div");
+							dummy.appendChild(this[0].cloneNode(true));
+							return dummy.innerHTML;
+						}
+					}catch(e) {
+
+					}
 				}else { // set
 					for( ; i < length; i++) {
 						this[i].innerHTML = value;
@@ -418,7 +773,11 @@ Copyright (c) Sung-min Yu
 				var i = 0,
 					length = this.length;
 				if(typeof value === 'undefined') { // get
-					return this[0].textContent;
+					try {
+						return this[0].textContent;
+					}catch(e) {
+
+					}
 				}else { // set
 					for( ; i < length; i++) {
 						this[i].textContent = value;
@@ -466,7 +825,11 @@ Copyright (c) Sung-min Yu
 				<!-- afterend -->
 				*/
 				var position = (position === 'beforebegin' || position === 'afterbegin' || position === 'beforeend' || position === 'afterend') ? position : 'beforeend'; // beforebegin | afterbegin | beforeend | afterend
-				this[0].insertAdjacentHTML(position, value);
+				try {
+					this[0].insertAdjacentHTML(position, value);
+				}catch(e) {
+
+				}
 				return this;
 			},
 			// 어떤 요소의 위치에 노드를 삽입
@@ -503,7 +866,7 @@ Copyright (c) Sung-min Yu
 				return this;
 			},
 			// 지정한 콘텐츠로 대체
-			replaceWith: function(value) {
+			replaceWith: function(element) {
 				// x.replaceChild(y,z); // 표준
 				/*
 				return this.each(function() {
@@ -537,9 +900,16 @@ Copyright (c) Sung-min Yu
 			},
 			//
 			css: function(value) {
-				var prefixes = ['', '-webkit-', '-moz-', '-ms-', '-o-'],
-					regexp_css3 = /^(transition|border-radius|transform|box-shadow|perspective|flex-direction)/i, // 사용자가 수동으로 -webkit- , -moz- , -o- , -ms- 입력하는 것들은 제외시킨다.
-					tmp = null,
+				var that = this,
+					prefixes = ['', '-webkit-', '-moz-', '-ms-', '-o-'],
+					regexp_css3 = /^(transition|border-radius|transform|box-shadow|perspective|flex-direction|filter)/i, // 사용자가 수동으로 -webkit- , -moz- , -o- , -ms- 입력하는 것들은 제외시킨다.
+					regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source, // +=, -= 숫자와 연산자 분리
+					regexp_calculation = new RegExp("^([+-])=(" + regexp_source_num + ")", "i"),
+					key = null, 
+					element = null,
+					current = null,
+					unit = null,
+					tmp = null, tmp1 = null, tmp2 = null,
 					default_view = document.defaultView;
 
 				if(typeof value === 'string') { // get
@@ -581,25 +951,68 @@ Copyright (c) Sung-min Yu
 
 				}else if(typeof value === 'object') { // set - 형태: {"속성명": "값", ... } 
 
-					for(var key in value) {
+					for(key in value) {
 						this.each(function() {
-							var element = this;
-							if(!element || element.nodeType === 3 || element.nodeType === 8 || !element.style ) {
-								return;
+							element = this;
+
+							// 속성, 값 검사 
+							if(!element || element.nodeType === 3 || element.nodeType === 8 || !element.style) {
+								return true;
+							}else if((value[key] === '' || value[key] === null) && key in element.style) { // 해당 css 프로퍼티 초기화여부 확인
+								// 초기화시 css default value 를 설정해 주는 것이 가장 정확함
+								if(element.style.removeProperty) {
+									element.style.removeProperty(key);
+								}else if(element.style.removeAttribute) { // IE < 9
+									element.style.removeAttribute(key);
+								}else if(key in element.style) {
+									element.style[key] = null;
+								}
+								return true;
+							}else if(tmp1 = regexp_calculation.exec(value[key])) { // +=, -= 연산자 분리
+								// tmp1[1]: 연산자
+								// tmp1[2]: 값
+								current = that.css(key);
+								unit = '';
+								// 단위값 존재 확인
+								if(regexp.text.test(current)) { // 기존 설정값이 단어로 되어 있는 것 (예: auto, none 등)
+									unit = 0;
+								}else if(tmp2 = regexp.num_unit.exec(current)) { // 단위 분리
+									// tmp2[1]: 값
+									// tmp2[2]: 단위 (예: px, em, %, s)
+									current = tmp2[1];
+									unit = tmp2[2];
+								}
+								value[key] = ((tmp1[1] + 1) * tmp1[2] + parseFloat(current)) + unit; // ( '연산자' + 1 ) * 값 + 현재css속성값
 							}
-							if(regexp_css3.test(key)) { // CSS3
-								for(var tmp in prefixes) {
+
+							// trim
+							if(typeof value[key] === 'string') value[key].replace(regexp.trim,  '');
+							
+							// 단위값이 없을 경우 설정
+							if(regexp.num.test(value[key]) && !regexp.num_unit.test(value[key])) {
+								// property default value 단위가 px 에 해당하는 것
+								if(regexp.pixel_unit_list.test(key)) {
+									value[key] = value[key] + 'px';
+								}else if(regexp.time_unit_list.test(key)) { // animation, transition
+									value[key] = value[key] + 's';
+								}
+							}
+
+							// css 값 설정
+							/*if(regexp_css3.test(key)) { // CSS3
+								for(tmp in prefixes) {
 									// element.style[prefixes[tmp].concat(key)] = value[key]; // 방법1
 									element.style.setProperty(prefixes[tmp].concat(key), value[key]); // 방법2
 								}
-							}else if(key in element.style) {
-								// 단위(예:px)까지 명확하게 입력해줘야 한다.
+							}else */if(key in element.style) {
 								// 방법1
+								// 단위(예:px)까지 명확하게 입력해줘야 한다.
 								element.style[key] = value[key];
 							}else if(typeof element.style.setProperty !== 'undefined') {
 								// 방법2 (Internet Explorer version 9)
 								element.style.setProperty(key, value[key]);	
 							}
+
 						});
 					}
 
@@ -609,173 +1022,215 @@ Copyright (c) Sung-min Yu
 			},
 			// padding, border, margin 제외
 			width: function(value) {
-				var regexp_num = /[^0-9]/g; // 숫자 제외값
-				if(typeof value === 'undefined') { // get
-					if(this[0] == window) { // window
-						// 1. WindowView properties
-						// window.outerWidth; // IE9 이상가능 
-						// window.innerWidth; // all browsers, except IE before
-						// document.documentElement.clientWidth; // Internet Explorer before version 9
+				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
+				try {
+					if(typeof value === 'undefined') { // get
+						if(this[0] == window) { // window
+							// 1. WindowView properties
+							// window.outerWidth; // IE9 이상가능 
+							// window.innerWidth; // all browsers, except IE before
+							// document.documentElement.clientWidth; // Internet Explorer before version 9
 
-						// 2. ScreenView properties
-						// availWidth; //screen.availWidth; //표준
-						// availHeight; //screen.availHeight; //표준
+							// 2. ScreenView properties
+							// availWidth; //screen.availWidth; //표준
+							// availHeight; //screen.availHeight; //표준
 
-						return window.innerWidth || document.documentElement.clientWidth;
-					}else if(this[0].nodeType == 9) { // document
-						return Math.max(
-							document.body.scrollWidth, document.documentElement.scrollWidth,
-							document.body.offsetWidth, document.documentElement.offsetWidth,
-							document.documentElement.clientWidth
-						); 
-					}else {
-						//return this[0].clientWidth;
-						return Number(this.css('width').replace(regexp_num, ''));
+							return window.innerWidth || document.documentElement.clientWidth;
+						}else if(this[0].nodeType == 9) { // document
+							return Math.max(
+								document.body.scrollWidth, document.documentElement.scrollWidth,
+								document.body.offsetWidth, document.documentElement.offsetWidth,
+								document.documentElement.clientWidth
+							); 
+						}else {
+							//return this[0].clientWidth;
+							//return Number(this.css('width').replace(regexp_not_num, '')); // css() 함수를 통한 값 추출과 사용목적에 차이가 있다.
+							return Number(module.getElementWidthHeight.call(null, this, 'width').replace(regexp_not_num, ''));
+						}
+					}else { // set
+						//this.css.call(this, {'width': value});
+						//return this;
+						this.css({'width': value});
 					}
-				}else { // set
-					//this.css.call(this, {'width': value});
-					//return this;
-					this.css({'width': value});
+				}catch(e) {
+
 				}
 			},
 			// border 안쪽 크기 (padding 포함)
 			innerWidth: function() {
-				var default_view = document.defaultView;
-				var regexp_num = /[^0-9]/g; // 숫자 제외값
+				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
 				var tmp;
 				var width = 0;
 				
 				// inner
-				if(this[0] == window || this[0].nodeType == 9) { // window, document
-					width = this.width();
-				}else if(this[0].style.paddingLeft && this[0].style.paddingRight) {
-					width += Number(this[0].style.width.replace(regexp_num, ''));
-					width += Number(this[0].style.paddingLeft.replace(regexp_num, '')) + Number(this[0].style.paddingRight.replace(regexp_num, ''));
-				}else if(window.getComputedStyle) {
-					tmp = default_view.getComputedStyle(this[0], null);
-					width += Number(tmp.getPropertyValue('width').replace(regexp_num, ''));
-					width += Number(tmp.getPropertyValue('padding-left').replace(regexp_num, '')) + Number(tmp.getPropertyValue('padding-right').replace(regexp_num, ''));
+				try {
+					if(this[0] == window || this[0].nodeType == 9) { // window, document
+						width = this.width();
+					}else {
+						width += Number(module.getElementWidthHeight.call(null, this, 'width').replace(regexp_not_num, ''));
+						if('width' in this[0].style && this[0].style.width !== '') {
+							//width += Number(this[0].style.width.replace(regexp_not_num, ''));
+							width += Number(this[0].style.paddingLeft.replace(regexp_not_num, '')) + Number(this[0].style.paddingRight.replace(regexp_not_num, ''));
+						}else if(window.getComputedStyle) {
+							tmp = document.defaultView.getComputedStyle(this[0], null);
+							//width += Number(tmp.getPropertyValue('width').replace(regexp_not_num, ''));
+							width += Number(tmp.getPropertyValue('padding-left').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('padding-right').replace(regexp_not_num, ''));
+						}
+					}
+				}catch(e) {
+
 				}
 
 				return width;
 			},
 			// border 포함 크기 (padding + border 포함, 파라미터가 true 경우 margin 값까지 포함)
 			outerWidth: function(is) {
-				var default_view = document.defaultView;
-				var regexp_num = /[^0-9]/g; // 숫자 제외값
+				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
 				var tmp;
 				var width = 0;
-
+				
 				// outer
-				if(this[0] == window || this[0].nodeType == 9) { // window, document
-					width = this.width();
-				}else if((this[0].style.paddingLeft && this[0].style.paddingRight) && (this[0].style.borderLeftWidth && this[0].style.borderRightWidth)) {
-					width += Number(this[0].style.width.replace(regexp_num, ''));
-					width += Number(this[0].style.paddingLeft.replace(regexp_num, '')) + Number(this[0].style.paddingRight.replace(regexp_num, ''));
-					width += Number(this[0].style.borderLeftWidth.replace(regexp_num, '')) + Number(this[0].style.borderRightWidth.replace(regexp_num, ''));
+				try {
+					if(this[0] == window || this[0].nodeType == 9) { // window, document
+						width = this.width();
+					}else {
+						width += Number(module.getElementWidthHeight.call(null, this, 'width').replace(regexp_not_num, ''));
+						if('width' in this[0].style && this[0].style.width !== '') {
+							//width += Number(this[0].style.width.replace(regexp_not_num, ''));
+							width += Number(this[0].style.paddingLeft.replace(regexp_not_num, '')) + Number(this[0].style.paddingRight.replace(regexp_not_num, ''));
+							width += Number(this[0].style.borderLeftWidth.replace(regexp_not_num, '')) + Number(this[0].style.borderRightWidth.replace(regexp_not_num, ''));
 
-					// margin
-					if(is === true) width += Number(this[0].style.marginLeft.replace(regexp_num, '')) + Number(this[0].style.marginRight.replace(regexp_num, ''));
-				}else if(window.getComputedStyle) {
-					tmp = default_view.getComputedStyle(this[0], null);
-					width += Number(tmp.getPropertyValue('width').replace(regexp_num, ''));
-					width += Number(tmp.getPropertyValue('padding-left').replace(regexp_num, '')) + Number(tmp.getPropertyValue('padding-right').replace(regexp_num, ''));
-					width += Number(tmp.getPropertyValue('border-left-width').replace(regexp_num, '')) + Number(tmp.getPropertyValue('border-right-width').replace(regexp_num, ''));
+							// margin
+							if(is === true) width += Number(this[0].style.marginLeft.replace(regexp_not_num, '')) + Number(this[0].style.marginRight.replace(regexp_not_num, ''));
+						}else if(window.getComputedStyle) {
+							tmp = document.defaultView.getComputedStyle(this[0], null);
+							//width += Number(tmp.getPropertyValue('width').replace(regexp_not_num, ''));
+							width += Number(tmp.getPropertyValue('padding-left').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('padding-right').replace(regexp_not_num, ''));
+							width += Number(tmp.getPropertyValue('border-left-width').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('border-right-width').replace(regexp_not_num, ''));
 
-					// margin
-					if(is === true) width += Number(tmp.getPropertyValue('margin-left').replace(regexp_num, '')) + Number(tmp.getPropertyValue('margin-right').replace(regexp_num, ''));
+							// margin
+							if(is === true) width += Number(tmp.getPropertyValue('margin-left').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('margin-right').replace(regexp_not_num, ''));
+						}
+					}
+				}catch(e) {
+
 				}
 
 				return width;
 			},
 			height: function(value) {
-				var regexp_num = /[^0-9]/g; // 숫자 제외값
-				if(typeof value === 'undefined') { // get
-					if(this[0] == window) {
-						// 1. WindowView properties
-						// window.outerHeight; // IE9 이상가능
-						// window.innerHeight; // all browsers, except IE before 
-						// document.documentElement.clientHeight; // Internet Explorer before version 9
+				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
+				try {
+					if(typeof value === 'undefined') { // get
+						if(this[0] == window) {
+							// 1. WindowView properties
+							// window.outerHeight; // IE9 이상가능
+							// window.innerHeight; // all browsers, except IE before 
+							// document.documentElement.clientHeight; // Internet Explorer before version 9
 
-						// 2. ScreenView properties
-						// availWidth; //screen.availWidth; //표준
-						// availHeight; //screen.availHeight; //표준
+							// 2. ScreenView properties
+							// availWidth; //screen.availWidth; //표준
+							// availHeight; //screen.availHeight; //표준
 
-						return window.innerHeight || document.documentElement.clientHeight;
-					}else if(this[0].nodeType == 9) { // document
-						return Math.max(
-							document.body.scrollHeight, document.documentElement.scrollHeight,
-							document.body.offsetHeight, document.documentElement.offsetHeight,
-							document.documentElement.clientHeight
-						);
-					}else {
-						//return this[0].clientHeight;
-						return Number(this.css('height').replace(regexp_num, ''));
+							return window.innerHeight || document.documentElement.clientHeight;
+						}else if(this[0].nodeType == 9) { // document
+							return Math.max(
+								document.body.scrollHeight, document.documentElement.scrollHeight,
+								document.body.offsetHeight, document.documentElement.offsetHeight,
+								document.documentElement.clientHeight
+							);
+						}else {
+							//return this[0].clientHeight;
+							//return Number(this.css('height').replace(regexp_not_num, '')); // css() 함수를 통한 값 추출과 사용목적에 차이가 있다.
+							return Number(module.getElementWidthHeight.call(null, this, 'height').replace(regexp_not_num, ''));
+						}
+					}else { // set
+						//this.css.call(this, {"height": value});
+						//return this;
+						this.css({"height": value});
 					}
-				}else { // set
-					//this.css.call(this, {"height": value});
-					//return this;
-					this.css({"height": value});
+				}catch(e) {
+
 				}
 			},
 			// border 안쪽 크기 (padding 포함)
 			innerHeight: function() {
-				var default_view = document.defaultView;
-				var regexp_num = /[^0-9]/g; // 숫자 제외값
+				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
 				var tmp;
 				var height = 0;
 				
 				// inner
-				if(this[0] == window || this[0].nodeType == 9) { // window, document
-					height = this.height();
-				}else if(this[0].style.paddingTop && this[0].style.paddingBottom) {
-					height += Number(this[0].style.height.replace(regexp_num, ''));
-					height += Number(this[0].style.paddingTop.replace(regexp_num, '')) + Number(this[0].style.paddingBottom.replace(regexp_num, ''));
-				}else if(window.getComputedStyle) {
-					tmp = default_view.getComputedStyle(this[0], null);
-					height += Number(tmp.getPropertyValue('height').replace(regexp_num, ''));
-					height += Number(tmp.getPropertyValue('padding-top').replace(regexp_num, '')) + Number(tmp.getPropertyValue('padding-bottom').replace(regexp_num, ''));
+				try {
+					if(this[0] == window || this[0].nodeType == 9) { // window, document
+						height = this.height();
+					}else {
+						height += Number(module.getElementWidthHeight.call(null, this, 'height').replace(regexp_not_num, ''));
+						if('height' in this[0].style && this[0].style.height !== '') {
+							//height += Number(this[0].style.height.replace(regexp_not_num, ''));
+							height += Number(this[0].style.paddingTop.replace(regexp_not_num, '')) + Number(this[0].style.paddingBottom.replace(regexp_not_num, ''));
+						}else if(window.getComputedStyle) {
+							tmp = document.defaultView.getComputedStyle(this[0], null);
+							//height += Number(tmp.getPropertyValue('height').replace(regexp_not_num, ''));
+							height += Number(tmp.getPropertyValue('padding-top').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('padding-bottom').replace(regexp_not_num, ''));
+						}
+					}
+				}catch(e) {
+
 				}
 
 				return height;
 			},
 			// border 포함 크기 (padding + border 포함, 파라미터가 true 경우 margin 값까지 포함)
 			outerHeight: function(is) {
-				var default_view = document.defaultView;
-				var regexp_num = /[^0-9]/g; // 숫자 제외값
+				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
 				var tmp;
 				var height = 0;
 
 				// outer
-				if(this[0] == window || this[0].nodeType == 9) { // window, document
-					height = this.height();
-				}else if((this[0].style.paddingTop && this[0].style.paddingBottom) && (this[0].style.borderTopWidth && this[0].style.borderBottomWidth)) {
-					height += Number(this[0].style.height.replace(regexp_num, ''));
-					height += Number(this[0].style.paddingTop.replace(regexp_num, '')) + Number(this[0].style.paddingBottom.replace(regexp_num, ''));
-					height += Number(this[0].style.borderTopWidth.replace(regexp_num, '')) + Number(this[0].style.borderBottomWidth.replace(regexp_num, ''));
+				try {
+					if(this[0] == window || this[0].nodeType == 9) { // window, document
+						height = this.height();
+					}else {
+						height += Number(module.getElementWidthHeight.call(null, this, 'height').replace(regexp_not_num, ''));
+						if('height' in this[0].style && this[0].style.height !== '') {
+							//height += Number(this[0].style.height.replace(regexp_not_num, ''));
+							height += Number(this[0].style.paddingTop.replace(regexp_not_num, '')) + Number(this[0].style.paddingBottom.replace(regexp_not_num, ''));
+							height += Number(this[0].style.borderTopWidth.replace(regexp_not_num, '')) + Number(this[0].style.borderBottomWidth.replace(regexp_not_num, ''));
 
-					// margin
-					if(is === true) height += Number(this[0].style.marginTop.replace(regexp_num, '')) + Number(this[0].style.marginBottom.replace(regexp_num, ''));
-				}else if(window.getComputedStyle) {
-					tmp = default_view.getComputedStyle(this[0], null);
-					height += Number(tmp.getPropertyValue('height').replace(regexp_num, ''));
-					height += Number(tmp.getPropertyValue('padding-top').replace(regexp_num, '')) + Number(tmp.getPropertyValue('padding-bottom').replace(regexp_num, ''));
-					height += Number(tmp.getPropertyValue('border-top-width').replace(regexp_num, '')) + Number(tmp.getPropertyValue('border-bottom-width').replace(regexp_num, ''));
+							// margin
+							if(is === true) height += Number(this[0].style.marginTop.replace(regexp_not_num, '')) + Number(this[0].style.marginBottom.replace(regexp_not_num, ''));
+						}else if(window.getComputedStyle) {
+							tmp = document.defaultView.getComputedStyle(this[0], null);
+							//height += Number(tmp.getPropertyValue('height').replace(regexp_not_num, ''));
+							height += Number(tmp.getPropertyValue('padding-top').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('padding-bottom').replace(regexp_not_num, ''));
+							height += Number(tmp.getPropertyValue('border-top-width').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('border-bottom-width').replace(regexp_not_num, ''));
 
-					// margin
-					if(is === true) height += Number(tmp.getPropertyValue('margin-top').replace(regexp_num, '')) + Number(tmp.getPropertyValue('margin-bottom').replace(regexp_num, ''));
+							// margin
+							if(is === true) height += Number(tmp.getPropertyValue('margin-top').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('margin-bottom').replace(regexp_not_num, ''));
+						}
+					}
+				}catch(e) {
+					
 				}
 
 				return height;
 			},
 			//
 			getClass: function() {
-				return this[0].classList;
+				try {
+					return this[0].classList;
+				}catch(e) {
+
+				}
 			},
 			hasClass: function(name) { 
 				// element.classList; // 클래스 리스트 출력
 				var regexp = new RegExp('(?:\\s|^)' + name + '(?:\\s|$)');
-				return !!this[0].className.match(regexp); // !! 느낌표가 2개 이유는 type 를 boolean 으로 만들기 위함
+				try {
+					return !!this[0].className.match(regexp); // !! 느낌표가 2개 이유는 type 를 boolean 으로 만들기 위함
+				}catch(e) {
+					
+				}
 			},
 			addClass: function(name) {
 				// element.classList.add('');
@@ -818,6 +1273,60 @@ Copyright (c) Sung-min Yu
 					}
 				});
 				return this;
+			},
+			//
+			scrollInfo: function() {
+				var top, left;
+				try {
+					if(this[0] == window || this[0].nodeType == 9) { // window, document
+						if(typeof window.pageYOffset == 'number') {
+							// Netscape compliant
+							top = window.pageYOffset;
+							left = window.pageXOffset;
+						}else if(document.body && (document.body.scrollLeft || document.body.scrollTop)) {
+							// DOM compliant
+							top = document.body.scrollTop;
+							left = document.body.scrollLeft; 
+						} else if(document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
+							// IE6 standards compliant mode
+							top = document.documentElement.scrollTop;
+							left = document.documentElement.scrollLeft;
+						}
+					}else {
+						top = this[0].scrollTop;
+						left = this[0].scrollLeft;
+					}
+				}catch(e) {
+
+				}
+
+				return {'top': top, 'left': left};
+			},
+			scrollTop: function(value) {
+				if(!this[0]) return;
+				var info = this.scrollInfo(this[0]);
+				if(typeof value !== 'undefined') { // set
+					if(this[0] == window || this[0].nodeType == 9) { // window, document
+						this[0].scrollTo(info.left, value);
+					}else {
+						this[0].scrollTop = value;
+					}
+				}else { // get
+					return info.top;
+				}
+			},
+			scrollLeft: function(value) {
+				if(!this[0]) return;
+				var info = this.scrollInfo(this[0]);
+				if(typeof value !== 'undefined') { // set
+					if(this[0] == window || this[0].nodeType == 9) { // window, document
+						this[0].scrollTo(value, info.top);
+					}else {
+						this[0].scrollLeft = value;
+					}
+				}else { // get
+					return info.left;
+				}	
 			},
 			//
 			data: (function() {
@@ -867,7 +1376,7 @@ Copyright (c) Sung-min Yu
 				var event_transform = "transitionend";
 				var support = false;
 				var key;
-
+				
 				// CSS3 지원여부 판단
 				for(key in prefixes) {
 					if(temp_element.style[key] !== undefined) {
@@ -876,161 +1385,157 @@ Copyright (c) Sung-min Yu
 						break;
 					}
 				}
+				
+				// toggle, show, hide
+				var setDisplsyType = function(element, property, value) {
+					if(!element || !property) return false;
+					//var result = {'animate': {}, 'queue': {}}; // animate: 현재 애니메이션에 적용할 css property, queue: 애니메니션이 종료된 후 적용할 css property
+					var result = {'property': null, 'start': null, 'end': null, 'queue': {}};
+					var display, visibility, opacity, tmp;
 
+					if(regexp.display_list.test(property)) { // display, visibility, opacity
+						// display 기본값: block
+						// visibility 기본값: visible
+						// opacity 기본값: 1
+						display = element.css('display');
+						//visibility = element.css('visibility');
+						opacity = element.css('opacity');
+
+						// toggle
+						if(value === 'toggle') {
+							if(display === 'none') {
+								value = 'show';
+							}else {
+								value = 'hide';
+							}
+						}
+
+						// show, hide
+						switch(value) {
+							case 'show':
+								if(!display || display !== 'none') {
+									return false;
+								}
+								element.css({'opacity': 0, 'display': 'block'});
+								result['property'] = 'opacity';
+								result['start'] = 0;
+								result['end'] = (0 < opacity) ? opacity : 1; // 사용자가 element 에 opacity 를 설정했는지 확인
+								break;
+							case 'hide':
+								if(!display || display === 'none') {
+									return false;
+								}
+								element.css({'opacity': 1});
+								result['property'] = 'opacity';
+								result['start'] = 1;
+								result['end'] = 0;
+								result['queue']['display'] = 'none';
+								break; 
+						}
+					}else {
+
+					}
+					
+					return result;
+				};
+				
 				if(support === true) {
 					return function(properties, options) { // CSS3 지원
 						var element = this;
+						var options = options || {};
 						var duration = options.duration || 400;
 						var easing = options.easing || 'ease';
 						var complete = options.complete;
-						/*
-						transition-property: background; // 트랜지션할 속성
-						transition-duration: 0.3s; // 트랜지션 지속 시간
-						transition-timing-function: ease; // 지정한 시간 동안 트랜지션 속도
-						transition-delay: 0.5s; // 트랜지션할 지연
-						*/
-						// 기존 css3 관련 값을 변수에 저장해 두고,
-						// 트랜지션이 끝나면 기존 값으로 다시 변경해야 겠다! (즉, 기존 트랜지션 설정값을 바꾸지 않도록 하자)
-						element.css({
-							"transition-property": Object.keys(properties).join(','),
-							"transition-duration": Number(duration) / 1000 + 's',
-							"transition-timing-function": "ease"
-						});
+						var queue = { // 애니메니션 종료 후 적용할 style
+							/*
+							// 기본값 http://www.w3schools.com/cssref/css3_pr_transform.asp
+							transition: 
+							transition-property: all
+							transition-duration: 0s
+							transition-timing-function: ease 또는 cubic-bezier(0.25, 0.1, 0.25, 1)
+							transition-delay: 0s
+							*/
+							'transition': /^$/,
+							'transition-property': /^(all)$/i,
+							'transition-duration': /^(0s)$/i,
+							'transition-timing-function': /^(ease|cubic-bezier+)$/i
+						};
+						var set = {};
+						var key, tmp, i;
 
-						element.css(properties);
+						// 현재 설정된 transform 값 확인
+						for(key in queue) {
+							tmp = element.css(key);
+							if(tmp && !queue[key].test(tmp)) { // 기본값이 아닌 경우 저장
+								if(properties[key] && properties[key] == tmp) continue;
+								queue[key] = tmp;
+							}else {
+								delete queue[key];
+							}
+						}
 
-						// callback
-						if(complete && typeof complete === 'function') {
-							element.one(event_transform, function() {
-								complete();
+						// properties 값 확인
+						for(key in properties) {
+							if((regexp.pixel_unit_list.test(key) || regexp.display_list.test(key)) && regexp.animate_types.test(properties[key])) { // toggle, show, hide
+								if(tmp = setDisplsyType(element, key, properties[key])) {
+									set[tmp['property']] = tmp['end'];
+									for(i in tmp['queue']) {
+										queue[i] = tmp['queue'][i];
+									}
+								}else {
+									delete properties[key];
+								}
+							}else if(/^(animation*|transition*)/i.test(key)) { // animation, transition 관련작업은 제외됨
+								delete properties[key];
+							}else {
+								set[key] = properties[key];
+							}
+						}
+						
+						// 실행
+						if(Object.keys(set).length > 0) {
+							
+							// transform 설정
+							element.css({
+								"transition-property": Object.keys(set).join(','),
+								"transition-duration": Number(duration) / 1000 + 's',
+								"transition-timing-function": "ease"
 							});
+
+							// 설정값 실행
+							window.setTimeout(function() { // opacity 등의 적용 때문에 setTimeout 사용
+								element.css(set);
+								element.one(event_transform, function() {
+									// queue
+									if(queue && Object.keys(queue).length > 0) {
+										$(this).css(queue);									
+									}
+
+									// callback
+									if(complete && typeof complete === 'function') {
+										complete();
+									}
+								});
+							});
+
 						}
 					};
 				}else {
 					return function(properties, options) { // CSS3 미지원
 						var element = this;
+						var options = options || {};
 						var duration = options.duration || 400;
 						var easing = options.easing || 'swing';
 						var complete = options.complete;
+						var queue = {}; // 애니메니션 종료 후 적용할 style
 
-						var max = Object.keys(properties).length;
+						//var max = Object.keys(properties).length;
 						var set = {};
+						var start, change, end, key, tmp, i;
 						var current = 0;
 						var increment = 20;
-
-						var regexp_color = /(backgroundColor|borderBottomColor|borderLeftColor|borderRightColor|borderTopColor|color|outlineColor)/ig;
-						var regexp_reg = /^rgb/i;
-						var regexp_hex = /^#/i;
-						var regexp_num = /[^0-9]/g; // 숫자 제외값
-						var regexp_transparent = /transparent/i;
-						var regexp_opacity = /opacity/i;
-						/*
-						var colornames = {
-							aqua: '#00ffff', black: '#000000', blue: '#0000ff', fuchsia: '#ff00ff',
-							gray: '#808080', green: '#008000', lime: '#00ff00', maroon: '#800000',
-							navy: '#000080', olive: '#808000', purple: '#800080', red: '#ff0000',
-							silver: '#c0c0c0', teal: '#008080', white: '#ffffff', yellow: '#ffff00'
-						};
-						*/
-						// HEX -> RBG
-						var setHexToRgb = function(hex) {
-							if(regexp_reg.test(hex)) {
-								return hex;
-							}
-							// Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
-							var regexp_shorthand = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-							var hex = hex.replace(regexp_shorthand, function(m, r, g, b) {
-								return r + r + g + g + b + b;
-							});
-							var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-							return result ? 'rgb(' + parseInt(result[1], 16) + ', ' + parseInt(result[2], 16) + ', ' + parseInt(result[3], 16) + ')' : 'rgb(0, 0, 0)';
-						}
-						// RBG -> HEX
-						var setRgbToHex = function(color) {
-							if(regexp_hex.test(color)) {
-								return color;
-							}
-							var digits = /(.*?)rgb\((\d+), (\d+), (\d+)\)/.exec(color);
-							var red = parseInt(digits[2]);
-							var green = parseInt(digits[3]);
-							var blue = parseInt(digits[4]);
-							var rgb = blue | (green << 8) | (red << 16);
-							return '#' + rgb.toString(16);
-						};
-						// HEX
-						var getBlendHEXColors = function(c0, c1, p) {
-							var f = parseInt(c0.slice(1), 16),
-								t = parseInt(c1.slice(1), 16),
-								R1 = f>>16,
-								G1 = f>>8&0x00FF, 
-								B1 = f&0x0000FF, 
-								R2 = t>>16,
-								G2 = t>>8&0x00FF,
-								B2 = t&0x0000FF;
-							return "#"+(0x1000000+(Math.round((R2-R1)*p)+R1)*0x10000+(Math.round((G2-G1)*p)+G1)*0x100+(Math.round((B2-B1)*p)+B1)).toString(16).slice(1);
-						};
-						var getShadeHEXColor = function(color, percent) {   
-							var f = parseInt(color.slice(1), 16),
-								t = percent < 0 ? 0 : 255,
-								p = percent < 0 ? percent * -1 : percent,
-								R = f>>16,
-								G = f>>8&0x00FF,
-								B = f&0x0000FF;
-							return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
-						};
-						// RGB
-						var getBlendRGBColors = function(c0, c1, p) {
-							var f = c0.split(","),
-								t = c1.split(","),
-								R = parseInt(f[0].slice(4)),
-								G = parseInt(f[1]),
-								B = parseInt(f[2]);
-							return "rgb("+(Math.round((parseInt(t[0].slice(4))-R)*p)+R)+","+(Math.round((parseInt(t[1])-G)*p)+G)+","+(Math.round((parseInt(t[2])-B)*p)+B)+")";
-						}
-						var getShadeRGBColor = function(color, percent) {
-							var f = color.split(","),
-								t = percent < 0 ? 0 : 255,
-								p = percent < 0 ? percent * -1 : percent,
-								R = parseInt(f[0].slice(4)),
-								G = parseInt(f[1]),
-								B = parseInt(f[2]);
-							return "rgb("+(Math.round((t-R)*p)+R)+","+(Math.round((t-G)*p)+G)+","+(Math.round((t-B)*p)+B)+")";
-						}
-						// http://stackoverflow.com/questions/5560248/programmatically-lighten-or-darken-a-hex-color-or-rgb-and-blend-colors
-						function setShade(color, percent) { // 투명도
-							if(color.length > 7 ) {
-								return shadeRGBColor(color, percent);
-							}else {
-								return shadeColor(color, percent);
-							}
-						}
-						function setBlend(color1, color2, percent) { // 색혼합
-							if(color1.length > 7) {
-								return getBlendRGBColors(color1, color2, percent);
-							}else {
-								return getBlendHEXColors(color1, color2, percent);
-							}
-						}
-						/*function setShadeBlend(p,c0,c1) {
-							var n = p < 0 ? p * -1 : p,
-								u = Math.round,
-								w = parseInt;
-							if(c0.length > 7) {
-								var f = c0.split(","),
-									t = (c1 ? c1 : p < 0 ? "rgb(0,0,0)" : "rgb(255,255,255)").split(","),
-									R = w(f[0].slice(4)),
-									G = w(f[1]),
-									B = w(f[2]);
-								return "rgb("+(u((w(t[0].slice(4))-R)*n)+R)+","+(u((w(t[1])-G)*n)+G)+","+(u((w(t[2])-B)*n)+B)+")";
-							}else {
-								var f = w(c0.slice(1), 16),
-									t = w((c1 ? c1 : p < 0 ? "#000000" : "#FFFFFF").slice(1), 16),
-									R1 = f>>16,
-									G1 = f>>8&0x00FF,
-									B1 = f&0x0000FF;
-								return "#"+(0x1000000+(u(((t>>16)-R1)*n)+R1)*0x10000+(u(((t>>8&0x00FF)-G1)*n)+G1)*0x100+(u(((t&0x0000FF)-B1)*n)+B1)).toString(16).slice(1);
-							}
-						}*/
+						var regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source; // +=, -= 숫자와 연산자 분리
+						var regexp_calculation = new RegExp("^([+-])=(" + regexp_source_num + ")", "i");
 
 						// requestAnimationFrame for Smart Animating http://goo.gl/sx5sts
 						var setRequestAnimFrame = (function() { 
@@ -1040,210 +1545,111 @@ Copyright (c) Sung-min Yu
 							return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function(id) { return window.clearTimeout(id); };
 						})();
 
-						/*
-						easing functions
-						t = current time
-						b = start value
-						c = change in value
-						d = duration
-						*/
-						var easing_func = {
-							/*
-							 * easing 계산식은 아래 저작권에 따릅니다.
-							 * jQuery Easing v1.3 - http://gsgd.co.uk/sandbox/jquery/easing/
-							 * TERMS OF USE - jQuery Easing
-							 * 
-							 * Open source under the BSD License. 
-							 * 
-							 * Copyright © 2008 George McGinley Smith
-							 * All rights reserved.
-							 */
-							linear: function(t, b, c, d) {
-								return t;
-							},
-							swing: function (t, b, c, d) {
-								//return 0.5 - Math.cos( t*Math.PI ) / 2;
-								return this['easeOutQuad'](t, b, c, d);
-							},
-							easeInQuad: function (t, b, c, d) {
-								return c*(t/=d)*t + b;
-							},
-							easeOutQuad: function (t, b, c, d) {
-								return -c *(t/=d)*(t-2) + b;
-							},
-							easeInOutQuad: function (t, b, c, d) {
-								if((t/=d/2) < 1) return c/2*t*t + b;
-								return -c/2 * ((--t)*(t-2) - 1) + b;
-							},
-							easeInCubic: function (t, b, c, d) {
-								return c*(t/=d)*t*t + b;
-							},
-							easeOutCubic: function (t, b, c, d) {
-								return c*((t=t/d-1)*t*t + 1) + b;
-							},
-							easeInOutCubic: function (t, b, c, d) {
-								if((t/=d/2) < 1) return c/2*t*t*t + b;
-								return c/2*((t-=2)*t*t + 2) + b;
-							},
-							easeInQuart: function (t, b, c, d) {
-								return c*(t/=d)*t*t*t + b;
-							},
-							easeOutQuart: function (t, b, c, d) {
-								return -c * ((t=t/d-1)*t*t*t - 1) + b;
-							},
-							easeInOutQuart: function (t, b, c, d) {
-								if((t/=d/2) < 1) return c/2*t*t*t*t + b;
-								return -c/2 * ((t-=2)*t*t*t - 2) + b;
-							},
-							easeInQuint: function (t, b, c, d) {
-								return c*(t/=d)*t*t*t*t + b;
-							},
-							easeOutQuint: function (t, b, c, d) {
-								return c*((t=t/d-1)*t*t*t*t + 1) + b;
-							},
-							easeInOutQuint: function (t, b, c, d) {
-								if((t/=d/2) < 1) return c/2*t*t*t*t*t + b;
-								return c/2*((t-=2)*t*t*t*t + 2) + b;
-							},
-							easeInSine: function (t, b, c, d) {
-								return -c * Math.cos(t/d * (Math.PI/2)) + c + b;
-							},
-							easeOutSine: function (t, b, c, d) {
-								return c * Math.sin(t/d * (Math.PI/2)) + b;
-							},
-							easeInOutSine: function (t, b, c, d) {
-								return -c/2 * (Math.cos(Math.PI*t/d) - 1) + b;
-							},
-							easeInExpo: function (t, b, c, d) {
-								return (t==0) ? b : c * Math.pow(2, 10 * (t/d - 1)) + b;
-							},
-							easeOutExpo: function (t, b, c, d) {
-								return (t==d) ? b+c : c * (-Math.pow(2, -10 * t/d) + 1) + b;
-							},
-							easeInOutExpo: function (t, b, c, d) {
-								if(t==0) return b;
-								if(t==d) return b+c;
-								if((t/=d/2) < 1) return c/2 * Math.pow(2, 10 * (t - 1)) + b;
-								return c/2 * (-Math.pow(2, -10 * --t) + 2) + b;
-							},
-							easeInCirc: function (t, b, c, d) {
-								return -c * (Math.sqrt(1 - (t/=d)*t) - 1) + b;
-							},
-							easeOutCirc: function (t, b, c, d) {
-								return c * Math.sqrt(1 - (t=t/d-1)*t) + b;
-							},
-							easeInOutCirc: function (t, b, c, d) {
-								if((t/=d/2) < 1) return -c/2 * (Math.sqrt(1 - t*t) - 1) + b;
-								return c/2 * (Math.sqrt(1 - (t-=2)*t) + 1) + b;
-							},
-							easeInElastic: function (t, b, c, d) {
-								var s=1.70158;var p=0;var a=c;
-								if(t==0) return b;  if((t/=d)==1) return b+c;  if(!p) p=d*.3;
-								if(a < Math.abs(c)) { a=c; var s=p/4; }
-								else var s = p/(2*Math.PI) * Math.asin (c/a);
-								return -(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
-							},
-							easeOutElastic: function (t, b, c, d) {
-								var s=1.70158;var p=0;var a=c;
-								if(t==0) return b;  if((t/=d)==1) return b+c;  if(!p) p=d*.3;
-								if(a < Math.abs(c)) { a=c; var s=p/4; }
-								else var s = p/(2*Math.PI) * Math.asin (c/a);
-								return a*Math.pow(2,-10*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b;
-							},
-							easeInOutElastic: function (t, b, c, d) {
-								var s=1.70158;var p=0;var a=c;
-								if(t==0) return b;  if((t/=d/2)==2) return b+c;  if(!p) p=d*(.3*1.5);
-								if(a < Math.abs(c)) { a=c; var s=p/4; }
-								else var s = p/(2*Math.PI) * Math.asin (c/a);
-								if(t < 1) return -.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
-								return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*.5 + c + b;
-							},
-							easeInBack: function (t, b, c, d, s) {
-								if(s == undefined) s = 1.70158;
-								return c*(t/=d)*t*((s+1)*t - s) + b;
-							},
-							easeOutBack: function (t, b, c, d, s) {
-								if(s == undefined) s = 1.70158;
-								return c*((t=t/d-1)*t*((s+1)*t + s) + 1) + b;
-							},
-							easeInOutBack: function (t, b, c, d, s) {
-								if(s == undefined) s = 1.70158;
-								if((t/=d/2) < 1) return c/2*(t*t*(((s*=(1.525))+1)*t - s)) + b;
-								return c/2*((t-=2)*t*(((s*=(1.525))+1)*t + s) + 2) + b;
-							},
-							easeInBounce: function (t, b, c, d) {
-								return c - this.easeOutBounce (x, d-t, 0, c, d) + b;
-							},
-							easeOutBounce: function (t, b, c, d) {
-								if((t/=d) < (1/2.75)) {
-									return c*(7.5625*t*t) + b;
-								} else if(t < (2/2.75)) {
-									return c*(7.5625*(t-=(1.5/2.75))*t + .75) + b;
-								} else if(t < (2.5/2.75)) {
-									return c*(7.5625*(t-=(2.25/2.75))*t + .9375) + b;
-								} else {
-									return c*(7.5625*(t-=(2.625/2.75))*t + .984375) + b;
-								}
-							},
-							easeInOutBounce: function (t, b, c, d) {
-								if(t < d/2) return this.easeInBounce (t*2, 0, c, d) * .5 + b;
-								return this.easeOutBounce (t*2-d, 0, c, d) * .5 + c*.5 + b;
-							}
-						};
-
-
 						// start, end 값 추출
 						for(key in properties) {
-							// 설정할 스타일 생성
-							set[key] = {};
-							if(regexp_color.test(key)) { // color 관련
-								set[key]['start'] = element.css(key); // 기존 설정값
-								set[key]['end'] = properties[key]; // 사용자 설정값
-								if((regexp_hex.test(set[key]['start']) || regexp_reg.test(set[key]['start'])) && (regexp_hex.test(set[key]['end']) || regexp_reg.test(set[key]['end']))) {
-									if(regexp_hex.test(set[key]['end'])) {
-										// RBG -> HEX
-										set[key]['start'] = setRgbToHex(set[key]['start']);
-									}else if(regexp_reg.test(set[key]['end'])) {
-										// HEX -> RBG
-										set[key]['start'] = setHexToRgb(set[key]['start']);
+							start = element.css(key); // 기존 설정값
+							end = properties[key]; // 사용자 설정값
+
+							if(start) {
+								if(regexp.color_js.test(key) || regexp.color_css.test(key)) { // color 관련
+									if((regexp.hex.test(start) || regexp.reg.test(start)) && (regexp.hex.test(end) || regexp.reg.test(end))) {
+										if(regexp.hex.test(end)) {
+											// RBG -> HEX
+											start = module.setRgbToHex(start);
+										}else if(regexp.reg.test(end)) {
+											// HEX -> RBG
+											start = module.setHexToRgb(start);
+										}
 									}
-									continue;
+								}else if((regexp.pixel_unit_list.test(key) || regexp.display_list.test(key)) && regexp.animate_types.test(end)) { // toggle, show, hide
+									if(tmp = setDisplsyType(element, key, properties[key])) {
+										/*
+										set[tmp['property']] = {};
+										set[tmp['property']]['start'] = tmp['start'];
+										set[tmp['property']]['change'] = tmp['end'];
+										set[tmp['property']]['end'] = tmp['end'];
+										*/
+										key = tmp['property'];
+										start = tmp['start'];
+										change = (tmp['end'] == 0) ? -1 : tmp['end'];
+										end = (tmp['end'] == 0) ? -1 : tmp['end'];
+										// 애니메이션 종류 후 적용할 css
+										for(i in tmp['queue']) {
+											queue[i] = tmp['queue'][i];
+										}
+										//continue;
+									}
+									//delete properties[key];
+									//continue;
+								}/*else if(regexp.display_list.test(key)) { // display, visibility, opacity
+									console.log(start);
+									console.log(end);
+								}*/else {
+									// start
+									if(regexp.position_list.test(key) && start === 'auto') { // auto
+										start = 0;
+									}else if(tmp = regexp.num_unit.exec(start)) { // 단위 분리
+										// tmp[1]: 값
+										// tmp[2]: 단위 (예: px, em, %, s)
+										start = Number(tmp[1]);
+									}
+									// end
+									if(tmp = regexp_calculation.exec(end)) { // +=, -= 연산자 분리
+										// tmp[1]: 연산자
+										// tmp[2]: 값
+										end = (tmp[1] + 1) * tmp[2] + parseFloat(start);
+									}else if(tmp = regexp.num_unit.exec(end)) { // 단위 분리
+										// tmp[1]: 값
+										// tmp[2]: 단위 (예: px, em, %, s)
+										end = Number(tmp[1]);
+									}
+
+									// 변경 스타일값 - 시작 스타일값
+									change = end - start;
 								}
-							}else {
-								set[key]['start'] = element.css(key);
-								if(set[key]['start']) {
-									set[key]['start'] = Number(set[key]['start'].replace(regexp_num, '')); // px 등 단위를 분리해서 가지고 있다가, 적용을 해야 한다.
-								}
-								set[key]['end'] = Number(String(properties[key]).replace(regexp_num, '')) - set[key]['start']; // 계산: 변경 스타일값 - 현재 스타일값
-								continue;
+
+								// 설정할 스타일 생성
+								set[key] = {};
+								set[key]['start'] = start;
+								set[key]['change'] = change;
+								set[key]['end'] = end;
+								/*
+								console.log('key: ' + key);
+								console.log('start: ' + start);
+								console.log('change: ' + change);
+								console.log('end: ' + end);
+								*/
 							}
-							// 위 조건문에서 continue; 가 발생하지 않았을 경우, 해당 설정 스타일 초기화
-							max -= 1;
-							delete properties[key]; 
 						}
+
+						// 실행
 						var frame_func = function() {
 							// increment the time
 							current += increment;
 
 							// css
-							var val;
+							var key, val;
 							var css = {};
 							for(key in set) {
-								if(regexp_color.test(key)) { // color 관련
-									val = easing_func[easing](current, 0, 100, duration);
+								if(regexp.color_js.test(key) || regexp.color_css.test(key)) { // color 관련
+									val = module.easing[easing](current, 0, 100, duration);
 									if(/(transparent)/ig.test(set[key]['start'])) { // 투명도 처리 (작업중)
 										val = Number(val) / 100;
-										css[key] = setShade(set[key]['end'], val); 
+										css[key] = module.setShade(set[key]['end'], val); 
 									}else {
 										val = Number(val) / 100; // 0 ~ 1
-										css[key] = setBlend(set[key]['start'], set[key]['end'], val);
+										css[key] = module.setBlend(set[key]['start'], set[key]['end'], val);
 									}
-								}else {
+								}else if(regexp.num.test(set[key]['start']) && regexp.num.test(set[key]['change'])) {
 									// easing
-									val = easing_func[easing](current, set[key]['start'], set[key]['end'], duration); // easing_func[easing](current time, start value, change in value, duration)
-									val = Math.round(val); // 반올림
+									val = module.easing[easing](current, Number(set[key]['start']), Number(set[key]['change']), duration); // module.easing[easing](current time, start value, change in value, duration)
+									if(regexp.pixel_unit_list.test(key)) {
+										val = Math.round(val); // 반올림	
+									}
 									// css
-									css[key] = val + 'px';
+									css[key] = val;
+
+									//console.log('val: ' + val);
 								}
 							}
 							element.css(css);
@@ -1251,9 +1657,15 @@ Copyright (c) Sung-min Yu
 							if(current < duration) {
 								// frame
 								setRequestAnimFrame(frame_func);
-							}else if(complete && typeof complete === 'function') {
+							}else {
+								// queue
+								if(queue && Object.keys(queue).length > 0) {
+									element.css(queue);									
+								}
 								// callback
-								complete();
+								if(complete && typeof complete === 'function') {
+									complete();
+								}
 							}
 						};
 						frame_func();
@@ -1267,7 +1679,9 @@ Copyright (c) Sung-min Yu
 			"$": $,
 			// DOM Ready
 			"ready": function(callback) { 
-				if(document.addEventListener) { // Mozilla, Opera, Webkit 
+				if(document.readyState === "complete") {
+					setTimeout(callback);
+				}else if(document.addEventListener) { // Mozilla, Opera, Webkit 
 					document.addEventListener("DOMContentLoaded", function() {
 						callback();
 					}, false);
@@ -1455,25 +1869,6 @@ Copyright (c) Sung-min Yu
 			scrollIntoView: function(element, is) {
 				return element.scrollIntoView(is || true);
 			},
-			// 스크롤 위치 
-			scrollOffset: function() {
-				var top = null, left = null;
-				if(typeof window.pageYOffset == 'number') {
-					//Netscape compliant
-					top = window.pageYOffset;
-					left = window.pageXOffset;
-				}else if(document.body && (document.body.scrollLeft || document.body.scrollTop)) {
-					//DOM compliant
-					top = document.body.scrollTop;
-					left = document.body.scrollLeft; 
-				} else if(document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
-					//IE6 standards compliant mode
-					top = document.documentElement.scrollTop;
-					left = document.documentElement.scrollLeft;
-				}
-
-				return {"top": top, "left": left};
-			},
 			// 두 node 가 동일한지 판단
 			isEqualNode: function(element1, element2) {
 				return element1.isEqualNode(element2);
@@ -1499,15 +1894,6 @@ Copyright (c) Sung-min Yu
 					width = document.documentElement.scrollWidth;
 				}
 				return {"height": height, "width": width};
-			},
-			// top, left로 부터 스크롤된 픽셀을 가져오거나 설정하기 - 추후 scrollOffset 과 통합하는 작업 필요!
-			elementScrollTopLeft: function(element, top, left) { //get, set 동시 작업
-				if(top || left) {
-					if(top) element.scrollTop = top;
-					if(left) element.scrollTop = left;
-				}else {
-					return {"top": element.scrollTop, "left": element.scrollLeft};
-				}
 			}
 		};
 	})();
