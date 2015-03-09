@@ -37,6 +37,97 @@ Copyright (c) Sung-min Yu
 
 		// module
 		var module = {
+			// width, height 등 사이즈 정보 반환 (Dom.prototype 로 bind 하여 사용)
+			getElementWidthHeight: function(property) {
+				if(!property || property !== 'width' && property !== 'height') return '0px';
+				var element = this;
+				var length = element.length || 0;
+				//var is_border_box = (element.css('boxSizing') === 'border-box') ? true : false;
+				var is_display = (element.css('display') === 'none') ? true : false;
+				var queue = { 
+					/*
+					// 기본값
+					position: static
+					visibility: visible
+					display: inline | block
+					*/
+					'position': /^(static)$/i,
+					'visibility': /^(visible)$/i,
+					'display': /^(inline|block)$/i
+				};
+				var result = '0px';
+				var key, tmp;
+
+				if(!length) return;
+
+				// display가 none 경우 width, height 추출에 오차가 발생한다.
+				if(is_display === true) {
+					// 현재 설정된 css 값 확인
+					for(key in queue) {
+						if(tmp = element.css(key)) {
+							if(queue[key].test(tmp)) { 
+								// 현재 element에 설정된 style의 값이 queue 목록에 지정된 기본값(style property default value)과 동일하거나 없으므로 
+								// 작업 후 해당 property 초기화(삭제)
+								queue[key] = null;
+							}else { 
+								// 현재 element에 설정된 style의 값이 queue 목록에 지정된 기본값(style property default value)이 아니므로 
+								// 현재 설정된 값을 저장(종료 후 현재값으로 재설정)
+								queue[key] = tmp;
+							}
+						}
+					}
+					element.css({'position': 'absolute', 'visibility': 'hidden', 'display': 'block'});
+				}
+
+				// property 값 반환
+				if(property in element[0].style && element[0].style[property] !== '') {
+					result = element[0].style[property];
+				}else if(window.getComputedStyle) {
+					result = document.defaultView.getComputedStyle(element[0], null).getPropertyValue(property);
+				}
+
+				// 값 반환을 위해 임시 수정했던 style 복구
+				if(is_display === true) {
+					// queue
+					element.css(queue);
+				}
+
+				return result;
+			},
+			// scroll 위치값 반환 (Dom.prototype 로 bind 하여 사용)
+			getScrollInfo: function() {
+				var element = this;
+				var length = element.length || 0;
+				var top, left;
+
+				if(!length) return;
+
+				try {
+					if(element[0] == window || element[0].nodeType == 9) { // window, document
+						if(typeof window.pageYOffset == 'number') {
+							// Netscape compliant
+							top = window.pageYOffset;
+							left = window.pageXOffset;
+						}else if(document.body && (document.body.scrollLeft || document.body.scrollTop)) {
+							// DOM compliant
+							top = document.body.scrollTop;
+							left = document.body.scrollLeft; 
+						} else if(document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
+							// IE6 standards compliant mode
+							top = document.documentElement.scrollTop;
+							left = document.documentElement.scrollLeft;
+						}
+					}else {
+						top = element[0].scrollTop;
+						left = element[0].scrollLeft;
+					}
+				}catch(e) {
+
+				}
+
+				return {'top': top, 'left': left};
+			},
+			//
 			colornames: {
 				aqua: '#00ffff', black: '#000000', blue: '#0000ff', fuchsia: '#ff00ff',
 				gray: '#808080', green: '#008000', lime: '#00ff00', maroon: '#800000',
@@ -149,6 +240,7 @@ Copyright (c) Sung-min Yu
 			b = start value
 			c = change in value
 			d = duration
+			module.easing[easing](current time, start value, change in value, duration)
 			*/
 			easing: {
 				/*
@@ -289,69 +381,13 @@ Copyright (c) Sung-min Yu
 					if(t < d/2) return this.easeInBounce (t*2, 0, c, d) * .5 + b;
 					return this.easeOutBounce (t*2-d, 0, c, d) * .5 + c*.5 + b;
 				}
-			},
-			// width, height 등 사이즈 정보 반환
-			getElementWidthHeight: function(element, property) {
-				if(!element || !property || property !== 'width' && property !== 'height') return '0px';
-				//var is_border_box = (element.css('boxSizing') === 'border-box') ? true : false;
-				var is_display = (element.css('display') === 'none') ? false : true;
-				var result = '0px', key, tmp;
-				var queue = { 
-					/*
-					// 기본값
-					position: static
-					visibility: visible
-					display: inline | block
-					*/
-					'position': /^(static)$/i,
-					'visibility': /^(visible)$/i,
-					'display': /^(inline|block)$/i
-				};
-				var queue_delete = {};
-				var queue_update = {};
-
-				// display가 none 경우 width, height 추출에 오차가 발생한다.
-				if(is_display === false) {
-					// 현재 설정된 css 값 확인
-					for(key in queue) {
-						if(tmp = element.css(key)) {
-							if(queue[key].test(tmp)) { // 기본값과 동일하므로 작업 후 해당 property 초기화
-								queue_delete[key] = null;
-							}else { // 해당값 기본값이 아니므로 작업 후 복구
-								queue_update[key] = tmp; 
-							}
-						}
-					}
-					element.css({'position': 'absolute', 'visibility': 'hidden', 'display': 'block'});
-				}
-
-				// property 값 반환
-				if(property in element[0].style && element[0].style[property] !== '') {
-					result = element[0].style[property];
-				}else if(window.getComputedStyle) {
-					result = document.defaultView.getComputedStyle(element[0], null).getPropertyValue(property);
-				}
-
-				// 값 반환을 위해 임시 수정했던 style 복구
-				if(is_display === false) {
-					// queue
-					if(Object.keys(queue_delete).length > 0) {
-						element.css(queue_delete);	
-					}
-					if(Object.keys(queue_update).length > 0) {
-						element.css(queue_update);	
-					}
-				}
-
-				return result;
 			}
 		};
 
 		// dom
 		function $() {
-			var arr = Array.prototype.slice.call(arguments),
-				selector,
-				context;
+			var arr = Array.prototype.slice.call(arguments);
+			var selector, context;
 
 			// selector, context 설정
 			switch(arr.length) {
@@ -365,7 +401,8 @@ Copyright (c) Sung-min Yu
 			return new Dom(selector, context);
 		};
 		function Dom(selector, context) {
-			if(typeof selector === 'object' && selector !== null && (selector.nodeType || selector === window)) { //DOMElement, window
+			var match;
+			if(typeof selector === 'object' && selector !== null && (selector.nodeType || selector === window)) { // DOMElement, window
 				/*
 				nodeType
 				1 : Element 노드를 의미
@@ -390,7 +427,7 @@ Copyright (c) Sung-min Yu
 				// /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/.test(selector)
 				// /^<(\w+)\s*\/?>(?:<\/\1>|)$/.test(selector)
 				// /^<([a-z]+)([^<]+)*(?:>(.*)<\/\1>|\s*\/>)$/.test(selector)
-				var match = regexp.tag.exec(selector);
+				match = regexp.tag.exec(selector);
 				if(match && match[1]) { // create element
 					this.element = (context || document).createElement(match[1]);
 					this.length = 1;
@@ -400,6 +437,12 @@ Copyright (c) Sung-min Yu
 					this.query(selector, context);
 				}
 			}else {
+				/*
+				this.element = window.document;
+				this.length = 1;
+				this[0] = this.element;
+				return this;
+				*/
 				return selector;
 			}
 		};
@@ -408,11 +451,13 @@ Copyright (c) Sung-min Yu
 			// Array 기본 메소드 사용이 가능해진다.
 			elementsToArray: function(elements) {
 				var arr = [];
+				var i, max;
+
 				try {
 					if(elements instanceof NodeList) {
 						arr = Array.prototype.slice.call(elements);
 					}else if(elements instanceof HTMLCollection) {
-						for(var i = 0, max = elements.length; i < max; i++) {
+						for(i=0, max=elements.length; i<max; i++) {
 							arr[i] = elements[i];
 						}
 					}
@@ -423,14 +468,15 @@ Copyright (c) Sung-min Yu
 			},
 			// dom 검색
 			query: function(selector, context) {
-				var context = context || document,
-					element = context.querySelectorAll(selector), // querySelectorAll: length 있음, querySelector: length 없음
-					arr = this.elementsToArray(element);
+				var context = context || document;
+				var element = context.querySelectorAll(selector); // querySelectorAll: length 있음, querySelector: length 없음
+				var arr = this.elementsToArray(element);
+				var key;
 
 				// instance 에 this 바인딩
 				this.element = element;
 				this.length = arr.length;
-				for(var key in arr) {
+				for(key in arr) {
 					this[key] = arr[key];
 				}
 
@@ -448,55 +494,56 @@ Copyright (c) Sung-min Yu
 			},
 			// getElementsByClassName
 			getElementsByClassName: function(name, context) {
-				var context = context || document,
-					element = context.getElementsByClassName(name),
-					arr = this.elementsToArray(element);
+				var context = context || document;
+				var element = context.getElementsByClassName(name);
+				var arr = this.elementsToArray(element);
+				var key;
 
 				this.element = element;
 				this.length = arr.length;
-				for(var key in arr) {
+				for(key in arr) {
 					this[key] = arr[key];
 				}
 				return this;
 			},
 			// getElementsByTagName
 			getElementsByTagName: function(name, context) {
-				var context = context || document,
-					element = context.getElementsByTagName(name), // type : HTMLCollection
-					arr = this.elementsToArray(element);
+				var context = context || document;
+				var element = context.getElementsByTagName(name); // type : HTMLCollection
+				var arr = this.elementsToArray(element);
+				var key;
 
 				this.element = element;
 				this.length = arr.length;
-				for(var key in arr) {
+				for(key in arr) {
 					this[key] = arr[key];
 				}
 				return this;
 			},
 			// getElementsByName
 			getElementsByName: function(name, context) { 
-				var context = context || document,
-					element,
-					arr = [];
+				var context = context || document;
+				var arr = [];
+				var element, key, i, tag, max;
 
 				if(document.getElementsByName) { // IE9 이하에서 사용이 다름
 					element = context.getElementsByName(name);
 					arr = this.elementsToArray(element);
 					this.element = element;
 					this.length = arr.length;
-					for(var key in arr) {
+					for(key in arr) {
 						this[key] = arr[key];
 					}
 				}else {
-					var i = 0,
-						tag = document.getElementsByTagName('*'),
-						max = tag.length;
-					for( ; i<max; i++) {
+					tag = document.getElementsByTagName('*');
+					max = tag.length;
+					for(i=0; i<max; i++) {
 						if(tag[i].name === name || tag[i].getAttribute('name') === name) {
 							arr[arr.length] = tag[i];
 						}
 					}
 					this.length = arr.length;
-					for(var key in arr) {
+					for(key in arr) {
 						this[key] = arr[key];
 					}
 				}
@@ -507,12 +554,11 @@ Copyright (c) Sung-min Yu
 				return $(selector, this[0] || document);
 			},
 			closest: function(name, context) { 
-				var context = context || document.documentElement, // documentElement: <html />
-					i = 0,
-					length = this.length,
-					element, search;
+				var context = context || document.documentElement; // documentElement: <html />
+				var length = this.length;
+				var element, search, i;
 
-				for( ; i<length; i++) { // this[] 연관배열
+				for(i=0; i<length; i++) { // this[] 연관배열
 					for(search = this[i].parentNode; search && search !== context; search = search.parentNode) { 
 						// 현재 element 부터 검사하기 위해 
 						// 현재 노드의 parentNode 를 search 초기값으로 바인딩하고
@@ -531,14 +577,16 @@ Copyright (c) Sung-min Yu
 				// x.hasChildNodes(); // 표준 - 노드에 자식 노드가 있는지 여부 
 				// x.childNodes[1]; // IE8 이하 사용 불가능 - 자식노드 리스트
 				// x.children[1]; // IE8 이하 사용 불가능 - 자식요소 리스트
-				if(this[0].hasChildNodes()) { // true | false
+				if(this.length && this[0].hasChildNodes()) { // true | false
 					return this[0].children;
 				}
 			},
 			// 자식요소의 수
 			childElementCount: function() { 
 				// x.childElementCount; // IE8 이하 사용 불가능
-				return this[0].childElementCount;
+				if(this.length) {
+					return this[0].childElementCount;
+				}
 			},
 			// event
 			live: function(selector, events, handlers, capture) { // off 설정 불가능(미구현)
@@ -564,24 +612,26 @@ Copyright (c) Sung-min Yu
 				});
 			},
 			on: (function() {
+				var event_func, return_func;
+
 				// 초기화
-				var addEvent;
 				if(typeof window.addEventListener === 'function') {
-					addEvent = function(events, handlers, capture) {
+					event_func = function(events, handlers, capture) {
 						this.addEventListener(events, handlers, capture);
 					}
 				}else if(typeof document.attachEvent === 'function') { // IE
-					addEvent = function(events, handlers) {
+					event_func = function(events, handlers) {
 						this.attachEvent('on' + events, handlers);
 					}
 				}
 
 				// 리턴함수
-				var func = function(events, handlers, capture) {
+				return_func = function(events, handlers, capture) {
 					var events = events || undefined;
 					var handlers = handlers || undefined;
 					var capture = (typeof capture === undefined) ? false : capture;
-					var callback, arr = [], key;
+					var arr = [];
+					var callback, key;
 
 					// 이벤트 정보
 					arr = events.split('.');
@@ -598,7 +648,7 @@ Copyright (c) Sung-min Yu
 						callback = function() {
 							handlers.apply(this, Array.prototype.slice.call(arguments));
 						};
-						addEvent.call(this, events, callback, capture);
+						event_func.call(this, events, callback, capture);
 						cache.event[key].push({
 							"element": this,
 							"events": events,
@@ -608,25 +658,27 @@ Copyright (c) Sung-min Yu
 					});	
 				};
 
-				return func;
+				return return_func;
 			})(),
 			off: (function() {
+				var event_func, return_func;
+
 				// 초기화
-				var removeEvent;
 				if(typeof window.removeEventListener === 'function') {
-					removeEvent = function(events, handlers, capture) {
+					event_func = function(events, handlers, capture) {
 						this.removeEventListener(events, handlers, capture);
 					}
 				}else if(typeof document.detachEvent === 'function') { // IE
-					removeEvent = function(events, handlers) {
+					event_func = function(events, handlers) {
 						this.detachEvent('on' + events, handlers);
 					}
 				}
 
 				// 리턴함수
-				var func = function(events) {
+				return_func = function(events) {
 					var events = events || undefined;
-					var tmp, arr = [], key;
+					var arr = [];
+					var tmp, key, index;
 
 					// 이벤트 정보
 					arr = events.split('.');
@@ -638,13 +690,13 @@ Copyright (c) Sung-min Yu
 					// 이벤트 해제
 					if(cache.event[key]) {
 						tmp = cache.event[key];
-						for(var index in tmp) {
-							removeEvent.call(tmp[index].element, tmp[index].events, tmp[index].handlers, tmp[index].capture);
+						for(index in tmp) {
+							event_func.call(tmp[index].element, tmp[index].events, tmp[index].handlers, tmp[index].capture);
 						}
 					}
 				};
 
-				return func;
+				return return_func;
 			})(),
 			one: function(events, handlers, capture) {
 				var that = this;
@@ -677,22 +729,26 @@ Copyright (c) Sung-min Yu
 				}
 			})(),
 			// 
-			each: function(callback) { 
-				var i = 0,
-					length = this.length;
+			each: function(callback) { 				
+				var length = this.length;
+				var i;
 
-				for( ; i < length; i++) {
+				for(i=0; i<length; i++) {
 					callback.apply(this[i], [i, this[i]]); // i:key, this[i]:element
 				}
 			},
 			// attribute
 			attr: function(name, value) { 
+				var key;
+
 				if(typeof name === 'string' && typeof value === 'undefined') { // get
-					return this[0].getAttribute(name);
+					if(this.length) {
+						return this[0].getAttribute(name);
+					}
 				}else { // set
 					if(typeof name === 'object') {
 						this.each(function() {
-							for(var key in name) {
+							for(key in name) {
 								this.setAttribute(key, name[key]);
 							}
 						});
@@ -713,7 +769,9 @@ Copyright (c) Sung-min Yu
 			hasAttr: function(name) {
 				// x.hasAttribute('href');
 				try {
-					return this[0].hasAttribute(name);
+					if(this.length) {
+						return this[0].hasAttribute(name);
+					}
 				}catch(e) {
 
 				}
@@ -722,7 +780,9 @@ Copyright (c) Sung-min Yu
 			prop: function(name, value) { 
 				if(typeof value === 'undefined') { //get
 					try {
-						return this[0][name];
+						if(this.length) {
+							return this[0][name];
+						}
 					}catch(e) {
 
 					}
@@ -746,8 +806,11 @@ Copyright (c) Sung-min Yu
 			},
 			// 
 			html: function(value) {
-				var i = 0,
-					length = this.length;
+				var length = this.length || 0;
+				var i, dummy;
+
+				if(!length) return this;
+				
 				if(typeof value === 'undefined') { // get
 					try {
 						//return this[i].outerHTML; // IE만 지원
@@ -755,7 +818,7 @@ Copyright (c) Sung-min Yu
 						if(this[0].outerHTML) {
 							return this[0].outerHTML;
 						}else {
-							var dummy = document.createElement("div");
+							dummy = document.createElement("div");
 							dummy.appendChild(this[0].cloneNode(true));
 							return dummy.innerHTML;
 						}
@@ -763,15 +826,18 @@ Copyright (c) Sung-min Yu
 
 					}
 				}else { // set
-					for( ; i < length; i++) {
+					for(i=0; i<length; i++) {
 						this[i].innerHTML = value;
 					}
 					return this;
 				}
 			},
 			text: function(value) {
-				var i = 0,
-					length = this.length;
+				var length = this.length || 0;
+				var i;
+
+				if(!length) return this;
+				
 				if(typeof value === 'undefined') { // get
 					try {
 						return this[0].textContent;
@@ -779,7 +845,7 @@ Copyright (c) Sung-min Yu
 
 					}
 				}else { // set
-					for( ; i < length; i++) {
+					for(i=0; i<length; i++) {
 						this[i].textContent = value;
 					}
 					return this;
@@ -793,6 +859,7 @@ Copyright (c) Sung-min Yu
 			//
 			prepend: function(element) {
 				var element = typeof element.length !== 'undefined' ? element[0] : element;
+
 				this.each(function() {
 					if(this.nodeType === 1 || this.nodeType === 9 || this.nodeType === 11) {
 						this.insertBefore(element, this.firstChild);
@@ -804,6 +871,7 @@ Copyright (c) Sung-min Yu
 			append: function(element) {
 				// x.appendChild(y); // 표준
 				var element = typeof element.length !== 'undefined' ? element[0] : element;
+
 				this.each(function() {
 					if(this.nodeType === 1 || this.nodeType === 9 || this.nodeType === 11) {
 						this.appendChild(element);
@@ -825,8 +893,11 @@ Copyright (c) Sung-min Yu
 				<!-- afterend -->
 				*/
 				var position = (position === 'beforebegin' || position === 'afterbegin' || position === 'beforeend' || position === 'afterend') ? position : 'beforeend'; // beforebegin | afterbegin | beforeend | afterend
+
 				try {
-					this[0].insertAdjacentHTML(position, value);
+					if(this.length) {
+						this[0].insertAdjacentHTML(position, value);
+					}
 				}catch(e) {
 
 				}
@@ -835,6 +906,7 @@ Copyright (c) Sung-min Yu
 			// 어떤 요소의 위치에 노드를 삽입
 			after: function(element) {
 				var element = typeof element.length !== 'undefined' ? element[0] : element;
+
 				this.each(function() {
 					if(this.parentNode) {
 						this.parentNode.insertBefore(element, this.nextSibling);
@@ -846,6 +918,7 @@ Copyright (c) Sung-min Yu
 				// 기준이 되는 element 바로 전으로 이동할 element가 이동(또는 삽입)한다.
 				// querySelectorAll 또는 api.$() length 가 있으나, querySelector 는 length 가 없다.
 				var element = typeof element.length !== 'undefined' ? element[0] : element;
+
 				this.each(function() {
 					if(this.parentNode) {
 						this.parentNode.insertBefore(element, this); 
@@ -858,6 +931,7 @@ Copyright (c) Sung-min Yu
 				// 이동할 element가, 기준이 되는 element 바로 전으로 이동(또는 삽입)한다.
 				// querySelectorAll 또는 api.$() length 가 있으나, querySelector 는 length 가 없다.
 				var element = typeof element.length !== 'undefined' ? element[0] : element;
+
 				this.each(function() {
 					if(this.parentNode) {
 						element.parentNode.insertBefore(this, element);
@@ -874,6 +948,7 @@ Copyright (c) Sung-min Yu
 				});
 				*/
 				var element = typeof element.length !== 'undefined' ? element[0] : element;
+
 				this.each(function() {
 					if(this.parentNode) {
 						this.parentNode.replaceChild(element, this);
@@ -893,24 +968,24 @@ Copyright (c) Sung-min Yu
 			clone: function(is) {
 				// x = y.cloneNode(true | false); //표준
 				// is : 자식 노드들도 모두 복제할지 여부(true:복사, false:해당없음)
-				if(this[0].nodeType) {
+				if(this.length && this[0].nodeType) {
 					// id를 가진 node를 복사할 때 주의하자(페이지내 중복 id를 가진 노드가 만들어 지는 가능성이 있다)
-					return this[0].cloneNode(is || true);
+					return $(this[0].cloneNode(is || true));
 				}
 			},
 			//
 			css: function(value) {
-				var that = this,
-					prefixes = ['', '-webkit-', '-moz-', '-ms-', '-o-'],
-					regexp_css3 = /^(transition|border-radius|transform|box-shadow|perspective|flex-direction|filter)/i, // 사용자가 수동으로 -webkit- , -moz- , -o- , -ms- 입력하는 것들은 제외시킨다.
-					regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source, // +=, -= 숫자와 연산자 분리
-					regexp_calculation = new RegExp("^([+-])=(" + regexp_source_num + ")", "i"),
-					key = null, 
-					element = null,
-					current = null,
-					unit = null,
-					tmp = null, tmp1 = null, tmp2 = null,
-					default_view = document.defaultView;
+				var that = this;
+				var length = that.length || 0;
+				var prefixes = ['', '-webkit-', '-moz-', '-ms-', '-o-'];
+				var regexp_css3 = /^(transition|border-radius|transform|box-shadow|perspective|flex-direction|filter)/i; // 사용자가 수동으로 -webkit- , -moz- , -o- , -ms- 입력하는 것들은 제외시킨다.
+				var regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source; // +=, -= 숫자와 연산자 분리
+				var regexp_calculation = new RegExp("^([+-])=(" + regexp_source_num + ")", "i");
+				var default_view = document.defaultView;
+				var element, key, current, unit, converted;
+				var tmp, tmp1, tmp2, i, max;
+
+				if(!length) return this;
 
 				if(typeof value === 'string') { // get
 
@@ -934,8 +1009,8 @@ Copyright (c) Sung-min Yu
 						// CSS 속성명으로 값을 구한다.
 						// Javascript property 의 경우 대문자를 소문자로 변환하고 그 앞에 '-'를 붙인다. 
 						// (예: backgroundColor -> background-color, zIndex -> z-index, fontSize -> font-size)
-						var converted = '';
-						for(var i = 0, len = value.length; i < len; ++i) {
+						converted = '';
+						for(i=0, max=value.length; i<max; ++i) {
 							if(value.charAt(i) == value.charAt(i).toUpperCase()) {
 								converted = converted + '-' + value.charAt(i).toLowerCase();
 							}else {
@@ -1022,7 +1097,11 @@ Copyright (c) Sung-min Yu
 			},
 			// padding, border, margin 제외
 			width: function(value) {
+				var length = this.length || 0;
 				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
+
+				if(!length) return this;
+
 				try {
 					if(typeof value === 'undefined') { // get
 						if(this[0] == window) { // window
@@ -1045,7 +1124,7 @@ Copyright (c) Sung-min Yu
 						}else {
 							//return this[0].clientWidth;
 							//return Number(this.css('width').replace(regexp_not_num, '')); // css() 함수를 통한 값 추출과 사용목적에 차이가 있다.
-							return Number(module.getElementWidthHeight.call(null, this, 'width').replace(regexp_not_num, ''));
+							return Number(module.getElementWidthHeight.call(this, 'width').replace(regexp_not_num, ''));
 						}
 					}else { // set
 						//this.css.call(this, {'width': value});
@@ -1058,16 +1137,19 @@ Copyright (c) Sung-min Yu
 			},
 			// border 안쪽 크기 (padding 포함)
 			innerWidth: function() {
+				var length = this.length || 0;
 				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
-				var tmp;
 				var width = 0;
+				var tmp;
 				
+				if(!length) return this;
+
 				// inner
 				try {
 					if(this[0] == window || this[0].nodeType == 9) { // window, document
 						width = this.width();
 					}else {
-						width += Number(module.getElementWidthHeight.call(null, this, 'width').replace(regexp_not_num, ''));
+						width += Number(module.getElementWidthHeight.call(this, 'width').replace(regexp_not_num, ''));
 						if('width' in this[0].style && this[0].style.width !== '') {
 							//width += Number(this[0].style.width.replace(regexp_not_num, ''));
 							width += Number(this[0].style.paddingLeft.replace(regexp_not_num, '')) + Number(this[0].style.paddingRight.replace(regexp_not_num, ''));
@@ -1085,16 +1167,19 @@ Copyright (c) Sung-min Yu
 			},
 			// border 포함 크기 (padding + border 포함, 파라미터가 true 경우 margin 값까지 포함)
 			outerWidth: function(is) {
+				var length = this.length || 0;
 				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
-				var tmp;
 				var width = 0;
+				var tmp;
+
+				if(!length) return this;
 				
 				// outer
 				try {
 					if(this[0] == window || this[0].nodeType == 9) { // window, document
 						width = this.width();
 					}else {
-						width += Number(module.getElementWidthHeight.call(null, this, 'width').replace(regexp_not_num, ''));
+						width += Number(module.getElementWidthHeight.call(this, 'width').replace(regexp_not_num, ''));
 						if('width' in this[0].style && this[0].style.width !== '') {
 							//width += Number(this[0].style.width.replace(regexp_not_num, ''));
 							width += Number(this[0].style.paddingLeft.replace(regexp_not_num, '')) + Number(this[0].style.paddingRight.replace(regexp_not_num, ''));
@@ -1119,7 +1204,11 @@ Copyright (c) Sung-min Yu
 				return width;
 			},
 			height: function(value) {
+				var length = this.length || 0;
 				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
+
+				if(!length) return this;
+
 				try {
 					if(typeof value === 'undefined') { // get
 						if(this[0] == window) {
@@ -1142,7 +1231,7 @@ Copyright (c) Sung-min Yu
 						}else {
 							//return this[0].clientHeight;
 							//return Number(this.css('height').replace(regexp_not_num, '')); // css() 함수를 통한 값 추출과 사용목적에 차이가 있다.
-							return Number(module.getElementWidthHeight.call(null, this, 'height').replace(regexp_not_num, ''));
+							return Number(module.getElementWidthHeight.call(this, 'height').replace(regexp_not_num, ''));
 						}
 					}else { // set
 						//this.css.call(this, {"height": value});
@@ -1155,16 +1244,19 @@ Copyright (c) Sung-min Yu
 			},
 			// border 안쪽 크기 (padding 포함)
 			innerHeight: function() {
+				var length = this.length || 0;
 				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
-				var tmp;
 				var height = 0;
+				var tmp;
+
+				if(!length) return this;
 				
 				// inner
 				try {
 					if(this[0] == window || this[0].nodeType == 9) { // window, document
 						height = this.height();
 					}else {
-						height += Number(module.getElementWidthHeight.call(null, this, 'height').replace(regexp_not_num, ''));
+						height += Number(module.getElementWidthHeight.call(this, 'height').replace(regexp_not_num, ''));
 						if('height' in this[0].style && this[0].style.height !== '') {
 							//height += Number(this[0].style.height.replace(regexp_not_num, ''));
 							height += Number(this[0].style.paddingTop.replace(regexp_not_num, '')) + Number(this[0].style.paddingBottom.replace(regexp_not_num, ''));
@@ -1182,16 +1274,19 @@ Copyright (c) Sung-min Yu
 			},
 			// border 포함 크기 (padding + border 포함, 파라미터가 true 경우 margin 값까지 포함)
 			outerHeight: function(is) {
+				var length = this.length || 0;
 				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
-				var tmp;
 				var height = 0;
+				var tmp;
+
+				if(!length) return this;
 
 				// outer
 				try {
 					if(this[0] == window || this[0].nodeType == 9) { // window, document
 						height = this.height();
 					}else {
-						height += Number(module.getElementWidthHeight.call(null, this, 'height').replace(regexp_not_num, ''));
+						height += Number(module.getElementWidthHeight.call(this, 'height').replace(regexp_not_num, ''));
 						if('height' in this[0].style && this[0].style.height !== '') {
 							//height += Number(this[0].style.height.replace(regexp_not_num, ''));
 							height += Number(this[0].style.paddingTop.replace(regexp_not_num, '')) + Number(this[0].style.paddingBottom.replace(regexp_not_num, ''));
@@ -1218,7 +1313,9 @@ Copyright (c) Sung-min Yu
 			//
 			getClass: function() {
 				try {
-					return this[0].classList;
+					if(this.length) {
+						return this[0].classList;
+					}
 				}catch(e) {
 
 				}
@@ -1226,21 +1323,25 @@ Copyright (c) Sung-min Yu
 			hasClass: function(name) { 
 				// element.classList; // 클래스 리스트 출력
 				var regexp = new RegExp('(?:\\s|^)' + name + '(?:\\s|$)');
+
 				try {
-					return !!this[0].className.match(regexp); // !! 느낌표가 2개 이유는 type 를 boolean 으로 만들기 위함
+					if(this.length) {
+						return !!this[0].className.match(regexp); // !! 느낌표가 2개 이유는 type 를 boolean 으로 만들기 위함
+					}
 				}catch(e) {
 					
 				}
 			},
 			addClass: function(name) {
 				// element.classList.add('');
-				var arr = name.split(' '),
-					element;
+				var arr = name.split(' ');
+				var element, key;
+
 				this.each(function() {
 					// this.className += ' ' + name; // 방법1
 					// this.classList.add(name); // 방법2 (한번에 하나의 클래스만 입력 가능하다. 죽, 띄어쓰기로 여러 클래스 입력 불가능)
 					element = this;
-					for(var key in arr) {
+					for(key in arr) {
 						element.classList.add(arr[key]);
 					}
 				});
@@ -1248,14 +1349,15 @@ Copyright (c) Sung-min Yu
 			},
 			removeClass: function(name) { 
 				// element.classList.remove('');
-				var // regexp = new RegExp('(?:\\s|^)' + name + '(?:\\s|$)'),
-					arr = name.split(' '),
-					element;
+				//var regexp = new RegExp('(?:\\s|^)' + name + '(?:\\s|$)');
+				var arr = name.split(' ');
+				var element, key;
+
 				this.each(function() {
 					// this.className = this.className.replace(regexp, ' '); // 방법1
 					// this.classList.remove(name); // 방법2 (한번에 하나의 클래스만 삭제 가능하다. 죽, 띄어쓰기로 여러 클래스 삭제 불가능)
 					element = this;
-					for(var key in arr) {
+					for(key in arr) {
 						element.classList.remove(arr[key]);
 					}
 				});
@@ -1263,20 +1365,23 @@ Copyright (c) Sung-min Yu
 			},
 			toggleClass: function(name) {
 				// element.classList.toggle('');
-				var arr = name.split(' '),
-					element;
+				var arr = name.split(' ');
+				var element, key;
+
 				// this.hasClass.apply(this, arguments) ? this.removeClass.apply(this, arguments) : this.addClass.apply(this, arguments); // 방법1
 				this.each(function() { // 방법2
 					element = this;
-					for(var key in arr) {
+					for(key in arr) {
 						element.classList.toggle(arr[key]);
 					}
 				});
 				return this;
 			},
 			//
+			/*
 			scrollInfo: function() {
 				var top, left;
+
 				try {
 					if(this[0] == window || this[0].nodeType == 9) { // window, document
 						if(typeof window.pageYOffset == 'number') {
@@ -1302,9 +1407,11 @@ Copyright (c) Sung-min Yu
 
 				return {'top': top, 'left': left};
 			},
+			*/
 			scrollTop: function(value) {
-				if(!this[0]) return;
-				var info = this.scrollInfo(this[0]);
+				if(!this.length) return;
+				var info = module.getScrollInfo.call(this);
+
 				if(typeof value !== 'undefined') { // set
 					if(this[0] == window || this[0].nodeType == 9) { // window, document
 						this[0].scrollTo(info.left, value);
@@ -1316,8 +1423,9 @@ Copyright (c) Sung-min Yu
 				}
 			},
 			scrollLeft: function(value) {
-				if(!this[0]) return;
-				var info = this.scrollInfo(this[0]);
+				if(!this.length) return;
+				var info = module.getScrollInfo.call(this);
+
 				if(typeof value !== 'undefined') { // set
 					if(this[0] == window || this[0].nodeType == 9) { // window, document
 						this[0].scrollTo(value, info.top);
@@ -1336,6 +1444,7 @@ Copyright (c) Sung-min Yu
 				http://www.sitepoint.com/managing-custom-data-html5-dataset-api/
 				*/
 				var support = ('dataset' in document.createElement('div') ? true : false);
+
 				if(support) { // html5 지원
 					return function(name, value) {
 						name = name.replace(/-([a-z])/g, function(name) {
@@ -1392,6 +1501,9 @@ Copyright (c) Sung-min Yu
 					//var result = {'animate': {}, 'queue': {}}; // animate: 현재 애니메이션에 적용할 css property, queue: 애니메니션이 종료된 후 적용할 css property
 					var result = {'property': null, 'start': null, 'end': null, 'queue': {}};
 					var display, visibility, opacity, tmp;
+					/*
+					queue 를 사용하여, 현재의 display, visibility, opacity 설정을 저장했다가, 복구해야하나?
+					*/
 
 					if(regexp.display_list.test(property)) { // display, visibility, opacity
 						// display 기본값: block
@@ -1413,27 +1525,30 @@ Copyright (c) Sung-min Yu
 						// show, hide
 						switch(value) {
 							case 'show':
-								if(!display || display !== 'none') {
-									return false;
+								if(display && display === 'none') {
+									element.css({'opacity': 0, 'display': 'block'});
+								}else {
+									element.css({'opacity': 0});
 								}
-								element.css({'opacity': 0, 'display': 'block'});
+								// 반환값
 								result['property'] = 'opacity';
 								result['start'] = 0;
 								result['end'] = (0 < opacity) ? opacity : 1; // 사용자가 element 에 opacity 를 설정했는지 확인
 								break;
 							case 'hide':
-								if(!display || display === 'none') {
-									return false;
-								}
 								element.css({'opacity': 1});
+								// 반환값
 								result['property'] = 'opacity';
 								result['start'] = 1;
 								result['end'] = 0;
-								result['queue']['display'] = 'none';
+								result['queue']['display'] = 'none'; // 애니메이션 종료 후 display 처리
 								break; 
 						}
-					}else {
-
+					}else if(regexp.pixel_unit_list.test(property)) { // px 단위 property
+						/*
+						1. width, height, ... 값이 0(show실행)인지 아닌지(hide실행) 확인
+						2. 애니메이션 끝난 후 기존 px 값을 어떻게 복구할 것인가?
+						*/
 					}
 					
 					return result;
@@ -1466,11 +1581,14 @@ Copyright (c) Sung-min Yu
 						// 현재 설정된 transform 값 확인
 						for(key in queue) {
 							tmp = element.css(key);
-							if(tmp && !queue[key].test(tmp)) { // 기본값이 아닌 경우 저장
-								if(properties[key] && properties[key] == tmp) continue;
+							if(tmp && !queue[key].test(tmp)) { 
+								// 현재 element에 설정된 style의 값이 queue 목록에 지정된 기본값(style property default value)이 아니므로 
+								// 현재 설정된 값을 저장(종료 후 현재값으로 재설정)
 								queue[key] = tmp;
-							}else {
-								delete queue[key];
+							}else { 
+								// 현재 element에 설정된 style의 값이 queue 목록에 지정된 기본값(style property default value)과 동일하거나 없으므로 
+								// 작업 후 해당 property 초기화(삭제)
+								queue[key] = null;
 							}
 						}
 
@@ -1479,15 +1597,11 @@ Copyright (c) Sung-min Yu
 							if((regexp.pixel_unit_list.test(key) || regexp.display_list.test(key)) && regexp.animate_types.test(properties[key])) { // toggle, show, hide
 								if(tmp = setDisplsyType(element, key, properties[key])) {
 									set[tmp['property']] = tmp['end'];
-									for(i in tmp['queue']) {
+									for(i in tmp['queue']) { // 애니메이션 종료 후 적용할 style
 										queue[i] = tmp['queue'][i];
 									}
-								}else {
-									delete properties[key];
 								}
-							}else if(/^(animation*|transition*)/i.test(key)) { // animation, transition 관련작업은 제외됨
-								delete properties[key];
-							}else {
+							}else if(!/^(animation*|transition*)/i.test(key)) { // animation, transition 관련작업은 제외됨
 								set[key] = properties[key];
 							}
 						}
@@ -1507,10 +1621,7 @@ Copyright (c) Sung-min Yu
 								element.css(set);
 								element.one(event_transform, function() {
 									// queue
-									if(queue && Object.keys(queue).length > 0) {
-										$(this).css(queue);									
-									}
-
+									$(this).css(queue);
 									// callback
 									if(complete && typeof complete === 'function') {
 										complete();
@@ -1529,13 +1640,13 @@ Copyright (c) Sung-min Yu
 						var complete = options.complete;
 						var queue = {}; // 애니메니션 종료 후 적용할 style
 
-						//var max = Object.keys(properties).length;
-						var set = {};
-						var start, change, end, key, tmp, i;
-						var current = 0;
-						var increment = 20;
 						var regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source; // +=, -= 숫자와 연산자 분리
 						var regexp_calculation = new RegExp("^([+-])=(" + regexp_source_num + ")", "i");
+						//var max = Object.keys(properties).length;
+						var set = {};
+						var current = 0;
+						var increment = 20;
+						var start, change, end, key, tmp, i;
 
 						// requestAnimationFrame for Smart Animating http://goo.gl/sx5sts
 						var setRequestAnimFrame = (function() { 
@@ -1563,12 +1674,6 @@ Copyright (c) Sung-min Yu
 									}
 								}else if((regexp.pixel_unit_list.test(key) || regexp.display_list.test(key)) && regexp.animate_types.test(end)) { // toggle, show, hide
 									if(tmp = setDisplsyType(element, key, properties[key])) {
-										/*
-										set[tmp['property']] = {};
-										set[tmp['property']]['start'] = tmp['start'];
-										set[tmp['property']]['change'] = tmp['end'];
-										set[tmp['property']]['end'] = tmp['end'];
-										*/
 										key = tmp['property'];
 										start = tmp['start'];
 										change = (tmp['end'] == 0) ? -1 : tmp['end'];
@@ -1577,10 +1682,7 @@ Copyright (c) Sung-min Yu
 										for(i in tmp['queue']) {
 											queue[i] = tmp['queue'][i];
 										}
-										//continue;
 									}
-									//delete properties[key];
-									//continue;
 								}/*else if(regexp.display_list.test(key)) { // display, visibility, opacity
 									console.log(start);
 									console.log(end);
@@ -1624,13 +1726,22 @@ Copyright (c) Sung-min Yu
 
 						// 실행
 						var frame_func = function() {
+							var css = {};
+							var key, val;
+
 							// increment the time
 							current += increment;
 
 							// css
-							var key, val;
-							var css = {};
 							for(key in set) {
+								/*
+								easing functions
+								t = current time
+								b = start value
+								c = change in value
+								d = duration
+								module.easing[easing](current time, start value, change in value, duration)
+								*/
 								if(regexp.color_js.test(key) || regexp.color_css.test(key)) { // color 관련
 									val = module.easing[easing](current, 0, 100, duration);
 									if(/(transparent)/ig.test(set[key]['start'])) { // 투명도 처리 (작업중)
@@ -1641,8 +1752,7 @@ Copyright (c) Sung-min Yu
 										css[key] = module.setBlend(set[key]['start'], set[key]['end'], val);
 									}
 								}else if(regexp.num.test(set[key]['start']) && regexp.num.test(set[key]['change'])) {
-									// easing
-									val = module.easing[easing](current, Number(set[key]['start']), Number(set[key]['change']), duration); // module.easing[easing](current time, start value, change in value, duration)
+									val = module.easing[easing](current, Number(set[key]['start']), Number(set[key]['change']), duration); 
 									if(regexp.pixel_unit_list.test(key)) {
 										val = Math.round(val); // 반올림	
 									}
@@ -1821,7 +1931,7 @@ Copyright (c) Sung-min Yu
 				};
 				function setCreate(child, parent) {
 					var fragment = parent || document.createDocumentFragment();
-					var index1, index2, element;
+					var index, index1, index2, element;
 					
 					// child [] 반복문
 					for(index1 in child) { 
@@ -1853,7 +1963,7 @@ Copyright (c) Sung-min Yu
 				}
 
 				// 콜백실행
-				for(var index in callback_arr) {
+				for(index in callback_arr) {
 					callback_arr[index]();
 				}
 			},
@@ -1886,6 +1996,7 @@ Copyright (c) Sung-min Yu
 			// 스크롤될 element의 크기를 얻기 (문서 전체크기를 알 수 있음)
 			elementScrollSize: function(element) {
 				var height = null, width = null;
+
 				if(element) {
 					height = element.scrollHeight;
 					width = element.scrollWidth;
