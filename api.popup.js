@@ -5,20 +5,26 @@ The MIT License (MIT)
 Copyright (c) Sung-min Yu
 */
 
-void function(global) {
+(function(api, global) {
+
 	'use strict'; // ES5
-	if(typeof global === 'undefined') return false;
+	if(typeof global === 'undefined' || global !== window) return false;	
+	var $;
 
 	// jQuery || api.dom 구분
-	var $;
 	if(typeof global.jQuery !== 'undefined') {
 		$ = global.jQuery;
-	}else if(typeof global.api !== 'undefined' && typeof global.api.dom !== 'undefined') {
+	}else if(global.api && typeof global.api.dom !== 'undefined') {
 		$ = global.api.$;
 	}else {
 		return false;
 	}
 
+	return api($, global);
+
+})(function($, global) {
+
+	'use strict'; // ES5
 	var active_element; // 현재 포커스 위치
 	//var current_scroll; // 현재 스크롤바 위치
 	var Popup = function(parameter) {
@@ -35,31 +41,42 @@ void function(global) {
 		// settings
 		that.settings = { // 기본 설정값
 			// selector
-			'id_selector': null, // #id
-			'class_open': null, // .class (버튼 event)
-			'class_close': 'close', // .class (버튼 event)
+			'selector': null, // #id
+			'close': 'close', // .class (버튼 event)
 			// is
-			'is_header': 'Y',			
-			'is_mask': 'Y',
-			// css
-			'css_selector': 'popup_selector',
-			'css_header': 'popup_header',
-			'css_title': 'popup_title',
-			'css_close': 'popup_close',
-			'css_mask': 'popup_mask',
+			'header': true,
+			'mask': true,
 			// html
-			'html_title': null,
-			'html_close': '닫기',
-			// callback
-			'callback_close': null
+			'html': {
+				'title': null,
+				'close': '닫기'
+			},
+			// css
+			'css': {
+				'selector': 'popup_selector',
+				'header': 'popup_header',
+				'title': 'popup_title',
+				'close': 'popup_close',
+				'mask': 'popup_mask'
+			}
 		};
-		for(key in that.settings) {
-			if(that.settings.hasOwnProperty(key)) {
-				if(parameter[key]) {
-					that.settings[key] = parameter[key];
+
+		var setOverriding = function(settings, options) {
+			var key;
+			for(key in options) {
+				try {
+					if(options[key].constructor === Object) {
+						settings[key] = setOverriding(settings[key], options[key]);
+					}else {
+						settings[key] = options[key];
+					}
+				}catch(e) {
+					settings[key] = options[key];
 				}
 			}
-		}
+			return settings;
+		};
+		that.settings = setOverriding(that.settings, parameter);
 
 		// element
 		that.element = {
@@ -71,7 +88,7 @@ void function(global) {
 		};
 
 		// 스크롤바 사이즈
-		if(!('scrollbarSize' in window)) {
+		if(!('scrollbarSize' in global)) {
 			that.scrollbar();
 		}
 
@@ -79,50 +96,51 @@ void function(global) {
 		that.init();
 
 		// event
-		that.event();
+		that.eventOn();
 	};
 
 	// init
 	Popup.prototype.init = function() {
 		var that = this;
-		var selector = $('#' + that.settings.id_selector);
-		//var fragment = $(document.createDocumentFragment());
+		var selector = $('#' + that.settings.selector);
+		var fragment = $(document.createDocumentFragment());
+
+		// container
+		that.element.container = $('<div>').attr({'style': 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 100000; overflow: auto; display: none;'});
+		fragment.append(that.element.container);
 
 		// popup
-		that.element.popup = $('<div>').attr({'class': that.settings.css_selector, 'style': 'position: relative; z-index: 10000; width: ' + selector.outerWidth(true) + 'px; display: none;'});
-	
+		that.element.popup = $('<div>').attr({'class': that.settings.css.selector, 'style': 'position: relative; z-index: 10000; width: ' + selector.outerWidth(true) + 'px; display: none;'});
+		that.element.container.append(that.element.popup);
+
+		// header
+		if(that.settings.header === true) {
+			that.element.header = $('<div>').attr({'class': that.settings.css.header});
+			// title
+			that.element.header.append($('<div>').attr({'class': that.settings.css.title}).html(that.settings.html.title));	
+			// close btn
+			that.element.header.append($('<div>').attr({'class': that.settings.css.close}).html('<a href="#none" class="' + that.settings.close + '">' + that.settings.html.close + '</a>'));	
+			//that.element.popup.prepend(that.element.header);
+			that.element.popup.append(that.element.header);
+		}
+
 		// content
 		that.element.content = selector.clone();
 		that.element.popup.append(that.element.content);
 
-		// header
-		if(that.settings.is_header === 'Y') {
-			that.element.header = $('<div>').attr({'class': that.settings.css_header});
-			// title
-			if(typeof that.settings.html_title === 'string' && that.settings.html_title !== '') {
-				that.element.header.append($('<div>').attr({'class': that.settings.css_title}).html(that.settings.html_title));	
-			}
-			// close btn
-			that.element.header.append($('<div>').attr({'class': that.settings.css_close}).html('<a href="#none" class="' + that.settings.class_close + '">' + that.settings.html_close + '</a>'));	
-			that.element.popup.prepend(that.element.header);
-		}
-
-		// container
-		that.element.container = $('<div>').attr({'style': 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 100000; overflow: auto; display: none;'});
-		that.element.container.append(that.element.popup);
-
-		// selector 요소 위치 <-> container 바꿔치기
-		selector.replaceWith(that.element.container);
-
 		// mask
-		if(that.settings.is_mask === 'Y') {
+		if(that.settings.mask === true) {
 			if($('body').find('#api_mask').length > 0) {
 				that.element.mask = $('body').find('#api_mask');
 			}else {
-				that.element.mask = $('<div>').attr({'id': 'api_mask', 'class': that.settings.css_mask, 'style': 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 90000; display: none;'});
+				that.element.mask = $('<div>').attr({'id': 'api_mask', 'class': that.settings.css.mask, 'style': 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 90000; display: none;'});
 				$('body').prepend(that.element.mask);
 			}
 		}
+
+		// selector 요소 위치 <-> container 바꿔치기
+		//selector.replaceWith(that.element.container);
+		selector.replaceWith(fragment);
 	};
 
 	// scrollbar
@@ -135,7 +153,7 @@ void function(global) {
 		scrollbar = div.offsetWidth - div.clientWidth;
 		document.body.removeChild(div);
 
-		window.scrollbarSize = scrollbar;
+		global.scrollbarSize = scrollbar;
 	};
 
 	// 위치값
@@ -144,28 +162,30 @@ void function(global) {
 		var left = 0;
 		var top = 0;
 		var width = {
-			'screen': Math.max($(window).width(), $('body').width()),
-			'element': element.outerWidth(true) // width + padding + border + margin
+			'window': Math.round($(global).width()),
+			'document': Math.round($('body').width()),
+			'element': Math.round(element.outerWidth()) // width + padding + border
 		};
 		var height = {
-			'screen': Math.max($(window).height(), $('body').height()),
-			'element': element.outerHeight(true) // width + padding + border + margin
+			'window': Math.round($(global).height()),
+			'document': Math.round($('body').height()),
+			'element': Math.round(element.outerHeight()) // width + padding + border
 		};
 		var tmp_height, tmp_top;
 
 		// 계산
-		if(width.screen > width.element) left = Math.round(width.screen / 2) - Math.round(width.element / 2);
+		if(width.window > width.element) left = Math.round(width.window / 2) - Math.round(width.element / 2);
 		//else left = 0; // 윈도우 사이즈(가로)보다 DIV 사이즈가 더 클경우
-		if(height.screen > height.element) top = Math.round(height.screen / 2) - Math.round(height.element / 2);
+		if(height.window > height.element) top = Math.round(height.window / 2) - Math.round(height.element / 2);
 		//else top = 0; // 윈도우 사이즈(세로)보다 DIV 사이즈가 더 클경우
 
 		// top값 + div높이 > body(window) 전체 높이보다 클경우 (div가 페이지보다 더 아래로 내려가지 않도록함.)
-		tmp_height = height.screen;
+		tmp_height = Math.max(height.window, height.document);
 		tmp_top = Math.round(top + height.element);
 		if(tmp_top > tmp_height) {
 			top = top - Math.round(tmp_top - tmp_height);
 		}
-
+		
 		// 위치값이 0보다 작지않도록 제어
 		if(left < 0) left = 0;
 		if(top < 0) top = 0;
@@ -174,10 +194,10 @@ void function(global) {
 	};
 
 	// 이벤트
-	Popup.prototype.event = function() {
+	Popup.prototype.eventOn = function() {
 		var that = this;
 		// 팝업내부 close 버튼 클릭시 닫기
-		$(that.element.popup).find('.' + that.settings.class_close).on('click', function(event) {
+		$(that.element.popup).find('.' + that.settings.close).on('click', function(event) {
 			that.close();
 		});
 		// esc 클릭시 닫기
@@ -186,6 +206,10 @@ void function(global) {
 				that.close();
 			}
 		});
+	};
+	Popup.prototype.eventOff = function() {
+		var that = this;
+		
 	};
 
 	// resize
@@ -199,13 +223,13 @@ void function(global) {
 	Popup.prototype.open = function(options) {
 		var that = this;
 		var options = options || {};
-		var html_title = options.html_title || that.settings.html_title;
+		var title = options.title || that.settings.html.title;
 		var callback_open = options.callback_open || that.settings.callback_open;
 		var position;
 		var setOpen = function() { // popup 실행
 			// title 유동적 변경
-			if(typeof html_title === 'string' && html_title !== '') {
-				that.element.popup.find('.' + that.settings.css_title).html(html_title);
+			if(typeof title === 'string' && title !== '') {
+				that.element.popup.find('.' + that.settings.css.title).html(title);
 			}
 
 			// 스크롤바 사이즈만큼 여백
@@ -242,9 +266,9 @@ void function(global) {
 
 		//resize on
 		var time = null;
-		$(window).on('resize.api_popup', function() {
-			window.clearTimeout(time);
-			time = window.setTimeout(function() { 
+		$(global).on('resize.api_popup', function() {
+			global.clearTimeout(time);
+			time = global.setTimeout(function() { 
 				that.resize();
 			}, 500);
 		});
@@ -284,9 +308,10 @@ void function(global) {
 		}});
 
 		//resize off
-		$(window).off('.api_popup');
+		$(global).off('.api_popup');
 	};
 
+	if(!global.api) global.api = {};
 	global.api.popup = Popup;
 
-}(window);
+}, this);

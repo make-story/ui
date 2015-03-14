@@ -1,6 +1,7 @@
 
 /* popup 전체 */
 .popup_selector {
+	padding: 5px;
 	border: 1px solid #292E32;
 	
 	-webkit-border-radius: 5px;
@@ -8,32 +9,32 @@
 	/*border-radius: 5px;*/
 	border-radius: 5px 5px 5px 5px;
 	
-	-webkit-box-shadow: 0 0 1em rgba(0,0,0,0.3);
-	-moz-box-shadow: 0 0 1em rgba(0,0,0,0.3);
-	box-shadow: 0 0 1em rgba(0,0,0,0.3);
+	-webkit-box-shadow: 0 0 1em rgba(0,0,0,0.2);
+	-moz-box-shadow: 0 0 1em rgba(0,0,0,0.2);
+	box-shadow: 0 0 1em rgba(0,0,0,0.2);
 }
 /* header */
 .popup_header {
+	margin-bottom: 5px;
 	height: 30px;
-	background-color: #3B4346;
-	border-bottom: 1px solid #2E3639;
+	border-bottom: 1px solid #292E32;
 }
 /* title */
 .popup_title {
 	position: absolute;
 	left: 10px;
 	top: 9px;
-	color: #DADBDC;
+	color: #292E32;
 }
 /* close */
 .popup_close {
 	position: absolute;
 	right: 10px;
 	top: 9px;
-	color: #DADBDC;
+	color: #292E32;
 }
 .popup_close a {
-	color: #DADBDC;
+	color: #292E32;
 }
 /* mask */
 .popup_mask { 

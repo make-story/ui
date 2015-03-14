@@ -7,8 +7,10 @@ Copyright (c) Sung-min Yu
 
 ;void function(global) {
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || typeof global.api === 'undefined' || typeof global.api.dom !== 'undefined' || typeof document.querySelectorAll === 'undefined') return false;
-	
+	if(typeof global === 'undefined' || global !== window || typeof document.querySelectorAll === 'undefined') return false;
+	if(!global.api) global.api = {};
+
+	// querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 	global.api.dom = (function() {
 
 		// cache
@@ -37,16 +39,183 @@ Copyright (c) Sung-min Yu
 
 		// module
 		var module = {
-			// width, height 등 사이즈 정보 반환 (Dom.prototype 로 bind 하여 사용)
-			getElementWidthHeight: function(property) {
-				if(!property || property !== 'width' && property !== 'height') return '0px';
-				var element = this;
-				var length = element.length || 0;
-				//var is_border_box = (element.css('boxSizing') === 'border-box') ? true : false;
-				var is_display = (element.css('display') === 'none') ? true : false;
+			// 숫자/단위 분리 (예: 10px -> [0]=>10px, [1]=>10, [2]=>'px')
+			getNumberUnit: function(value) {
+				var regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source;
+				var regexp_number = new RegExp("^(" + regexp_source_num + ")(.*)$", "i");
+				var matches = regexp_number.exec(value);
+				if(matches) {
+					return matches;
+				}
+			},
+			// 숫자여부 확인
+			isNumeric: function(value) {
+				return !isNaN(parseFloat(value)) && isFinite(value);
+			},
+			// css
+			/*
+			getStyle: (function() {
+				if(window.getComputedStyle) {
+					return function(element) {
+						return window.getComputedStyle(element, null);
+					};
+				}else if(document.documentElement.currentStyle) {
+					return element.currentStyle;
+				}
+			})(),
+			*/
+			css: {
+				get: function(element, property) {
+					if(!element) return;
+					var default_view = document.defaultView;
+					var value = 0;
+					var converted = '';
+					var i, max;
+
+					// return this[0].style[property]; // 방법1(CSS 속성과 JS 에서의 CSS 속성형식이 다르므로 사용불가능)
+					// return this[0].style.getPropertyValue(property); // 방법2(CSS 속성명을 사용하여 정상적 출력가능)
+					// 방법3
+					if(property == 'opacity' && element.filters) { // IE opacity
+						value = 1;
+						try {
+							value = element.filters.item('alpha').opacity / 100;		
+						}catch(e) {
+							console.log(e);
+						}
+					}else if(element.style[property]) { // style로 값을 구할 수 있는 경우
+						// HTML DOM Style Object (CSS 속성방식이 아닌 Jvascript property 방식)
+						// (예: background-color -> backgroundColor)
+						value = element.style[property];
+					}else if(element.currentStyle && element.currentStyle[property]) { // IE의 경우
+						value = element.currentStyle[property];
+					}else if(default_view && default_view.getComputedStyle) {
+						// CSS 속성명으로 값을 구한다.
+						// Javascript property 의 경우 대문자를 소문자로 변환하고 그 앞에 '-'를 붙인다. 
+						// (예: backgroundColor -> background-color, zIndex -> z-index, fontSize -> font-size)
+						for(i=0, max=property.length; i<max; ++i) {
+							if(property.charAt(i) == property.charAt(i).toUpperCase()) {
+								converted = converted + '-' + property.charAt(i).toLowerCase();
+							}else {
+								converted = converted + property.charAt(i);
+							}
+						}
+						if(default_view.getComputedStyle(element, null).getPropertyValue(converted)) {
+							value = default_view.getComputedStyle(element, null).getPropertyValue(converted);
+						}
+					}
+
+					// css 는 단위까지 명확하게 알기위한 성격이 강하므로, 단위/숫자 분리는 제외
+					return value;
+				},
+				set: function(element, value) { // value: {"속성명": "값", ... }
+					if(!element) return;
+					var prefixes = ['', '-webkit-', '-moz-', '-ms-', '-o-'];
+					var regexp_css3 = /^(transition|border-radius|transform|box-shadow|perspective|flex-direction|filter)/i; // 사용자가 수동으로 -webkit- , -moz- , -o- , -ms- 입력하는 것들은 제외시킨다.
+					var regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source; // +=, -= 숫자와 연산자 분리
+					var regexp_calculation = new RegExp("^([+-])=(" + regexp_source_num + ")", "i");
+					var property, current, unit;
+					var tmp, tmp1, tmp2;
+
+					for(property in value) {
+						// 속성, 값 검사 
+						if(element.nodeType === 3 || element.nodeType === 8 || !element.style) {
+							continue;
+						}else if(value[property] === '' || value[property] === null) { // 해당 css 프로퍼티 초기화여부 확인
+							// 초기화시 css default value 를 설정해 주는 것이 가장 정확함
+							if(element.style.removeProperty) {
+								element.style.removeProperty(property);
+							}else if(element.style.removeAttribute) { // IE < 9
+								element.style.removeAttribute(property);
+							}else if(property in element.style) {
+								element.style[property] = null;
+							}
+						}else if(tmp1 = regexp_calculation.exec(value[property])) { // +=, -= 연산자 분리
+							// tmp1[1]: 연산자
+							// tmp1[2]: 값
+							current = this.get(element, property);
+							unit = '';
+							// 단위값 존재 확인
+							if(regexp.text.test(current)) { // 기존 설정값이 단어로 되어 있는 것 (예: auto, none 등)
+								unit = 0;
+							}else if(tmp2 = regexp.num_unit.exec(current)) { // 단위 분리
+								// tmp2[1]: 값
+								// tmp2[2]: 단위 (예: px, em, %, s)
+								current = tmp2[1];
+								unit = tmp2[2];
+							}
+							value[property] = ((tmp1[1] + 1) * tmp1[2] + parseFloat(current)) + unit; // ( '연산자' + 1 ) * 값 + 현재css속성값
+						}
+
+						// trim
+						//if(typeof value[property] === 'string') value[property].replace(regexp.trim,  '');
+						
+						// 단위값이 없을 경우 설정
+						if(regexp.num.test(value[property]) && !regexp.num_unit.test(value[property])) {
+							// property default value 단위가 px 에 해당하는 것
+							if(regexp.pixel_unit_list.test(property)) {
+								value[property] = value[property] + 'px';
+							}else if(regexp.time_unit_list.test(property)) { // animation, transition
+								value[property] = value[property] + 's';
+							}
+						}
+
+						// css 값 설정
+						/*if(regexp_css3.test(property)) { // CSS3
+							for(tmp in prefixes) {
+								// element.style[prefixes[tmp].concat(property)] = value[property]; // 방법1
+								element.style.setProperty(prefixes[tmp].concat(property), value[property]); // 방법2
+							}
+						}else */if(property in element.style) {
+							// 방법1
+							// 단위(예:px)까지 명확하게 입력해줘야 한다.
+							element.style[property] = value[property];
+						}else if(typeof element.style.setProperty !== 'undefined') {
+							// 방법2 (Internet Explorer version 9)
+							element.style.setProperty(property, value[property]);	
+						}
+					}
+				}
+			},
+			// inner, outer 관련
+			getAugmentWidthHeight: function(element, property) {
+				var value = {
+					'padding': 0,
+					'border': 0,
+					'margin': 0
+				};
+				var arr, i, max, tmp;
+
+				if(!element || !property || !(/^(width|height)$/i.test(property))) value;
+
+				// width, height 에 따라 추가할 위치
+				if(property === 'width') {
+					arr = ["Left", "Right"];
+				}else if(property === 'height') {
+					arr = ["Top", "Bottom"];
+				}
+
+				for(i=0, max=arr.length; i<max; i++) {
+					// padding
+					tmp = this.getNumberUnit(this.css.get(element, 'padding' + arr[i]));
+					value.padding += (tmp && !isNaN(parseFloat(tmp[1])) && isFinite(tmp[1])) ? Number(tmp[1]) : 0; // 숫자형 검사
+					// border
+					tmp = this.getNumberUnit(this.css.get(element, 'border' + arr[i] + 'Width'));
+					value.border += (tmp && !isNaN(parseFloat(tmp[1])) && isFinite(tmp[1])) ? Number(tmp[1]) : 0;
+					// margin
+					tmp = this.getNumberUnit(this.css.get(element, 'margin' + arr[i]));
+					value.margin += (tmp && !isNaN(parseFloat(tmp[1])) && isFinite(tmp[1])) ? Number(tmp[1]) : 0;
+				}
+				
+				return value;
+			},
+			// width, height 등 사이즈 정보 반환
+			getElementWidthHeight: function(element, property, extra, is) {
+				if(!element || !property || !(/^(width|height)$/i.test(property)) || (extra && !/^(inner|outer)$/i.test(extra))) return 0;
+				//var is_border_box = (this.css.get(element, 'boxSizing') === 'border-box') ? true : false;
+				var is_display = (this.css.get(element, 'display') === 'none') ? true : false;
 				var queue = { 
 					/*
-					// 기본값
+					css property 기본값
 					position: static
 					visibility: visible
 					display: inline | block
@@ -55,16 +224,14 @@ Copyright (c) Sung-min Yu
 					'visibility': /^(visible)$/i,
 					'display': /^(inline|block)$/i
 				};
-				var result = '0px';
+				var value = 0;
 				var key, tmp;
-
-				if(!length) return;
 
 				// display가 none 경우 width, height 추출에 오차가 발생한다.
 				if(is_display === true) {
 					// 현재 설정된 css 값 확인
 					for(key in queue) {
-						if(tmp = element.css(key)) {
+						if(tmp = this.css.get(element, key)) {
 							if(queue[key].test(tmp)) { 
 								// 현재 element에 설정된 style의 값이 queue 목록에 지정된 기본값(style property default value)과 동일하거나 없으므로 
 								// 작업 후 해당 property 초기화(삭제)
@@ -76,34 +243,56 @@ Copyright (c) Sung-min Yu
 							}
 						}
 					}
-					element.css({'position': 'absolute', 'visibility': 'hidden', 'display': 'block'});
+					this.css.set(element, {'position': 'absolute', 'visibility': 'hidden', 'display': 'block'});
 				}
 
-				// property 값 반환
-				if(property in element[0].style && element[0].style[property] !== '') {
-					result = element[0].style[property];
-				}else if(window.getComputedStyle) {
-					result = document.defaultView.getComputedStyle(element[0], null).getPropertyValue(property);
+				// 해당 property 값
+				value = element['offset' + (property.substring(0, 1).toUpperCase() + property.substring(1))]; // offsetWidth, offsetHeight (border + padding + width 값, display: none 의 경우는 0 반환)
+				if(value <= 0 || value == null) {
+					// css로 값을 구한다.
+					tmp = this.getNumberUnit(this.css.get(element, property));
+					value = (tmp && !isNaN(parseFloat(tmp[1]))) && isFinite(tmp[1]) ? Number(tmp[1]) : 0;
+					if(extra) {
+						// inner, outer 추가
+						tmp = this.getAugmentWidthHeight(element, property);
+						value += tmp.padding;
+						if(extra === 'outer') {
+							value += tmp.border;
+							if(is === true) {
+								value += tmp.margin;
+							}
+						}
+					}
+				}else {
+					// offset 값 가공 (margin, border, padding)
+					tmp = this.getAugmentWidthHeight(element, property);
+					if(extra) {
+						if(extra === 'inner') {
+							value -= tmp.border;
+						}else if(extra === 'outer' && is === true) {
+							value += tmp.margin;
+						}
+					}else {
+						value -= tmp.border;
+						value -= tmp.padding;
+					}
 				}
-
+				
 				// 값 반환을 위해 임시 수정했던 style 복구
 				if(is_display === true) {
 					// queue
-					element.css(queue);
+					this.css.set(element, queue);
 				}
 
-				return result;
+				return value;
 			},
-			// scroll 위치값 반환 (Dom.prototype 로 bind 하여 사용)
-			getScrollInfo: function() {
-				var element = this;
-				var length = element.length || 0;
+			// scroll 위치값 반환
+			getScrollInfo: function(element) {
+				if(!element) return;
 				var top, left;
 
-				if(!length) return;
-
 				try {
-					if(element[0] == window || element[0].nodeType == 9) { // window, document
+					if(element == window || element.nodeType == 9) { // window, document
 						if(typeof window.pageYOffset == 'number') {
 							// Netscape compliant
 							top = window.pageYOffset;
@@ -118,8 +307,8 @@ Copyright (c) Sung-min Yu
 							left = document.documentElement.scrollLeft;
 						}
 					}else {
-						top = element[0].scrollTop;
-						left = element[0].scrollLeft;
+						top = element.scrollTop;
+						left = element.scrollLeft;
 					}
 				}catch(e) {
 
@@ -975,131 +1164,23 @@ Copyright (c) Sung-min Yu
 			},
 			//
 			css: function(value) {
-				var that = this;
-				var length = that.length || 0;
-				var prefixes = ['', '-webkit-', '-moz-', '-ms-', '-o-'];
-				var regexp_css3 = /^(transition|border-radius|transform|box-shadow|perspective|flex-direction|filter)/i; // 사용자가 수동으로 -webkit- , -moz- , -o- , -ms- 입력하는 것들은 제외시킨다.
-				var regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source; // +=, -= 숫자와 연산자 분리
-				var regexp_calculation = new RegExp("^([+-])=(" + regexp_source_num + ")", "i");
-				var default_view = document.defaultView;
-				var element, key, current, unit, converted;
-				var tmp, tmp1, tmp2, i, max;
+				var length = this.length || 0;
+				var key;
 
 				if(!length) return this;
 
 				if(typeof value === 'string') { // get
-
-					// return this[0].style[value]; // 방법1(CSS 속성과 JS 에서의 CSS 속성형식이 다르므로 사용불가능)
-					// return this[0].style.getPropertyValue(value); // 방법2(CSS 속성명을 사용하여 정상적 출력가능)
-					// 방법3
-					if(value == 'opacity' && this[0].filters) { // IE opacity
-						tmp = 1;
-						try {
-							tmp = this[0].filters.item('alpha').opacity / 100;		
-						}catch(e) {
-							console.log(e);
-						}
-					}else if(this[0].style[value]) { // style로 값을 구할 수 있는 경우
-						// HTML DOM Style Object (CSS 속성방식이 아닌 Jvascript property 방식)
-						// (예: background-color -> backgroundColor)
-						tmp = this[0].style[value];
-					}else if(this[0].currentStyle && this[0].currentStyle[value]) { // IE의 경우
-						tmp = this[0].currentStyle[value];
-					}else if(default_view && default_view.getComputedStyle) {
-						// CSS 속성명으로 값을 구한다.
-						// Javascript property 의 경우 대문자를 소문자로 변환하고 그 앞에 '-'를 붙인다. 
-						// (예: backgroundColor -> background-color, zIndex -> z-index, fontSize -> font-size)
-						converted = '';
-						for(i=0, max=value.length; i<max; ++i) {
-							if(value.charAt(i) == value.charAt(i).toUpperCase()) {
-								converted = converted + '-' + value.charAt(i).toLowerCase();
-							}else {
-								converted = converted + value.charAt(i);
-							}
-						}
-						if(default_view.getComputedStyle(this[0], null).getPropertyValue(converted)) {
-							tmp = default_view.getComputedStyle(this[0], null).getPropertyValue(converted);
-						}
-					}
-
-					return tmp;
-
-				}else if(typeof value === 'object') { // set - 형태: {"속성명": "값", ... } 
-
-					for(key in value) {
-						this.each(function() {
-							element = this;
-
-							// 속성, 값 검사 
-							if(!element || element.nodeType === 3 || element.nodeType === 8 || !element.style) {
-								return true;
-							}else if((value[key] === '' || value[key] === null) && key in element.style) { // 해당 css 프로퍼티 초기화여부 확인
-								// 초기화시 css default value 를 설정해 주는 것이 가장 정확함
-								if(element.style.removeProperty) {
-									element.style.removeProperty(key);
-								}else if(element.style.removeAttribute) { // IE < 9
-									element.style.removeAttribute(key);
-								}else if(key in element.style) {
-									element.style[key] = null;
-								}
-								return true;
-							}else if(tmp1 = regexp_calculation.exec(value[key])) { // +=, -= 연산자 분리
-								// tmp1[1]: 연산자
-								// tmp1[2]: 값
-								current = that.css(key);
-								unit = '';
-								// 단위값 존재 확인
-								if(regexp.text.test(current)) { // 기존 설정값이 단어로 되어 있는 것 (예: auto, none 등)
-									unit = 0;
-								}else if(tmp2 = regexp.num_unit.exec(current)) { // 단위 분리
-									// tmp2[1]: 값
-									// tmp2[2]: 단위 (예: px, em, %, s)
-									current = tmp2[1];
-									unit = tmp2[2];
-								}
-								value[key] = ((tmp1[1] + 1) * tmp1[2] + parseFloat(current)) + unit; // ( '연산자' + 1 ) * 값 + 현재css속성값
-							}
-
-							// trim
-							if(typeof value[key] === 'string') value[key].replace(regexp.trim,  '');
-							
-							// 단위값이 없을 경우 설정
-							if(regexp.num.test(value[key]) && !regexp.num_unit.test(value[key])) {
-								// property default value 단위가 px 에 해당하는 것
-								if(regexp.pixel_unit_list.test(key)) {
-									value[key] = value[key] + 'px';
-								}else if(regexp.time_unit_list.test(key)) { // animation, transition
-									value[key] = value[key] + 's';
-								}
-							}
-
-							// css 값 설정
-							/*if(regexp_css3.test(key)) { // CSS3
-								for(tmp in prefixes) {
-									// element.style[prefixes[tmp].concat(key)] = value[key]; // 방법1
-									element.style.setProperty(prefixes[tmp].concat(key), value[key]); // 방법2
-								}
-							}else */if(key in element.style) {
-								// 방법1
-								// 단위(예:px)까지 명확하게 입력해줘야 한다.
-								element.style[key] = value[key];
-							}else if(typeof element.style.setProperty !== 'undefined') {
-								// 방법2 (Internet Explorer version 9)
-								element.style.setProperty(key, value[key]);	
-							}
-
-						});
-					}
-
-					return this;
-
+					return module.css.get(this[0], value);
+				}else if(typeof value === 'object') { // set 
+					this.each(function() {
+						// this: element
+						module.css.set(this, value);
+					});
 				}
 			},
-			// padding, border, margin 제외
+			// 
 			width: function(value) {
 				var length = this.length || 0;
-				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
-
 				if(!length) return this;
 
 				try {
@@ -1122,13 +1203,9 @@ Copyright (c) Sung-min Yu
 								document.documentElement.clientWidth
 							); 
 						}else {
-							//return this[0].clientWidth;
-							//return Number(this.css('width').replace(regexp_not_num, '')); // css() 함수를 통한 값 추출과 사용목적에 차이가 있다.
-							return Number(module.getElementWidthHeight.call(this, 'width').replace(regexp_not_num, ''));
+							return module.getElementWidthHeight(this[0], 'width');
 						}
 					}else { // set
-						//this.css.call(this, {'width': value});
-						//return this;
 						this.css({'width': value});
 					}
 				}catch(e) {
@@ -1138,75 +1215,38 @@ Copyright (c) Sung-min Yu
 			// border 안쪽 크기 (padding 포함)
 			innerWidth: function() {
 				var length = this.length || 0;
-				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
-				var width = 0;
-				var tmp;
-				
 				if(!length) return this;
 
 				// inner
 				try {
 					if(this[0] == window || this[0].nodeType == 9) { // window, document
-						width = this.width();
+						return this.width();
 					}else {
-						width += Number(module.getElementWidthHeight.call(this, 'width').replace(regexp_not_num, ''));
-						if('width' in this[0].style && this[0].style.width !== '') {
-							//width += Number(this[0].style.width.replace(regexp_not_num, ''));
-							width += Number(this[0].style.paddingLeft.replace(regexp_not_num, '')) + Number(this[0].style.paddingRight.replace(regexp_not_num, ''));
-						}else if(window.getComputedStyle) {
-							tmp = document.defaultView.getComputedStyle(this[0], null);
-							//width += Number(tmp.getPropertyValue('width').replace(regexp_not_num, ''));
-							width += Number(tmp.getPropertyValue('padding-left').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('padding-right').replace(regexp_not_num, ''));
-						}
+						return module.getElementWidthHeight(this[0], 'width', 'inner');
 					}
 				}catch(e) {
 
 				}
-
-				return width;
 			},
 			// border 포함 크기 (padding + border 포함, 파라미터가 true 경우 margin 값까지 포함)
 			outerWidth: function(is) {
 				var length = this.length || 0;
-				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
-				var width = 0;
-				var tmp;
-
 				if(!length) return this;
 				
 				// outer
 				try {
 					if(this[0] == window || this[0].nodeType == 9) { // window, document
-						width = this.width();
+						return this.width();
 					}else {
-						width += Number(module.getElementWidthHeight.call(this, 'width').replace(regexp_not_num, ''));
-						if('width' in this[0].style && this[0].style.width !== '') {
-							//width += Number(this[0].style.width.replace(regexp_not_num, ''));
-							width += Number(this[0].style.paddingLeft.replace(regexp_not_num, '')) + Number(this[0].style.paddingRight.replace(regexp_not_num, ''));
-							width += Number(this[0].style.borderLeftWidth.replace(regexp_not_num, '')) + Number(this[0].style.borderRightWidth.replace(regexp_not_num, ''));
-
-							// margin
-							if(is === true) width += Number(this[0].style.marginLeft.replace(regexp_not_num, '')) + Number(this[0].style.marginRight.replace(regexp_not_num, ''));
-						}else if(window.getComputedStyle) {
-							tmp = document.defaultView.getComputedStyle(this[0], null);
-							//width += Number(tmp.getPropertyValue('width').replace(regexp_not_num, ''));
-							width += Number(tmp.getPropertyValue('padding-left').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('padding-right').replace(regexp_not_num, ''));
-							width += Number(tmp.getPropertyValue('border-left-width').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('border-right-width').replace(regexp_not_num, ''));
-
-							// margin
-							if(is === true) width += Number(tmp.getPropertyValue('margin-left').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('margin-right').replace(regexp_not_num, ''));
-						}
+						return module.getElementWidthHeight(this[0], 'width', 'outer', is);
 					}
 				}catch(e) {
 
 				}
-
-				return width;
 			},
+			// 
 			height: function(value) {
 				var length = this.length || 0;
-				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
-
 				if(!length) return this;
 
 				try {
@@ -1229,13 +1269,9 @@ Copyright (c) Sung-min Yu
 								document.documentElement.clientHeight
 							);
 						}else {
-							//return this[0].clientHeight;
-							//return Number(this.css('height').replace(regexp_not_num, '')); // css() 함수를 통한 값 추출과 사용목적에 차이가 있다.
-							return Number(module.getElementWidthHeight.call(this, 'height').replace(regexp_not_num, ''));
+							return module.getElementWidthHeight(this[0], 'height');
 						}
 					}else { // set
-						//this.css.call(this, {"height": value});
-						//return this;
 						this.css({"height": value});
 					}
 				}catch(e) {
@@ -1245,70 +1281,34 @@ Copyright (c) Sung-min Yu
 			// border 안쪽 크기 (padding 포함)
 			innerHeight: function() {
 				var length = this.length || 0;
-				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
-				var height = 0;
-				var tmp;
-
 				if(!length) return this;
 				
 				// inner
 				try {
 					if(this[0] == window || this[0].nodeType == 9) { // window, document
-						height = this.height();
+						return this.height();
 					}else {
-						height += Number(module.getElementWidthHeight.call(this, 'height').replace(regexp_not_num, ''));
-						if('height' in this[0].style && this[0].style.height !== '') {
-							//height += Number(this[0].style.height.replace(regexp_not_num, ''));
-							height += Number(this[0].style.paddingTop.replace(regexp_not_num, '')) + Number(this[0].style.paddingBottom.replace(regexp_not_num, ''));
-						}else if(window.getComputedStyle) {
-							tmp = document.defaultView.getComputedStyle(this[0], null);
-							//height += Number(tmp.getPropertyValue('height').replace(regexp_not_num, ''));
-							height += Number(tmp.getPropertyValue('padding-top').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('padding-bottom').replace(regexp_not_num, ''));
-						}
+						return module.getElementWidthHeight(this[0], 'height', 'inner');
 					}
 				}catch(e) {
 
 				}
-
-				return height;
 			},
 			// border 포함 크기 (padding + border 포함, 파라미터가 true 경우 margin 값까지 포함)
 			outerHeight: function(is) {
 				var length = this.length || 0;
-				var regexp_not_num = /[^0-9]/g; // 숫자 제외값
-				var height = 0;
-				var tmp;
-
 				if(!length) return this;
 
 				// outer
 				try {
 					if(this[0] == window || this[0].nodeType == 9) { // window, document
-						height = this.height();
+						return this.height();
 					}else {
-						height += Number(module.getElementWidthHeight.call(this, 'height').replace(regexp_not_num, ''));
-						if('height' in this[0].style && this[0].style.height !== '') {
-							//height += Number(this[0].style.height.replace(regexp_not_num, ''));
-							height += Number(this[0].style.paddingTop.replace(regexp_not_num, '')) + Number(this[0].style.paddingBottom.replace(regexp_not_num, ''));
-							height += Number(this[0].style.borderTopWidth.replace(regexp_not_num, '')) + Number(this[0].style.borderBottomWidth.replace(regexp_not_num, ''));
-
-							// margin
-							if(is === true) height += Number(this[0].style.marginTop.replace(regexp_not_num, '')) + Number(this[0].style.marginBottom.replace(regexp_not_num, ''));
-						}else if(window.getComputedStyle) {
-							tmp = document.defaultView.getComputedStyle(this[0], null);
-							//height += Number(tmp.getPropertyValue('height').replace(regexp_not_num, ''));
-							height += Number(tmp.getPropertyValue('padding-top').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('padding-bottom').replace(regexp_not_num, ''));
-							height += Number(tmp.getPropertyValue('border-top-width').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('border-bottom-width').replace(regexp_not_num, ''));
-
-							// margin
-							if(is === true) height += Number(tmp.getPropertyValue('margin-top').replace(regexp_not_num, '')) + Number(tmp.getPropertyValue('margin-bottom').replace(regexp_not_num, ''));
-						}
+						return module.getElementWidthHeight(this[0], 'height', 'outer', is);
 					}
 				}catch(e) {
 					
 				}
-
-				return height;
 			},
 			//
 			getClass: function() {
@@ -1498,17 +1498,18 @@ Copyright (c) Sung-min Yu
 				// toggle, show, hide
 				var setDisplsyType = function(element, property, value) {
 					if(!element || !property) return false;
-					//var result = {'animate': {}, 'queue': {}}; // animate: 현재 애니메이션에 적용할 css property, queue: 애니메니션이 종료된 후 적용할 css property
+					// animate: 현재 애니메이션에 적용할 css property
+					// queue: 애니메니션이 종료된 후 적용할 css property
 					var result = {'property': null, 'start': null, 'end': null, 'queue': {}};
 					var display, visibility, opacity, tmp;
-					/*
-					queue 를 사용하여, 현재의 display, visibility, opacity 설정을 저장했다가, 복구해야하나?
-					*/
 
 					if(regexp.display_list.test(property)) { // display, visibility, opacity
-						// display 기본값: block
-						// visibility 기본값: visible
-						// opacity 기본값: 1
+						/*
+						css property 기본값
+						display: block
+						visibility: visible
+						opacity: 1
+						*/
 						display = element.css('display');
 						//visibility = element.css('visibility');
 						opacity = element.css('opacity');
@@ -1525,23 +1526,30 @@ Copyright (c) Sung-min Yu
 						// show, hide
 						switch(value) {
 							case 'show':
-								if(display && display === 'none') {
-									element.css({'opacity': 0, 'display': 'block'});
+								if(display !== 'none' && opacity > 0) {
+									return false;
 								}else {
-									element.css({'opacity': 0});
+									element.css({'display': 'block', 'opacity': 0});
 								}
-								// 반환값
+								// 애니메이션
 								result['property'] = 'opacity';
 								result['start'] = 0;
-								result['end'] = (0 < opacity) ? opacity : 1; // 사용자가 element 에 opacity 를 설정했는지 확인
+								result['end'] = (0 < opacity) ? opacity : 1;
+								// 애니메이션 종료 후 처리
+								result['queue']['display'] = null; 
+								result['queue']['opacity'] = null;
 								break;
 							case 'hide':
-								element.css({'opacity': 1});
-								// 반환값
+								if(display === 'none' && opacity === 0) {
+									return false;
+								}
+								// 애니메이션
 								result['property'] = 'opacity';
-								result['start'] = 1;
+								result['start'] = (0 < opacity) ? opacity : 1;
 								result['end'] = 0;
-								result['queue']['display'] = 'none'; // 애니메이션 종료 후 display 처리
+								// 애니메이션 종료 후 처리
+								result['queue']['display'] = 'none'; 
+								result['queue']['opacity'] = null;
 								break; 
 						}
 					}else if(regexp.pixel_unit_list.test(property)) { // px 단위 property
@@ -1605,7 +1613,7 @@ Copyright (c) Sung-min Yu
 								set[key] = properties[key];
 							}
 						}
-						
+
 						// 실행
 						if(Object.keys(set).length > 0) {
 							
@@ -1617,6 +1625,7 @@ Copyright (c) Sung-min Yu
 							});
 
 							// 설정값 실행
+							// 애니메이션 시간을 체크하여, 해당 시간이내에 콜백이 실행되지 않았을 경우 강제 실행 할 수 있도록 구현하자!!!
 							window.setTimeout(function() { // opacity 등의 적용 때문에 setTimeout 사용
 								element.css(set);
 								element.one(event_transform, function() {
@@ -2015,4 +2024,4 @@ Copyright (c) Sung-min Yu
 	// api.core 수정하지 못하도록 제어
 
 
-}(window);
+}(this);
