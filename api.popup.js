@@ -61,22 +61,18 @@ Copyright (c) Sung-min Yu
 			}
 		};
 
-		var setOverriding = function(settings, options) {
+		var setSettings = function(settings, options) {
 			var key;
 			for(key in options) {
-				try {
-					if(options[key].constructor === Object) {
-						settings[key] = setOverriding(settings[key], options[key]);
-					}else {
-						settings[key] = options[key];
-					}
-				}catch(e) {
+				if(options[key].constructor === Object) {
+					settings[key] = setSettings(settings[key], options[key]);
+				}else {
 					settings[key] = options[key];
 				}
 			}
 			return settings;
 		};
-		that.settings = setOverriding(that.settings, parameter);
+		that.settings = setSettings(that.settings, parameter);
 
 		// element
 		that.element = {

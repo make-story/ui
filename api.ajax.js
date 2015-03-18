@@ -5,12 +5,16 @@ The MIT License (MIT)
 Copyright (c) Sung-min Yu 
 */
 
-;void function(global) {
+(function(api, global) {
+
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || typeof global.api === 'undefined' || typeof global.api.ajax !== 'undefined') return false;
+	if(typeof global === 'undefined' || global !== window || !global.api) return false;	
+	return api(global);
 
+})(function(global) {
+
+	'use strict'; // ES5
 	global.api.ajax = function(parameter) {
-
 		var that = this;
 
 		// XMLHttpRequest 인스턴스
@@ -113,5 +117,5 @@ Copyright (c) Sung-min Yu
 		that.instance.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 		that.instance.send(settings.data);
 	};
-
-}(window);
+	
+}, this);
