@@ -79,14 +79,14 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 				// return this[0].style[property]; // 방법1(CSS 속성과 JS 에서의 CSS 속성형식이 다르므로 사용불가능)
 				// return this[0].style.getPropertyValue(property); // 방법2(CSS 속성명을 사용하여 정상적 출력가능)
 				// 방법3
-				if(property == 'opacity' && element.filters) { // IE opacity
+				/*if(property == 'opacity' && element.filters) { // IE opacity (버전8 이하)
 					value = 1;
 					try {
 						value = element.filters.item('alpha').opacity / 100;		
 					}catch(e) {
 						console.log(e);
 					}
-				}else if(element.style[property]) { // style로 값을 구할 수 있는 경우
+				}else */if(element.style[property]) { // style로 값을 구할 수 있는 경우
 					// HTML DOM Style Object (CSS 속성방식이 아닌 Jvascript property 방식)
 					// (예: background-color -> backgroundColor)
 					value = element.style[property];

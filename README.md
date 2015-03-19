@@ -10,7 +10,8 @@ _작업시 고민했던 부분_
 개발자 의도와 다르게 실행되는 것을 방지
 
 <pre>
-;void function(global) {   ...
+;void function() { ... };
+;(function() { ... })();
 </pre>
  
 <br />
@@ -27,9 +28,10 @@ _작업시 고민했던 부분_
 
 <pre>
 var api = {};
-api.code. ...
-api.dom. ...
-api.ajax ...
+api.code
+api.dom
+api.ajax
+...
 </pre>
 
 <br />
@@ -85,10 +87,6 @@ api.ajax ...
 
 >해당 프로젝트에 대해 undefined, null 사용구분
 
->__undefined:__ 변수가 선언되어 있지 않았을 때를 판단
-
->__null:__ 변수는 선언되어 있으나 초기화되었을 때를 판단
-
 <br />
 ### 함수 Object 실행단계에 따른 설계
 1. 실행 콘텍스트 환경을 설정
@@ -97,13 +95,40 @@ api.ajax ...
 4. 다시 함수의 처음으로 돌아가 코드를 실행
 
 <pre>
-code
+(function(api, global) {
+	
+	// 유효성 검사 후 실제 실행
+	// 실행이 불가능한 환경에서 실행컨텍스트(undefined 바인딩 최소화) 영역 최소화
+	...
+
+	// 실행
+	api();
+
+
+})(function(){
+	
+	// 실제 코드
+
+}, this);
 </pre>
 
 <br />
 ### demos 마크업
 
-> html5 마크업 사용
+> html5 마크업을 사용하여 구현합니다. (준비중)
+
+<br />
+### 참고사이트
+
+> w3schools (css)
+>> http://www.w3schools.com/cssref/default.asp 
+
+> Peter-Paul Koch (dom)
+>> http://quirksmode.org/dom/core/
+
+> MDN (폴리필)
+>> https://developer.mozilla.org/ko/
+
 
 <br />
 API
@@ -128,6 +153,7 @@ API
 > api.core.script: script 동적로딩, 의존성관리
 
 <pre>
+// 동적로딩
 api.script(
 	['./test1.js', './test2.js', 'test3.js'], 
 	function() {
@@ -138,10 +164,15 @@ api.script(
 	}
 );
 
-api.script('test.js', function() {
-	// 성공콜백
+// 모듈화
+api.box({ ... });
+api.script('test.js', function(test) {
+
+	// test 모듈화 변수 사용
+
 });
 
+// 의존성관리
 api.script('test1.js', function() {
 	api.script(['test2.js'], function() {
 		// ...
@@ -151,97 +182,299 @@ api.script('test1.js', function() {
 
 > api.core.resize: 브라우저 리사이즈 통합 콜백
 
+<pre>
+code
+</pre>
+
 
 ###2. library: api.dom.js
 ---
 - *DOM 제어*
-- 대표적인 UI 컴포넌트 jQuery 의 기능(메소드)을 네이티브로 구현해 보는 것에 목적이 있음
-
-> selector: querySelectorAll 사용
+- 대표적인 UI 라이브러리 jQuery 의 기능(메소드)을 자체적으로 구현해 보는 것에 목적이 있음
+- Native Javascript UI 작업시 DOM 핸들링관련 필요한 기능을 사전처럼 한눈에 인덱싱(찾기)하기 위함
+- querySelectorAll selector 를 사용합니다. (jQuery 처럼 별도의 selector 엔진은 없음)
 
 > api.$(selector), api.dom.$(selector)
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).find(): 하위 dom 검색
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).closest(): 상위 dom 검색 (비효율)
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).children(): 자식 리스트
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).childElementCount(): 자식 리스트 count
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).live(): 동적 이벤트
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).on(): 이벤트 설정
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).off(): 이벤트 해제
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).one(): 일회성 이벤트
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).trigger(): 이벤트 강제실행
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).each(): element 순회
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).attr(): element 속성 확인/수정
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).removeAttr(): element 속성 삭제
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).hasAttr(): element 속성 존재여부
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).prop(): element property 확인/수정
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).removeProp(): element property 삭제
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).html(): element html 확인/수정
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).text(): element text 확인/수정
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).val(): element value 확인/수정
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).append(): 하위 요소 삽입
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).appendHtml(): 위치지정 html 삽입
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).remove(): 요소 삭제 
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).css(): css 확인/수정
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).width(): element width 값
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).innerWidth(): element width + padding 값
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).outerWidth(): element width + padding + border + [margin] 값
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).height(): element height 값
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).innerHeight(): element height + padding 값
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).outerHeight(): element height + padding + border + [margin] 값
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).getClass(): class 속성 확인
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).hasClass(): class 특성 속성값 존재여부
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).addClass(): class 속성값 추가
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).removeClass(): class 속성값 삭제
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).toggleClass(): class 속성값 toggle
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).scrollInfo(): 스크롤 x, y 정보
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).scrollTop(): 스크롤 y 정보/설정
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).scrollLeft(): 스크롤 x 정보/설정
 
+<pre>
+code
+</pre>
+
+
 > api.$(selector).data(): data (html5 data 속성) 
+
+<pre>
+code
+</pre>
+
 
 > api.$(selector).animate(): 애니메이션 (CSS3 또는 frame 함수)
 
-> 그밖의 계속 추가중...
+<pre>
+code
+</pre>
+
 
 ---
 
 > api.dom.ready(): readystatechange
+
+<pre>
+code
+</pre>
+
 
 > api.dom.html(): createDocumentFragment html 동적생성
 
@@ -269,27 +502,59 @@ api.dom.html({
 
 > api.dom.activeElement(): 문서내 포커스를 가지고 있거나 활성 상태인 노드
 
+<pre>
+code
+</pre>
+
+
 > api.dom.hasFocus(): 문서 혹은 문서 내의 특정 노드가 포커스를 가지고 있는지 판별
+
+<pre>
+code
+</pre>
+
 
 > api.dom.scrollIntoView(): element를 View로 스크롤
 
+<pre>
+code
+</pre>
+
+
 > api.dom.isEqualNode(): 두 node 가 동일한지 판단
+
+<pre>
+code
+</pre>
+
 
 > api.dom.elementOffset(): element의 Top, Right, Bottom, Left, Width, Height 값
 
+<pre>
+code
+</pre>
+
+
 > api.dom.elementFromPoint(): 뷰포트의 특정 지점(좌표)의 최상단 element 정보
+
+<pre>
+code
+</pre>
+
 
 > api.dom.elementScrollSize(): 스크롤될 element의 크기를 얻기 (문서 전체크기를 알 수 있음)
 
+<pre>
+code
+</pre>
 
 
 ###3. library: api.ajax.js
 ---
-- *Ajax 사용*
-
-> api.ajax()
+- Ajax 통신
 
 <pre>
+// 설정값
 api.ajax({
 	'type': 'GET', // GET이나 POST 같은 HTTP 메서드 타입
 	'url': '', // 요청할 URL 주소
@@ -304,6 +569,7 @@ api.ajax({
 	'success': undefined // 요청이 성공했을 때 실행할 콜백 함수
 });
 
+// 사용예
 api.ajax({
 	'url': 'test.js',
 	'success': function(data) {
@@ -313,25 +579,31 @@ api.ajax({
 </pre>
 
 
+====
+
+
 #### plugin: api.popup.js
 ---
-- *작업 진행중 입니다.*
-- *api.dom.js 를 사용합니다.*
 - div 팝업 기능을 제공합니다.
+- jQuery 또는 api.dom.js 가 필요합니다.
+
+<pre>
+code
+</pre>
 
 
 #### plugin: api.slide.js
 ---
 - *작업 진행중 입니다.*
-- *api.dom.js 를 사용합니다.*
 - div 슬라이드 기능을 제공합니다.
+- jQuery 또는 api.dom.js 가 필요합니다.
 
 
 #### plugin: api.validate.js
 ---
 - *작업 진행중 입니다.*
-- *api.dom.js 를 사용합니다.*
 - input 등 유효성 검사 기능을 제공합니다.
+- jQuery 또는 api.dom.js 가 필요합니다.
 
 ====
 
