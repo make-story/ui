@@ -1085,7 +1085,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 			</p>
 			<!-- afterend -->
 			*/
-			var position = (position === 'beforebegin' || position === 'afterbegin' || position === 'beforeend' || position === 'afterend') ? position : 'beforeend'; // beforebegin | afterbegin | beforeend | afterend
+			var position = /^(beforebegin|afterbegin|beforeend|afterend)$/i.test(position) ? position : 'beforeend';
 
 			try {
 				if(this.length) {
@@ -1159,7 +1159,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 			});
 		},
 		clone: function(is) {
-			// x = y.cloneNode(true | false); //표준
+			// x = y.cloneNode(true | false); // 표준
 			// is : 자식 노드들도 모두 복제할지 여부(true:복사, false:해당없음)
 			if(this.length && this[0].nodeType) {
 				// id를 가진 node를 복사할 때 주의하자(페이지내 중복 id를 가진 노드가 만들어 지는 가능성이 있다)
@@ -1196,8 +1196,8 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 						// document.documentElement.clientWidth; // Internet Explorer before version 9
 
 						// 2. ScreenView properties
-						// availWidth; //screen.availWidth; //표준
-						// availHeight; //screen.availHeight; //표준
+						// availWidth; //screen.availWidth; // 표준
+						// availHeight; //screen.availHeight; // 표준
 
 						return window.innerWidth || document.documentElement.clientWidth;
 					}else if(this[0].nodeType == 9) { // document
@@ -1262,8 +1262,8 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 						// document.documentElement.clientHeight; // Internet Explorer before version 9
 
 						// 2. ScreenView properties
-						// availWidth; //screen.availWidth; //표준
-						// availHeight; //screen.availHeight; //표준
+						// availWidth; //screen.availWidth; // 표준
+						// availHeight; //screen.availHeight; // 표준
 
 						return window.innerHeight || document.documentElement.clientHeight;
 					}else if(this[0].nodeType == 9) { // document
@@ -1502,7 +1502,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 			// toggle, show, hide
 			var setDisplsyType = function(element, property, value) {
 				if(!element || !property) return false;
-				// animate: 현재 애니메이션에 적용할 css property
+				// property: 현재 애니메이션에 적용할 css property
 				// queue: 애니메니션이 종료된 후 적용할 css property
 				var result = {'property': null, 'start': null, 'end': null, 'queue': {}};
 				var display, visibility, opacity, tmp;
@@ -1799,8 +1799,13 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 
 	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 
-	var result = {
-		"$": $,
+	// extend
+	(function(extend) {
+		var key;
+		for(key in extend) {
+			$[key] = extend[key];
+		}
+	})({
 		// DOM Ready
 		"ready": function(callback) { 
 			if(document.readyState === "complete") {
@@ -1968,9 +1973,11 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 
 			// 생성
 			if(parameter.child) {
-				if(parameter.parent) { // 부모 element 에 삽입할 경우
+				if(parameter.parent) { 
+					// 부모 element 에 삽입할 경우
 					$(parameter.parent).append(setCreate(parameter.child));	
 				}else {
+					// element 를 반환할 경우
 					return setCreate(parameter.child);
 				}
 				//$(parameter.parent || 'body').append(setCreate(parameter.child));
@@ -2020,16 +2027,14 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 			}
 			return {"height": height, "width": width};
 		}
-	};
-	
+	});
+
 	// api box 기능을 사용할 경우
 	if(api.box && typeof api.box === 'function') {
-		return api.box(result);
+		return api.box($);
+	}else {
+		// $ 접근: global.api.$() 또는 global.api.dom()
+		global.api.$ = global.api.dom = $;
 	}
-	
-	global.api.dom = result;
-
-	// $ 접근: global.api.$() 또는 global.api.dom.$()
-	global.api.$ = global.api.dom.$;
 
 }, this);

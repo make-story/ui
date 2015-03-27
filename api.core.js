@@ -11,7 +11,7 @@ Copyright (c) Sung-min Yu
 (function(api, global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global !== window) return false;	
+	if(typeof global === 'undefined' || global !== window) return false;
 	return api(global);
 
 })(function(global) {
@@ -188,262 +188,215 @@ Copyright (c) Sung-min Yu
 	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 
 	// script 삽입: 동적로딩, 의존성관리, 모듈화
-	var Script = function() {
-		// 대기 리스트 - 구조: [{"list": ['JS load 파일', ... ], "count": "JS load 파일 총 개수", "success": 성공콜백, "error": 실패콜백, "uninitialized": ['load 실패 리스트', ... ], "complete": ['load 성공 리스트', ... ]}, ... ]
-		this['queue'] = []; 
-		// 현재 작업중인 정보 - Module의 인스턴스 정보가 들어간다
-		this['module'];
-		// 전체 JS 작업 정보
-		this['uninitialized'] = []; // 실패 리스트
-		this['complete'] = this.getScriptElements(); // 완료 리스트 (동일한 경로의 값이라도 load가 성공하면 리스트에 추가된다.)
-		this['box'] = {}; // 모듈화에 필요한 JS 파일별 값 - 구조: {'JS 파일명': 'box 반환값', 'JS 파일명': 'box 반환값', ... }
+	// api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동하지 않는다.
+	var Call = function() {
+		/*
+		- 메소드 실행순서
+		setQueue() -> setList() -> setLoad() -> setBox() -> setState() -> setCallback()
+		*/
+
+		// 대기중인 작업 - 구조: [{"list": ['JS load 파일', ... ], "count": "JS load 파일 총 개수", "success": 성공콜백, "error": 실패콜백, "uninitialized": ['load 실패 리스트', ... ], "complete": ['load 성공 리스트', ... ]}, ... ]
+		this['queue'] = {
+			'script': [],
+			'box': []
+		};
+
+		// 현재 진행중인 작업
+		this['action']; // Module 인스턴스 값
+		this['wait'] = []; // box 의 js list load 에 따라 대기중인 인스턴스 값
+
+		// 전체 작업정보 (작업결과)
+		this['result'] = {
+			'uninitialized': [], // 실패 리스트
+			'complete': this.dom.getScript(), // 성공 리스트 (동일한 경로의 값이라도 load가 성공하면 리스트에 추가된다.)
+			'box': {} // 모듈화에 필요한 JS 파일별 값 - 구조: {'JS 파일명': 'box 반환값', 'JS 파일명': 'box 반환값', ... }
+		};
 	};
-	Script.prototype = {
-		// 개별 JS 정보 모듈
-		Module: function() {
-			// 
-			this['list'] = []; // 작업 리스트
-			this['count'] = 0; // 작업 리스트 총 개수
-			// 
-			this['success'] = function() {}; // 성공 콜백
-			this['error'] = function() {}; // 에러 콜백
-			this['uninitialized'] = []; // 실패 리스트
-			this['complete'] = []; // 성공 리스트
-			this['box'] = { // 작업 리스트의 개별 JS가 반환하는 box 값 (콜백 반환값 아님)
-				'count': 0,
-				'data': []
-			}; 
+	Call.prototype = {
+		dom: {
+			// document에 존재하는 script element 리스트
+			getScript: function() {
+				var elements = document.getElementsByTagName('script');
+				//var elements = document.scripts;
+				var scripts = [];
+				var src;
+				if(typeof elements === 'object') {
+					for(var i=elements.length-1; i>=0; i-=1) {
+						if(typeof elements[i].src !== 'undefined' && elements[i].src !== '') {
+							//src = elements[i].src; // 상대경로가 자동 절대경로로 변경
+							src = elements[i].getAttribute('src');
+							scripts.push(src);
+						}
+					}
+				}
+
+				return scripts;
+			},
+			// script element 생성
+			setScriptCreate: function() {
+				//var element = config.xhtml ? document.createElementNS('http://www.w3.org/1999/xhtml', 'html:script') : document.createElement('script'); // 참고
+				var element = document.createElement("script");
+				element.type = 'text/javascript';
+				//element.charset = 'utf-8';
+				element.async = true;
+
+				return element;
+			},
+			// element 를 head 에 추가
+			setScriptInsert: function(element) {
+				var head = document.getElementsByTagName('head')[0]; 
+				//If BASE tag is in play, using appendChild is a problem for IE6.
+				var base = document.getElementsByTagName('base')[0];
+				if(base) {
+					head = base.parentNode;
+					head.insertBefore(element, base);
+				}else {
+					head.appendChild(element);
+				}
+			}
 		},
-		init: function() {
+		// 모듈
+		Module: function() {
+			// 모듈 타입
+			this['type'] = 'script'; // script | box
+			// 공통
+			this['file'] = { 
+				'count': 0, // 현재 작업 개수 카운트
+				'total': 0, // 작업 리스트 총 개수
+				'list': [] // 작업 리스트
+			};
+			// box 작업에 사용되는 정보
+			this['box'] = {
+				'count': 0, // 현재 box 개수 카운트
+				'factory': [] // IE는 setBox가 js list 별로 모두 실행된 후 setState 가 실행되므로 타입이 배열로 되어있어야 한다.
+			};
+			// 모듈간 관계
+			this['relation'] = {
+				// 연결된 모듈 인스턴스 값
+				'parent': undefined,
+				/*
+				- 매칭작업
+				setState 함수에서 매칭작업이 진행되며,
+				this['relation']['parent'] 인스턴스에서 box 인스턴스가 module 배열에서 몇번째 index 에 있는지 확인하여,
+				이 index 값을 가지고 file 배열에서 현재 box 인스턴스가 어떤 src 인지 확인한다.
+				*/
+				'file': [], // load 된 파일 순서
+				'module': [] // box 인스턴스 순서
+			};
+			// 해당 Module 작업 결과
+			this['result'] = {
+				'uninitialized': [], // 실패 리스트
+				'complete': [] // 성공 리스트	
+			};
+			// 작업 결과에 따른 콜백 (type이 script 의 경우만 실행)
+			this['success'] = function() {}; 
+			this['error'] = function() {}; 
+		},
+		// script load
+		setScript: function() {
+			console.log('---------- setScript 실행');
 			// arguments를 배열로 변환
 			var args = Array.prototype.slice.call(arguments);
+			var queue = this['queue'];
 
-			// 해당 모듈 인스턴스 생성
+			// 모듈 인스턴스 생성
 			var module = new this.Module(); 
+			queue['script'].push(module);
+
+			// 파라미터 확인
 			switch(args.length) {
 				case 3:
 					// 에러 콜백 함수
 					module['error'] = args.pop();
-					//if(typeof module['error'] !== 'function') return; // try{}catch{} 제어로 변경
 				case 2:
 					// 완료 콜백 함수
 					module['success'] = args.pop();
-					//if(typeof module['success'] !== 'function') return; // try{}catch{} 제어로 변경
-					break;
-				default:
-					// js 로드만 실행
-
 					break;
 			}
 
-			// 작업 리스트에 추가
-			module['list'] = (args[0] && typeof args[0] === "string") ? args : args[0];
-			module['count'] = module['list'].length; // js 파일 리스트 총 개수
-			this.queue.push(module);
+			// 작업 정보 설정
+			module['type'] = 'script';
+			module['file']['list'] = (args[0] && typeof args[0] === "string") ? args : args[0];
+			module['file']['total'] = module['file']['list'].length; // js 파일 리스트 총 개수
 
 			// 실행
 			this.setQueue();
 		},
-		// 모듈화 (load 성공콜백시 파라미터로 전달하는 값)
-		setBox: function(work) {			
-			if(typeof work === 'function') {
-				work = work();
+		setBox: function() {	
+			// 흐름: setBox 가 실행되고, setState 가 실행
+			// box(['파일', ... ], function() { return 반환값; }), 또는 box(반환값)
+			// js 파일 load -> 해당 js파일의 box 리스트로드 -> 해당 js파일의 box 리스트로드 -> ... 계층적으로 js파일 load 가 이루어질 수 있음
+			console.log('---------- setBox 실행');
+			
+			// arguments를 배열로 변환
+			var args = Array.prototype.slice.call(arguments);
+			var queue = this['queue'];
+			var action = this['action'];
+			var module;
+
+			if(!action || typeof action !== 'object') return;
+
+			// 파라미터 확인
+			switch(args.length) {
+				case 2:
+					// 모듈 인스턴스 생성
+					module = new this.Module();
+					queue['box'].push(module);
+					// 작업 정보 설정
+					module['type'] = 'box';
+					module['file']['list'] = args.shift();
+					module['file']['total'] = module['file']['list'].length;
+					// 관계 설정
+					module['relation']['parent'] = action; // 추가 모듈에 현재 인스턴스값 설정
+				case 1:
+				default:
+					//
+					action['relation']['module'].push(module); // module: 파라미터가 2개의 경우 module은 box의 인스턴스 값이 들어가며, 1개의 경우 undefined 가 들어가도록 설계 (['relation']['file'] 리스트와 매칭작업 때문)
+					//
+					action['box']['count']++;
+					action['box']['factory'].push(args.shift()); // box를 담고 있는 객체(또는 함수, undefined)
+					break;
 			}
-			this.module['box']['count']++;
-			this.module['box']['data'].push(work);
 		},
-		// queue(작업) 리스트 순차 실행
+		// queue(대기중인 작업) 순차 실행
 		setQueue: function() {
-			if(typeof this.module === 'object' || this.queue.length === 0) return;
+			console.log('---------- setQueue 실행');
+			var queue = this['queue'];
 			
 			// 현재 실행 모듈에 적용
-			this.module = this.queue.shift(); 
-			if(this.module['list'].length === 0) { // 실행할 js load 리스트가 없거나, 중복된 js 파일이 이미 load 되어 리스트가 비어있을 경우
-				delete this.module;
+			if(queue['box'].length > 0) {
+				this['action'] = queue['box'].shift();
+			}else if(queue['script'].length > 0) {
+				this['action'] = queue['script'].shift();
+			}else {	
+				//this['action'] = undefined;
+				delete this['action'];
+				return;
+			}
+			// list 실행
+			if(this['action']['file']['list'].length === 0) { // 실행할 js load 리스트가 없거나, 중복된 js 파일이 이미 load 되어 리스트가 비어있을 경우
 				this.setQueue(); // 재귀실행
 			}else {
 				this.setList(); // js 파일 리스트 실행
 			}
 		},
-		// queue 내부 js 리스트 순차 실행
+		// Module 내부 list(JS 파일) load 실행
 		setList: function() {
-			if(typeof this.module !== 'object') return; 
-
-			var list = this.module['list'];
+			console.log('---------- setList 실행');
+			if(!this['action'] || typeof this['action'] !== 'object') return;
+			var list = this['action']['file']['list'];
 			var i, max, src;
 			
-			// js 리스트를 async 사용하여 load
+			// async 사용하여 JS리스트 전체 load 실행
 			for(i=0, max=list.length; i<max; i++) {
 				src = list[i];
-				if(this.complete.indexOf(src) > -1) {
+				if(this['result']['complete'].indexOf(src) > -1) {
 					// complete 되어있음 (이미 load 되어 있는 파일)
 					this.setState(src, 'complete');
 				}else {
 					// load 실행
 					this.setLoad(src);
 				}
-			}
-
-			/*
-			// js 리스트를 순차적으로 load - 이 방식은 async 사용하지 않는 방식으로, 동적 load 개발의미를 벗어난다
-			if(list.length > 0) {
-				src = list.shift();
-				if(this.complete.indexOf(src) > -1) {
-					// 기존 존재
-					//console.log('기존 존재');
-					this.setState(src, 'complete');
-				}else {
-					// 신규 생성
-					//console.log('신규 생성');
-					this.setLoad(src);
-				}	
-			}else {
-				// 다음 queue 실행
-				this.setQueue();
-			}
-			*/
-		},
-		// load 에 따른 상태 설정 (setLoad 함수에서 실행됨)
-		setState: function(src, state) { // state: uninitialized(실패), complete(완료)
-			if(typeof this.module === 'undefined' || !src || !state || (state !== 'uninitialized' && state !== 'complete')) return;
-
-			// 전체 상태정보에 추가 - uninitialized[], complete[]
-			this[state].push(src);
-
-			// 현재 모듈(queue) 상태정보에 추가
-			this.module[state].push(src);
-			
-			// box 정보
-			if(state === 'complete') {
-				if(!(src in this['box'])) { 
-					// 개별 모듈의 box 확인
-					if(this.module['complete'].length > this.module['box']['count']) {
-						// 해당 js 내부 box 실행 함수가 없으므로 강제 실행
-						this.setBox(); 
-					}
-
-					// 전체 JS 정보에 추가 (필히 개별 box 확인 작업 후 실행되어야 한다)
-					if(this.module['complete'].length < this.module['box']['count']) { 
-						// IE (익스플로러는 여러개의 JS 파일을 load 할 경우, box 함수가 모두 실행되고 이 부분이 실행될 수 있다.)
-						this['box'][src] = this.module['box']['data'].shift(); // 첫번째 (선입선출)
-					}else {
-						this['box'][src] = this.module['box']['data'].pop(); // 마지막 (후입선출)
-					}
-				}
-			}
-			
-			// 대기 모듈(queue)에서 현재 작업된 src 확인
-			var ready_module, ready_queue, ready_list;
-			for(ready_queue in this.queue) {
-				// 인스턴스 값
-				ready_module = this.queue[ready_queue]; 
-				// 존재여부 확인
-				ready_list = (typeof ready_module['list'] === 'object' && ready_module['list'].length > 0) ? ready_module['list'].indexOf(src) : -1; 
-				// 현재 this.module 의 인스턴스가 아닌 대기중인 queue 의 인스턴스 작업임을 알야야 한다.
-				if(ready_list > -1) { 
-					// 대기중인 queue 에서 해당 src 관련 정보 변경
-					ready_module[state].push(src);
-					// box 정보
-					ready_module['box'].push(this['box'][src]);
-					// 대기 리스트 요소 제거
-					//ready_module['list'].splice(ready_list, 1); // js list 를 지우게 되면, 하단 callback 에서 box 조립시 list 배열 정보를 몰라서 파라미터 작업을 못한다!!!!
-					// 해당 콜백 실행
-					this.setCallback(ready_module);
-				}
-			}
-			
-			// 콜백실행
-			this.setCallback(this.module);
-		},
-		// 사용자 콜백 실행 (setState 함수에서 실행됨)
-		// 현재 실행중인 모듈(this.module)이 아닌, 대기중인 모듈에서 중복된 js 파일의 콜백이 먼저 실행될 수 있다. 그러므로 module === this.module 를 확인하여 현재 실행모듈을 초기화 해야 한다.
-		setCallback: function(module) {
-			if(typeof module !== 'object') {
-				//console.log("typeof module !== 'object'");
-				return;
-			}
-			var queue_length = module['count'];
-			var uninitialized_length = module['uninitialized'].length; // 실패
-			var complete_length = module['complete'].length; // 성공
-			var total = Number(uninitialized_length) + Number(complete_length);
-			var i, arr, index;
-
-			if(uninitialized_length > 0) { // 실패
-				// 에러 콜백 실행
-				try {
-					module['error'].call(module);
-				}catch(e) {
-					console.log(e);
-				}
-				// 현재 작업 정보 초기화
-				if(module === this.module) {
-					//this.module = undefined; 
-					delete this.module;
-				}
-				// 다음 queue 실행
-				this.setQueue();
-				//this.setList();
-			}else if(complete_length == queue_length) { // 성공
-				// 정상 콜백 실행
-				try {
-					// box 파라미터 조립
-					arr = new Array(queue_length);
-					for(i=0; i<queue_length; i++) {
-						arr[i] = this['box'][module['list'][i]];
-					}
-					delete module['box']; // 개별 box 데이터 제거
-
-					module['success'].apply(module, arr);
-				}catch(e) {
-					console.log(e);
-				}
-				// 현재 작업 정보 초기화
-				if(module === this.module) {
-					//this.module = undefined;
-					delete this.module;
-				}
-				// 다음 queue 실행
-				this.setQueue();	
-				//this.setList();
-			}
-		},
-		// document에 존재하는 script element 리스트
-		getScriptElements: function() {
-			var elements = document.getElementsByTagName('script');
-			//var elements = document.scripts;
-			var scripts = [];
-			if(typeof elements === 'object') {
-				for(var i=elements.length-1; i>=0; i-=1) {
-					if(typeof elements[i].src !== 'undefined' && elements[i].src !== '') {
-						// getAttribute: elements[i].src 프로퍼티로 직접 접근할 경우 상대경로가 자동 절대경로로 변경되어 실제 값과 차이가 발생하기 때문
-						var src = elements[i].getAttribute('src');
-						scripts.push(src);
-					}
-				}
-			}
-
-			return scripts;
-		},
-		// script element 생성
-		setScriptCreate: function() {
-			//var element = config.xhtml ? document.createElementNS('http://www.w3.org/1999/xhtml', 'html:script') : document.createElement('script'); // 참고
-			var element = document.createElement("script");
-			element.type = 'text/javascript';
-			//element.charset = 'utf-8';
-			element.async = true;
-
-			return element;
-		},
-		// element 를 head 에 추가
-		setScriptInsert: function(element) {
-			var head = document.getElementsByTagName('head')[0]; 
-			//If BASE tag is in play, using appendChild is a problem for IE6.
-			var base = document.getElementsByTagName('base')[0];
-			if(base) {
-				head = base.parentNode;
-				head.insertBefore(element, base);
-			}else {
-				head.appendChild(element);
 			}
 		},
 		// script 로드, 에러 이벤트
@@ -460,7 +413,7 @@ Copyright (c) Sung-min Yu
 					var that = this;
 					var pending_script_list = [];
 					var error_script_list = [];
-					var element = that.setScriptCreate();
+					var element = that.dom.setScriptCreate();
 					
 					var handlers = function(parameter) { // IE 9 하위 버전에서는 event 객체 반환이 없음
 						// this 에는 이벤트의 해당 element 값이 들어 있으므로 오염에 주의해야 한다.
@@ -504,12 +457,12 @@ Copyright (c) Sung-min Yu
 
 					// IE 는 src 속성과 script 삽입이 이벤트(onreadystatechange, onerror) 등록 후 이루어져야 한다.
 					element.src = src;
-					that.setScriptInsert(element);
+					that.dom.setScriptInsert(element);
 				}
 			}else if(window.addEventListener) {
 				return function(src) {
 					var that = this;
-					var element = that.setScriptCreate();
+					var element = that.dom.setScriptCreate();
 					var handlers = function(parameter) {
 						// this 에는 이벤트의 해당 element 값이 들어 있으므로 오염에 주의해야 한다.
 
@@ -527,14 +480,175 @@ Copyright (c) Sung-min Yu
 					element.addEventListener('load', handlers, false);
 
 					element.src = src;
-					that.setScriptInsert(element);
+					that.dom.setScriptInsert(element);
 				}
 			}else {
 				return function(){};
 			}
-		})()
+		})(),
+		// load 에 따른 상태 설정 (setLoad 함수에서 실행됨)
+		setState: function(src, state) { // state: uninitialized(실패), complete(완료)
+			console.log('---------- setState 실행');
+			var queue = this['queue'];
+			var action = this['action'];
+			var wait = this['wait'];
+			var result = this['result'];
+
+			console.log('src: ' + src);
+
+			// 유효성 검사
+			if(typeof action !== 'object' || !src || !state || (state !== 'uninitialized' && state !== 'complete')) return;
+
+			// 전체 상태정보에 추가 - uninitialized[], complete[]
+			result[state].push(src);
+
+			// 현재 모듈(queue) 상태정보
+			action['file']['count']++;
+			action['relation']['file'].push(src);
+			action['result'][state].push(src);
+
+			// box
+			if(!(src in result['box'])) { 
+				// 개별 모듈의 box 확인
+				if(action['file']['count'] > action['box']['count']) {
+					// 해당 js 내부 box 실행 함수가 없으므로 강제 실행
+					this.setBox(); 
+				}
+
+				// 전체 JS 정보에 추가 (필히 개별 box 확인 작업 후 실행되어야 한다)
+				if(action['file']['count'] < action['box']['count']) { 
+					// IE (익스플로러는 여러개의 JS 파일을 load 할 경우, box 함수가 모두 실행되고 이 부분이 실행될 수 있다.)
+					result['box'][src] = action['box']['factory'].shift(); // 첫번째 (선입선출)
+				}else {
+					result['box'][src] = action['box']['factory'].pop(); // 마지막 (후입선출)
+				}
+			}
+
+			// 
+			if(action['file']['count'] === action['file']['total']) { 
+				if(queue['box'].length > 0) {
+					wait.push(action);
+					this.setQueue();
+					return;
+				}else {
+
+					// 현재 module 타입이 box 인것 처리 (factory 재설정)
+					if(wait.length > 0 || action['type'] === 'box') {
+						var i = wait.length;
+						var instance = action;
+						var parent, index, file, arr, j, max;
+						do {
+							// factory 재설정
+							if(instance['type'] === 'box' && instance['file']['count'] === instance['file']['total']) {
+								// 현재 box가 parent 의 module 배열에서 몇번째 index에 위치해 있는지 확인
+								// index 값으로 file 배열에서 해당 index file 값을 가져온다.
+								parent = instance['relation']['parent'];
+								if(parent && typeof parent === 'object') {
+									index = parent['relation']['module'].indexOf(instance);
+									file = parent['relation']['file'][index];
+									console.log('index: ' + index);
+									console.log('file: ' + file);
+									// facroty 값 재설정
+									if(typeof result['box'][file] === 'function') {
+										arr = [];
+										for(j=0, max=instance['file']['total']; j<max; j++) {
+											arr.push(result['box'][instance['file']['list'][j]]);
+										}
+										result['box'][file] = result['box'][file].apply(null, arr);
+									}
+								}
+							}
+							// wait 순차처리 (wait의 0번째 index 는 type 이 script 이므로 제외됨)
+							i -= 1;
+							if(i < 1) {
+								break;
+							}else {
+								instance = wait[i];
+							}
+						}while(true);
+
+						// 현재 action 값 변경
+						action = wait[0];
+					}
+					console.dir(result['box']);
+
+
+					/*
+					if(action['type'] === 'script') {
+						// 대기 모듈(queue)에서 현재 작업된 src 확인
+						var ready_module, ready_queue, ready_list;
+						for(ready_queue in queue['script']) {
+							// 인스턴스 값
+							ready_module = queue['script'][ready_queue]; 
+							// 존재여부 확인
+							ready_list = (typeof ready_module['list'] === 'object' && ready_module['list'].length > 0) ? ready_module['list'].indexOf(src) : -1; 
+							// 현재 action 의 인스턴스가 아닌 대기중인 queue 의 인스턴스 작업임을 알야야 한다.
+							if(ready_list > -1) { 
+								// 대기중인 queue 에서 해당 src 관련 정보 변경
+								ready_module[state].push(src);
+								// box 정보
+								ready_module['box'].push(this['box'][src]);
+								// 대기 리스트 요소 제거
+								//ready_module['list'].splice(ready_list, 1); // js list 를 지우게 되면, 하단 callback 에서 box 조립시 list 배열 정보를 몰라서 파라미터 작업을 못한다!!!!
+								// 해당 콜백 실행
+								this.setCallback(ready_module);
+							}
+						}
+					}
+					*/
+
+					// 콜백실행
+					this.setCallback(action);
+				}
+			}		
+		},
+		// 사용자 콜백 실행 (setState 함수에서 실행됨)
+		setCallback: function(instance) {
+			console.log('---------- setCallback 실행');
+			if(typeof instance !== 'object') return;
+			
+			var result = this['result'];
+			var uninitialized = instance['result']['uninitialized'];
+			var complete = instance['result']['complete'];
+			var arr, j, max;
+
+			if(uninitialized.length > 0) { // 실패
+				// 에러 콜백 실행
+				try {
+					instance['error'].call(instance['result']);
+				}catch(e) {
+					console.log(e);
+				}
+				// 현재 작업 정보 초기화
+				if(instance === this['action']) {
+					//this['action'] = undefined; 
+					delete this['action'];
+				}
+				// 다음 queue 실행
+				this.setQueue();
+			}else if(instance['file']['count'] === instance['file']['total']) { // 성공
+				// 정상 콜백 실행
+				try {
+					// box 파라미터 조립
+					arr = [];
+					for(j=0, max=instance['file']['total']; j<max; j++) {
+						arr.push(result['box'][instance['file']['list'][j]]);
+					}
+					instance['success'].apply(instance['result'], arr);
+				}catch(e) {
+					console.log(e);
+				}
+				// 현재 작업 정보 초기화
+				if(instance === this['action']) {
+					//this['action'] = undefined; 
+					delete this['action'];
+				}
+				// 다음 queue 실행
+				this.setQueue();
+			}
+		}
 	};
-	var instance_script = new Script();
+	var instance_call = new Call();
 
 	// resize callback 관리
 	var Resize = function() {
@@ -592,8 +706,8 @@ Copyright (c) Sung-min Yu
 
 	global.api = {
 		"core": core,
-		"box": instance_script.setBox.bind(instance_script),
-		"script": instance_script.init.bind(instance_script),
+		"box": instance_call.setBox.bind(instance_call),
+		"script": instance_call.setScript.bind(instance_call),
 		"resize": instance_resize
 	};
 

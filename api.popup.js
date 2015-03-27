@@ -5,7 +5,7 @@ The MIT License (MIT)
 Copyright (c) Sung-min Yu
 */
 
-(function(api, global) {
+(function(factory , global) {
 
 	'use strict'; // ES5
 	if(typeof global === 'undefined' || global !== window) return false;	
@@ -20,7 +20,7 @@ Copyright (c) Sung-min Yu
 		return false;
 	}
 
-	return api($, global);
+	return factory ($, global);
 
 })(function($, global) {
 
