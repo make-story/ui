@@ -13,8 +13,7 @@ Copyright (c) Sung-min Yu
 
 })(function(global) {
 
-	'use strict'; // ES5
-	global.api.module = {
+	var module = {
 		// 상속 - 추후 Object.create() 로 변경하자!
 		inherit: function(C, P) {
 			/*
@@ -46,6 +45,7 @@ Copyright (c) Sung-min Yu
 			C.prototype.constructor = C; // 생성자 재설정 (런타임시 객체 판별)
 		},
 		// deep copy
+		// http://davidwalsh.name/javascript-clone
 		clone: function clone(src, deep) { // src: target, deep: true|false
 			if(!src && typeof src != "object") {
 				// any non-object ( Boolean, String, Number ), null, undefined, NaN
@@ -101,16 +101,24 @@ Copyright (c) Sung-min Yu
 
 			return ret;
 		},
+		// json deep copy
+		jsonDeepCopy: function(original, copy) {
+			// json object 를 string 으로 바꾸고, string 을 다시 object로 변경하는 방법을 사용한다.
+			if(typeof original === 'object' && typeof copy === 'object') {
+				return original = JSON.parse(JSON.stringify(copy)); 
+			}else {
+				return original;
+			}
+		},
 		// 반응형 계산
 		sizePercent: function(t, c) {
 			//공식 : target / content = result
 			//예제 : 60(구하고자하는 크기) / 320(기준) = 0.1875 -> 18.75%
 			//예제 : 10 / 320 = 0.03125 -> 3.125
-			var 
-				target = Number(t),
-				//content = c || api.core.grid.width,
-				content = Number(c),
-				result = (target / content) * 100;
+			var target = Number(t);
+			//var content = c || api.core.grid.width;
+			var content = Number(c);
+			var result = (target / content) * 100;
 
 			return result; 
 		},
@@ -127,7 +135,9 @@ Copyright (c) Sung-min Yu
 		 *
 		 * stopImmediatePropagation: 현재 이벤트가 상위뿐 아니라 현재 레벨에 걸린 다른 이벤트도 동작하지 않도록 중단한다.
 		 *
-		 * 사용자가 발생한 이벤트를 중지하느냐, 기본 이벤트를 중지하느냐의 차이
+		 * 
+		 사용자가 발생한(설정한) 현재 element 이벤트의 상위 element 이벤트를 중지시키는냐, 
+		 브라우저 기본 이벤트를 중지하느냐의 차이
 		 	<a href="http://test.com">
 		 		<div id="div">
 					<img src="" id="img" />
@@ -165,7 +175,7 @@ Copyright (c) Sung-min Yu
 		startCall: function(callback, seconds) { 
 			if(typeof callback !== 'function') return false;
 			var seconds = seconds || 3000; //1000 -> 1초
-			//시간 작동
+			// 시간 작동
 			var time = window.setTimeout(function(){ callback(); }, seconds);
 			return time;
 		},
@@ -189,37 +199,9 @@ Copyright (c) Sung-min Yu
 			// 시간 중지
 			window.clearInterval(time);
 		},
-		// mouse 위치
-		mouseOffset: function(e, standard) {
-			var 
-				event = window.event || e,
-				standard = standard || document.body,
-				offset_standard = null,
-				offset_scroll = null,
-				top = null, left = null;
-			// event stop
-			//this.stopCapture(event);
-			//this.stopBubbling(event);
-			//this.stopEventDelivery(e);
-
-			// touch
-			if(api.core.mobile === true) {
-				event = event.originalEvent.touches[0] || event.originalEvent.changedTouches[0];
-			}
-
-			// top, left 위치
-			offset_standard = this.elementOffset(standard);
-			top = event.clientY - offset_standard.top;
-			left = event.clientX - offset_standard.left;
-
-			// scroll
-			offset_scroll = this.scrollOffset();
-			//top += offset_scroll.top;
-			//left += offset_scroll.left;
-			
-			return {"top": top, "left": left};
-		},
 		/*
+		// type 체크
+		// https://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/
 		type({a: 4}); //"object"
 		type([1, 2, 3]); //"array"
 		(function() {console.log(type(arguments))})(); //arguments
@@ -385,7 +367,19 @@ Copyright (c) Sung-min Yu
 			document.body.removeChild(div);
 
 			return scrollbar;
+		},
+		// 대기 - 예: sleep(10000);
+		sleep: function(milliSeconds) {
+			var startTime = new Date().getTime(); // get the current time   
+			while(new Date().getTime() < startTime + milliSeconds); // hog cpu 
 		}
 	};
+
+	// api box 기능을 사용할 경우
+	if(api.box && typeof api.box === 'function') {
+		return api.box(module);
+	}else {
+		global.api.module = module;
+	}
 	
 }, this);

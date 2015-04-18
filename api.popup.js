@@ -1,11 +1,11 @@
 /*
-Div Popup
+Div Popup 
 
 The MIT License (MIT)
 Copyright (c) Sung-min Yu
 */
 
-(function(factory , global) {
+(function(factory, global) {
 
 	'use strict'; // ES5
 	if(typeof global === 'undefined' || global !== window) return false;	
@@ -20,11 +20,10 @@ Copyright (c) Sung-min Yu
 		return false;
 	}
 
-	return factory ($, global);
+	return factory($, global);
 
-})(function($, global) {
+})(function($, global, undefined) {
 
-	'use strict'; // ES5
 	var active_element; // 현재 포커스 위치
 	//var current_scroll; // 현재 스크롤바 위치
 	var Popup = function(parameter) {
@@ -101,7 +100,7 @@ Copyright (c) Sung-min Yu
 		var selector = $('#' + that.settings.selector);
 		var fragment = $(document.createDocumentFragment());
 
-		// container
+		// container (mask 와 container 를 별도로 두는 이유는 mask에 opacity 값이 적용되기 때문이다.)
 		that.element.container = $('<div>').attr({'style': 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 100000; overflow: auto; display: none;'});
 		fragment.append(that.element.container);
 

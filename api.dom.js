@@ -16,9 +16,8 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 
 })(function(global) {
 
-	'use strict'; // ES5
-	// cache
-	var cache = {
+	// storage
+	var storage = {
 		'event': {}
 	};
 
@@ -305,7 +304,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 						// DOM compliant
 						top = document.body.scrollTop;
 						left = document.body.scrollLeft; 
-					} else if(document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
+					}else if(document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
 						// IE6 standards compliant mode
 						top = document.documentElement.scrollTop;
 						left = document.documentElement.scrollLeft;
@@ -833,8 +832,8 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 				}
 				key = arr.join('');
 				
-				// cache
-				cache.event[key] = [];
+				// storage
+				storage.event[key] = [];
 
 				// 이벤트 설정
 				this.each(function() {
@@ -842,7 +841,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 						handlers.apply(this, Array.prototype.slice.call(arguments));
 					};
 					event_func.call(this, events, callback, capture);
-					cache.event[key].push({
+					storage.event[key].push({
 						"element": this,
 						"events": events,
 						"handlers": callback,
@@ -881,8 +880,8 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 				key = arr.join('');
 
 				// 이벤트 해제
-				if(cache.event[key]) {
-					tmp = cache.event[key];
+				if(storage.event[key]) {
+					tmp = storage.event[key];
 					for(index in tmp) {
 						event_func.call(tmp[index].element, tmp[index].events, tmp[index].handlers, tmp[index].capture);
 					}
@@ -1045,9 +1044,21 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 			}
 		},
 		val: function(value) { 
-			return this.each(function() {
-				this.value = value;
-			});
+			var length = this.length || 0;
+
+			if(!length) return this;
+
+			if(typeof value === 'undefined') { // get
+				try {
+					return this[0].value;
+				}catch(e) {
+
+				}
+			}else { // set
+				return this.each(function() {
+					this.value = value;
+				});
+			}
 		},
 		//
 		prepend: function(element) {
@@ -1105,6 +1116,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 					this.parentNode.insertBefore(element, this.nextSibling);
 				}
 			});
+			return this;
 		},
 		before: function(element) {
 			// api.$(기준이 되는 대상).before(이동할 대상);
@@ -1180,6 +1192,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 					// this: element
 					module.css.set(this, value);
 				});
+				return this;
 			}
 		},
 		// 
@@ -1343,7 +1356,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 
 			this.each(function() {
 				// this.className += ' ' + name; // 방법1
-				// this.classList.add(name); // 방법2 (한번에 하나의 클래스만 입력 가능하다. 죽, 띄어쓰기로 여러 클래스 입력 불가능)
+				// this.classList.add(name); // 방법2 (한번에 하나의 클래스만 입력 가능하다. 즉, 띄어쓰기로 여러 클래스 입력 불가능)
 				element = this;
 				for(key in arr) {
 					element.classList.add(arr[key]);
@@ -1359,7 +1372,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 
 			this.each(function() {
 				// this.className = this.className.replace(regexp, ' '); // 방법1
-				// this.classList.remove(name); // 방법2 (한번에 하나의 클래스만 삭제 가능하다. 죽, 띄어쓰기로 여러 클래스 삭제 불가능)
+				// this.classList.remove(name); // 방법2 (한번에 하나의 클래스만 삭제 가능하다. 즉, 띄어쓰기로 여러 클래스 삭제 불가능)
 				element = this;
 				for(key in arr) {
 					element.classList.remove(arr[key]);
@@ -1396,7 +1409,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 						// DOM compliant
 						top = document.body.scrollTop;
 						left = document.body.scrollLeft; 
-					} else if(document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
+					}else if(document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
 						// IE6 standards compliant mode
 						top = document.documentElement.scrollTop;
 						left = document.documentElement.scrollLeft;
@@ -1467,7 +1480,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 				return function(name, value) {
 					if(typeof value === 'undefined') {
 						//return this.attr.call(this, 'data-' + name);
-						this.attr('data-' + name);
+						return this.attr('data-' + name);
 					}else {
 						//this.attr.call(this, 'data-' + name, value);
 						this.attr('data-' + name, value);
@@ -1899,6 +1912,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 			*/
 
 			// html
+			var index;
 			var callback_arr = []; // element 가 렌더링 된 후 콜백을 실행
 			var func = { // element에 필요한 각 기능별 함수
 				"attr": function(element, obj) {
@@ -1907,6 +1921,16 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 					for(key in attr) {
 						element.attr(key, attr[key]);
 					}
+					return element;
+				},
+				"style": function(element, obj) {
+					var style = obj.style;
+					var key;
+					element.each(function() {
+						for(key in style) {
+							this.style[key] = style[key];
+						}
+					});
 					return element;
 				},
 				"css": function(element, obj) {
