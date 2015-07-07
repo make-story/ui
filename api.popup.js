@@ -1,28 +1,36 @@
 /*
 Div Popup 
 
-The MIT License (MIT)
-Copyright (c) Sung-min Yu
+@version
+0.1 (2015.07.07)
+
+@copyright
+Copyright (c) Sung-min Yu.
+
+@license
+Dual licensed under the MIT and GPL licenses.
 */
 
 (function(factory, global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global !== window) return false;	
 	var $;
-
+	if(typeof global === undefined || global !== window) {
+		return false;	
+	}
 	// jQuery || api.dom 구분
-	if(typeof global.jQuery !== 'undefined') {
+	if(typeof global.jQuery !== undefined) {
 		$ = global.jQuery;
-	}else if(global.api && typeof global.api.dom !== 'undefined') {
+	}else if(global.api && typeof global.api.$ !== undefined) {
 		$ = global.api.$;
 	}else {
 		return false;
 	}
-
 	return factory($, global);
 
 })(function($, global, undefined) {
+
+	'use strict'; // ES5
 
 	var active_element; // 현재 포커스 위치
 	//var current_scroll; // 현재 스크롤바 위치
@@ -35,35 +43,16 @@ Copyright (c) Sung-min Yu
 		
 		var that = this;
 		var parameter = parameter || {}; // 사용자 설정값
-		var key;
 
 		// settings
-		that.settings = { // 기본 설정값
-			// selector
-			'selector': null, // #id
-			'close': 'close', // .class (버튼 event)
-			// is
-			'header': true,
-			'mask': true,
-			// html
-			'html': {
-				'title': null,
-				'close': '닫기'
-			},
-			// css
-			'css': {
-				'selector': 'popup_selector',
-				'header': 'popup_header',
-				'title': 'popup_title',
-				'close': 'popup_close',
-				'mask': 'popup_mask'
-			}
+		that.settings = {
+			'element': null, // popup element
+			'mask': true // is mask
 		};
-
 		var setSettings = function(settings, options) {
 			var key;
 			for(key in options) {
-				if(options[key].constructor === Object) {
+				if(options[key] && options[key].constructor === Object) {
 					settings[key] = setSettings(settings[key], options[key]);
 				}else {
 					settings[key] = options[key];
@@ -72,15 +61,15 @@ Copyright (c) Sung-min Yu
 			return settings;
 		};
 		that.settings = setSettings(that.settings, parameter);
+		if(that.settings.element === null || typeof that.settings.element !== 'object') {
+			return false;
+		}
 
 		// element
-		that.element = {
-			'container': null,
-			'popup': null, 
-			'header': null,
-			'content': null, 
-			'mask': null
-		};
+		that.element = {};
+		that.element.container;
+		that.element.popup = $(that.settings.element);
+		that.element.mask;
 
 		// 스크롤바 사이즈
 		if(!('scrollbarSize' in global)) {
@@ -89,53 +78,41 @@ Copyright (c) Sung-min Yu
 
 		// init
 		that.init();
-
-		// event
-		that.eventOn();
 	};
 
 	// init
 	Popup.prototype.init = function() {
 		var that = this;
-		var selector = $('#' + that.settings.selector);
-		var fragment = $(document.createDocumentFragment());
-
-		// container (mask 와 container 를 별도로 두는 이유는 mask에 opacity 값이 적용되기 때문이다.)
-		that.element.container = $('<div>').attr({'style': 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 100000; overflow: auto; display: none;'});
-		fragment.append(that.element.container);
-
-		// popup
-		that.element.popup = $('<div>').attr({'class': that.settings.css.selector, 'style': 'position: relative; z-index: 10000; width: ' + selector.outerWidth(true) + 'px; display: none;'});
-		that.element.container.append(that.element.popup);
-
-		// header
-		if(that.settings.header === true) {
-			that.element.header = $('<div>').attr({'class': that.settings.css.header});
-			// title
-			that.element.header.append($('<div>').attr({'class': that.settings.css.title}).html(that.settings.html.title));	
-			// close btn
-			that.element.header.append($('<div>').attr({'class': that.settings.css.close}).html('<a href="#none" class="' + that.settings.close + '">' + that.settings.html.close + '</a>'));	
-			//that.element.popup.prepend(that.element.header);
-			that.element.popup.append(that.element.header);
-		}
-
-		// content
-		that.element.content = selector.clone();
-		that.element.popup.append(that.element.content);
-
+		//var fragment = document.createDocumentFragment();
+		/*
 		// mask
 		if(that.settings.mask === true) {
-			if($('body').find('#api_mask').length > 0) {
-				that.element.mask = $('body').find('#api_mask');
+			//if($(document.body).find('#api_popup_mask').length > 0) {
+			if(document.getElementById('api_mask')) {
+				//that.element.mask = $(document.body).find('#api_mask');
+				that.element.mask = $(document.getElementById('api_mask'));
 			}else {
-				that.element.mask = $('<div>').attr({'id': 'api_mask', 'class': that.settings.css.mask, 'style': 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 90000; display: none;'});
-				$('body').prepend(that.element.mask);
+				that.element.mask = $('<div>').attr({'id': 'api_popup_mask', 'style': 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 90000; display: none; opacity: 0.5; background-color: #FFF;'});
+				document.body.insertBefore(that.element.mask[0], document.body.firstChild);
 			}
 		}
+		*/
 
-		// selector 요소 위치 <-> container 바꿔치기
-		//selector.replaceWith(that.element.container);
-		selector.replaceWith(fragment);
+		// container (mask 와 container 를 별도로 두는 이유는 mask에 opacity 값이 적용되기 때문이다.)
+		//if($(document.body).find('#api_container').length > 0) {
+		if(document.getElementById('api_container')) {
+			//that.element.container = $(document.body).find('#api_container');
+			that.element.container = $(document.getElementById('api_container'));
+		}else {
+			that.element.container = $('<div>').attr({'id': 'api_container', 'style': 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 100000; overflow: auto; display: none; background-color: rgba(255, 255, 255, 0.5);'});
+			//that.element.container[0].cssText = 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 100000; overflow: auto; display: none; background-color: rgba(255, 255, 255, 0.5);';
+			document.body.insertBefore(that.element.container[0], document.body.firstChild);
+		}
+
+		// popup
+		that.element.popup[0].style.position = 'relative';
+		that.element.popup[0].style.display = 'none';
+		that.element.container.append(that.element.popup);		
 	};
 
 	// scrollbar
@@ -144,9 +121,9 @@ Copyright (c) Sung-min Yu
 		var scrollbar;
 
 		div.style.cssText = 'width: 99px; height: 99px; overflow: scroll; position: absolute; top: -9999px;';
-		document.body.appendChild(div);
+		document.documentElement.appendChild(div);
 		scrollbar = div.offsetWidth - div.clientWidth;
-		document.body.removeChild(div);
+		document.documentElement.removeChild(div);
 
 		global.scrollbarSize = scrollbar;
 	};
@@ -188,25 +165,6 @@ Copyright (c) Sung-min Yu
 		return {'top': top, 'left': left};
 	};
 
-	// 이벤트
-	Popup.prototype.eventOn = function() {
-		var that = this;
-		// 팝업내부 close 버튼 클릭시 닫기
-		$(that.element.popup).find('.' + that.settings.close).on('click', function(event) {
-			that.close();
-		});
-		// esc 클릭시 닫기
-		$(document).on('keyup', function(event) {
-			if(that.element.container.css('display') === 'block' && event.keyCode == 27) {
-				that.close();
-			}
-		});
-	};
-	Popup.prototype.eventOff = function() {
-		var that = this;
-		
-	};
-
 	// resize
 	Popup.prototype.resize = function() {
 		var position = this.position(this.element.popup);
@@ -218,15 +176,9 @@ Copyright (c) Sung-min Yu
 	Popup.prototype.open = function(options) {
 		var that = this;
 		var options = options || {};
-		var title = options.title || that.settings.html.title;
-		var callback_open = options.callback_open || that.settings.callback_open;
+		var callback = options.callback;
 		var position;
 		var setOpen = function() { // popup 실행
-			// title 유동적 변경
-			if(typeof title === 'string' && title !== '') {
-				that.element.popup.find('.' + that.settings.css.title).html(title);
-			}
-
 			// 스크롤바 사이즈만큼 여백
 			if(document.documentElement.clientHeight < document.body.offsetHeight) {
 				$('html').css({'margin-right': scrollbarSize + 'px', 'overflow': 'hidden'});
@@ -238,9 +190,9 @@ Copyright (c) Sung-min Yu
 			// popup
 			position = that.position(that.element.popup);
 			that.element.popup.css({'left': position.left + 'px', 'top': (position.top - 20) + 'px'});
-			that.element.popup.animate({'top': position.top + 'px', 'opacity': 'show'}, {'duration': 300, 'complete': function() { // popup
-				if(callback_open && typeof callback_open === 'function') { // 콜백
-					callback_open.call(that.element.popup);
+			that.element.popup.animate({'top': position.top + 'px', 'opacity': 'show'}, {'duration': 200, 'complete': function() { // popup
+				if(callback && typeof callback === 'function') { // 콜백
+					callback.call(that.element.popup);
 				}
 			}});
 
@@ -261,18 +213,25 @@ Copyright (c) Sung-min Yu
 
 		//resize on
 		var time = null;
-		$(global).on('resize.api_popup', function() {
+		$(global).on('resize.api_popup_resize', function() {
 			global.clearTimeout(time);
 			time = global.setTimeout(function() { 
 				that.resize();
 			}, 500);
+		});
+
+		// esc click close on
+		$(document).on('keyup.api_popup_keyup', function(event) {
+			if(that.element.container.css('display') === 'block' && event.keyCode == 27) {
+				that.close();
+			}
 		});
 	};
 
 	Popup.prototype.close = function(options) {
 		var that = this;
 		var options = options || {};
-		var callback_close = options.callback_close || that.settings.callback_close;
+		var callback = options.callback;
 		var setClose = function() {
 			// 스크롤 관련 여백 초기화
 			$('html').css({'margin-right': null, 'overflow': null});
@@ -283,8 +242,8 @@ Copyright (c) Sung-min Yu
 			}
 
 			//콜백
-			if(callback_close && typeof callback_close === 'function') { 
-				callback_close.call(that.element.popup);
+			if(callback && typeof callback === 'function') { 
+				callback.call(that.element.popup);
 			}
 		};
 
@@ -303,7 +262,10 @@ Copyright (c) Sung-min Yu
 		}});
 
 		//resize off
-		$(global).off('.api_popup');
+		$(global).off('.api_popup_resize');
+
+		// esc click close off
+		$(document).off('.api_popup_keyup');
 	};
 
 	if(!global.api) global.api = {};

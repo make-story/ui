@@ -1,21 +1,31 @@
 /*
 Module(util)
 
-The MIT License (MIT)
-Copyright (c) Sung-min Yu
+@version
+0.1 (2015.07.07)
+
+@copyright
+Copyright (c) Sung-min Yu.
+
+@license
+Dual licensed under the MIT and GPL licenses.
 */
 
 (function(api, global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global !== window || !global.api) return false;	
+	if(typeof global === undefined || global !== window || !global.api || 'module' in global.api) {
+		return false;	
+	}
 	return api(global);
 
 })(function(global) {
 
+	'use strict'; // ES5
+
 	var module = {
 		// 상속 - 추후 Object.create() 로 변경하자!
-		inherit: function(C, P) {
+		inherit: function(C, P) { 
 			/*
 			원칙적으로 재사용할 멤버는 this가 아니라 프로토타입에 추가되어야 한다.
 			따라서 상속되어야 하는 모든 것들도 프로토타입 안에 존재해야 한다.
@@ -176,7 +186,7 @@ Copyright (c) Sung-min Yu
 			if(typeof callback !== 'function') return false;
 			var seconds = seconds || 3000; //1000 -> 1초
 			// 시간 작동
-			var time = window.setTimeout(function(){ callback(); }, seconds);
+			var time = window.setTimeout(callback, seconds);
 			return time;
 		},
 		// clearTimeout
@@ -187,7 +197,7 @@ Copyright (c) Sung-min Yu
 		},
 		// setInterval (반복 실행)
 		startTime: function(callback, seconds) { 
-			if(typeof callback != 'function') return false;
+			if(typeof callback !== 'function') return false;
 			var seconds = seconds || 3000; //1000 -> 1초
 			// 시간 작동
 			var time = window.setInterval(callback, seconds);
@@ -219,7 +229,11 @@ Copyright (c) Sung-min Yu
 		},
 		// 좌우 공백 제거 
 		trim: function(text) {
-			return text.replace(/(^\s*)|(\s*$)/g, "");
+			if(!text) {
+				return text;
+			}else {
+				return String(text).replace(/(^\s*)|(\s*$)/g, "");
+			}
 		},
 		// 키보드 이벤트 정보 
 		keyboardCode: function(event) {

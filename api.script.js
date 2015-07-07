@@ -1,8 +1,14 @@
 /*
 Import
 
-The MIT License (MIT)
-Copyright (c) Sung-min Yu
+@version
+0.1 (2015.07.07)
+
+@copyright
+Copyright (c) Sung-min Yu.
+
+@license
+Dual licensed under the MIT and GPL licenses.
 
 script 삽입: 동적로딩, 의존성관리, 모듈화
 api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동하지 않는다.
@@ -11,10 +17,14 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 (function(api, global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global !== window || !global.api) return false;	
+	if(typeof global === undefined || global !== window || !global.api) {
+		return false;	
+	}
 	return api(global);
 
 })(function(global) {
+
+	'use strict'; // ES5
 
 	// document에 존재하는 script element 리스트
 	var getScript = function() {
@@ -24,7 +34,7 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 		var src;
 		if(typeof elements === 'object') {
 			for(var i=elements.length-1; i>=0; i-=1) {
-				if(typeof elements[i].src !== 'undefined' && elements[i].src !== '') {
+				if(typeof elements[i].src !== undefined && elements[i].src !== '') {
 					//src = elements[i].src; // 상대경로가 자동 절대경로로 변경
 					src = elements[i].getAttribute('src');
 					scripts.push(src);
@@ -34,6 +44,7 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 
 		return scripts;
 	};
+
 	// script element 생성
 	var setScriptCreate = function() {
 		//var element = config.xhtml ? document.createElementNS('http://www.w3.org/1999/xhtml', 'html:script') : document.createElement('script'); // 참고
@@ -44,10 +55,11 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 
 		return element;
 	};
+
 	// element 를 head 에 추가
 	var setScriptInsert = function(element) {
 		var head = document.getElementsByTagName('head')[0]; 
-		//If BASE tag is in play, using appendChild is a problem for IE6.
+		// If BASE tag is in play, using appendChild is a problem for IE6.
 		var base = document.getElementsByTagName('base')[0];
 		if(base) {
 			head = base.parentNode;
@@ -57,49 +69,54 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 		}
 	};
 
+	// Script 생성자
 	var Script = function() {
-		// 대기
+		// 대기 리스트
 		this['queue'] = {
 			'script': [],
 			'box': [],
 			'wait': [] // box 의 js list load 에 따라 대기중인 인스턴스 값
 		};
-		// 결과
+		// 결과 리스트
 		this['uninitialized'] = []; // 실패 리스트
 		this['complete'] = []; // 성공 리스트
-		this['box'] = {}; // 모듈화에 필요한 JS 파일별 값 - 구조: {'JS 파일명': 'box 반환값', 'JS 파일명': 'box 반환값', ... }
+		// 모듈화에 필요한 JS 파일별 값 - 구조: {'JS 파일명': 'box 반환값', 'JS 파일명': 'box 반환값', ... }
+		this['box'] = {}; 
 		// 현재 실행중인 module의 인스턴스
 		this['action']; 
 	};
 	Script.prototype = {
+		// Module 생성자
 		Module: function() {
-			// 관계 인스턴스
+			// 관계 인스턴스 (종속적인 파일의 load를 실행한 Module 인스턴스)
 			this['relation'];
 			// 공통
 			this['file'] = { 
 				'list': [], // load해야할 파일 리스트
-				'load': [], // load 된 파일 순서
+				'load': [], // load된 파일 순서
 				'uninitialized': [], // 실패 리스트
 				'complete': [] // 성공 리스트
 			};
-			// box 작업
+			// box 작업에 필요한 변수
 			this['box'] = {
-				'module': [], // box 인스턴스 순서
-				'factory': [] // IE는 setBox가 js list 별로 모두 실행된 후 setState 가 실행되므로 값 타입이 배열로 되어있어야 한다.
+				'module': [], // box 인스턴스 순서에 사용된다.
+				'factory': [] // IE는 setBox 메소드가 js list 별로 모두 실행된 후 setState 메소드가 실행되므로 값 타입이 배열로 되어있어야 한다.
 			};
 			// 작업 결과에 따른 콜백 (type이 script 의 경우만 실행)
-			this['success']; // success 콜백이 없을 경우 box 파라미터를 만들지 않는다. - 작업 진행중!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			this['success']; // success 콜백이 없을 경우 box 파라미터를 만들지 않는다. - 설계 진행중!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			this['error']; 
 		},
-		// queue 관리
+		// queue 대기 리스트 실행
 		setQueue: function() {
 			//console.log('<< setQueue 실행 >>');
 			
 			var that = this;
 			var queue = that['queue'];
 			if(typeof that['action'] === 'object') {
+				// 현재 실행중인 인스턴스가 있음
 				return false;
 			}else if(queue['box'].length === 0 && queue['script'].length === 0) {
+				// 실행할 load 리스트가 없음
 				return false;
 			}else if(queue['box'].length > 0) {
 				//console.log('box 순차 실행');
@@ -119,20 +136,21 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 			var i, max, src;
 
 			if(!action || typeof action !== 'object') {
+				// 실행해야할 module 인스턴스가 유효하지 않음
 				console.log('---------- error ----------');
 				return false;
 			}
 			
-			// async 사용하여 JS리스트 전체 load 실행
+			// async 사용하여 JS 리스트 load 실행
 			for(i=0, max=action['file']['list'].length; i<max; i++) {
 				src = action['file']['list'][i];
-				if(that['complete'].indexOf(src) > -1) {
-					//console.log('과거 load 존재: ' + src);
+				if(that['complete'].indexOf(src) > -1) { 
 					// complete 되어있음 (이미 load 되어 있는 파일)
+					//console.log('과거 load 존재: ' + src);
 					that.setState(src, 'complete');
-				}else {
-					//console.log('신규 load 실행: ' + src);
+				}else { 
 					// load 실행
+					//console.log('신규 load 실행: ' + src);
 					that.setLoad(src);
 				}
 			}
@@ -140,7 +158,7 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 		// script 로드, 에러 이벤트
 		setLoad: (function() {
 			/*
-			readyState 상태값
+			- readyState 상태값
 			uninitialized: 아직 loading이 시작되지 않았다.
 			loading: loading 중이다.
 			interactive: 충분히 load되었고 사용자가 그것과 상호작용할 수 있다.
@@ -224,7 +242,7 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 				return function(){};
 			}
 		})(),
-		// load 에 따른 상태 설정 (setLoad 함수에서 실행됨)
+		// load 에 따른 상태 설정 (setLoad 메소드에서 실행됨)
 		setState: function(src, state) { // state: uninitialized(실패), complete(완료)
 			//console.log('<< setState 실행 >>');
 			//console.log('src: ' + src);
@@ -241,13 +259,12 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 			action['file'][state].push(src);
 			that[state].push(src);
 
-			// box
+			// box 처리
 			if(!(src in that['box'])) { 
-				// module 확인 (src 해당 파일 내부에 box 실행함수가 없음)
+				// module 확인 (src 경로의 js 파일 내부에 box 실행함수가 없음)
 				if(action['file']['load'].length > action['box']['module'].length) {
 					action['box']['module'].push(undefined);
 				}
-
 				// factory 확인 (위 module 확인이 먼저 이루어 져야함)
 				if(action['file']['load'].length < action['box']['factory'].length) { 
 					// IE (익스플로러는 여러개의 JS 파일을 load 할 경우, box 함수가 모두 실행되고 이 부분이 실행될 수 있다.)
@@ -260,7 +277,7 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 			//console.log('box');
 			//console.dir(that['box']);
 
-			// load 완료 확인
+			// js파일리스트 load 완료 여부확인
 			if(action['file']['list'].length === action['file']['load'].length) { 
 				if(that['queue']['box'].length > 0) {
 					// box 의 종속된 js 리스트를 load하기 위해 현재 인스턴스를 대기 배열에 넣는다.
@@ -289,7 +306,7 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 			do {
 				// do{ }while(): 현재 인스턴스 값부터 처리
 
-				// 현재 인스턴스가 relation(현재 인스턴스를 만든 인스턴스)의 box['module'] 배열에서 몇번째 index에 위치해 있는지 확인
+				// 현재 인스턴스가 relation(현재 인스턴스를 만든 Module인스턴스)의 box['module'] 배열에서 몇번째 index에 위치해 있는지 확인 (누가 자신을 만들었는지 확인)
 				// index 값으로 file['load'] 배열에서 해당 index 값으로 자신의 src를 가져온다.
 				relation = action['relation'];
 				if(relation && typeof relation === 'object') {
@@ -299,11 +316,8 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 						// 인스턴스 index 로 load 된 file 순서(배열)에서 src 값을 검출
 						file = relation['file']['load'][index]; 
 						/*
-						// 로그
 						console.log('index: ' + index);
 						console.log('file: ' + file);
-						console.log('box');
-						console.dir(that['box']);
 						*/
 						// facroty 값 재설정
 						if(typeof that['box'][file] === 'function') {
@@ -312,6 +326,7 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 							for(j=0, max=action['file']['load'].length; j<max; j++) {
 								arr.push(that['box'][action['file']['list'][j]]);
 							}
+							//console.log(arr);
 							that['box'][file] = that['box'][file].apply(null, arr);
 						}
 					}
@@ -323,6 +338,11 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 				}
 			}while(true);
 
+			/*
+			console.log('box');
+			console.dir(that['box']);
+			*/
+
 			// 콜백실행
 			action = queue['wait'].pop();
 			that.setCallback(action);
@@ -333,6 +353,11 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 
 			var that = this;
 			var arr, j, max;
+			
+			/*
+			console.log('box');
+			console.dir(that['box']);
+			*/
 
 			// 유효성 검사
 			if(typeof instance['error'] === 'function' || typeof action['success'] === 'function') {
@@ -367,6 +392,28 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 	var instance = new Script();
 
 
+	/*
+	-
+	js 파일 동적로딩
+
+
+	// 사용예 1
+	api.script('js load 파일');
+
+	// 사용예 2
+	api.script(['js load 파일 리스트']);
+
+	// 사용예 3
+	api.script(
+		'js load 파일', 
+		function() {
+			// 성공콜백
+		},
+		function() {
+			// 실패콜백
+		}
+	);
+	*/
 	global.api.script = function() {
 		//console.log('---------- api.script 실행 ----------');
 
@@ -394,6 +441,22 @@ api.core.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동�
 
 		instance.setQueue();
 	};
+
+	
+	/*
+	-
+	의존성관리(해당 코드를 실행시키는데 종속적인 파일 리스트)
+	모듈화(리턴값을 글로벌 스코프가 아닌 콜백함수의 스코프로 제한)
+
+
+	// 사용예 1
+	api.box(반환객체);
+
+	// 사용예 2
+	api.box([종속된 객체 리스트], function(종속된 객체) {
+		return 반환객체;
+	})
+	*/
 	global.api.box = function() {
 		//console.log('---------- api.box 실행 ----------');
 

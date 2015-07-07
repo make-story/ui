@@ -1,18 +1,25 @@
 /*
 Div Flicking
 
-The MIT License (MIT)
-Copyright (c) Sung-min Yu
+@version
+0.1 (2015.07.07)
+
+@copyright
+Copyright (c) Sung-min Yu.
+
+@license
+Dual licensed under the MIT and GPL licenses.
 */
 
 (function(factory, global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global !== window) return false;	
 	var $, core;
-
+	if(typeof global === undefined || global !== window) {
+		return false;	
+	}
 	// jQuery || api.dom 구분
-	if(typeof global.jQuery !== 'undefined') {
+	if(typeof global.jQuery !== undefined) {
 		$ = global.jQuery;
 		core = {
 			"check": { // true, false 
@@ -31,16 +38,17 @@ Copyright (c) Sung-min Yu
 			core.event.move = 'touchmove';
 			core.event.up = 'touchend';
 		}
-	}else if(global.api && typeof global.api.dom !== 'undefined') {
+	}else if(global.api && typeof global.api.$ !== undefined) {
 		$ = global.api.$;
 		core = api.core;
 	}else {
 		return false;
 	}
-
 	return factory($, core, global);
 
 })(function($, core, global, undefined) {
+
+	'use strict'; // ES5
 
 	// translate (jQuery css 가 아닌 style property 로 설정하는 것이 좋음)
 	var setTranslate = function(element, duration, translateX) {
@@ -151,7 +159,8 @@ Copyright (c) Sung-min Yu
 			var fragment = $(document.createDocumentFragment());
 
 			// 조립
-			container.css({'overflow-x': 'hidden'});
+			//container.css({'overflow-x': 'hidden'}); // IE 에서 스크롤바 생기는 문제 발생
+			container.css({'overflow': 'hidden'});
 			//that.element.flicking = $(document.createElement('div')).css(css3).attr('data-type', 'flicking');
 			that.element.flicking = $(document.createElement('div')).attr('data-type', 'flicking');
 			setTranslate(that.element.flicking[0], 0, 0);
@@ -325,7 +334,7 @@ Copyright (c) Sung-min Yu
 		slide: function(index, duration) {
 			// 해당 슬라이드로 이동
 			var that = this;
-			var duration = typeof duration !== 'undefined' ? duration : Number(that.settings.speed) / 1000;
+			var duration = typeof duration !== undefined ? duration : Number(that.settings.speed) / 1000;
 			var css3 = {};
 			var i, max;
 			if(typeof index === 'number' && (that.info.index < index || that.info.index > index)) { // 다음 || 이전
@@ -348,7 +357,7 @@ Copyright (c) Sung-min Yu
 			var that = this;
 
 			// 유효성 검사
-			if(typeof value === 'undefined' || (typeof value !== 'number' && !(/^(next|prev)$/.test(value)))) {
+			if(typeof value === undefined || (typeof value !== 'number' && !(/^(next|prev)$/.test(value)))) {
 				return false;
 			}
 

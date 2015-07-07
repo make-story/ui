@@ -1,20 +1,30 @@
 /*
 DOM
 
-The MIT License (MIT)
-Copyright (c) Sung-min Yu
+@version
+0.1 (2015.07.07)
 
-querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
+@copyright
+Copyright (c) Sung-min Yu.
+
+@license
+Dual licensed under the MIT and GPL licenses.
 */
 
 (function(api, global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global !== window) return false;
-	if(!global.api) global.api = {}; // dom은 api에 종속되어 작동하지 않는다.
+	if(typeof global === 'undefined' || global !== window) {
+		return false;
+	}
+	if(!global.api) {
+		global.api = {}; // dom은 api에 종속되어 작동하지 않는다.
+	}
 	return api(global);
 
 })(function(global) {
+
+	'use strict'; // ES5
 
 	// storage
 	var storage = {
@@ -127,7 +137,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 						// 초기화시 css default value 를 설정해 주는 것이 가장 정확함
 						if(element.style.removeProperty) {
 							element.style.removeProperty(property);
-						}else if(element.style.removeAttribute) { // IE < 9
+						}else if(element.style.removeAttribute) { // IE9 이상
 							element.style.removeAttribute(property);
 						}else if(property in element.style) {
 							element.style[property] = null;
@@ -1461,7 +1471,6 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 			http://www.sitepoint.com/managing-custom-data-html5-dataset-api/
 			*/
 			var support = ('dataset' in document.createElement('div') ? true : false);
-
 			if(support) { // html5 지원
 				return function(name, value) {
 					name = name.replace(/-([a-z])/g, function(name) {
@@ -1821,7 +1830,7 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 	})({
 		// DOM Ready
 		"ready": function(callback) { 
-			if(document.readyState === "complete") {
+			if(document.readyState === "interactive" || document.readyState === "complete") {
 				setTimeout(callback);
 			}else if(document.addEventListener) { // Mozilla, Opera, Webkit 
 				document.addEventListener("DOMContentLoaded", function() {
@@ -2037,19 +2046,6 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 		// 뷰포트의 특정 지점(좌표)의 최상단 element 정보
 		elementFromPoint: function(top, left) {
 			return document.elementFromPoint(top, left);
-		},
-		// 스크롤될 element의 크기를 얻기 (문서 전체크기를 알 수 있음)
-		elementScrollSize: function(element) {
-			var height = null, width = null;
-
-			if(element) {
-				height = element.scrollHeight;
-				width = element.scrollWidth;
-			}else {
-				height = document.documentElement.scrollHeight;
-				width = document.documentElement.scrollWidth;
-			}
-			return {"height": height, "width": width};
 		}
 	});
 
@@ -2058,7 +2054,8 @@ querySelectorAll - Chrome: 1, Firefox: 3.5, Internet Explorer: 9, Safari: 3.2
 		return api.box($);
 	}else {
 		// $ 접근: global.api.$() 또는 global.api.dom()
-		global.api.$ = global.api.dom = $;
+		//global.api.$ = global.api.dom = $;
+		global.api.$ = $;
 	}
 
 }, this);
