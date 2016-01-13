@@ -239,7 +239,7 @@ Dual licensed under the MIT and GPL licenses.
 		keyboardCode: function(event) {
 			var event = event || window.event;
 			var code = event.which || event.keyCode;
-			var key = '';
+			var key;
 			switch(code) {
 				//0
 				case 48:
@@ -359,13 +359,7 @@ Dual licensed under the MIT and GPL licenses.
 					break;
 			}
 
-			if(key != '') {
-				//기본 이벤트 중지
-				/*if(event.preventDefault){
-					event.preventDefault();
-				}else {
-					event.returnValue = false;
-				}*/
+			if(key) {
 				return {"code": code, "key": key};
 			}else {
 				return false;

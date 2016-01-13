@@ -31,7 +31,7 @@ http://www.quirksmode.org/js/detect.html
 
 ;(function(factory, global) {
 
-	if(typeof global === 'undefined' || global !== window) {
+	if(typeof global === 'undefined' || global != window) {
 		return false;
 	}else {
 		// 클라이언트 환경정보(브라우저 버전 등)를 우선 확인한다.
@@ -104,26 +104,11 @@ http://www.quirksmode.org/js/detect.html
 				"css": {
 					//"prefix": '', // 벤더 프리픽스
 					//"transform": ''
-				},
-				// grid, block 값은 추후 api.grid.js 옮겨서 사용자가 임의로 수정하지 못하도록 하자
-				"grid": { 
-					"width": 0, // 실제 해당도 값에 따른 해상도 기준값(320, 640, 960, 1280~)
-					"width_count": 0 // 해상도 기준 가로로 들어갈 수 있는 block 개수
-				},
-				"block": { 
-					"max_width_size": 3, // block 하나의 최대 가로 사이즈
-					"width": 90, // block size(px) 1개 기준 width 값
-					"height": 90, // block size(px) 1개 기준 height 값
-					//"margin": 5, // block margin (값을 변경할 경우 CSS 해당 px 값도 변경해 주어야 한다.)
-					"margin_width": 5, // 좌우 여백
-					"margin_height": 5, // 상하 여백
-					"outer_width": 0, // block size 1개 width 기준 + marign 값
-					"outer_height": 0 // block size 1개 height 기준 + marign 값
 				}
 			};
 			// 트랜스폼
 			for(key in transforms) {
-				if(element.style[key] !== undefined) {
+				if(element.style[key] != undefined) {
 					environment['check']['transform'] = true;
 					//environment['css']['transform'] = transforms[key];
 					break;
@@ -131,7 +116,7 @@ http://www.quirksmode.org/js/detect.html
 			}
 			// 트랜지션
 			for(key in transitions) {
-				if(element.style[key] !== undefined) {
+				if(element.style[key] != undefined) {
 					environment['check']['transition'] = true;
 					environment['event']['transitionend'] = transitions[key];
 					break;
@@ -139,7 +124,7 @@ http://www.quirksmode.org/js/detect.html
 			}
 			// 애니메이션 확인
 			for(key in animations) {
-				if(element.style[key] !== undefined) {
+				if(element.style[key] != undefined) {
 					environment['check']['animation'] = true;
 					environment['event']['animationstart'] = animations[key][0];
 					environment['event']['animationiteration'] = animations[key][1];
@@ -232,56 +217,16 @@ http://www.quirksmode.org/js/detect.html
 				environment['event']['click'] = (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click';
 			}
 
-			// block
-			environment['block']['outer_width'] = environment['block']['width'] + (environment['block']['margin_width'] * 2);
-			environment['block']['outer_height'] = environment['block']['height'] + (environment['block']['margin_height'] * 2);
-			
-			// grid
-			// 해상도 대비(모바일의 경우 width, height 중 작은값) 최대 들어갈수 있는 블록 개수가 grid의 가로 최종값이 된다.
-			if(environment['device'] === 'pc') {
-				environment['grid']['width'] = Math.floor(environment['screen']['width'] / environment['block']['outer_width']) * environment['block']['outer_width'];
-			}else {
-				environment['grid']['width'] = Math.floor(Math.min(environment['screen']['width'], environment['screen']['height']) / environment['block']['outer_width']) * environment['block']['outer_width'];	
-			}
-			/*if(0 <= environment['screen']['width'] && environment['screen']['width'] < 640) { // 0 ~ 639
-				//environment['grid']['width'] = 320;
-				environment['grid']['width'] = 300; // PC 스크롤바 가로사이즈를 생각한 값
-			}else if(640 <= environment['screen']['width'] && environment['screen']['width'] < 960) { // 640 ~ 959
-				//environment['grid']['width'] = 640;
-				environment['grid']['width'] = 600;
-			}else if(960 <= environment['screen']['width'] && environment['screen']['width'] < 1280) { // 960 ~ 1279
-				//environment['grid']['width'] = 960;
-				environment['grid']['width'] = 900;
-			}else if(1280 <= environment['screen']['width']) { // 1280 ~ 와이드
-				// 유동적 계산 - 추후 적용하자
-				// 1. 전체 사이즈 대비 1개(60px)가 해상도의 %(퍼센트)로 계산 했을 때 몇 픽셀인지 계산
-				// 2. margin(10px)도 해당도의 %(퍼센트)로 계산 했을 때 몇 픽셀인지 계산
-				// 3. 두 픽셀을 더해서 해상도 대비 최대 몇개의 story가 가로 사이즈로 들어갈 수 있는지 출력
-				//environment['grid']['width'] = 1280;
-				environment['grid']['width'] = 1200;
-			}*/
-			environment['grid']['width_count'] = environment['grid']['width'] / (environment['block']['width'] + (environment['block']['margin_width'] * 2)); // block.margin_width * 2 이유 : 여백이 왼쪽, 오른쪽이 있기 때문
-
 			// 라이브러리를 확장으로 사용할 수 있도록 한다.
-			/*var extend = function extend(obj) {
-				var key;
-				if(typeof obj === 'object') {
-					for(key in obj) {
-						extend[key] = obj[key];
-					}
-				}
-			};*/
 			/*
 			api.extend.set({
-				'grid': {
-					'Display': {
-						'test': function() {
-							alert('test');
-						}
+				'Popup': {
+					'test': function() {
+						alert('test');
 					}
 				}
 			});
-			api.extend.get('grid.Display');
+			api.extend.get('Popup.test');
 			*/
 			var extend = {
 				set: function(obj) {
@@ -310,7 +255,6 @@ http://www.quirksmode.org/js/detect.html
 								}
 							}while(i < max);
 						}
-						
 						return obj;
 					}
 					return false
@@ -381,7 +325,7 @@ http://www.quirksmode.org/js/detect.html
 	// window.ScrollX, window.ScrollY 크로스 브라우저
 	var getScrollXY = function() {
 		// https://developer.mozilla.org/ko/docs/Web/API/Window/scrollY
-		var supportPageOffset = window.pageXOffset !== undefined;
+		var supportPageOffset = window.pageXOffset != undefined;
 		var isCSS1Compat = ((document.compatMode || "") === "CSS1Compat");
 		return {
 			'x': supportPageOffset ? window.pageXOffset : isCSS1Compat ? document.documentElement.scrollLeft : document.body.scrollLeft, 
@@ -441,7 +385,7 @@ http://www.quirksmode.org/js/detect.html
 	// is: margin 값 포함여부
 	var getElementWidthHeight = function(elements, property, extra, is) {
 		if(!elements || !elements instanceof DOM || !property || !(/^(width|height)$/i.test(property)) || (extra && !/^(inner|outer)$/i.test(extra))) return 0;
-		//var is_border_box = (elements.style('boxSizing') === 'border-box') ? true : false;
+		var is_border_box = (elements.style('boxSizing') === 'border-box') ? true : false; // IE와 웹킷간의 박스모델 스팩이 다르므로 구분해야 한다.
 		var is_display = (elements.style('display') === 'none') ? true : false;
 		var queue = { 
 			/*
@@ -520,7 +464,7 @@ http://www.quirksmode.org/js/detect.html
 
 	// DOM (event, style, attr, data, scroll 등)
 	// var element = api.dom('<div>').style({'': '', '': ''}).attr({'': ''}).data({'': ''}).on('', function() { ... }).get();
-	// WEB API 기능을 사전처럼 빠르게 인덱싱하는데 목적이 있다.
+	// WEB API 기능을 사전처럼 빠르게 인덱싱하는데 목적이 있다. (기능단위)
 	function DOM(selector, context) {
 		// return instance
 		if(!(this instanceof DOM)) {
@@ -631,7 +575,7 @@ http://www.quirksmode.org/js/detect.html
 				//return false;
 			}else if(typeof selector === 'string') {
 				for(i=0; i<max; i++) { // this.elements[] 연관배열
-					for(search = this.elements[i].parentNode; search && search !== context; search = search.parentNode) { 
+					for(search = this.elements[i].parentNode; search && search != context; search = search.parentNode) { 
 						// 현재 element 부터 검사하기 위해 
 						// 현재 노드의 parentNode 를 search 초기값으로 바인딩하고
 						// search.querySelector() 로 확인 한다.
@@ -879,7 +823,7 @@ http://www.quirksmode.org/js/detect.html
 		},
 		// stylesheet
 		// jQuery 와 다르게 style 메소드로 명명한 이유는 jQuery css 메소드는 내부에서 크로스브라우저, 부가적인 기능처리 등으로 코드 복잡도 높고와 사용 효율성은 낮아,
-		// 개발자가 직접 javascript style 속성값을 값을 주도록 유도하기위해 심플하게 작업했다. (라이브러리가 너무 많은 기능을 하기보다, API형태에 맞춘다.)
+		// 개발자가 직접 javascript style 속성값을 값을 주도록 유도하기위해 심플하게 작업했다. (라이브러리가 너무 많은 기능을 하기보다, 표준 API에 맞춘다.)
 		style: function(parameter) {
 			// x.style.cssText; // 표준
 			// x.currentStyle[styleProp];
@@ -1327,7 +1271,12 @@ http://www.quirksmode.org/js/detect.html
 
 				// 이벤트 설정
 				for(i=0; i<max; i++) {
-					// 콜벡
+					// this.elements[i] 에 event key 가 이미 설정되어 있는지 확인
+					/*if(typeof this.elements[i]['storage'] === 'object' && this.elements[i]['storage'][key]) {
+						continue;
+					}*/
+
+					// 콜백
 					callback = function() {
 						handlers.apply(this, Array.prototype.slice.call(arguments));
 					};
@@ -1481,7 +1430,7 @@ http://www.quirksmode.org/js/detect.html
 					// window, document
 					viewport = getViewport();
 					if('left' in parameter || 'top' in parameter) {
-						window.scrollTo((typeof parameter.left !== 'undefined' ? parameter.left : (viewport.left || 0)), (typeof parameter.top !== 'undefined' ? parameter.top : (viewport.top || 0)));
+						window.scrollTo((typeof parameter.left != 'undefined' ? parameter.left : (viewport.left || 0)), (typeof parameter.top != 'undefined' ? parameter.top : (viewport.top || 0)));
 					}else {
 						return {'left': viewport.left, 'top': viewport.top};
 					}
@@ -1557,16 +1506,15 @@ http://www.quirksmode.org/js/detect.html
 			
 			// 유효한 터치영역
 			//var radius = Math.min(DOM(selector).width(), DOM(selector).height(), 20); 
-			var radius = 20;
-
-			if(typeof selector !== 'undefined' && (typeof handlers === 'object' || typeof handlers === 'function')) {
+			var radius = 0;
+			if(typeof selector != 'undefined' && (typeof handlers === 'object' || typeof handlers === 'function')) {
 				DOM(selector).on(environment['event']['down'] + '.EVENT_MOUSEDOWN_api_dom_touch', function(e) {
 					var event = e || window.event;
 					//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
 					var touch = event.touches; // touchstart
 					var that = this;
 
-					// 현재 이벤트의 기본 동작을 중단한다. (기본 이벤트를 중단시키면 스크롤이 작동을 안한다.)
+					// 기본 이벤트를 중단시키면 스크롤이 작동을 안한다.
 					// 버블링(stopPropagation) 중지시키면, 상위 이벤트(예: document 에 적용된 이벤트)이 작동을 안한다.
 
 					// 멀티터치 방지
@@ -1583,8 +1531,8 @@ http://www.quirksmode.org/js/detect.html
 					that.touchTimeDelay = that.touchTimeDelay || null; // delay check 관련 setTimeout
 					that.touchTimeCount = that.touchTimeCount || null; // 터치 횟수 카운트 시작 관련 setTimeout
 					that.touchCheck = that.touchCheck || {};
+					radius = Math.max(event.target.offsetWidth, event.target.offsetHeight, 30);
 					if(touch) {
-						radius = 30;
 						that.touchCheck[that.touchCount] = {
 							'start': {
 								'top': touch[0].screenY,
@@ -1596,7 +1544,6 @@ http://www.quirksmode.org/js/detect.html
 							}
 						};
 					}else {
-						radius = 20;
 						that.touchCheck[that.touchCount] = {
 							'start': {
 								'top': event.screenY,
@@ -1681,7 +1628,7 @@ http://www.quirksmode.org/js/detect.html
 			}
 		},
 		'off': function(selector) {
-			if(typeof selector !== 'undefined') { 
+			if(typeof selector != 'undefined') { 
 				DOM(selector).off('.EVENT_MOUSEDOWN_api_dom_touch');
 			}
 		}
@@ -1758,11 +1705,11 @@ http://www.quirksmode.org/js/detect.html
 	};
 	DocumentTouch.prototype = {
 		add: function(callback) { // callback 추가
-			if(!callback || typeof callback !== 'function') return false;
+			if(!callback || typeof callback != 'function') return false;
 			this.callback.push(callback);
 		},
 		del: function(callback) { // callback 제거
-			if(!callback || typeof callback !== 'function') return false;
+			if(!callback || typeof callback != 'function') return false;
 			var index = (this.callback.length > 0) ? this.callback.indexOf(callback) : -1; // 존재여부 확인
 			if(index > -1) {
 				this.callback.splice(index, 1); // 대기 리스트 요소 제거
@@ -1814,11 +1761,11 @@ http://www.quirksmode.org/js/detect.html
 	};
 	DocumentResize.prototype = {
 		add: function(callback) { // callback 추가
-			if(!callback || typeof callback !== 'function') return false;
+			if(!callback || typeof callback != 'function') return false;
 			this.callback.push(callback);
 		},
 		del: function(callback) { // callback 제거
-			if(!callback || typeof callback !== 'function') return false;
+			if(!callback || typeof callback != 'function') return false;
 			var index = (this.callback.length > 0) ? this.callback.indexOf(callback) : -1; // 존재여부 확인
 			if(index > -1) {
 				this.callback.splice(index, 1); // 대기 리스트 요소 제거

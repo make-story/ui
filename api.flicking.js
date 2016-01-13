@@ -1,5 +1,5 @@
 /*
-Grid Flicking
+Flicking
 
 @version
 0.1 (2015.07.07)
@@ -32,21 +32,6 @@ Dual licensed under the MIT and GPL licenses.
 
 		// 현재 실행중인 플리킹 정보 (인스턴스 값)
 		that.action;
-		/*
-		// 마우스 이탈 체크
-		if(env.check.mobile === false) {
-			api.dom(document).on('mouseout.out_' + that.settings.selector, function(e) {
-				var event = e || window.event;
-				//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
-				var touch = event.touches || event.changedTouches;
-				var target = event.relatedTarget || event.toElement;
-				if(!target || target.nodeName === "HTML") {
-					api.dom(document).off('.move_' + that.settings.selector);
-					api.dom(document).off('.up_' + that.settings.selector);
-					that.slide();
-				}
-			});
-		}*/
 	};
 	Flicking.prototype = {
 		// 해당 grid 이벤트 적용 (실행)
@@ -73,7 +58,7 @@ Dual licensed under the MIT and GPL licenses.
 				this.key; // grid key
 				this.total = 0; // 전체 슬라이드 개수
 				this.width = 0; // 슬라이드 width 값
-				this.index = 1; // 현재 출력되고 있는 슬라이드
+				this.index = 1; // 현재 출력되고 있는 슬라이드 (1부터 시작)
 				this.translate = 0; // container 의 현재 translateX 값
 				this.element; // 플리킹 대상 element
 
@@ -84,12 +69,6 @@ Dual licensed under the MIT and GPL licenses.
 					'auto': true,
 					'second': 3 // 초*/
 				};
-
-				// time
-				/*this.time = {
-					'resize': null, 
-					'auto': null
-				};*/
 
 				// translate 콜백
 				this.complete; // 슬라이드 작동후 한번실행
@@ -129,24 +108,23 @@ Dual licensed under the MIT and GPL licenses.
 
 			// 이벤트 적용
 			that.setOn(parameter);
+			that.setTransitionendOn(parameter);
 
 			// 스크롤 이벤트 (상하로 움직일 때, 이전과 이후 슬라이드도 함께 이동한다.)
 
 		},
-		setTranslate: function(parameter) {
+		// 해당 플리킹 정보반환: index, total 등 (또는 모듈 인스턴스를 통해 접근할 수 있다.)
+		getInstance: function(parameter) { 
 			var that = this;
 			var parameter = parameter || {};
-			var duration = parameter['duration'];
-			var translateX = parameter['translateX'];
-			var style = that['action']['element'] && that['action']['element'].style;
+			var key = parameter['key']; // flicking key
 
-			if(!style) {
+			if(!key || !that['instance'][key] || !that['instance'][key]['element']) {
 				console.log('[오류]');
 				return false;
 			}
-			style.webkitTransitionDuration = style.MozTransitionDuration = style.msTransitionDuration = style.OTransitionDuration = style.transitionDuration = duration + 's';
-			style.webkitTransform = 'translate(' + translateX + 'px, 0)' + 'translateZ(0)';
-			style.msTransform = style.MozTransform = style.OTransform = 'translateX(' + translateX + 'px)';
+			
+			return that['instance'][key];
 		},
 		// 
 		setOn: function(parameter) {
@@ -162,24 +140,6 @@ Dual licensed under the MIT and GPL licenses.
 			//console.log('[실행] flicking event');
 			//console.log(that['instance'][key]['element']);
 
-			// 트랜지션
-			api.dom(that['instance'][key]['element']).on(api['env']['event']['transitionend'] + '.EVENT_TRANSITION_flicking_grid', function(e) {
-				var event = e || window.event;
-
-				//console.log(event.target);
-				//console.log(event.type);
-				//console.log(event.bubbles);
-				//console.log(event.cancelable);
-				//console.log(event.propertyName);
-				//console.log(event.elapsedTime);
-				//console.log(event.pseudoElement);
-
-				// grid에서 발생한 이벤트여부 확인
-				if(that['instance'][key]['element'].isEqualNode(event.target) && typeof event.propertyName === 'string' && event.propertyName.toLowerCase() === 'transform') {
-					console.log('slide transitionend');
-				}
-			});
-
 			// 마우스 오버시 slide prev, slide next 버튼을 show 하자
 			// 마우스 아웃시 slide prev, slide next 버튼을 hide 하자
 			// 모바일에서는 사용자가 플레킹에 익숙해져 있지만, pc 에서 사용자는 버튼에 익숙해져 있으므로, 이 방법이 최선이다
@@ -187,11 +147,16 @@ Dual licensed under the MIT and GPL licenses.
 
 			// over 이벤트
 			/*api.dom('[data-type="grid"]').on('mouseover.over_grid', function(e) {
-
 				api.dom(this).on('mouseout.out_grid', function(e) {
 
-				})
+				});
 			});*/
+
+			// 이벤트 키를 검사하여, 이미 이벤트가 설정되었는지 확인 (이벤트 중복 설정 방지)
+			if(that['instance'][key]['element']['storage'] && that['instance'][key]['element']['storage']['EVENT_MOUSEDOWN_flicking_grid']) {
+				console.log('[오류] 중복 이벤트');
+				return false;
+			}
 
 			// down 이벤트
 			api.dom(that['instance'][key]['element']).on(api['env']['event']['down'] + '.EVENT_MOUSEDOWN_flicking_grid', function(e) {
@@ -358,7 +323,6 @@ Dual licensed under the MIT and GPL licenses.
 				return false;
 			}
 
-			api.dom(that['instance'][key]['element']).off('.EVENT_TRANSITION_flicking_grid');
 			api.dom(that['instance'][key]['element']).off('.EVENT_MOUSEDOWN_flicking_grid');
 		},
 		setRestart: function(parameter) {
@@ -366,6 +330,99 @@ Dual licensed under the MIT and GPL licenses.
 
 			that.setOff(parameter);
 			that.setOn(parameter);
+		},
+		// 슬라이드 마우스 오버 콜백
+		setSlideMouseoverOn : function(parameter) {
+
+		},
+		setSlideMouseoverOff : function(parameter) {
+
+		},
+		// 마우스 포인터 브라우저 밖으로 나갔는지 확인
+		setBrowserMouseoutCheckOn: function(parameter) {
+			var that = this;
+
+			/*if(api['env']['check']['mobile'] === false) {
+				api.dom(document).on('mouseout.EVENT_MOUSEOUT_flicking_grid', function(e) {
+					var event = e || window.event;
+					//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+					var touch = event.touches || event.changedTouches;
+					var target = event.relatedTarget || event.toElement;
+					if(!target || target.nodeName === "HTML") {
+						// 이동중에 있는 플리킹 정지
+						that.setSlideStop();
+					}
+				});
+			}*/
+		},
+		setBrowserMouseoutCheckOff: function(parameter) {
+			var that = this;
+
+			//api.dom(document).off('.EVENT_MOUSEOUT_flicking_grid');
+		},
+		// transitionend
+		setTransitionendOn: function(parameter) {
+			var that = this;
+			var parameter = parameter || {};
+			var key = parameter['key'];
+
+			if(!key || !that['instance'][key] || !that['instance'][key]['element']) {
+				console.log('[오류]');
+				return false;
+			}
+
+			// 이벤트 키를 검사하여, 이미 이벤트가 설정되었는지 확인 (이벤트 중복 설정 방지)
+			if(that['instance'][key]['element']['storage'] && that['instance'][key]['element']['storage']['EVENT_TRANSITION_flicking_grid']) {
+				console.log('[오류] 중복 이벤트');
+				return false;
+			}
+
+			// 트랜지션 (하위 자식 노드의 transition 전파에 따라 실행될 수 있다. 자식의 transition 전파를 막으려면 해당 자식 이벤트에 stopPropagation 실행)
+			api.dom(that['instance'][key]['element']).on(api['env']['event']['transitionend'] + '.EVENT_TRANSITION_flicking_grid', function(e) {
+				var event = e || window.event;
+
+				console.log('[정보] transitionend');
+				//console.log(event.target);
+				//console.log(event.type);
+				//console.log(event.bubbles);
+				//console.log(event.cancelable);
+				//console.log(event.propertyName);
+				//console.log(event.elapsedTime);
+				//console.log(event.pseudoElement);
+
+				// grid에서 발생한 이벤트여부 확인
+				if(that['instance'][key]['element'].isEqualNode(event.target) && typeof event.propertyName === 'string' && event.propertyName.toLowerCase() === 'transform') {
+					console.log('grid transform');
+				}
+			});
+		},
+		setTransitionendOff: function(parameter) {
+			var that = this;
+			var parameter = parameter || {};
+			var key = parameter['key'];
+
+			if(!key || !that['instance'][key] || !that['instance'][key]['element']) {
+				console.log('[오류]');
+				return false;
+			}
+
+			api.dom(that['instance'][key]['element']).off('.EVENT_TRANSITION_flicking_grid');
+		},
+		// translate
+		setTranslate: function(parameter) {
+			var that = this;
+			var parameter = parameter || {};
+			var duration = parameter['duration'];
+			var translateX = parameter['translateX'];
+			var style = that['action']['element'] && that['action']['element'].style;
+
+			if(!style) {
+				console.log('[오류]');
+				return false;
+			}
+			style.webkitTransitionDuration = style.MozTransitionDuration = style.msTransitionDuration = style.OTransitionDuration = style.transitionDuration = duration + 's';
+			style.webkitTransform = 'translate(' + translateX + 'px, 0)' + 'translateZ(0)';
+			style.msTransform = style.MozTransform = style.OTransform = 'translateX(' + translateX + 'px)';
 		},
 		//
 		setSlideMove: function(parameter) {
@@ -387,9 +444,14 @@ Dual licensed under the MIT and GPL licenses.
 			// slide 이동
 			that.setTranslate({'duration': duration, 'translateX': that['action']['translate']});
 		},
-		getSlideIndex: function() { // 해당 플리킹 정보반환: index, total 등 (또는 모듈 인스턴스를 통해 접근할 수 있다.)
-
+		// 슬라이드 이동 정지
+		setSlideStop: function() {
+			var that = this;
+			if(that['action']) {
+				that.setSlideMove({'key': that['action'].key, 'index': that['action']['index']});
+			}
 		},
+		// 슬라이드 index 또는 next, prev 값에 따른 이동
 		setSlideIndex: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
@@ -443,12 +505,6 @@ Dual licensed under the MIT and GPL licenses.
 				}
 			}
 
-		},
-		setSlideStop: function() {
-			var that = this;
-			if(that['action']) {
-				that.setSlideMove({'key': that['action'].key, 'index': that['action']['index']});
-			}
 		}
 	};
 
