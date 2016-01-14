@@ -1480,6 +1480,22 @@ http://www.quirksmode.org/js/detect.html
 		}
 	};
 
+	// extend
+	DOM.extend = DOM.fn.extend = function(parameter) {
+		var value = typeof parameter === 'object' ? parameter : {};
+		var key;
+		for(key in value) {
+			if(this.hasOwnProperty(key)) {
+				// 동일한 함수(또는 메소드)가 있으면 건너뛴다
+				continue;
+			}
+			// this : DOM.extend( ... ), DOM.fn.extend( ... ) 분리
+			// api.dom.test = function() { ... }   <- 같은 기능 ->   api.dom.extend({'test': function() { ... }})
+			// api.dom.fn.test = function() { ... }   <- 같은 기능 ->   api.dom.fn.extend({'test': function() { ... }})
+			this[key] = value[key];
+		}
+	};
+
 	// 터치 이벤트 종류에 따른 콜백
 	DOM.touch = {
 		'on': function(selector, handlers) {
@@ -1634,22 +1650,6 @@ http://www.quirksmode.org/js/detect.html
 		}
 	};
 
-	// extend
-	DOM.extend = DOM.fn.extend = function(parameter) {
-		var value = typeof parameter === 'object' ? parameter : {};
-		var key;
-		for(key in value) {
-			if(this.hasOwnProperty(key)) {
-				// 동일한 함수(또는 메소드)가 있으면 건너뛴다
-				continue;
-			}
-			// this : DOM.extend( ... ), DOM.fn.extend( ... ) 분리
-			// api.dom.test = function() { ... }   <- 같은 기능 ->   api.dom.extend({'test': function() { ... }})
-			// api.dom.fn.test = function() { ... }   <- 같은 기능 ->   api.dom.fn.extend({'test': function() { ... }})
-			this[key] = value[key];
-		}
-	};
-
 	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 
 	// document Ready
@@ -1672,7 +1672,7 @@ http://www.quirksmode.org/js/detect.html
 			}
 		}
 	};
-
+	/*
 	// document mousedown 이벤트 콜백 (레이어 닫기 등)
 	var DocumentTouch = function() {
 		var that = this;
@@ -1796,7 +1796,7 @@ http://www.quirksmode.org/js/detect.html
 			}
 		})()
 	};
-	
+	*/
 	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 
 	// requestAnimationFrame, cancelAnimationFrame
@@ -2131,11 +2131,11 @@ http://www.quirksmode.org/js/detect.html
 		"version": 0.1,
 		"key": getKey,
 		"dom": DOM,
-		"document": {
+		/*"document": {
 			'ready': documentReady,
 			'touch': new DocumentTouch(),
 			'resize': new DocumentResize()
-		},
+		},*/
 		"animationFrameQueue": setAnimationFrameQueue,
 		"animationQueue": setAnimationQueue,
 		"transitionQueue": setTransitionQueue,
