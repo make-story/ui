@@ -191,9 +191,12 @@ api.support - 클라이언트 환경정보, DOM 컴포넌트
 	api.transitionQueue({})
 		트랜지션 리스트 실행
 
+
 ----------
 
+
 api.flicking - 플리킹 라이브러리
+
 	api.flicking.setup({
 		key: '고유값',
 		total: '슬라이드 총 개수',
@@ -212,14 +215,20 @@ api.flicking - 플리킹 라이브러리
 		value: '이동할 index 또는 next, prev'
 	});
 
+
 ----------
+
 
 api.popup - 팝업 라이브러리
+
 	작업진행중
+
 
 ----------
 
+
 api.xhr - XMLHttpRequest (레벨2) 라이브러리
+
 	api.xhr({
 		'type': 'GET', // GET이나 POST 같은 HTTP 메서드 타입
 		'url': '', // 요청할 URL 주소
@@ -235,31 +244,45 @@ api.xhr - XMLHttpRequest (레벨2) 라이브러리
 		'success': undefined // 요청이 성공했을 때 실행할 콜백 함수
 	});
 
+
 ----------
 
+
 api.utility - 각종 기능들 묶음
+
 	api.utility.inherit(객체, 상속할 객체)
 		함수객체 상속
+
 	api.utility.clone(복사대상, 하위까지 복사여부)
 		깊은 복사
+
 	api.utility.jsonDeepCopy(원본, 복사대상)
 		json 깊은 복사
+
 	api.utility.sizePercent(대상, 컨텐츠)
 		반응형 공식에 따른 계산값 반환
+
 	api.utility.stopCapture(이벤트)
 		이벤트의 기본 동작 중단
+
 	api.utility.stopBubbling(이벤트)
 		이벤트의 전파 중단
+
 	api.utility.stopEventDelivery(이벤트)
 		이벤트의 기본동작, 전파 모두 중단
+
 	api.utility.startCall(callback, seconds)
 		setTimeout
+
 	api.utility.closeCall(time)
 		clearTimeout
+
 	api.utility.startTime(callback, seconds)
 		setInterval
+
 	api.utility.closeTime(time)
 		clearInterval
+
 	api.utility.type(값)
 		type({a: 4}); //"object"
 		type([1, 2, 3]); //"array"
@@ -272,44 +295,63 @@ api.utility - 각종 기능들 묶음
 		type(new Number(4)); //"number"
 		type(new String("abc")); //"string"
 		type(new Boolean(true)); //"boolean"
+
 	api.utility.trim(값)
 		좌우 공백 제거 
+
 	api.utility.keyboardCode(이벤트)
 		키보드 이벤트 값 반환
+
 	api.utility.sleep(milliSeconds)
 		대기 상태 실행
+
 	api.utility.setLeftFormatString(add, value, count)
 		value 앞에 count 수만큼 add를 채운다	
+
 	api.utility.setRequestAnimFrame(callback)
 		requestAnimationFrame
+
 	api.utility.setCancelAnimFrame(time)
 		cancelAnimationFrame
+
 	api.utility.getNumberUnit(value)
 		숫자값 단위값 분리
+
 	api.utility.isNumeric(value)
 		숫자여부 확인
+
 	api.utility.getNumber(value)
 		숫자만 추출
+
 	api.utility.setNumberFormat(value)
 		정수값을 금액단위로 표현
+
 	api.utility.setFloatFormat(value)
 		소수점값을 금액단위로 표현
+
 	api.utility.setRemoveComma(value)
 		금액단위 표현 제거
+
 	api.utility.setRound(값, 자릿수)
 		지정자리 반올림
+
 	api.utility.setFloor(값, 자릿수)
 		지정자리 버림
+
 	api.utility.setCeiling(값, 자릿수)
 		지정자리 올림
+
 	api.utility.dateSpecificInterval()
 		몇일째 되는날
 		getDateSpecificInterval({'year': year, 'month': month, 'day': day}, 10); // +10일
 		getDateSpecificInterval({'instance': tmp}, -19); // -19일
+
 	api.utility.dateBetween(시작일2015-10-27, 종료일2015-12-27)
 		날짜차이
+
 	api.utility.lastday(년도, 월);
 		해당 년월의 마지막 날짜
+		
 
 ====
 
