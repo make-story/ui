@@ -242,12 +242,13 @@ box-sizing: 내용 부분만 사이즈가 적용되는 content-box와 달리안�
 				this.key; // popup key
 				this.form; // 종류
 				this.align; // 위치
-				this.left; 
-				this.top;
 				this.width; 
 				this.height;
 				this.animate;
 				this.transitionend;
+				//
+				this.left; 
+				this.top;
 
 				// settings (팝업 종류별 설정값)
 				this.settings = {
@@ -607,12 +608,47 @@ box-sizing: 내용 부분만 사이즈가 적용되는 content-box와 달리안�
 			//
 			var header = instance['element']['header'] = api.dom(fragment).find('#' + keys['header']).get(0);
 			var title_input = instance['element']['title_input'] = api.dom(fragment).find('#' + keys['title_input']).get(0);
-			api.dom(title_input).on('focus', function() {
-				instance['settings']['title_callback'].call(this, instance['key'], instance['settings']['title']);
-			});
 			var title_button = instance['element']['title_button'] = api.dom(fragment).find('#' + keys['title_button']).get(0);
 			var close_button = instance['element']['close_button'] = api.dom(fragment).find('#' + keys['close_button']).get(0);
 			var grid = instance['element']['grid'] = api.dom(fragment).find('#' + keys['grid']).get(0);
+
+			api.dom(title_button).on(api['env']['event']['click'], function(e) {
+				var event = e || window.event;
+				var value = title_input.value;
+				// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+				if(event.stopPropagation) { 
+					event.stopPropagation();
+				}else {
+					event.cancelBubble = true;
+				}
+				// 현재 이벤트의 기본 동작을 중단한다.
+				if(event.preventDefault) { 
+					event.preventDefault();
+				}else {
+					event.returnValue = false;
+				}
+				// 폴더 제목 변경
+				if(typeof instance['settings']['title_callback'] === 'function') {
+					instance['settings']['title_callback'].call(this, {'key': instance['key'], 'title': encodeURIComponent(value || '')});
+				}
+			});
+			api.dom(close_button).on(api['env']['event']['click'], function(e) {
+				var event = e || window.event;
+				// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+				if(event.stopPropagation) { 
+					event.stopPropagation();
+				}else {
+					event.cancelBubble = true;
+				}
+				// 현재 이벤트의 기본 동작을 중단한다.
+				if(event.preventDefault) { 
+					event.preventDefault();
+				}else {
+					event.returnValue = false;
+				}
+				that.setHide({'key': instance['key']});
+			});
+
 
 			// 하단 parent grid 정보를 추적하기 위한 element 추가
 			// data-type="parent" data-grid="부모 grid 키" data-folder="현재 folder 키" data-form="부모 grid 종류(main 또는 folder)"
@@ -622,7 +658,7 @@ box-sizing: 내용 부분만 사이즈가 적용되는 content-box와 달리안�
 			var parent = instance['element']['parent'] = api.dom(fragment).find('#' + keys['parent']).get(0);
 			parent['storage'] = {
 				'type': 'parent',
-				'folder': instance['key'],
+				'folder': instance['key'], 
 				'grid': instance['settings']['grid']
 			};
 
@@ -1833,7 +1869,7 @@ box-sizing: 내용 부분만 사이즈가 적용되는 content-box와 달리안�
 			// parameter
 			var parameter = parameter || {};
 			var key = parameter['key'];
-			var callback = parameter['callback'];
+			//var callback = parameter['callback'];
 
 			// ---------- ---------- ---------- ---------- ---------- ----------
 
