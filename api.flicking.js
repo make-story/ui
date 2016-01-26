@@ -54,13 +54,14 @@ Dual licensed under the MIT and GPL licenses.
 
 			// 모듈
 			var Module = function() {
-				// info
+				// 필수
 				this.key; // grid key
 				this.total = 0; // 전체 슬라이드 개수
 				this.width = 0; // 슬라이드 width 값
+				this.element; // 플리킹 대상 element
+				// 현재상태
 				this.index = 1; // 현재 출력되고 있는 슬라이드 (1부터 시작)
 				this.translate = 0; // container 의 현재 translateX 값
-				this.element; // 플리킹 대상 element
 
 				// settings
 				this.settings = { // 기본 설정값
@@ -109,9 +110,6 @@ Dual licensed under the MIT and GPL licenses.
 			// 이벤트 적용
 			that.setOn(parameter);
 			that.setTransitionendOn(parameter);
-
-			// 스크롤 이벤트 (상하로 움직일 때, 이전과 이후 슬라이드도 함께 이동한다.)
-
 		},
 		// 해당 플리킹 정보반환: index, total 등 (또는 모듈 인스턴스를 통해 접근할 수 있다.)
 		getInstance: function(parameter) { 
@@ -139,18 +137,6 @@ Dual licensed under the MIT and GPL licenses.
 			// 로그
 			//console.log('[실행] flicking event');
 			//console.log(that['instance'][key]['element']);
-
-			// 마우스 오버시 slide prev, slide next 버튼을 show 하자
-			// 마우스 아웃시 slide prev, slide next 버튼을 hide 하자
-			// 모바일에서는 사용자가 플레킹에 익숙해져 있지만, pc 에서 사용자는 버튼에 익숙해져 있으므로, 이 방법이 최선이다
-			// 위 방법은 뉴욕타임즈를 참고했다.
-
-			// over 이벤트
-			/*api.dom('[data-type="grid"]').on('mouseover.over_grid', function(e) {
-				api.dom(this).on('mouseout.out_grid', function(e) {
-
-				});
-			});*/
 
 			// 이벤트 키를 검사하여, 이미 이벤트가 설정되었는지 확인 (이벤트 중복 설정 방지)
 			if(that['instance'][key]['element']['storage'] && that['instance'][key]['element']['storage']['EVENT_MOUSEDOWN_flicking_grid']) {
@@ -333,7 +319,17 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// 슬라이드 마우스 오버 콜백
 		setSlideMouseoverOn : function(parameter) {
+			// 마우스 오버시 slide prev, slide next 버튼을 show 하자
+			// 마우스 아웃시 slide prev, slide next 버튼을 hide 하자
+			// 모바일에서는 사용자가 플레킹에 익숙해져 있지만, pc 에서 사용자는 버튼에 익숙해져 있으므로, 이 방법이 최선이다
+			// 위 방법은 뉴욕타임즈를 참고했다.
 
+			// over 이벤트
+			/*api.dom('[data-type="grid"]').on('mouseover.over_grid', function(e) {
+				api.dom(this).on('mouseout.out_grid', function(e) {
+
+				});
+			});*/
 		},
 		setSlideMouseoverOff : function(parameter) {
 
