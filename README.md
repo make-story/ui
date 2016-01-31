@@ -196,6 +196,7 @@ api.support - 클라이언트 환경정보, DOM 컴포넌트
 
 
 api.editor - 텍스트에디터 라이브러리
+
 	api.editor.on(api.dom('#editor').get(0)); // 해당요소 에디터 설정
 	api.editor.off(api.dom('#editor').get(0)); // 해당요소 에디터 해제
 
@@ -236,6 +237,7 @@ api.popup - 팝업 라이브러리
 
 
 api.xhr - XMLHttpRequest (레벨2) 라이브러리
+
 	api.xhr({
 		'type': 'GET', // GET이나 POST 같은 HTTP 메서드 타입
 		'url': '', // 요청할 URL 주소
