@@ -12,23 +12,13 @@ Dual licensed under the MIT and GPL licenses.
 
 -
 사용예 (파일전송)
-var setXHR = function() {
-	// file
-	var file = {};
-	file['test'] = api.dom('#file').get(0); // <input type="file" name="file" id="file">
-	// data
-	var data = {};
-	data['test'] = 'ysm'; // 또는 data = 'test=ysm';
-	// 실행
-	api.xhr({
-		'type': 'POST', 
-		'url': './action.php', 
-		'async': true, 
-
-		'file': file, // xhr 전송할 파일 리스트
-		'data': data // 서버에 보낼 문자열 값이나 자바스크립트 데이터 객체
-	});
-};
+var from = new FormData(api.dom('#form').get(0));
+api.xhr({
+	'type': 'POST', 
+	'url': './action.php', 
+	'async': true, 
+	'data': from // 서버에 보낼 문자열 값이나 자바스크립트 데이터 객체
+});
 */
 
 ;(function(factory, global) {
@@ -52,7 +42,7 @@ var setXHR = function() {
 			'url': '', // 요청할 URL 주소
 			'async': true, // 동기/비동기 방식
 
-			'file': {}, // xhr 전송할 파일 리스트
+			//'file': {}, // xhr 전송할 파일 리스트
 			'data': {}, // 서버에 보낼 문자열 값이나 자바스크립트 데이터 객체
 			'context': global, // 콜백함수 내부에서 this 키워드로 사용할 객체
 			'dataType': 'text', // 서버 측에서 응답받을 데이터의 형식을 문자열로 지정 (json, text, jsonp)
