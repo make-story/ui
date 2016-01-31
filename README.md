@@ -195,6 +195,14 @@ api.support - 클라이언트 환경정보, DOM 컴포넌트
 ----------
 
 
+api.editor - 텍스트에디터 라이브러리
+	api.editor.on(api.dom('#editor').get(0)); // 해당요소 에디터 설정
+	api.editor.off(api.dom('#editor').get(0)); // 해당요소 에디터 해제
+
+
+----------
+
+
 api.flicking - 플리킹 라이브러리
 
 	api.flicking.setup({
@@ -228,13 +236,11 @@ api.popup - 팝업 라이브러리
 
 
 api.xhr - XMLHttpRequest (레벨2) 라이브러리
-
 	api.xhr({
 		'type': 'GET', // GET이나 POST 같은 HTTP 메서드 타입
 		'url': '', // 요청할 URL 주소
 		'async': true, // 동기/비동기 방식
 
-		'file': {}, // xhr 전송할 파일 리스트
 		'data': {}, // 서버에 보낼 문자열 값이나 자바스크립트 데이터 객체
 		'context': global, // 콜백함수 내부에서 this 키워드로 사용할 객체
 		'dataType': 'text', // 서버 측에서 응답받을 데이터의 형식을 문자열로 지정 (json, text, jsonp)
@@ -242,6 +248,14 @@ api.xhr - XMLHttpRequest (레벨2) 라이브러리
 		'progressUpload': undefined, // 업로드 진행률 콜백 함수
 		'progressDownload': undefined, // 다운로드 진행률 콜백 함수
 		'success': undefined // 요청이 성공했을 때 실행할 콜백 함수
+	});
+
+	사용예 (파일전송)
+	var from = new FormData(api.dom('#form').get(0));
+	api.xhr({
+		'type': 'POST', 
+		'url': '', 
+		'data': from 
 	});
 
 
