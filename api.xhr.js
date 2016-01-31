@@ -154,12 +154,6 @@ var setXHR = function() {
 			
 			// 요청
 			instance.open(settings.type, settings.url, settings.async);
-			// POST 요청의 경우에는 서버로 전송하는 Content-Type이 application/x-www-form-urlencoded, multipart/form-data, text/plain 중에 하나여야 한다.
-			//instance.setRequestHeader('X-PINGOTHER', 'pingpong'); // CORS
-			instance.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-			//instance.setRequestHeader('Content-Type', 'multipart/form-data');
-			//instance.setRequestHeader('Content-Type', 'text/plain');
-			//instance.overrideMimeType('text/plain; charset=x-user-defined');
 
 			// http://www.html5rocks.com/en/tutorials/file/xhr2/?redirect_from_locale=ko
 			instance.responseType = settings.dataType || 'text'; // arraybuffer || blob || document || json || text
@@ -178,42 +172,72 @@ var setXHR = function() {
 					break;
 				case 'post':
 					/*
-					// FormData: https://developer.mozilla.org/en-US/docs/Web/API/FormData
-					data = new FormData(); 
-					if(typeof settings.data === 'string' && settings.data !== '') {
-						// &, = 문자열 기준으로 key=value 를 분리하여, data에 넣는다
-						settings.data.replace(/([^=&]+)=([^&]*)/g, function(m, name, value) {
-							//data[decodeURIComponent(name)] = decodeURIComponent(value);
-							data.append(name, value);	
-						}); 
-					}else if(typeof settings.data === 'object' && Object.keys(settings.data).length > 0) {
-						for(name in settings.data) {
-							if(settings.data.hasOwnProperty(name)) {
-								data.append(name, settings.data[name]);
+					// POST 요청의 경우에는 서버로 전송하는 Content-Type이 application/x-www-form-urlencoded, multipart/form-data, text/plain 중에 하나여야 한다.
+					instance.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); 
+					instance.setRequestHeader('Content-Type', 'multipart/form-data');
+					instance.setRequestHeader('Content-Type', 'text/plain');
+					instance.setRequestHeader('X-PINGOTHER', 'pingpong'); // CORS
+					instance.overrideMimeType('text/plain; charset=x-user-defined');
+					*/
+					if(global.FormData && typeof settings.data === 'object' && settings.data instanceof FormData) {
+						data = settings.data;
+					}else {
+						instance.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+						if(typeof settings.data === 'string' && settings.data !== '') {
+							settings.data.replace(/([^=&]+)=([^&]*)/g, function(m, name, value) {
+								arr.push(name + '=' + value);
+							});
+						}else if(typeof settings.data === 'object' && Object.keys(settings.data).length > 0) {
+							for(name in settings.data) {
+								if(settings.data.hasOwnProperty(name)) {
+									arr.push(name + '=' + settings.data[name]);
+								}
 							}
 						}
+						data = arr.join('&');
 					}
-					// file
-					if(typeof settings.file === 'object' && Object.keys(settings.file).length > 0) {
-						for(name in settings.file) {
-							if(settings.file.hasOwnProperty(name) && 'files' in settings.file[name]) {
-								data.append(name, settings.file[name].files[0]);
+					/*
+					if(global.FormData) {
+						// FormData: https://developer.mozilla.org/en-US/docs/Web/API/FormData
+						data = new FormData(); 
+						// text
+						if(typeof settings.data === 'string' && settings.data !== '') {
+							// &, = 문자열 기준으로 key=value 를 분리하여, data에 넣는다
+							settings.data.replace(/([^=&]+)=([^&]*)/g, function(m, name, value) {
+								//data[decodeURIComponent(name)] = decodeURIComponent(value);
+								data.append(name, value);	
+							}); 
+						}else if(typeof settings.data === 'object' && Object.keys(settings.data).length > 0) {
+							for(name in settings.data) {
+								if(settings.data.hasOwnProperty(name)) {
+									data.append(name, settings.data[name]);
+								}
 							}
 						}
+						// file
+						if(typeof settings.file === 'object' && Object.keys(settings.file).length > 0) {
+							for(name in settings.file) {
+								if(settings.file.hasOwnProperty(name) && 'files' in settings.file[name]) {
+									data.append(name, settings.file[name].files[0]);
+								}
+							}
+						}
+					}else {
+						// 일반적인 방법
+						if(typeof settings.data === 'string' && settings.data !== '') {
+							settings.data.replace(/([^=&]+)=([^&]*)/g, function(m, name, value) {
+								arr.push(name + '=' + value);
+							}); 
+						}else if(typeof settings.data === 'object' && Object.keys(settings.data).length > 0) {
+							for(name in settings.data) {
+								if(settings.data.hasOwnProperty(name)) {
+									arr.push(name + '=' + settings.data[name]);
+								}
+							}
+						}
+						data = arr.join('&');
 					}
 					*/
-					if(typeof settings.data === 'string' && settings.data !== '') {
-						settings.data.replace(/([^=&]+)=([^&]*)/g, function(m, name, value) {
-							arr.push(name + '=' + value);
-						}); 
-					}else if(typeof settings.data === 'object' && Object.keys(settings.data).length > 0) {
-						for(name in settings.data) {
-							if(settings.data.hasOwnProperty(name)) {
-								arr.push(name + '=' + settings.data[name]);
-							}
-						}
-					}
-					data = arr.join('&');
 					break;
 			}
 			
