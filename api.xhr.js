@@ -74,7 +74,7 @@ api.xhr({
 		}
 
 		var match, callback, pattern, script;
-		var instance, data, name, arr = [];
+		var instance, data = null, name, arr = [];
 		if(typeof settings.dataType === 'string' && settings.dataType.toLowerCase() === 'jsonp') {
 			// 1.
 			// JSONP
@@ -144,9 +144,13 @@ api.xhr({
 			
 			// 요청
 			instance.open(settings.type, settings.url, settings.async);
+			//instance.setRequestHeader('Accept', '*/*');
+			instance.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); // X-Requested-With 헤더는, 해당 요청이 Ajax라는 걸 의미 (비표준)
 
-			// http://www.html5rocks.com/en/tutorials/file/xhr2/?redirect_from_locale=ko
-			instance.responseType = settings.dataType || 'text'; // arraybuffer || blob || document || json || text
+			// responseType XMLHttpRequest 레벨2 에서 중요함: http://www.html5rocks.com/en/tutorials/file/xhr2/?redirect_from_locale=ko 
+			//instance.responseType = "arraybuffer";
+			//instance.responseType = 'text'; // 파이어폭스 파이어버그에서 응답이 null 로 출력될 경우, responseType 을 text로 해야 responseText 로 정상 출력된다. (이는 XMLHttpRequest 레벨 2 지원문제)
+			instance.responseType = settings.dataType || 'text'; // arraybuffer || blob || document(xml) || json || text
 			
 			// data 처리
 			switch(settings.type.toLowerCase()) {
@@ -157,22 +161,16 @@ api.xhr({
 								arr.push(name + '=' + settings.data[name]);
 							}
 						}
-						data = arr.join('&');
+						if(arr.length > 0) {
+							data = arr.join('&');
+						}
 					}
 					break;
 				case 'post':
-					/*
-					// POST 요청의 경우에는 서버로 전송하는 Content-Type이 application/x-www-form-urlencoded, multipart/form-data, text/plain 중에 하나여야 한다.
-					instance.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); 
-					instance.setRequestHeader('Content-Type', 'multipart/form-data');
-					instance.setRequestHeader('Content-Type', 'text/plain');
-					instance.setRequestHeader('X-PINGOTHER', 'pingpong'); // CORS
-					instance.overrideMimeType('text/plain; charset=x-user-defined');
-					*/
 					if(global.FormData && typeof settings.data === 'object' && settings.data instanceof FormData) {
 						data = settings.data;
 					}else {
-						instance.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+						instance.overrideMimeType('text/plain; charset=x-user-defined');
 						if(typeof settings.data === 'string' && settings.data !== '') {
 							settings.data.replace(/([^=&]+)=([^&]*)/g, function(m, name, value) {
 								arr.push(name + '=' + value);
@@ -184,7 +182,20 @@ api.xhr({
 								}
 							}
 						}
-						data = arr.join('&');
+						if(arr.length > 0) {
+							/*
+							// POST 요청의 경우에는 서버로 전송하는 Content-Type이 application/x-www-form-urlencoded, multipart/form-data, text/plain 중에 하나여야 한다.
+							instance.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); 
+							instance.setRequestHeader('Content-Type', 'multipart/form-data');
+							instance.setRequestHeader('Content-Type', 'text/plain');
+							instance.setRequestHeader('X-PINGOTHER', 'pingpong'); // CORS
+
+							// retrieve data unprocessed as a binary string
+							instance.overrideMimeType("text/plain; charset=x-user-defined");
+							*/
+							instance.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+							data = arr.join('&');
+						}
 					}
 					/*
 					if(global.FormData) {
@@ -225,55 +236,13 @@ api.xhr({
 								}
 							}
 						}
-						data = arr.join('&');
+						if(arr.length > 0) {
+							data = arr.join('&');
+						}
 					}
 					*/
 					break;
 			}
-			
-			/*
-			// 상태처리 (구버전, XMLHttpRequest level 1)
-			instance.onreadystatechange = function() {
-				switch(instance.readyState) {
-					case 0: // 객체만 생성되고 아직 초기화되지 않은 상태(open 메소드가 호출되지 않음)
-						if(typeof settings.beforeSend === 'function') {
-							settings.beforeSend.call(settings.context);
-						}
-						break;
-					case 1: // open 메소드가 호출되고 아직 send 메소드가 불리지 않은 상태
-					case 2: // send 메소드가 불렸지만 status와 헤더는 도착하지 않은 상태
-						// 연결 진행
-						break;
-					case 3: // 데이터의 일부를 받은 상태
-						if(typeof settings.complete === 'function') {
-							settings.complete.call(settings.context);
-						}
-						break;
-					case 4: // 데이터를 전부 받은 상태
-						if(instance.status === 200) { // 요청 성공
-							var data;
-							if(settings.dataType.toLowerCase() === 'xml') {
-								data = instance.responseXML;
-							}else {
-								data = instance.responseText;
-								if(settings.dataType.toLowerCase() === 'json') {
-									data = JSON.parse(data);
-								}
-							}
-							if(typeof settings.success === 'function') {
-								settings.success.call(settings.context, data);
-							}
-						}else { // 문제 발생
-							// 403(접근거부), 404(페이지없음), 500(서버오류발생)
-						}
-						break;
-				}
-			};
-			instance.addEventListener("progress", callback, false);
-			instance.addEventListener("load", callback, false);
-			instance.addEventListener("error", callback, false);
-			instance.addEventListener("abort", callback, false);
-			*/
 
 			//instance.onloadstart
 			//instance.onabort
@@ -297,29 +266,43 @@ api.xhr({
 					settings.progressDownload.call(settings.context, Number((100 / total) * loaded).toFixed(2));
 				}
 			};
-			// 완료
-			instance.onload = function(event) {
-				if(this.status === 200) { // 요청 성공
-					//console.log('finished');
-					//console.log(this.response);
-
-					// Note: .response instead of .responseText
-					//var blob = new Blob([this.response], {type: 'image/png'});
-
-					var data;
-					if(settings.dataType.toLowerCase() === 'xml') {
-						data = instance.responseXML;
-					}else {
-						data = instance.responseText;
-						if(settings.dataType.toLowerCase() === 'json') {
-							data = JSON.parse(data);
+			// 받는중
+			instance.onreadystatechange = function() {
+				switch(instance.readyState) {
+					case 0: // 객체만 생성되고 아직 초기화되지 않은 상태(open 메소드가 호출되지 않음)
+						if(typeof settings.beforeSend === 'function') {
+							settings.beforeSend.call(settings.context);
 						}
+						break;
+					case 1: // open 메소드가 호출되고 아직 send 메소드가 불리지 않은 상태
+					case 2: // send 메소드가 불렸지만 status와 헤더는 도착하지 않은 상태
+						// 연결 진행
+						break;
+					case 3: // 데이터의 일부를 받은 상태
+						if(typeof settings.complete === 'function') {
+							settings.complete.call(settings.context);
+						}
+						break;
+					case 4: // 데이터를 전부 받은 상태
+						if(instance.status != 200) {
+							// 403(접근거부), 404(페이지없음), 500(서버오류발생)
+						}
+						break;
+				}
+			};
+			// 완료
+			instance.onload = function(event) { 
+				//console.dir(this);
+				//console.dir(instance);
+				//this.getResponseHeader("Last-Modified")
+				if(instance.status == 200) {
+					var data = instance.response || instance.responseText || instance.responseXML; // XMLHttpRequest Level 2
+					if(!instance.responseType && settings.dataType.toLowerCase() === 'json') {
+						data = JSON.parse(data);
 					}
 					if(typeof settings.success === 'function') {
 						settings.success.call(settings.context, data);
 					}
-				}else { // 문제 발생
-					// 403(접근거부), 404(페이지없음), 500(서버오류발생)
 				}
 			};
 			// 에러
@@ -329,7 +312,7 @@ api.xhr({
 			};
 
 			// 전송 데이터
-			instance.send(data);
+			instance.send(data || null);
 		}
 	};
 	
