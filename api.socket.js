@@ -76,7 +76,7 @@ socket.message(콜백설정);
 				open.call(this, Array.prototype.slice.call(arguments));
 			}
 		};
-		that.socket.onerror = function(error) { // 에러
+		that.socket.onerror = function() { // 에러
 			if(typeof error === 'function') {
 				error.call(this, Array.prototype.slice.call(arguments));
 			}
