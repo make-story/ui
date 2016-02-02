@@ -264,6 +264,26 @@ api.xhr - XMLHttpRequest (레벨2) 라이브러리
 ----------
 
 
+api.socket - WebSocket 라이브러리
+
+	api.socket({
+		'url': 'ws://', // 필수
+		'open': 'open 콜백',
+		'send': '서버전송 메시지',
+		'message': '서버로 부터 받은 메시지',
+		'error': '에러 콜백'
+	});
+
+	var socket = api.socket({'url': 'ws://'});
+	socket.message(function(data) {
+		// 서버로 부터 받은 메시지
+	});
+	socket.send('서버로 전송 데이터');
+
+
+----------
+
+
 api.utility - 각종 기능들 묶음
 
 	api.utility.inherit(객체, 상속할 객체)
