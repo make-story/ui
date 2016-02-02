@@ -43,7 +43,7 @@ socket.message(콜백설정);
 	var connect = {};
 
 	// 소켓
-	var Socket = function(parameter) {
+	var Socket = function Socket(parameter) {
 		var that = this;
 
 		// parameter
