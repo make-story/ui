@@ -111,7 +111,7 @@ Dual licensed under the MIT and GPL licenses.
 			that.setOn(parameter);
 			that.setTransitionendOn(parameter);
 
-			return this; // 체이닝 가능하도록 지원
+			return that; // 체이닝 가능하도록 지원
 		},
 		// 해당 플리킹 정보반환: index, total 등 (또는 모듈 인스턴스를 통해 접근할 수 있다.)
 		getInstance: function(parameter) { 
@@ -321,6 +321,7 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// 슬라이드 마우스 오버 콜백
 		setSlideMouseoverOn : function(parameter) {
+			var that = this;
 			// 마우스 오버시 slide prev, slide next 버튼을 show 하자
 			// 마우스 아웃시 slide prev, slide next 버튼을 hide 하자
 			// 모바일에서는 사용자가 플레킹에 익숙해져 있지만, pc 에서 사용자는 버튼에 익숙해져 있으므로, 이 방법이 최선이다
@@ -333,10 +334,11 @@ Dual licensed under the MIT and GPL licenses.
 				});
 			});*/
 
-			return this;
+			return that;
 		},
 		setSlideMouseoverOff : function(parameter) {
-			return this;
+			var that = this;
+			return that;
 		},
 		// 마우스 포인터 브라우저 밖으로 나갔는지 확인 (마우스커서가 플리킹중 팝업위로 올라갔는지 여부도 확인해야 한다.)
 		setBrowserMouseoutCheckOn: function(parameter) {
@@ -355,12 +357,12 @@ Dual licensed under the MIT and GPL licenses.
 				});
 			}*/
 
-			return this;
+			return that;
 		},
 		setBrowserMouseoutCheckOff: function(parameter) {
 			var that = this;
 			//api.dom(document).off('.EVENT_MOUSEOUT_flicking_grid');
-			return this;
+			return that;
 		},
 		// transitionend
 		setTransitionendOn: function(parameter) {
@@ -398,7 +400,7 @@ Dual licensed under the MIT and GPL licenses.
 				}
 			});
 
-			return this;
+			return that;
 		},
 		setTransitionendOff: function(parameter) {
 			var that = this;
@@ -410,7 +412,7 @@ Dual licensed under the MIT and GPL licenses.
 				return false;
 			}
 			api.dom(that['instance'][key]['element']).off('.EVENT_TRANSITION_flicking_grid');
-			return this;
+			return that;
 		},
 		// translate
 		setTranslate: function(parameter) {
