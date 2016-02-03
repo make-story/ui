@@ -302,7 +302,7 @@ http://www.quirksmode.org/js/detect.html
 		*/
 		var arr = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'/*,'0','1','2','3','4','5','6','7','8','9'*/];
 		var date = new Date();
-		return [arr[Math.floor(Math.random() * arr.length)], Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1), date.getFullYear(), (Number(date.getMonth()) + 1), date.getDate()].join('');
+		return [arr[Math.floor(Math.random() * arr.length)], Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1), date.getFullYear(), (Number(date.getMonth()) + 1), date.getDay(), date.getHours(), date.getMinutes()].join('');
 	};
 
 	// event name 크로스브라우저에 따른 자동 변경
@@ -636,7 +636,7 @@ http://www.quirksmode.org/js/detect.html
 			if('classList' in document.createElement('div')) {
 				return function(name) {
 					var i, key, max = (this.elements && this.elements.length) || 0;
-					var arr = name.split(/\s+/);
+					var arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 					
 					if(!max) {
 						return this;
@@ -680,7 +680,7 @@ http://www.quirksmode.org/js/detect.html
 			if('classList' in document.createElement('div')) {
 				return function(name) {
 					var i, key, max = (this.elements && this.elements.length) || 0;
-					var arr = name.split(/\s+/);
+					var arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 
 					if(!max) {
 						return this;
@@ -723,7 +723,7 @@ http://www.quirksmode.org/js/detect.html
 			if('classList' in document.createElement('div')) {
 				return function(name) {
 					var i, key, max = (this.elements && this.elements.length) || 0;
-					var arr = name.split(/\s+/);
+					var arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 
 					if(!max) {
 						return this;
@@ -1254,7 +1254,7 @@ http://www.quirksmode.org/js/detect.html
 			return_function = function(events, handlers, capture) {
 				var events = events || undefined;
 				var handlers = handlers || undefined;
-				var capture = (typeof capture === 'undefined') ? false : capture;
+				var capture = (typeof capture === 'undefined') ? false : capture; // IE의 경우 캡쳐 미지원 (기본값: false 버블링으로 함)
 				var arr = [];
 				var key, callback;
 				var i, max = (this.elements && this.elements.length) || 0;
@@ -1547,7 +1547,7 @@ http://www.quirksmode.org/js/detect.html
 					that.touchTimeDelay = that.touchTimeDelay || null; // delay check 관련 setTimeout
 					that.touchTimeCount = that.touchTimeCount || null; // 터치 횟수 카운트 시작 관련 setTimeout
 					that.touchCheck = that.touchCheck || {};
-					radius = Math.max(event.target.offsetWidth, event.target.offsetHeight, 30);
+					radius = Math.max(event.target.offsetWidth, event.target.offsetHeight, 30); // 이벤트 작동 타겟 영역
 					if(touch) {
 						that.touchCheck[that.touchCount] = {
 							'start': {
@@ -1605,6 +1605,13 @@ http://www.quirksmode.org/js/detect.html
 						var event = e || window.event;
 						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
 						var touch = event.changedTouches; // touchend
+
+						// 현재 이벤트의 기본 동작을 중단한다. (모바일에서 스크롤 하단이동 기본기능)
+						if(event.preventDefault) { 
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
 						
 						// 이벤트 종료
 						DOM(window).off('.EVENT_MOUSEMOVE_api_dom_touch');
@@ -1622,7 +1629,7 @@ http://www.quirksmode.org/js/detect.html
 								var end = that.touchCheck[that.touchCount-1]['end'];
 								var time = Number(that.touchCheck['time']['end']) - Number(that.touchCheck['time']['start']);
 								// handlers(callback) 실행
-								if(time <= 180 && Math.abs(start['top'] - end['top']) <= radius && Math.abs(start['left'] - end['left']) <= radius) {
+								if(time <= 180/* 클릭된 상태가 지속될 수 있으므로 시간검사 */ && Math.abs(start['top'] - end['top']) <= radius && Math.abs(start['left'] - end['left']) <= radius) {
 									if(that.touchCount === 1) {
 										if(typeof handlers === 'function') {
 											handlers.call(that, e);
@@ -1637,7 +1644,7 @@ http://www.quirksmode.org/js/detect.html
 								}
 								that.touchCount = 0;
 								that.touchCheck = {};
-							}, 200);
+							}, 300); // 검사 시작시간
 						}
 					});
 				});

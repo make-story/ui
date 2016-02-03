@@ -115,6 +115,8 @@ socket.message(콜백설정);
 					}
 					break;
 			}
+
+			return this;
 		},
 		message: function(callback) {
 			var that = this;
@@ -135,6 +137,8 @@ socket.message(콜백설정);
 				that.socket.close = callback; // 소켓이 닫히는 시점
 			}
 			that.socket.close();
+
+			return this;
 		}
 	};
 

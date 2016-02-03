@@ -110,6 +110,8 @@ Dual licensed under the MIT and GPL licenses.
 			// 이벤트 적용
 			that.setOn(parameter);
 			that.setTransitionendOn(parameter);
+
+			return this; // 체이닝 가능하도록 지원
 		},
 		// 해당 플리킹 정보반환: index, total 등 (또는 모듈 인스턴스를 통해 접근할 수 있다.)
 		getInstance: function(parameter) { 
@@ -117,7 +119,7 @@ Dual licensed under the MIT and GPL licenses.
 			var parameter = parameter || {};
 			var key = parameter['key']; // flicking key
 
-			if(!key || !that['instance'][key] || !that['instance'][key]['element']) {
+			if(!key || !that['instance'][key]) {
 				console.log('[오류]');
 				return false;
 			}
@@ -330,11 +332,13 @@ Dual licensed under the MIT and GPL licenses.
 
 				});
 			});*/
+
+			return this;
 		},
 		setSlideMouseoverOff : function(parameter) {
-
+			return this;
 		},
-		// 마우스 포인터 브라우저 밖으로 나갔는지 확인
+		// 마우스 포인터 브라우저 밖으로 나갔는지 확인 (마우스커서가 플리킹중 팝업위로 올라갔는지 여부도 확인해야 한다.)
 		setBrowserMouseoutCheckOn: function(parameter) {
 			var that = this;
 
@@ -350,11 +354,13 @@ Dual licensed under the MIT and GPL licenses.
 					}
 				});
 			}*/
+
+			return this;
 		},
 		setBrowserMouseoutCheckOff: function(parameter) {
 			var that = this;
-
 			//api.dom(document).off('.EVENT_MOUSEOUT_flicking_grid');
+			return this;
 		},
 		// transitionend
 		setTransitionendOn: function(parameter) {
@@ -391,6 +397,8 @@ Dual licensed under the MIT and GPL licenses.
 					console.log('grid transform');
 				}
 			});
+
+			return this;
 		},
 		setTransitionendOff: function(parameter) {
 			var that = this;
@@ -401,8 +409,8 @@ Dual licensed under the MIT and GPL licenses.
 				console.log('[오류]');
 				return false;
 			}
-
 			api.dom(that['instance'][key]['element']).off('.EVENT_TRANSITION_flicking_grid');
+			return this;
 		},
 		// translate
 		setTranslate: function(parameter) {
