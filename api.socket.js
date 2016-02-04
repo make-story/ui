@@ -67,7 +67,13 @@ socket.message(콜백설정);
 		//
 		that.queue = [];
 		//that.storage = {};
-		that.socket = new WebSocket(url);
+		try {
+			that.socket = new WebSocket(url);
+		}catch(e) {
+			if(typeof error === 'function') {
+				error.call(this, Array.prototype.slice.call(arguments));
+			}
+		}
 		that.socket.onopen = function() { // 연결 (소켓이 열리는 시점)
 			while(that.queue.length) {
 				that.socket.send(that.queue.shift()); // 서버로 메시지 전송
