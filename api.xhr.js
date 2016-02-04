@@ -170,7 +170,7 @@ api.xhr({
 					if(global.FormData && typeof settings.data === 'object' && settings.data instanceof FormData) {
 						data = settings.data;
 					}else {
-						instance.overrideMimeType('text/plain; charset=x-user-defined');
+						//instance.overrideMimeType('text/plain; charset=x-user-defined'); // IE작동안함
 						if(typeof settings.data === 'string' && settings.data !== '') {
 							settings.data.replace(/([^=&]+)=([^&]*)/g, function(m, name, value) {
 								arr.push(name + '=' + value);
