@@ -326,7 +326,7 @@ http://www.quirksmode.org/js/detect.html
 	};
 
 	// window.ScrollX, window.ScrollY 크로스 브라우저
-	var getScrollXY = function() {
+	/*var getScrollXY = function() {
 		// https://developer.mozilla.org/ko/docs/Web/API/Window/scrollY
 		var supportPageOffset = window.pageXOffset != undefined;
 		var isCSS1Compat = ((document.compatMode || "") === "CSS1Compat");
@@ -334,7 +334,7 @@ http://www.quirksmode.org/js/detect.html
 			'x': supportPageOffset ? window.pageXOffset : isCSS1Compat ? document.documentElement.scrollLeft : document.body.scrollLeft, 
 			'y': supportPageOffset ? window.pageYOffset : isCSS1Compat ? document.documentElement.scrollTop : document.body.scrollTop
 		};
-	};
+	};*/
 
 	// 숫자여부 
 	var isNumeric = function(value) {
