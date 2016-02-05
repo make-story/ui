@@ -15,7 +15,7 @@ Dual licensed under the MIT and GPL licenses.
 http://www.opensource.org/licenses/MIT
 
 @browser compatibility
-IE9 이상 (트랜지션, 애니메이션 등의 사용은 IE10 이상)
+IE9 이상(IE8 부분지원) (트랜지션, 애니메이션 등의 사용은 IE10 이상)
 querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
 element.classList: Chrome 8.0, Firefox 3.6, Internet Explorer 10, Opera 11.50, Safari 5.1
 getBoundingClientRect(): width/height IE9부터 지원
@@ -289,6 +289,9 @@ http://www.quirksmode.org/js/detect.html
 	// 정규식
 	var regexp = {
 		pixel_unit_list: /width$|height$|top|right|bottom|left|fontSize|letterSpacing|lineHeight|^margin*|^padding*/i, // 단위 px 해당되는 것
+		time_unit_list: /.+(-duration|-delay)$/i, // seconds (s) or milliseconds (ms)
+		position_list: /^(top|right|bottom|left)$/,
+		display_list: /^(display|visibility|opacity|)$/i,
 		num: /^[+-]?\d+(\.\d+)?$/ // 숫자
 	};
 
@@ -333,6 +336,11 @@ http://www.quirksmode.org/js/detect.html
 		};
 	};
 
+	// 숫자여부 
+	var isNumeric = function(value) {
+		return !isNaN(parseFloat(value)) && isFinite(value);
+	};
+
 	// 숫자/단위 분리 (예: 10px -> [0]=>10px, [1]=>10, [2]=>'px')
 	var getNumberUnit = function(value) {
 		var regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source;
@@ -368,13 +376,13 @@ http://www.quirksmode.org/js/detect.html
 		for(i=0, max=arr.length; i<max; i++) {
 			// padding
 			tmp = getNumberUnit(elements.style('padding' + arr[i]));
-			value['padding'] += (tmp && tmp[1] && !isNaN(parseFloat(tmp[1])) && isFinite(tmp[1])) ? Number(tmp[1]) : 0; // 숫자형 검사
+			value['padding'] += (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
 			// border
 			tmp = getNumberUnit(elements.style('border' + arr[i] + 'Width'));
-			value['border'] += (tmp && tmp[1] && !isNaN(parseFloat(tmp[1])) && isFinite(tmp[1])) ? Number(tmp[1]) : 0;
+			value['border'] += (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
 			// margin
 			tmp = getNumberUnit(elements.style('margin' + arr[i]));
-			value['margin'] += (tmp && tmp[1] && !isNaN(parseFloat(tmp[1])) && isFinite(tmp[1])) ? Number(tmp[1]) : 0;
+			value['margin'] += (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
 		}
 		
 		return value;
@@ -426,7 +434,7 @@ http://www.quirksmode.org/js/detect.html
 		if(value <= 0 || value == null) {
 			// css로 값을 구한다.
 			tmp = getNumberUnit(elements.style(property));
-			value = (tmp && tmp[1] && !isNaN(parseFloat(tmp[1]))) && isFinite(tmp[1]) ? Number(tmp[1]) : 0;
+			value = (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
 			if(extra) {
 				// inner, outer 추가
 				tmp = getAugmentWidthHeight(elements, property);
@@ -835,7 +843,7 @@ http://www.quirksmode.org/js/detect.html
 			element.style.webkitTransitionDuration = element.style.MozTransitionDuration = element.style.msTransitionDuration = element.style.OTransitionDuration = element.style.transitionDuration = '1s';
 			element.style.webkitAnimationDelay = element.style.MozAnimationDelay = element.style.msAnimationDelay = element.style.OAnimationDelay = element.style.animationDelay = '1s';
 			*/
-			if(!max || !this.elements[0].style) {
+			if(!max || this.elements[0].nodeType === 3 || this.elements[0].nodeType === 8 || !this.elements[0].style) {
 				return this;
 				//return false;
 			}else if(typeof parameter === 'string' && parameter in this.elements[0].style) { // get
@@ -855,6 +863,9 @@ http://www.quirksmode.org/js/detect.html
 								}
 							}else {
 								// 단위(예:px)까지 명확하게 입력해줘야 한다.
+								if(typeof parameter[key] === 'number' && regexp.pixel_unit_list.test(key)) {
+									parameter[key] += 'px';
+								}
 								this.elements[i].style[key] = parameter[key];
 							}
 						}
