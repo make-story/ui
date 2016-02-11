@@ -389,6 +389,41 @@ api.utility - 각종 기능들 묶음
 		해당 년월의 마지막 날짜
 		
 
+----------
+
+
+api.script - js 파일 동적로딩
+
+	// 사용예 1
+	api.script('js load 파일');
+
+	// 사용예 2
+	api.script(['js load 파일 리스트']);
+
+	// 사용예 3
+	api.script(
+		'js load 파일', 
+		function(js파일실행반환값) {
+			// 성공콜백
+		},
+		function() {
+			// 실패콜백
+		}
+	);
+
+
+	의존성관리(해당 코드를 실행시키는데 종속적인 파일 리스트)
+	모듈화(리턴값을 글로벌 스코프가 아닌 콜백함수의 스코프로 제한)
+
+	// 사용예 1
+	api.box(반환객체);
+
+	// 사용예 2
+	api.box([종속된 객체 리스트], function(종속된 객체) {
+		return 반환객체;
+	});
+
+
 ====
 
 #####The MIT License (MIT)
