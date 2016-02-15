@@ -262,7 +262,7 @@ http://www.quirksmode.org/js/detect.html
 			};
 
 			// 브라우저 버전체크
-			if(environment['browser']['name'] === 'explorer' && environment['browser']['version'] < 8.0) {
+			if(environment['browser']['name'] === 'explorer' && environment['browser']['version'] < 7.0) {
 				// 브라우저 지원범위에 따른 최소 기능만 제공
 				return {
 					"env": environment,
@@ -540,32 +540,34 @@ http://www.quirksmode.org/js/detect.html
 						break;
 				}
 			}else { // search element
-				// document.querySelectorAll(x); // IE8이상 사용가능 ('.testClass + p' selector 형태는 IE9이상 사용가능) 
-				elements = (context || document).querySelectorAll(selector); // querySelectorAll: length 있음, querySelector: length 없음
-				if(elements instanceof NodeList || elements instanceof HTMLCollection) {
-					for(i=0, max=elements.length; i<max; i++) {
-						this.elements[i] = elements[i];
+				try {
+					// document.querySelectorAll(x); // IE8이상 사용가능 ('.testClass + p' selector 형태는 IE9이상 사용가능) 
+					elements = (context || document).querySelectorAll(selector); // querySelectorAll: length 있음, querySelector: length 없음
+					if(elements instanceof NodeList || elements instanceof HTMLCollection) {
+						for(i=0, max=elements.length; i<max; i++) {
+							this.elements[i] = elements[i];
+						}
+					}
+				}catch(e) {
+					// IE7, 8 대응시 아래 코드 사용
+					if(selector.charAt(0) === '#') { // id
+						elements = document.getElementById(selector.slice(1)); // getElementById context 하위 검색 불가능
+						try {
+							if(elements && elements.nodeType) {
+								this.elements[0] = elements;
+							}
+						}catch(e) {}
+					}else { // tag
+						elements = (context || document).getElementsByTagName(selector);
+						try {
+							if(elements && (elements.length || elements instanceof NodeList || elements instanceof HTMLCollection)) { // IE7 문제: NodeList, HTMLCollection
+								for(i=0, max=elements.length; i<max; i++) {
+									this.elements[i] = elements[i];
+								}
+							}
+						}catch(e) {}
 					}
 				}
-
-				// IE7, 8 대응시 아래 코드 사용
-				/*if(selector.charAt(0) === '#') { // id
-					elements = document.getElementById(selector.slice(1)); // getElementById context 하위 검색 불가능
-					try {
-						if(elements && elements.nodeType) {
-							this.elements[0] = elements;
-						}
-					} catch(e) {}
-				}else { // tag
-					elements = (context || document).getElementsByTagName(selector);
-					try {
-						if(elements && (elements.length || elements instanceof NodeList || elements instanceof HTMLCollection)) { // IE7 문제: NodeList, HTMLCollection
-							for(i=0, max=elements.length; i<max; i++) {
-								this.elements[i] = elements[i];
-							}
-						}
-					} catch(e) {}
-				}*/
 			}
 		}
 
@@ -651,7 +653,6 @@ http://www.quirksmode.org/js/detect.html
 					}
 				}
 			}else {
-				//console.log('[정보] classList 미지원 (getClass)');
 				return function() {
 					if(this.elements && this.elements.length > 0 && this.elements[0].className) {
 						return this.elements[0].className.split(/\s+/);
@@ -664,8 +665,8 @@ http://www.quirksmode.org/js/detect.html
 			var regexp;
 
 			if(this.elements && this.elements.length > 0 && typeof name === 'string' && this.elements[0].className) {
-				regexp = new RegExp('(?:\\s|^)' + name + '(?:\\s|$)');				
-				return !!this.elements[0].className.match(regexp); // !! 느낌표가 2개 이유는 type 를 boolean 으로 만들기 위함
+				regexp = new RegExp('(\\s|^)' + name + '(\\s|$)'); // new로 만들때에는 이스케이프문자 \는 \\로 해주어야 한다.
+				return regexp.test(this.elements[0].className);
 			}
 
 			return false;
@@ -693,7 +694,6 @@ http://www.quirksmode.org/js/detect.html
 					return this;
 				};
 			}else {
-				//console.log('[정보] classList 미지원 (addClass)');
 				return function(name) {
 					var i, key, max = (this.elements && this.elements.length) || 0;
 					var arr;
@@ -705,7 +705,7 @@ http://www.quirksmode.org/js/detect.html
 						arr = name.split(/\s+/);
 						for(i=0; i<max; i++) {
 							for(key in arr) {
-								if(!(!!this.elements[i].className.match(new RegExp('(\\s|^)' + arr[key] + '(\\s|$)')))) {
+								if(!(!!this.elements[i].className.match(new RegExp('(\\s|^)' + arr[key] + '(\\s|$)')))) { // new로 만들때에는 이스케이프문자 \는 \\로 해주어야 한다.
 									this.elements[i].className += " " + arr[key];
 								}
 							}
@@ -739,7 +739,6 @@ http://www.quirksmode.org/js/detect.html
 					return this;
 				};
 			}else {
-				//console.log('[정보] classList 미지원 (removeClass)');
 				return function(name) {
 					var regexp;
 					var i, key, max = (this.elements && this.elements.length) || 0;
@@ -752,7 +751,7 @@ http://www.quirksmode.org/js/detect.html
 						arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 						for(i=0; i<max; i++) {
 							for(key in arr) {
-								regexp = new RegExp('(?:\\s|^)' + arr[key] + '(?:\\s|$)');
+								regexp = new RegExp('(\\s|^)' + arr[key] + '(\\s|$)'); // new로 만들때에는 이스케이프문자 \는 \\로 해주어야 한다.
 								this.elements[i].className = this.elements[i].className.replace(regexp, ' ');
 							}
 						}
@@ -784,7 +783,6 @@ http://www.quirksmode.org/js/detect.html
 					return this;
 				};
 			}else {
-				//console.log('[정보] classList 미지원 (toggleClass)');
 				return function(name) {
 					var i, key, max = (this.elements && this.elements.length) || 0;
 					var arr;
@@ -2065,7 +2063,7 @@ http://www.quirksmode.org/js/detect.html
 							if(regexp.pixel_unit_list.test(key)) {
 								unit = 'px';
 							}else {
-								console.log('[경고] 단위 없음');
+								//console.log('[경고] 단위 없음');
 								continue;
 							}
 						}
