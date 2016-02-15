@@ -547,6 +547,25 @@ http://www.quirksmode.org/js/detect.html
 						this.elements[i] = elements[i];
 					}
 				}
+
+				// IE7, 8 대응시 아래 코드 사용
+				/*if(selector.charAt(0) === '#') { // id
+					elements = document.getElementById(selector.slice(1)); // getElementById context 하위 검색 불가능
+					try {
+						if(elements && elements.nodeType) {
+							this.elements[0] = elements;
+						}
+					} catch(e) {}
+				}else { // tag
+					elements = (context || document).getElementsByTagName(selector);
+					try {
+						if(elements && (elements.length || elements instanceof NodeList || elements instanceof HTMLCollection)) { // IE7 문제: NodeList, HTMLCollection
+							for(i=0, max=elements.length; i<max; i++) {
+								this.elements[i] = elements[i];
+							}
+						}
+					} catch(e) {}
+				}*/
 			}
 		}
 
@@ -568,7 +587,20 @@ http://www.quirksmode.org/js/detect.html
 		},
 		// child node search
 		find: function(selector) {
-			return DOM(selector, this.elements[0] || document);
+			if(this.elements && this.elements.length > 0) {
+				return DOM(selector, this.elements[0] || document);
+			}
+			return this;
+		},
+		// loop elements
+		each: function(callback) { 	
+			var i, max;
+
+			if(this.elements && this.elements.length > 0 && typeof callback === 'function') {
+				for(i=0, max=this.elements.length; i<max; i++) {
+					callback.apply(this.elements[i], [i, this.elements[i]]); // i:key, this.elements[i]:element
+				}
+			}
 		},
 		// parent node search
 		closest: function(selector, context) {
@@ -621,7 +653,7 @@ http://www.quirksmode.org/js/detect.html
 			}else {
 				//console.log('[정보] classList 미지원 (getClass)');
 				return function() {
-					if(this.elements && this.elements.length > 0) {
+					if(this.elements && this.elements.length > 0 && this.elements[0].className) {
 						return this.elements[0].className.split(/\s+/);
 					}
 				}
@@ -631,7 +663,7 @@ http://www.quirksmode.org/js/detect.html
 			// x.className; // 표준
 			var regexp;
 
-			if(this.elements && this.elements.length > 0 && typeof name === 'string') {
+			if(this.elements && this.elements.length > 0 && typeof name === 'string' && this.elements[0].className) {
 				regexp = new RegExp('(?:\\s|^)' + name + '(?:\\s|$)');				
 				return !!this.elements[0].className.match(regexp); // !! 느낌표가 2개 이유는 type 를 boolean 으로 만들기 위함
 			}
@@ -644,12 +676,13 @@ http://www.quirksmode.org/js/detect.html
 			if('classList' in document.createElement('div')) {
 				return function(name) {
 					var i, key, max = (this.elements && this.elements.length) || 0;
-					var arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
+					var arr;
 					
 					if(!max) {
 						return this;
 						//return false;
 					}else if(typeof name === 'string') {
+						arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 						for(i=0; i<max; i++) {
 							for(key in arr) {
 								this.elements[i].classList.add(arr[key]); // add(): 한번에 하나의 클래스만 입력 가능하다. 즉, 띄어쓰기로 여러 클래스 입력 불가능
@@ -663,12 +696,13 @@ http://www.quirksmode.org/js/detect.html
 				//console.log('[정보] classList 미지원 (addClass)');
 				return function(name) {
 					var i, key, max = (this.elements && this.elements.length) || 0;
-					var arr = name.split(/\s+/);
+					var arr;
 					
 					if(!max) {
 						return this;
 						//return false;
 					}else if(typeof name === 'string') {
+						arr = name.split(/\s+/);
 						for(i=0; i<max; i++) {
 							for(key in arr) {
 								if(!(!!this.elements[i].className.match(new RegExp('(\\s|^)' + arr[key] + '(\\s|$)')))) {
@@ -688,12 +722,13 @@ http://www.quirksmode.org/js/detect.html
 			if('classList' in document.createElement('div')) {
 				return function(name) {
 					var i, key, max = (this.elements && this.elements.length) || 0;
-					var arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
+					var arr;
 
 					if(!max) {
 						return this;
 						//return false;
 					}else if(typeof name === 'string') {
+						arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 						for(i=0; i<max; i++) {
 							for(key in arr) {
 								this.elements[i].classList.remove(arr[key]); // remove(): 한번에 하나의 클래스만 삭제 가능하다. 즉, 띄어쓰기로 여러 클래스 삭제 불가능
@@ -708,12 +743,13 @@ http://www.quirksmode.org/js/detect.html
 				return function(name) {
 					var regexp;
 					var i, key, max = (this.elements && this.elements.length) || 0;
-					var arr = name.split(/\s+/);
+					var arr;
 
 					if(!max) {
 						return this;
 						//return false;
 					}else if(typeof name === 'string') {
+						arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 						for(i=0; i<max; i++) {
 							for(key in arr) {
 								regexp = new RegExp('(?:\\s|^)' + arr[key] + '(?:\\s|$)');
@@ -731,12 +767,13 @@ http://www.quirksmode.org/js/detect.html
 			if('classList' in document.createElement('div')) {
 				return function(name) {
 					var i, key, max = (this.elements && this.elements.length) || 0;
-					var arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
+					var arr;
 
 					if(!max) {
 						return this;
 						//return false;
 					}else if(typeof name === 'string') { 
+						arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 						for(i=0; i<max; i++) {
 							for(key in arr) {
 								this.elements[i].classList.toggle(arr[key]);
@@ -750,12 +787,13 @@ http://www.quirksmode.org/js/detect.html
 				//console.log('[정보] classList 미지원 (toggleClass)');
 				return function(name) {
 					var i, key, max = (this.elements && this.elements.length) || 0;
-					var arr = name.split(/\s+/);
+					var arr;
 
 					if(!max) {
 						return this;
 						//return false;
 					}else if(typeof name === 'string') { 
+						arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 						for(i=0; i<max; i++) {
 							for(key in arr) {
 								this.hasClass.call(this, arr[key]) ? this.removeClass.call(this, arr[key]) : this.addClass.call(this, arr[key]);
@@ -787,7 +825,7 @@ http://www.quirksmode.org/js/detect.html
 					dummy.appendChild(this.elements[0].cloneNode(true));
 					return dummy.innerHTML;
 				}
-			}else if(typeof value === 'string') { // set
+			}else if(typeof value === 'string' || typeof value === 'number') { // set
 				for(i=0; i<max; i++) {
 					this.elements[i].innerHTML = value;
 				}
@@ -797,16 +835,17 @@ http://www.quirksmode.org/js/detect.html
 		},
 		text: function(value) {
 			// x.textContent; // 표준
+			// x.innerText; // IE
 			var i, max = (this.elements && this.elements.length) || 0;
 
 			if(!max) {
 				return this;
 				//return false;
 			}else if(typeof value === 'undefined') { // get
-				return this.elements[0].textContent;
-			}else if(typeof value === 'string') { // set
+				return this.elements[0].textContent || this.elements[0].innerText;
+			}else if(typeof value === 'string' || typeof value === 'number') { // set
 				for(i=0; i<max; i++) {
-					this.elements[i].textContent = value;
+					this.elements[i].textContent = this.elements[i].innerText = value;
 				}
 			}
 
@@ -821,7 +860,7 @@ http://www.quirksmode.org/js/detect.html
 				//return false;
 			}else if(typeof value === 'undefined') { // get
 				return this.elements[0].value;
-			}else if(typeof value === 'string') { // set
+			}else if(typeof value === 'string' || typeof value === 'number') { // set
 				for(i=0; i<max; i++) {
 					this.elements[i].value = value;
 				}
@@ -980,6 +1019,7 @@ http://www.quirksmode.org/js/detect.html
 		},
 		// attribute
 		attr: function(parameter) { 
+			// x.attributes[y]; //
 			// x.getAttribute(y); // IE8이상 사용가능
 			// x.setAttribute(y, z); // IE8이상 사용가능
 			var i, key, max = (this.elements && this.elements.length) || 0;
@@ -1063,7 +1103,7 @@ http://www.quirksmode.org/js/detect.html
 			if(!max) {
 				return this;
 				//return false;
-			}else if(typeof name === 'string') {
+			}else {
 				for(i=0; i<max; i++) {
 					if(this.elements[i].parentNode) {
 						this.elements[i].parentNode.removeChild(this.elements[i]);
@@ -1247,7 +1287,7 @@ http://www.quirksmode.org/js/detect.html
 			return this;
 		},
 		// event
-		on: (function() {
+		/*on: (function() {
 			var event_function, return_function;
 
 			// 초기화
@@ -1255,7 +1295,7 @@ http://www.quirksmode.org/js/detect.html
 				event_function = function(events, handlers, capture) {
 					this.addEventListener(events, handlers, capture);
 				}
-			}else if(typeof document.attachEvent === 'function') { // IE
+			}else if(window.attachEvent) { // IE (typeof 검사시 IE8에서는 function 이 아닌 object 반환)
 				event_function = function(events, handlers) {
 					this.attachEvent('on' + events, handlers);
 				}
@@ -1283,9 +1323,9 @@ http://www.quirksmode.org/js/detect.html
 				// 이벤트 설정
 				for(i=0; i<max; i++) {
 					// this.elements[i] 에 event key 가 이미 설정되어 있는지 확인
-					/*if(typeof this.elements[i]['storage'] === 'object' && this.elements[i]['storage'][key]) {
+					if(typeof this.elements[i]['storage'] === 'object' && this.elements[i]['storage'][key]) {
 						continue;
-					}*/
+					}
 
 					// 콜백
 					callback = function() {
@@ -1317,7 +1357,7 @@ http://www.quirksmode.org/js/detect.html
 				event_function = function(events, handlers, capture) {
 					this.removeEventListener(events, handlers, capture);
 				}
-			}else if(typeof document.detachEvent === 'function') { // IE
+			}else if(window.detachEvent) { // IE
 				event_function = function(events, handlers) {
 					this.detachEvent('on' + events, handlers);
 				}
@@ -1352,7 +1392,84 @@ http://www.quirksmode.org/js/detect.html
 			};
 
 			return return_function;
-		})(),
+		})(),*/
+		on: function(events, handlers, capture) {
+			var events = events || undefined,
+				handlers = handlers || undefined,
+				capture = (typeof capture === 'undefined') ? false : capture, // IE의 경우 캡쳐 미지원 (기본값: false 버블링으로 함)
+				arr = [], key;
+
+			// 이벤트 키
+			arr = events.split('.');
+			if(arr.length > 1) {
+				events = arr.shift();
+			}
+			key = arr.join('');
+
+			// 이벤트 설정
+			this.each(function(i, element) {
+				var callback = handlers;
+				// element 에 event key 가 이미 설정되어 있는지 확인
+				/*if(typeof element['storage'] === 'object' && element['storage'][key]) {
+					return;
+				}*/
+				if(typeof element.addEventListener === 'function') {
+					element.addEventListener(events, callback, capture);
+				}else if(element.attachEvent) { // IE (typeof 검사시 IE8에서는 function 이 아닌 object 반환)
+					callback = function(e) { // IE this 바인딩 문제
+						handlers(e, element);
+					};
+					/*
+					// 아래 같이 선언했을 경우 IE에서 스택풀 발생
+					handlers = function(e) { // IE this 바인딩 문제
+						handlers(e, element);
+					};
+					*/
+					element.attachEvent('on' + events, callback); 
+				}else {
+					return;
+				}
+				// 실행 정보 저장
+				if(typeof element['storage'] != 'object') {
+					element.storage = {};
+				}
+				element.storage[key] = {
+					"events": events,
+					"handlers": callback,
+					"capture": capture
+				};
+			});
+
+			return this;
+		},
+		off: function(events) {
+			var events = events || undefined,
+				arr = [], key;
+
+			// 이벤트 키
+			arr = events.split('.');
+			if(arr.length > 1) {
+				events = arr.shift();
+			}
+			key = arr.join('');
+
+			// 이벤트 해제
+			this.each(function(i, element) {
+				if(typeof element['storage'] === 'object' && element.storage[key]) {
+					if(typeof element.removeEventListener === 'function') {
+						element.removeEventListener(element.storage[key].events, element.storage[key].handlers, element.storage[key].capture);
+					}else if(element.detachEvent) { // IE
+						element.detachEvent('on' + element.storage[key].events, element.storage[key].handlers);
+					}else {
+						return;
+					}
+					// 저장된 이벤트 정보 제거
+					delete element.storage[key]; 
+				}
+			});
+
+			return this;
+		},
 		one: function(events, handlers, capture) {
 			var that = this;
 			// new Date().getUTCMilliseconds();
@@ -1507,163 +1624,202 @@ http://www.quirksmode.org/js/detect.html
 		}
 	};
 
-	// 터치 이벤트 종류에 따른 콜백
-	DOM.touch = {
-		'on': function(selector, handlers) {
-			/*
-			// 핵심은 up 이 발생하고, 특정시간 이후까지 down이 발생하지 않았을 때, 클릭이 몇번발생했는지 카운트를 시작한다.
-			api.dom.touch.on('#ysm', 
-				{
-					'one': function(e) {
-						console.log('one touch');
-					},
-					'two': function(e) {
-						console.log('two touch');
-					},
-					'delay': function(e) {
-						console.log('delay touch');
-					}
-				}
-			);
-			또는
-			api.dom.touch.on('#ysm', function() {
-				...
-			});
-			*/
+
+	// one, two, delay touch
+	/*
+	마우스 또는 터치 up 이 발생하고, 특정시간 이후까지 down이 발생하지 않았을 때, 클릭이 몇번발생했는지 카운트를 시작한다.
+	api.touch.on('#ysm', 
+		{
+			'one': function(e) {
+				console.log('one touch');
+			},
+			'two': function(e) {
+				console.log('two touch');
+			},
+			'delay': function(e) {
+				console.log('delay touch');
+			}
+		}
+	);
+	api.touch.off('#ysm', 'one'); // one 해제
+
+	또는
+
+	api.touch.on('#ysm', function() {
+		...
+	});
+	api.touch.off('#ysm', 'all'); // 전체 해제
+
+	// IE 7, 8 등에서는 더블클릭문제로 정상작동하지 않는다.
+	if(api.env.browser.name === 'explorer' && api.env.browser.version < 11) {
+		api.dom(selector).on('dblclick', function(e) {
 			
-			// 유효한 터치영역
-			//var radius = Math.min(DOM(selector).width(), DOM(selector).height(), 20); 
-			var radius = 0;
-			if(typeof selector != 'undefined' && (typeof handlers === 'object' || typeof handlers === 'function')) {
-				DOM(selector).on(environment['event']['down'] + '.EVENT_MOUSEDOWN_api_dom_touch', function(e) {
-					var event = e || window.event;
-					//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
-					var touch = event.touches; // touchstart
-					var that = this;
+		});
+	}
+	*/
+	var setTouchHandler = function(e, element) {
+		var event = e || window.event;
+		var touch = event.touches; // touchstart
+		var that = element || this;
+		var radius = 0; // 유효한 터치영역
 
-					// 기본 이벤트를 중단시키면 스크롤이 작동을 안한다.
-					// 버블링(stopPropagation) 중지시키면, 상위 이벤트(예: document 에 적용된 이벤트)이 작동을 안한다.
+		// 기본 이벤트를 중단시키면 스크롤이 작동을 안한다.
+		// 버블링(stopPropagation) 중지시키면, 상위 이벤트(예: document 에 적용된 이벤트)이 작동을 안한다.
 
-					// 멀티터치 방지
-					if(touch && touch.length && 1 < touch.length) {
-						return;
+		if(!that['storage']) { // 유효성 검사
+			return;
+		}else if(touch && touch.length && 1 < touch.length) { // 멀티터치 방지
+			return;
+		}
+
+		// 이벤트 종료
+		DOM(document).off('.EVENT_MOUSEMOVE_DOM_TOUCH');
+		DOM(document).off('.EVENT_MOUSEUP_DOM_TOUCH');
+
+		// 필수 정보
+		that.touchCount = that.touchCount || 0; // 터치 횟수
+		that.touchTimeDelay = that.touchTimeDelay || null; // delay check 관련 setTimeout
+		that.touchTimeCount = that.touchTimeCount || null; // 터치 횟수 카운트 시작 관련 setTimeout
+		that.touchCheck = that.touchCheck || {};
+		radius = (event.target !== undefined && event.target.offsetWidth !== undefined && event.target.offsetWidth !== 'undefined') ? Math.max(event.target.offsetWidth, event.target.offsetHeight) : 0; // IE문제: 7에서 offsetWidth null 오류
+		radius = Math.max(radius, 30); // 이벤트 작동 타겟 영역
+		if(touch) {
+			that.touchCheck[that.touchCount] = {
+				'start': {
+					'top': touch[0].screenY,
+					'left': touch[0].screenX
+				},
+				'end': {
+					'top': touch[0].screenY,
+					'left':  touch[0].screenX
+				}
+			};
+		}else {
+			that.touchCheck[that.touchCount] = {
+				'start': {
+					'top': event.screenY,
+					'left': event.screenX
+				},
+				'end': {
+					'top': event.screenY,
+					'left':  event.screenX
+				}
+			};
+		}
+		that.touchCheck['time'] = {};
+		that.touchCheck['time']['start'] = new Date().getTime();
+		
+		// delay
+		window.clearTimeout(that.touchTimeCount);
+		that.touchTimeDelay = window.setTimeout(function() {
+			if(that['storage']['EVENT_DOM_TOUCH_DELAY'] && typeof that['storage']['EVENT_DOM_TOUCH_DELAY'] === 'function') {
+				that['storage']['EVENT_DOM_TOUCH_DELAY'].call(that, e);
+			}
+		}, 1000);
+
+		DOM(document).on(environment['event']['move'] + '.EVENT_MOUSEMOVE_DOM_TOUCH', function(e) {
+			var event = e || window.event;
+			var touch = event.touches || event.changedTouches;
+
+			if(touch) {
+				that.touchCheck[that.touchCount]['end']['top'] = touch[0].screenY;
+				that.touchCheck[that.touchCount]['end']['left'] = touch[0].screenX;
+			}else {
+				that.touchCheck[that.touchCount]['end']['top'] = event.screenY;
+				that.touchCheck[that.touchCount]['end']['left'] = event.screenX;
+			}
+
+			// delay 정지
+			if(Math.abs(that.touchCheck[0]['start']['top'] - that.touchCheck[that.touchCount]['end']['top']) > radius || Math.abs(that.touchCheck[0]['start']['left'] - that.touchCheck[that.touchCount]['end']['left']) > radius) {
+				window.clearTimeout(that.touchTimeDelay);
+			}
+		});
+
+		DOM(document).on(environment['event']['up'] + '.EVENT_MOUSEUP_DOM_TOUCH', function(e) { // IE7문제: window 가 아닌 document 에 할당해야 한다.
+			var event = e || window.event;
+			var touch = event.changedTouches; // touchend
+
+			// 현재 이벤트의 기본 동작을 중단한다. (모바일에서 스크롤 하단이동 기본기능)
+			if(event.preventDefault) { 
+				event.preventDefault();
+			}else {
+				event.returnValue = false;
+			}
+			
+			// 이벤트 종료
+			DOM(document).off('.EVENT_MOUSEMOVE_DOM_TOUCH');
+			DOM(document).off('.EVENT_MOUSEUP_DOM_TOUCH');
+
+			//					
+			that.touchCount += 1;
+			that.touchCheck['time']['end'] = new Date().getTime();
+
+			// click check: 지정된 시간까지 다음 클릭이 발생하지 않는다면, count 값을 확인하여 해당 콜백을 실행한다.
+			window.clearTimeout(that.touchTimeDelay);
+			if(typeof that.touchCheck === 'object' && that.touchCheck[that.touchCount-1]) {
+				that.touchTimeCount = window.setTimeout(function() {
+					var start = that.touchCheck[0]['start'];
+					var end = that.touchCheck[that.touchCount-1]['end'];
+					var time = Number(that.touchCheck['time']['end']) - Number(that.touchCheck['time']['start']);
+
+					// handlers(callback) 실행
+					if(time <= 180/* 클릭된 상태가 지속될 수 있으므로 시간검사 */ && Math.abs(start['top'] - end['top']) <= radius && Math.abs(start['left'] - end['left']) <= radius) {
+						if(that.touchCount === 1 && that['storage']['EVENT_DOM_TOUCH_ONE'] && typeof that['storage']['EVENT_DOM_TOUCH_ONE'] === 'function') {
+							that['storage']['EVENT_DOM_TOUCH_ONE'].call(that, e);
+						}else if(that.touchCount === 2 && that['storage']['EVENT_DOM_TOUCH_TWO'] && typeof that['storage']['EVENT_DOM_TOUCH_TWO'] === 'function') {
+							that['storage']['EVENT_DOM_TOUCH_TWO'].call(that, e);
+						}
 					}
+					that.touchCount = 0;
+					that.touchCheck = {};
+				}, 300); // 검사 시작시간
+			}
+		});
+	}
+	DOM.touch = {
+		on: function(selector, handlers) {
+			if(selector && (typeof handlers === 'object' || typeof handlers === 'function')) {
+				DOM(selector).each(function(i, element) {
+					var key;
 
-					// 이벤트 종료
-					DOM(window).off('.EVENT_MOUSEMOVE_api_dom_touch');
-					DOM(window).off('.EVENT_MOUSEUP_api_dom_touch');
-
-					// 필수 정보
-					that.touchCount = that.touchCount || 0; // 터치 횟수
-					that.touchTimeDelay = that.touchTimeDelay || null; // delay check 관련 setTimeout
-					that.touchTimeCount = that.touchTimeCount || null; // 터치 횟수 카운트 시작 관련 setTimeout
-					that.touchCheck = that.touchCheck || {};
-					radius = Math.max(event.target.offsetWidth, event.target.offsetHeight, 30); // 이벤트 작동 타겟 영역
-					if(touch) {
-						that.touchCheck[that.touchCount] = {
-							'start': {
-								'top': touch[0].screenY,
-								'left': touch[0].screenX
-							},
-							'end': {
-								'top': touch[0].screenY,
-								'left':  touch[0].screenX
-							}
-						};
-					}else {
-						that.touchCheck[that.touchCount] = {
-							'start': {
-								'top': event.screenY,
-								'left': event.screenX
-							},
-							'end': {
-								'top': event.screenY,
-								'left':  event.screenX
-							}
-						};
-					}
-					that.touchCheck['time'] = {};
-					that.touchCheck['time']['start'] = new Date().getTime();
-					
-					// delay
-					window.clearTimeout(that.touchTimeCount);
-					that.touchTimeDelay = window.setTimeout(function() {
-						if(handlers['delay'] && typeof handlers['delay'] === 'function') {
-							handlers['delay'].call(that, e);
+					if(element && element.nodeType) {
+						if(typeof element['storage'] !== 'object') {
+							element['storage'] = {};
 						}
-					}, 1000);
-
-					DOM(window).on(environment['event']['move'] + '.EVENT_MOUSEMOVE_api_dom_touch', function(e) {
-						var event = e || window.event;
-						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
-						var touch = event.touches || event.changedTouches;
-
-						if(touch) {
-							that.touchCheck[that.touchCount]['end']['top'] = touch[0].screenY;
-							that.touchCheck[that.touchCount]['end']['left'] = touch[0].screenX;
-						}else {
-							that.touchCheck[that.touchCount]['end']['top'] = event.screenY;
-							that.touchCheck[that.touchCount]['end']['left'] = event.screenX;
-						}
-
-						// delay 정지
-						if(Math.abs(that.touchCheck[0]['start']['top'] - that.touchCheck[that.touchCount]['end']['top']) > radius || Math.abs(that.touchCheck[0]['start']['left'] - that.touchCheck[that.touchCount]['end']['left']) > radius) {
-							window.clearTimeout(that.touchTimeDelay);
-						}
-					});
-
-					DOM(window).on(environment['event']['up'] + '.EVENT_MOUSEUP_api_dom_touch', function(e) {
-						var event = e || window.event;
-						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
-						var touch = event.changedTouches; // touchend
-
-						// 현재 이벤트의 기본 동작을 중단한다. (모바일에서 스크롤 하단이동 기본기능)
-						if(event.preventDefault) { 
-							event.preventDefault();
-						}else {
-							event.returnValue = false;
-						}
-						
-						// 이벤트 종료
-						DOM(window).off('.EVENT_MOUSEMOVE_api_dom_touch');
-						DOM(window).off('.EVENT_MOUSEUP_api_dom_touch');
-
-						//					
-						that.touchCount += 1;
-						that.touchCheck['time']['end'] = new Date().getTime();
-
-						// click check: 지정된 시간까지 다음 클릭이 발생하지 않는다면, count 값을 확인하여 해당 콜백을 실행한다.
-						window.clearTimeout(that.touchTimeDelay);
-						if(typeof that.touchCheck === 'object' && that.touchCheck[that.touchCount-1]) {
-							that.touchTimeCount = window.setTimeout(function() {
-								var start = that.touchCheck[0]['start'];
-								var end = that.touchCheck[that.touchCount-1]['end'];
-								var time = Number(that.touchCheck['time']['end']) - Number(that.touchCheck['time']['start']);
-								// handlers(callback) 실행
-								if(time <= 180/* 클릭된 상태가 지속될 수 있으므로 시간검사 */ && Math.abs(start['top'] - end['top']) <= radius && Math.abs(start['left'] - end['left']) <= radius) {
-									if(that.touchCount === 1) {
-										if(typeof handlers === 'function') {
-											handlers.call(that, e);
-										}else if(handlers['one'] && typeof handlers['one'] === 'function') {
-											handlers['one'].call(that, e);
-										}
-									}else if(that.touchCount === 2) {
-										if(handlers['two'] && typeof handlers['two'] === 'function') {
-											handlers['two'].call(that, e);
-										}
-									}
+						if(typeof handlers === 'object') {
+							for(key in handlers) {
+								if(handlers.hasOwnProperty(key) && /^(one|two|delay)$/i.test(key) && typeof handlers[key] === 'function') {
+									element['storage']['EVENT_DOM_TOUCH_' + key.toUpperCase()] = handlers[key];
 								}
-								that.touchCount = 0;
-								that.touchCheck = {};
-							}, 300); // 검사 시작시간
+							}
+						}else {
+							element['storage']['EVENT_DOM_TOUCH_ONE'] = handlers;
 						}
-					});
+						if(!element['storage']['EVENT_DOM_TOUCH']) {
+							DOM(element).on(environment['event']['down'] + '.EVENT_DOM_TOUCH', setTouchHandler);
+						}
+					}
 				});
 			}
 		},
-		'off': function(selector) {
-			if(typeof selector != 'undefined') { 
-				DOM(selector).off('.EVENT_MOUSEDOWN_api_dom_touch');
+		off: function(selector, eventkey) { // eventkey: one, two, delay, all
+			if(selector) {
+				DOM(selector).each(function(i, element) {
+					var key = (typeof eventkey === 'string' && eventkey) || 'all';
+
+					if(element && element.nodeType && element['storage']) {
+						switch(key.toLowerCase()) {
+							case 'one':
+							case 'two':
+							case 'delay':
+								delete element['storage']['EVENT_DOM_TOUCH_' + key.toUpperCase()];
+								break;
+							case 'all':
+								DOM(element).off('.EVENT_DOM_TOUCH');
+								break;
+						}
+					}
+				});
 			}
 		}
 	};
