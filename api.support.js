@@ -15,7 +15,7 @@ Dual licensed under the MIT and GPL licenses.
 http://www.opensource.org/licenses/MIT
 
 @browser compatibility
-IE9 이상(IE8 부분지원) (트랜지션, 애니메이션 등의 사용은 IE10 이상)
+IE9 이상(IE7, IE8 부분지원하며, 트랜지션, 애니메이션 등의 사용은 IE10 이상)
 querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
 element.classList: Chrome 8.0, Firefox 3.6, Internet Explorer 10, Opera 11.50, Safari 5.1
 getBoundingClientRect(): width/height IE9부터 지원
@@ -867,8 +867,6 @@ http://www.quirksmode.org/js/detect.html
 			return this;
 		},
 		// stylesheet
-		// jQuery 와 다르게 style 메소드로 명명한 이유는 jQuery css 메소드는 내부에서 크로스브라우저, 부가적인 기능처리 등으로 코드 복잡도 높고와 사용 효율성은 낮아,
-		// 개발자가 직접 javascript style 속성값을 값을 주도록 유도하기위해 심플하게 작업했다. (라이브러리가 너무 많은 기능을 하기보다, 표준 API에 맞춘다.)
 		style: function(parameter) {
 			// x.style.cssText; // 표준
 			// x.currentStyle[styleProp];
@@ -1412,7 +1410,7 @@ http://www.quirksmode.org/js/detect.html
 					return;
 				}*/
 				if(typeof element.addEventListener === 'function') {
-					element.addEventListener(events, callback, capture);
+					element.addEventListener(events, callback, capture); // IE9이상 사용가능
 				}else if(element.attachEvent) { // IE (typeof 검사시 IE8에서는 function 이 아닌 object 반환)
 					callback = function(e) { // IE this 바인딩 문제
 						handlers(e, element);
