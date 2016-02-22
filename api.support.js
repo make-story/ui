@@ -70,7 +70,7 @@ http://www.quirksmode.org/js/detect.html
 					"animation": false/*('animationName' in element.style || 'WebkitAnimationName' in element.style || 'MozAnimationName' in element.style || 'OAnimationName' in element.style || 'msAnimationName' in element.style || 'KhtmlAnimationName' in element.style)*/,
 					"fullscreen": (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled || document.msFullscreenEnabled)
 				},
-				"device": null, // pc | mobile | tablet (해상도에 따라 설정가능) - check['mobile'] 가 있음에도 따로 구분한 이유는 기기기준과 해상도 기준의 영역을 나누어 관리하기 위함
+				"monitor": null, // pc | mobile | tablet (해상도에 따라 설정가능) - check['mobile'] 가 있음에도 따로 구분한 이유는 기기기준과 해상도(모니터) 기준의 영역을 나누어 관리하기 위함
 				"screen": { // browser 사이즈가 아닌 해상도 값
 					"width": screen.availWidth/*Windows Taskbar 제외*/ || screen.width || Math.round(window.innerWidth), 
 					"height": screen.availHeight/*Windows Taskbar 제외*/ || screen.height || Math.round(window.innerHeight)
@@ -133,40 +133,38 @@ http://www.quirksmode.org/js/detect.html
 				}
 			}
 
-			// device
-			environment['device'] = 'pc';
+			// monitor
+			environment['monitor'] = 'pc';
 			if(/android/i.test(userAgent)) { // 안드로이드
 				// mobile 없으면 태블릿임
 				if(/mobile/i.test(userAgent)) {
-					environment['device'] = 'mobile';
+					environment['monitor'] = 'mobile';
 				}else {
-					environment['device'] = 'tablet';
+					environment['monitor'] = 'tablet';
 				}
 			}else if(/(iphone|ipad|ipod)/i.test(userAgent)) { // 애플
 				if(/ipad/i.test(userAgent)) {
-					environment['device'] = 'tablet';
+					environment['monitor'] = 'tablet';
 				}else {
-					environment['device'] = 'mobile';
+					environment['monitor'] = 'mobile';
 				}
 			}else if(environment.check.mobile) {
-				environment['device'] = 'mobile';
+				environment['monitor'] = 'mobile';
 			}else if(/(MacIntel|MacPPC)/i.test(platform)) {
-				environment['device'] = 'pc';
+				environment['monitor'] = 'pc';
 			}else if(/(win32|win64)/i.test(platform)) {
-				environment['device'] = 'pc';
+				environment['monitor'] = 'pc';
 			}
 
-			/*
 			// agent 값보다 스크린 크기를 우선 적용하여 태블릿인지 모바일인지 여부를 결정한다.
 			// 테블렛인데 가로 길이가 미달이면 모바일로 인식하게 함
-			if((environment['device'] = 'tablet') && environment['screen']['width'] && environment.screen.height && (Math.min(environment['screen']['width'], environment.screen.height) < 768)) {
-				environment['device'] = 'mobile';
-			}
+			/*if((environment['monitor'] = 'tablet') && environment['screen']['width'] && environment['screen']['height'] && (Math.min(environment['screen']['width'], environment['screen']['height']) < 768)) {
+				environment['monitor'] = 'mobile';
+			}*/
 			// 모바일인데 가로 길이가 넘어가면 테블렛으로 인식하게 함
-			if((environment['device'] = 'mobile') && environment['screen']['width'] && environment.screen.height && (Math.min(environment['screen']['width'], environment.screen.height) >= 768)) {
-				environment['device'] = 'tablet';
-			}
-			*/
+			/*if((environment['monitor'] = 'mobile') && environment['screen']['width'] && environment['screen']['height'] && (Math.min(environment['screen']['width'], environment['screen']['height']) >= 768)) {
+				environment['monitor'] = 'tablet';
+			}*/
 
 			// browser (if문 순서 중요함)
 			environment['browser']['name'] = navigator.appName;
@@ -472,7 +470,6 @@ http://www.quirksmode.org/js/detect.html
 
 	// DOM (event, style, attr, data, scroll 등)
 	// var element = api.dom('<div>').style({'': '', '': ''}).attr({'': ''}).data({'': ''}).on('', function() { ... }).get();
-	// WEB API 기능을 사전처럼 빠르게 인덱싱하는데 목적이 있다. (기능단위)
 	function DOM(selector, context) {
 		// return instance
 		if(!(this instanceof DOM)) {
@@ -1645,13 +1642,6 @@ http://www.quirksmode.org/js/detect.html
 		...
 	});
 	api.touch.off('#ysm', 'all'); // 전체 해제
-
-	// IE 7, 8 등에서는 더블클릭문제로 정상작동하지 않는다.
-	if(api.env.browser.name === 'explorer' && api.env.browser.version < 11) {
-		api.dom(selector).on('dblclick', function(e) {
-			
-		});
-	}
 	*/
 	var setTouchHandler = function(e, element) {
 		var event = e || window.event;

@@ -144,7 +144,7 @@ api.xhr({
 			
 			// 요청
 			instance.open(settings.type, settings.url, settings.async);
-			//instance.setRequestHeader('Accept', '*/*');
+			instance.setRequestHeader('Accept', '*/*');
 			instance.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); // X-Requested-With 헤더는, 해당 요청이 Ajax라는 걸 의미 (비표준)
 
 			// responseType XMLHttpRequest 레벨2 에서 중요함: http://www.html5rocks.com/en/tutorials/file/xhr2/?redirect_from_locale=ko 
