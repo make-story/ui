@@ -148,9 +148,11 @@ api.xhr({
 			instance.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); // X-Requested-With 헤더는, 해당 요청이 Ajax라는 걸 의미 (비표준)
 
 			// responseType XMLHttpRequest 레벨2 에서 중요함: http://www.html5rocks.com/en/tutorials/file/xhr2/?redirect_from_locale=ko 
-			//instance.responseType = "arraybuffer";
-			//instance.responseType = 'text'; // 파이어폭스 파이어버그에서 응답이 null 로 출력될 경우, responseType 을 text로 해야 responseText 로 정상 출력된다. (이는 XMLHttpRequest 레벨 2 지원문제)
-			instance.responseType = settings.dataType || 'text'; // arraybuffer || blob || document(xml) || json || text
+			if(settings.dataType) {
+				//instance.responseType = "arraybuffer";
+				//instance.responseType = 'text'; // 파이어폭스 파이어버그에서 응답이 null 로 출력될 경우, responseType 을 text로 해야 responseText 로 정상 출력된다. (이는 XMLHttpRequest 레벨 2 지원문제)
+				instance.responseType = settings.dataType; // arraybuffer || blob || document(xml) || json || text
+			}
 			
 			// data 처리
 			switch(settings.type.toLowerCase()) {
