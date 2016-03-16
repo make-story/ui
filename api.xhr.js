@@ -24,8 +24,10 @@ api.xhr({
 ;(function(factory, global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global !== window || !('api' in global) || !('XMLHttpRequest' in global)) {
+	if(typeof global === 'undefined' || global !== window || !('XMLHttpRequest' in global)) {
 		return false;
+	}else if(!global.api) {
+		global.api = {};
 	}
 	global.api.xhr = factory(global);
 
@@ -38,6 +40,7 @@ api.xhr({
 		// settings
 		var parameter = parameter || {}; // 사용자 설정값
 		var settings = { // 기본 설정값
+			'contentType': 'application/x-www-form-urlencoded',
 			'type': 'GET', // GET이나 POST 같은 HTTP 메서드 타입
 			'url': '', // 요청할 URL 주소
 			'async': true, // 동기/비동기 방식
@@ -63,18 +66,43 @@ api.xhr({
 		}
 
 		// 유효성 검사
-		if(settings.type.toLowerCase() != 'get' && settings.type.toLowerCase() != 'post') { // HTTP 타입
+		if(/[^get|post|put|delete]/i.test(settings.type)) { // HTTP 타입 (get|post|put|delete|options|head|trace|connect)
 			return false;
 		}
-		if(typeof settings.url != 'string' || settings.url.replace(/\s/g, '') === '' /*|| !/^([\w.+-]+:)(?:\/\/([^\/?#:]*)(?::(\d+)|)|)/.test(settings.url)*/) { // url
+		if(typeof settings.url !== 'string' || settings.url.replace(/\s/g, '') === '' /*|| !/^([\w.+-]+:)(?:\/\/([^\/?#:]*)(?::(\d+)|)|)/.test(settings.url)*/) { // url
 			return false;
 		}
-		if(typeof settings.async != 'boolean') { // 동기/비동기 
+		if(typeof settings.async !== 'boolean') { // 동기/비동기 
 			return false;
 		}
 
 		var match, callback, pattern, script;
-		var instance, data = null, name, arr = [];
+		var instance, arr = [], name, data;
+
+		// data 처리
+		if(global.FormData && typeof settings.data === 'object' && settings.data instanceof FormData) { // FormData
+			data = settings.data;
+			settings.contentType = null;
+		}else {
+			if(typeof settings.data === 'string' && settings.data !== '') {
+				settings.data.replace(/([^=&]+)=([^&]*)/g, function(m, name, value) {
+					arr.push(name + '=' + value);
+				});
+			}else if(typeof settings.data === 'object' && Object.keys(settings.data).length > 0) {
+				for(name in settings.data) {
+					if(settings.data.hasOwnProperty(name)) {
+						arr.push(name + '=' + settings.data[name]);
+					}
+				}
+			}
+			data = arr.join('&');
+		}
+		if(settings.type.toLowerCase() === 'get') {
+			settings.url += settings.url.lastIndexOf('?') > -1 ? '&' + data : '?' + data;
+			settings.contentType = null;
+		}
+
+		//
 		if(typeof settings.dataType === 'string' && settings.dataType.toLowerCase() === 'jsonp') {
 			// 1.
 			// JSONP
@@ -141,109 +169,31 @@ api.xhr({
 			if(typeof instance.withCredentials === 'undefined') {
 				return false;
 			}
-			
+
 			// 요청
 			instance.open(settings.type, settings.url, settings.async);
 			instance.setRequestHeader('Accept', '*/*');
 			instance.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); // X-Requested-With 헤더는, 해당 요청이 Ajax라는 걸 의미 (비표준)
+			if(settings.contentType) {
+				/*
+				// POST 요청의 경우에는 서버로 전송하는 Content-Type이 application/x-www-form-urlencoded, multipart/form-data, text/plain 중에 하나여야 한다.
+				instance.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); 
+				instance.setRequestHeader('Content-Type', 'multipart/form-data');
+				instance.setRequestHeader('Content-Type', 'text/plain');
+				instance.setRequestHeader('X-PINGOTHER', 'pingpong'); // CORS
 
+				// retrieve data unprocessed as a binary string
+				instance.overrideMimeType('text/plain; charset=x-user-defined'); // IE작동안함
+				*/
+				instance.setRequestHeader('Content-Type', settings.contentType);
+			}
+			
+			// dataType
 			// responseType XMLHttpRequest 레벨2 에서 중요함: http://www.html5rocks.com/en/tutorials/file/xhr2/?redirect_from_locale=ko 
 			if(settings.dataType) {
 				//instance.responseType = "arraybuffer";
 				//instance.responseType = 'text'; // 파이어폭스 파이어버그에서 응답이 null 로 출력될 경우, responseType 을 text로 해야 responseText 로 정상 출력된다. (이는 XMLHttpRequest 레벨 2 지원문제)
 				instance.responseType = settings.dataType; // arraybuffer || blob || document(xml) || json || text
-			}
-			
-			// data 처리
-			switch(settings.type.toLowerCase()) {
-				case 'get':
-					if(typeof settings.data === 'object' && Object.keys(settings.data).length > 0) {
-						for(name in settings.data) {
-							if(settings.data.hasOwnProperty(name)) {
-								arr.push(name + '=' + settings.data[name]);
-							}
-						}
-						if(arr.length > 0) {
-							data = arr.join('&');
-						}
-					}
-					break;
-				case 'post':
-					if(global.FormData && typeof settings.data === 'object' && settings.data instanceof FormData) {
-						data = settings.data;
-					}else {
-						//instance.overrideMimeType('text/plain; charset=x-user-defined'); // IE작동안함
-						if(typeof settings.data === 'string' && settings.data !== '') {
-							settings.data.replace(/([^=&]+)=([^&]*)/g, function(m, name, value) {
-								arr.push(name + '=' + value);
-							});
-						}else if(typeof settings.data === 'object' && Object.keys(settings.data).length > 0) {
-							for(name in settings.data) {
-								if(settings.data.hasOwnProperty(name)) {
-									arr.push(name + '=' + settings.data[name]);
-								}
-							}
-						}
-						if(arr.length > 0) {
-							/*
-							// POST 요청의 경우에는 서버로 전송하는 Content-Type이 application/x-www-form-urlencoded, multipart/form-data, text/plain 중에 하나여야 한다.
-							instance.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); 
-							instance.setRequestHeader('Content-Type', 'multipart/form-data');
-							instance.setRequestHeader('Content-Type', 'text/plain');
-							instance.setRequestHeader('X-PINGOTHER', 'pingpong'); // CORS
-
-							// retrieve data unprocessed as a binary string
-							instance.overrideMimeType("text/plain; charset=x-user-defined");
-							*/
-							instance.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-							data = arr.join('&');
-						}
-					}
-					/*
-					if(global.FormData) {
-						// FormData: https://developer.mozilla.org/en-US/docs/Web/API/FormData
-						data = new FormData(); 
-						// text
-						if(typeof settings.data === 'string' && settings.data !== '') {
-							// &, = 문자열 기준으로 key=value 를 분리하여, data에 넣는다
-							settings.data.replace(/([^=&]+)=([^&]*)/g, function(m, name, value) {
-								//data[decodeURIComponent(name)] = decodeURIComponent(value);
-								data.append(name, value);	
-							}); 
-						}else if(typeof settings.data === 'object' && Object.keys(settings.data).length > 0) {
-							for(name in settings.data) {
-								if(settings.data.hasOwnProperty(name)) {
-									data.append(name, settings.data[name]);
-								}
-							}
-						}
-						// file
-						if(typeof settings.file === 'object' && Object.keys(settings.file).length > 0) {
-							for(name in settings.file) {
-								if(settings.file.hasOwnProperty(name) && 'files' in settings.file[name]) {
-									data.append(name, settings.file[name].files[0]);
-								}
-							}
-						}
-					}else {
-						// 일반적인 방법
-						if(typeof settings.data === 'string' && settings.data !== '') {
-							settings.data.replace(/([^=&]+)=([^&]*)/g, function(m, name, value) {
-								arr.push(name + '=' + value);
-							}); 
-						}else if(typeof settings.data === 'object' && Object.keys(settings.data).length > 0) {
-							for(name in settings.data) {
-								if(settings.data.hasOwnProperty(name)) {
-									arr.push(name + '=' + settings.data[name]);
-								}
-							}
-						}
-						if(arr.length > 0) {
-							data = arr.join('&');
-						}
-					}
-					*/
-					break;
 			}
 
 			//instance.onloadstart
@@ -286,7 +236,7 @@ api.xhr({
 						}
 						break;
 					case 4: // 데이터를 전부 받은 상태
-						if(instance.status != 200) {
+						if(instance.status !== 200) {
 							// 403(접근거부), 404(페이지없음), 500(서버오류발생)
 						}
 						break;
@@ -297,6 +247,7 @@ api.xhr({
 				//console.dir(this);
 				//console.dir(instance);
 				//this.getResponseHeader("Last-Modified")
+				//this.getResponseHeader("Content-Type")
 				if(instance.status == 200) {
 					var data = instance.response || instance.responseText || instance.responseXML; // XMLHttpRequest Level 2
 					if(!instance.responseType && settings.dataType.toLowerCase() === 'json') {
@@ -313,7 +264,7 @@ api.xhr({
 				console.log(event);
 			};
 
-			// 전송 데이터
+			// 전송
 			instance.send(data || null);
 		}
 	};
