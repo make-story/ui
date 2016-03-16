@@ -1,11 +1,11 @@
 /*
-Support (클라이언트 환경정보, DOM제어 등)
+Support (BOM, DOM)
 
 브라우저 정보, 해상도, 사용자 정보 등 확인
 브라우저 기능지원 여부: http://modernizr.com/download/
 
-@version
-0.1 (2015.04.09)
+@date
+2015.04.09
 
 @copyright
 Copyright (c) Sung-min Yu.
@@ -36,6 +36,7 @@ http://www.quirksmode.org/js/detect.html
 	}else {
 		// 클라이언트 환경정보(브라우저 버전 등)를 우선 확인한다.
 		global.api = (function() {
+
 			'use strict'; // ES5
 
 			// 클라이언트 브라우저 환경
@@ -270,6 +271,7 @@ http://www.quirksmode.org/js/detect.html
 
 			// 기능 조립
 			return factory(global, environment, extend);
+			
 		})();
 	}
 
@@ -1115,7 +1117,8 @@ http://www.quirksmode.org/js/detect.html
 		//
 		prepend: function(parameter) {
 			// x.insertBefore(y,z); // 표준
-			// x.firstChild; // IE9이상 사용가능
+			// x.firstChild; // IE9이상 사용가능 (textnode 포함)
+			// x.firstElementChild // textnode 제외
 			var i, max = (this.elements && this.elements.length) || 0;
 			var element;
 
@@ -1280,112 +1283,6 @@ http://www.quirksmode.org/js/detect.html
 			return this;
 		},
 		// event
-		/*on: (function() {
-			var event_function, return_function;
-
-			// 초기화
-			if(typeof window.addEventListener === 'function') {
-				event_function = function(events, handlers, capture) {
-					this.addEventListener(events, handlers, capture);
-				}
-			}else if(window.attachEvent) { // IE (typeof 검사시 IE8에서는 function 이 아닌 object 반환)
-				event_function = function(events, handlers) {
-					this.attachEvent('on' + events, handlers);
-				}
-			}
-
-			// 리턴함수
-			return_function = function(events, handlers, capture) {
-				var events = events || undefined;
-				var handlers = handlers || undefined;
-				var capture = (typeof capture === 'undefined') ? false : capture; // IE의 경우 캡쳐 미지원 (기본값: false 버블링으로 함)
-				var arr = [];
-				var key, callback;
-				var i, max = (this.elements && this.elements.length) || 0;
-
-				// 이벤트 키
-				arr = events.split('.');
-				if(arr.length > 1) {
-					events = arr.shift();
-				}
-				key = arr.join('');
-
-				// event type(name) change
-				events = setEventTypeChange(events);
-
-				// 이벤트 설정
-				for(i=0; i<max; i++) {
-					// this.elements[i] 에 event key 가 이미 설정되어 있는지 확인
-					if(typeof this.elements[i]['storage'] === 'object' && this.elements[i]['storage'][key]) {
-						continue;
-					}
-
-					// 콜백
-					callback = function() {
-						handlers.apply(this, Array.prototype.slice.call(arguments));
-					};
-					event_function.call(this.elements[i], events, callback, capture);
-					
-					// 실행 정보 저장
-					if(typeof this.elements[i]['storage'] != 'object') {
-						this.elements[i].storage = {};
-					}
-					this.elements[i].storage[key] = {
-						"events": events,
-						"handlers": callback,
-						"capture": capture
-					};
-				}
-
-				return this;
-			};
-
-			return return_function;
-		})(),
-		off: (function() {
-			var event_function, return_function;
-
-			// 초기화
-			if(typeof window.removeEventListener === 'function') {
-				event_function = function(events, handlers, capture) {
-					this.removeEventListener(events, handlers, capture);
-				}
-			}else if(window.detachEvent) { // IE
-				event_function = function(events, handlers) {
-					this.detachEvent('on' + events, handlers);
-				}
-			}
-
-			// 리턴함수
-			return_function = function(events) {
-				var events = events || undefined;
-				var arr = [];
-				var key;
-				var i, max = (this.elements && this.elements.length) || 0;
-
-				// 이벤트 키
-				arr = events.split('.');
-				if(arr.length > 1) {
-					events = arr.shift();
-				}
-				key = arr.join('');
-
-				// event type(name) change
-				events = setEventTypeChange(events);
-
-				// 이벤트 해제
-				for(i=0; i<max; i++) {
-					if(typeof this.elements[i]['storage'] === 'object' && this.elements[i].storage[key]) {
-						event_function.call(this.elements[i], this.elements[i].storage[key].events, this.elements[i].storage[key].handlers, this.elements[i].storage[key].capture);	
-						delete this.elements[i].storage[key]; // 저장된 이벤트 정보 제거
-					}
-				}
-
-				return this;
-			};
-
-			return return_function;
-		})(),*/
 		on: function(events, handlers, capture) {
 			var events = events || undefined,
 				handlers = handlers || undefined,
@@ -1618,8 +1515,9 @@ http://www.quirksmode.org/js/detect.html
 	};
 
 
-	// one, two, delay touch
 	/*
+	// one, two, delay touch
+
 	마우스 또는 터치 up 이 발생하고, 특정시간 이후까지 down이 발생하지 않았을 때, 클릭이 몇번발생했는지 카운트를 시작한다.
 	api.touch.on('#ysm', 
 		{
@@ -1761,7 +1659,7 @@ http://www.quirksmode.org/js/detect.html
 				}, 300); // 검사 시작시간
 			}
 		});
-	}
+	};
 	DOM.touch = {
 		on: function(selector, handlers) {
 			if(selector && (typeof handlers === 'object' || typeof handlers === 'function')) {
@@ -1957,6 +1855,7 @@ http://www.quirksmode.org/js/detect.html
 		})()
 	};
 	*/
+
 	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 
 	// requestAnimationFrame, cancelAnimationFrame
