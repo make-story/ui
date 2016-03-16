@@ -36,8 +36,6 @@ api.xhr({
 	'use strict'; // ES5
 
 	var xhr = function(parameter) {
-
-		// settings
 		var parameter = parameter || {}; // 사용자 설정값
 		var settings = { // 기본 설정값
 			'contentType': 'application/x-www-form-urlencoded',
@@ -56,7 +54,11 @@ api.xhr({
 			'progressDownload': undefined, // 다운로드 진행률 콜백 함수
 			'success': undefined // 요청이 성공했을 때 실행할 콜백 함수
 		};
+		var match, callback, pattern, script;
+		var instance, arr = [], name, data;
 		var key;
+
+		// 사용자 설정값
 		for(key in settings) {
 			if(settings.hasOwnProperty(key)) {
 				if(parameter[key]) {
@@ -75,9 +77,6 @@ api.xhr({
 		if(typeof settings.async !== 'boolean') { // 동기/비동기 
 			return false;
 		}
-
-		var match, callback, pattern, script;
-		var instance, arr = [], name, data;
 
 		// data 처리
 		if(global.FormData && typeof settings.data === 'object' && settings.data instanceof FormData) { // FormData
