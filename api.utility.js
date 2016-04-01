@@ -1,29 +1,28 @@
 /*
 Utility
 
-@version
-0.1 (2015.07.07)
+@date
+2015.07.07
 
 @copyright
 Copyright (c) Sung-min Yu.
 
 @license
 Dual licensed under the MIT and GPL licenses.
+
+@browser compatibility
+
 */
 
-;(function(factory, global) {
+;(function(global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global !== window || !('api' in global)) {
+	if(typeof global === 'undefined' || global !== window) {
 		return false;	
+	}else if(!global.api) {
+		global.api = {};
 	}
-	global.api.utility = factory(global);
-
-})(function(global, undefined) {
-
-	'use strict'; // ES5
-
-	var utility = {
+	global.api.utility = {
 		// 상속 - 추후 Object.create() 로 변경하자!
 		inherit: function(C, P) { 
 			/*
@@ -57,7 +56,7 @@ Dual licensed under the MIT and GPL licenses.
 		// deep copy
 		// http://davidwalsh.name/javascript-clone
 		clone: function clone(src, deep) { // src: target, deep: true|false
-			if(!src && typeof src != "object") {
+			if(!src && typeof src !== "object") {
 				// any non-object ( Boolean, String, Number ), null, undefined, NaN
 				return src;
 			}
@@ -381,6 +380,34 @@ Dual licensed under the MIT and GPL licenses.
 			}
 			return result + value;
 		},
+		// fragment 에 html 삽입 후 반환
+		setFragmentHtml: function(html) {
+			// Source: https://github.com/Alhadis/Snippets/blob/master/js/polyfills/IE8-child-elements.js
+			/*if(!("firstElementChild" in document.documentElement)){
+				Object.defineProperty(Element.prototype, "firstElementChild", {
+					get: function(){
+						for(var nodes = this.children, n, i = 0, l = nodes.length; i < l; ++i)
+							if(n = nodes[i], 1 === n.nodeType) return n;
+						return null;
+					}
+				});
+			}*/
+
+			var fragment = document.createDocumentFragment();
+			/*
+			var temp = document.createElement('template'); // IE 미지원
+			temp.innerHTML = html;
+			fragment.appendChild(temp.content);
+			*/
+			var temp = document.createElement('div');
+			var child;
+			temp.innerHTML = html;
+			while (child = temp.firstChild) { // temp.firstElementChild (textnode 제외)
+				fragment.appendChild(child);
+			}
+
+			return fragment;
+		},
 		// requestAnimationFrame for Smart Animating http://goo.gl/sx5sts
 		setRequestAnimFrame: (function() { 
 			return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback) { return window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
@@ -453,7 +480,7 @@ Dual licensed under the MIT and GPL licenses.
 			var i, max;
 			for(i=0, max=value.length; i<max; i++) {
 				substr = value.substring(i, i+1);
-				if(substr != ',') { 
+				if(substr !== ',') { 
 					result += substr; 
 				}
 			}
@@ -529,7 +556,7 @@ Dual licensed under the MIT and GPL licenses.
 		// 해당 년월의 마지막 날짜
 		lastday: function(year, month) {
 			var arr = [31,28,31,30,31,30,31,31,30,31,30,31];
-			if((year %4 == 0 && year % 100 != 0) || year % 400 == 0) {
+			if((year %4 == 0 && year % 100 !== 0) || year % 400 == 0) {
 				arr[1] = 29;
 			}
 			return arr[month-1];
@@ -538,7 +565,4 @@ Dual licensed under the MIT and GPL licenses.
 		// ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 	};
 
-	// public return
-	return utility;
-	
-}, this);
+})(this);

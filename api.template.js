@@ -10,6 +10,9 @@ Copyright (c) Sung-min Yu.
 @license
 Dual licensed under the MIT and GPL licenses.
 
+@browser compatibility
+
+
 -
 사용예
 <script id="template" type="text/template">
@@ -45,7 +48,7 @@ https://mustache.github.io/mustache.5.html
 ;(function(factory, global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global != window) {
+	if(typeof global === 'undefined' || global !== window) {
 		return false;	
 	}else if(!global.api) {
 		global.api = {};
@@ -101,7 +104,7 @@ https://mustache.github.io/mustache.5.html
 	};
 
 
-	// 1. 파싱
+	// 1. 파싱 - template 에서 html code와 {{tag}} code 분리
 	var Parse = function Parse(template, context, parent) {
 		this.template = template || '';
 		this.context = context || 'global';
@@ -184,7 +187,7 @@ https://mustache.github.io/mustache.5.html
 
 
 
-	// 2. 렌더
+	// 2. 렌더 - 파서단계에서 분리된 {{tag}}에 값 적용
 	var render = function render(parse, contents) {
 		/*
 		value 에 해당 context 의 영역을 준다

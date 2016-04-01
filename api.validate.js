@@ -1,14 +1,17 @@
 /*
 유효성검사
 
-@version
-0.1 (2016.02.22)
+@date
+2016.02.22
 
 @copyright
 Copyright (c) Sung-min Yu.
 
 @license
 Dual licensed under the MIT and GPL licenses.
+
+@browser compatibility
+
 */
 
 ;(function(global, undefined) {
@@ -40,7 +43,7 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// 글자 포함여부
 		isEqualTo : function(value, string) {
-			return this.isText(value) && this.isText(string) && value.indexOf(string) != -1; //value에 string문자가 포함되었는지 검사
+			return this.isText(value) && this.isText(string) && value.indexOf(string) !== -1; //value에 string문자가 포함되었는지 검사
 		},
 		// 최소글자
 		isMinlength : function(value, number) {
@@ -73,7 +76,7 @@ Dual licensed under the MIT and GPL licenses.
 		isExtension : function(value, extension) {
 			var extension = extension || 'jpg,jpeg,gif,png,pdf,hwp,exl'; //관리자 지정 확장자
 			var value = value.substr(value.lastIndexOf(".") + 1).toLowerCase(); //첨부된 확장자
-			return this.isText(value) && extension.indexOf(value) != -1;
+			return this.isText(value) && extension.indexOf(value) !== -1;
 		}
 	};
 

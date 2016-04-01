@@ -1,5 +1,5 @@
 
-api.support - 클라이언트 환경정보, DOM 컴포넌트
+api.dom - 클라이언트 환경정보, DOM 컴포넌트
 
 	api.env.check.mobile
 		모바일 디바이스 여부 true/false
@@ -206,59 +206,15 @@ api.editor - 텍스트에디터 라이브러리
 
 api.flicking - 플리킹 라이브러리
 
-	api.flicking.setup({
-		key: '고유값',
-		total: '슬라이드 총 개수',
-		width: '슬라이드 하나기준 width',
-		element: 'flicking 대상 element 값'
-	});
-	api.flicking.setOn({key: '이벤트 실행 플로킹 키값'});
-	api.flicking.setOff({key: '이벤트 종료 플로킹 키값'});
-	api.flicking.setSlideMove({
-		key: '고유값',
-		index: '이동할 index'
-	});
-	api.flicking.setSlideStop({key: '이동중인 슬라이드 정지할 고유값'});
-	api.flicking.setSlideIndex({
-		key: '고유값',
-		value: '이동할 index 또는 next, prev'
-	});
-
-
-----------
-
-
-api.popup - 팝업 라이브러리
-
 	작업진행중
 
 
 ----------
 
 
-api.xhr - XMLHttpRequest (레벨2) 라이브러리
+api.modals - 팝업 라이브러리
 
-	api.xhr({
-		'type': 'GET', // GET이나 POST 같은 HTTP 메서드 타입
-		'url': '', // 요청할 URL 주소
-		'async': true, // 동기/비동기 방식
-
-		'data': {}, // 서버에 보낼 문자열 값이나 자바스크립트 데이터 객체
-		'context': global, // 콜백함수 내부에서 this 키워드로 사용할 객체
-		'dataType': 'text', // 서버 측에서 응답받을 데이터의 형식을 문자열로 지정 (json, text, jsonp)
-
-		'progressUpload': undefined, // 업로드 진행률 콜백 함수
-		'progressDownload': undefined, // 다운로드 진행률 콜백 함수
-		'success': undefined // 요청이 성공했을 때 실행할 콜백 함수
-	});
-
-	사용예 (파일전송)
-	var from = new FormData(api.dom('#form').get(0));
-	api.xhr({
-		'type': 'POST', 
-		'url': '', 
-		'data': from 
-	});
+	작업진행중
 
 
 ----------
@@ -279,6 +235,50 @@ api.socket - WebSocket 라이브러리
 		// 서버로 부터 받은 메시지
 	});
 	socket.send('서버로 전송 데이터');
+
+
+----------
+
+
+api.template - 템플릿 {{tag}} 라이브러리
+
+	작업진행중
+
+
+----------
+
+
+api.validate - 유효성검사 라이브러리
+
+	작업진행중
+
+
+----------
+
+
+api.xhr - XMLHttpRequest (레벨2) 라이브러리
+
+	api.xhr({
+		'type': 'GET', // GET, POST, DELETE, PUT 같은 HTTP 메서드 타입
+		'url': '', // 요청할 URL 주소
+		'async': true, // 동기/비동기 방식
+
+		'data': {}, // 서버에 보낼 문자열 값이나 자바스크립트 데이터 객체
+		'context': global, // 콜백함수 내부에서 this 키워드로 사용할 객체
+		'dataType': 'text', // 서버 측에서 응답받을 데이터의 형식을 문자열로 지정 (json, text, jsonp)
+
+		'progressUpload': undefined, // 업로드 진행률 콜백 함수
+		'progressDownload': undefined, // 다운로드 진행률 콜백 함수
+		'success': undefined // 요청이 성공했을 때 실행할 콜백 함수
+	});
+
+	사용예 (파일전송)
+	var from = new FormData(api.dom('#form').get(0));
+	api.xhr({
+		'type': 'POST', 
+		'url': '', 
+		'data': from 
+	});
 
 
 ----------

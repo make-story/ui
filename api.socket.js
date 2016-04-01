@@ -1,14 +1,17 @@
 /*
 socket
 
-@version
-0.1 (2015.07.07)
+@date
+2015.07.07
 
 @copyright
 Copyright (c) Sung-min Yu.
 
 @license
 Dual licensed under the MIT and GPL licenses.
+
+@browser compatibility
+
 
 -
 사용예
@@ -22,8 +25,10 @@ socket.message(콜백설정);
 ;(function(factory, global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global != window || !('api' in global)) {
+	if(typeof global === 'undefined' || global !== window) {
 		return false;	
+	}else if(!global.api) {
+		global.api = {};
 	}
 	global.api.socket = factory(global);
 

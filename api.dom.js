@@ -1,5 +1,5 @@
 /*
-Support (BOM, DOM)
+BOM, DOM
 
 브라우저 정보, 해상도, 사용자 정보 등 확인
 브라우저 기능지원 여부: http://modernizr.com/download/
@@ -31,269 +31,12 @@ http://www.quirksmode.org/js/detect.html
 
 ;(function(factory, global) {
 
-	if(typeof global === 'undefined' || global != window) {
-		return false;
-	}else {
-		// 클라이언트 환경정보(브라우저 버전 등)를 우선 확인한다.
-		global.api = (function() {
-
-			'use strict'; // ES5
-
-			// 클라이언트 브라우저 환경
-			var userAgent = (navigator.userAgent || navigator.vendor || window.opera).toLowerCase();
-			var platform = navigator.platform;
-			var nameOffset, verOffset;
-			var key;
-			var element = document.createElement('div');
-			var transforms = ["transform", "WebkitTransform", "MozTransform", "OTransform", "msTransform"]; // css check (IE9 벤더프리픽스로 사용가능, IE10이상 공식지원)
-			var transitions = { // event check (IE10이상 공식지원)
-				"transition": "transitionend", 
-				"WebkitTransition": "webkitTransitionEnd", 
-				"MozTransition": "transitionend", 
-				"OTransition": "oTransitionEnd",
-				"msTransition": "MSTransitionEnd"
-			};
-			var animations = { // event check (IE10이상 공식지원)
-				"animation": ['animationstart', 'animationiteration', 'animationend'], 
-				"WebkitAnimation": ['webkitAnimationStart', 'webkitAnimationIteration', 'webkitAnimationEnd'],
-				"MozAnimation": ['animationstart', 'animationiteration', 'animationend'], 
-				"OAnimation": ['oanimationstart', 'oanimationiteration', 'oanimationend'],
-				"msAnimation": ['MSAnimationStart', 'MSAnimationIteration', 'MSAnimationEnd']
-			};
-			// 3D지원여부 판단자료: ['perspective', 'WebkitPerspective', 'MozPerspective', 'OPerspective', 'msPerspective']
-		 	var environment = { // PC, 사용자 환경
-				//"zindex": 100,
-				"check": { // true, false 
-					"mobile": (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino|android|ipad|playbook|silk/i.test(navigator.userAgent||navigator.vendor||window.opera)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test((navigator.userAgent||navigator.vendor||window.opera).substr(0,4))),
-					"touch": ('ontouchstart' in window || navigator.MaxTouchPoints > 0 || navigator.msMaxTouchPoints > 0),
-					"transform": false,
-					"transition": false/*('transition' in element.style || 'WebkitTransition' in element.style || 'MozTransition' in element.style || 'OTransition' in element.style || 'msTransition' in element.style)*/,
-					"animation": false/*('animationName' in element.style || 'WebkitAnimationName' in element.style || 'MozAnimationName' in element.style || 'OAnimationName' in element.style || 'msAnimationName' in element.style || 'KhtmlAnimationName' in element.style)*/,
-					"fullscreen": (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled || document.msFullscreenEnabled)
-				},
-				"monitor": null, // pc | mobile | tablet (해상도에 따라 설정가능) - check['mobile'] 가 있음에도 따로 구분한 이유는 기기기준과 해상도(모니터) 기준의 영역을 나누어 관리하기 위함
-				"screen": { // browser 사이즈가 아닌 해상도 값
-					"width": screen.availWidth/*Windows Taskbar 제외*/ || screen.width || Math.round(window.innerWidth), 
-					"height": screen.availHeight/*Windows Taskbar 제외*/ || screen.height || Math.round(window.innerHeight)
-				},
-				"browser": {
-					"name": null, // chrome | safari | opera | firefox | explorer (브라우저 구분)
-					"version": null,
-					"scrollbar": (function() { // 브라우저별 스크롤바 폭 (모바일브라우저 주의)
-						var div = document.createElement("div");
-						var scrollbar = 0;
-						div.style.cssText = 'width: 99px; height: 99px; overflow: scroll; position: absolute; top: -9999px;';
-						document.documentElement.appendChild(div);
-						scrollbar = div.offsetWidth - div.clientWidth;
-						document.documentElement.removeChild(div);
-						return scrollbar;
-					})()
-				},
-				"event": {
-					// 마우스 또는 터치
-					"resize": 'onorientationchange' in window ? 'orientationchange' : 'resize',
-					"down": 'mousedown',
-					"move": 'mousemove',
-					"up": 'mouseup',
-					"click": "click",
-					// 트랜지션, 애니메이션
-					"transitionend": "transitionend",
-					"animationstart": "animationstart",
-					"animationiteration": "animationiteration",
-					"animationend": "animationend"
-				},
-				"css": {
-					//"prefix": '', // 벤더 프리픽스
-					//"transform": ''
-				}
-			};
-			// 트랜스폼
-			for(key in transforms) {
-				if(element.style[key] != undefined) {
-					environment['check']['transform'] = true;
-					//environment['css']['transform'] = transforms[key];
-					break;
-				}
-			}
-			// 트랜지션
-			for(key in transitions) {
-				if(element.style[key] != undefined) {
-					environment['check']['transition'] = true;
-					environment['event']['transitionend'] = transitions[key];
-					break;
-				}
-			}
-			// 애니메이션 확인
-			for(key in animations) {
-				if(element.style[key] != undefined) {
-					environment['check']['animation'] = true;
-					environment['event']['animationstart'] = animations[key][0];
-					environment['event']['animationiteration'] = animations[key][1];
-					environment['event']['animationend'] = animations[key][2];
-					break;
-				}
-			}
-
-			// monitor
-			environment['monitor'] = 'pc';
-			if(/android/i.test(userAgent)) { // 안드로이드
-				// mobile 없으면 태블릿임
-				if(/mobile/i.test(userAgent)) {
-					environment['monitor'] = 'mobile';
-				}else {
-					environment['monitor'] = 'tablet';
-				}
-			}else if(/(iphone|ipad|ipod)/i.test(userAgent)) { // 애플
-				if(/ipad/i.test(userAgent)) {
-					environment['monitor'] = 'tablet';
-				}else {
-					environment['monitor'] = 'mobile';
-				}
-			}else if(environment.check.mobile) {
-				environment['monitor'] = 'mobile';
-			}else if(/(MacIntel|MacPPC)/i.test(platform)) {
-				environment['monitor'] = 'pc';
-			}else if(/(win32|win64)/i.test(platform)) {
-				environment['monitor'] = 'pc';
-			}
-
-			// agent 값보다 스크린 크기를 우선 적용하여 태블릿인지 모바일인지 여부를 결정한다.
-			// 테블렛인데 가로 길이가 미달이면 모바일로 인식하게 함
-			/*if((environment['monitor'] = 'tablet') && environment['screen']['width'] && environment['screen']['height'] && (Math.min(environment['screen']['width'], environment['screen']['height']) < 768)) {
-				environment['monitor'] = 'mobile';
-			}*/
-			// 모바일인데 가로 길이가 넘어가면 테블렛으로 인식하게 함
-			/*if((environment['monitor'] = 'mobile') && environment['screen']['width'] && environment['screen']['height'] && (Math.min(environment['screen']['width'], environment['screen']['height']) >= 768)) {
-				environment['monitor'] = 'tablet';
-			}*/
-
-			// browser (if문 순서 중요함)
-			environment['browser']['name'] = navigator.appName;
-			environment['browser']['version'] = String(parseFloat(navigator.appVersion));
-			if((verOffset = userAgent.indexOf("opr/")) != -1) {
-				environment['browser']['name'] = "opera";
-				environment['browser']['version'] = userAgent.substring(verOffset + 4);
-			}else if((verOffset = userAgent.indexOf("opera")) != -1) {
-				environment['browser']['name'] = "opera";
-				environment['browser']['version'] = userAgent.substring(verOffset + 6);
-				if((verOffset = userAgent.indexOf("version")) != -1) {
-					environment['browser']['version'] = userAgent.substring(verOffset + 8);
-				}
-			}else if((verOffset = userAgent.indexOf("msie")) != -1) {
-				environment['browser']['name'] = "explorer";
-				environment['browser']['version'] = userAgent.substring(verOffset + 5);
-			}else if((verOffset = userAgent.indexOf("chrome")) != -1) {
-				environment['browser']['name'] = "chrome";
-				environment['browser']['version'] = userAgent.substring(verOffset + 7);
-			}else if((verOffset = userAgent.indexOf("safari")) != -1) {
-				environment['browser']['name'] = "safari";
-				environment['browser']['version'] = userAgent.substring(verOffset + 7);
-				if((verOffset = userAgent.indexOf("version")) != -1) {
-					environment['browser']['version'] = userAgent.substring(verOffset + 8);
-				}
-			}else if((verOffset = userAgent.indexOf("firefox")) != -1) {
-				environment['browser']['name'] = "firefox";
-				environment['browser']['version'] = userAgent.substring(verOffset + 8);
-			}else if((nameOffset = userAgent.lastIndexOf(' ') + 1) < (verOffset = userAgent.lastIndexOf('/'))) { 
-				environment['browser']['name'] = userAgent.substring(nameOffset, verOffset);
-				environment['browser']['version'] = userAgent.substring(verOffset + 1);
-				if(environment['browser']['name'].toLowerCase() == environment['browser']['name'].toUpperCase()) {
-					environment['browser']['name'] = navigator.appName;
-				}
-			}
-			if((verOffset = environment['browser']['version'].indexOf(';')) != -1) {
-				environment['browser']['version'] = environment['browser']['version'].substring(0, verOffset);
-			}
-			if((verOffset = environment['browser']['version'].indexOf(' ')) != -1) {
-				environment['browser']['version'] = environment['browser']['version'].substring(0, verOffset);
-			}
-
-			// event
-			if(environment['check']['touch'] === true) {
-				environment['event']['down'] = 'touchstart';
-				environment['event']['move'] = 'touchmove';
-				environment['event']['up'] = 'touchend';
-				environment['event']['click'] = (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click';
-			}
-
-			// 라이브러리를 확장으로 사용할 수 있도록 한다.
-			/*
-			api.extend.set({
-				'Popup': {
-					'test': function() {
-						alert('test');
-					}
-				}
-			});
-			api.extend.get('Popup.test');
-			*/
-			var extend = {
-				set: function(obj) {
-					var key;
-					for(key in obj) {
-						if(!/set|get/ig.test(key)) {
-							this[key] = obj[key];
-						}
-					}
-				},
-				get: function(chaining) {
-					var arr;
-					var i, max;
-					var obj;
-					if(typeof chaining === 'string' && chaining.length > 0) {
-						arr = chaining.split('.');
-						i = 0;
-						max = arr.length;
-						if(obj = this[arr[i]]) {
-							do {
-								i++;
-								if(obj[arr[i]]) {
-									obj = obj[arr[i]];
-								}else {
-									break;
-								}
-							}while(i < max);
-						}
-						return obj;
-					}
-					return false
-				}
-			};
-
-			// 브라우저 버전체크
-			if(environment['browser']['name'] === 'explorer' && environment['browser']['version'] < 7.0) {
-				// 브라우저 지원범위에 따른 최소 기능만 제공
-				return {
-					"env": environment,
-					"extend": extend
-				};
-			}
-
-			// 기능 조립
-			return factory(global, environment, extend);
-			
-		})();
-	}
-
-})(function(global, environment, extend, undefined) {
-
 	'use strict'; // ES5
-
-	// isArray (IE9부터 지원)
-	/*if(!Array.isArray) {
-		Array.isArray = function(arg) {
-			return Object.prototype.toString.call(arg) === '[object Array]';
-		};
-	}*/
-
-	// 정규식
-	var regexp = {
-		pixel_unit_list: /width$|height$|top|right|bottom|left|fontSize|letterSpacing|lineHeight|^margin*|^padding*/i, // 단위 px 해당되는 것
-		time_unit_list: /.+(-duration|-delay)$/i, // seconds (s) or milliseconds (ms)
-		position_list: /^(top|right|bottom|left)$/,
-		display_list: /^(display|visibility|opacity|)$/i,
-		num: /^[+-]?\d+(\.\d+)?$/ // 숫자
-	};
+	if(typeof global === 'undefined' || global !== window) {
+		return false;
+	}else if(!global.api) {
+		global.api = {};
+	}
 
 	// 일반적인 고유키 생성 (id="" 속성의 경우 첫글자가 문자로 시작해야 한다.)
 	var getKey = function() {
@@ -308,33 +51,220 @@ http://www.quirksmode.org/js/detect.html
 		return [arr[Math.floor(Math.random() * arr.length)], Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1), date.getFullYear(), (Number(date.getMonth()) + 1), date.getDay(), date.getHours(), date.getMinutes()].join('');
 	};
 
+	// 클라이언트 브라우저 환경
+	var userAgent = (navigator.userAgent || navigator.vendor || window.opera).toLowerCase();
+	var platform = navigator.platform;
+	var nameOffset, verOffset;
+	var key;
+	var element = document.createElement('div');
+	var transforms = ["transform", "WebkitTransform", "MozTransform", "OTransform", "msTransform"]; // css check (IE9 벤더프리픽스로 사용가능, IE10이상 공식지원)
+	var transitions = { // event check (IE10이상 공식지원)
+		"transition": "transitionend", 
+		"WebkitTransition": "webkitTransitionEnd", 
+		"MozTransition": "transitionend", 
+		"OTransition": "oTransitionEnd",
+		"msTransition": "MSTransitionEnd"
+	};
+	var animations = { // event check (IE10이상 공식지원)
+		"animation": ['animationstart', 'animationiteration', 'animationend'], 
+		"WebkitAnimation": ['webkitAnimationStart', 'webkitAnimationIteration', 'webkitAnimationEnd'],
+		"MozAnimation": ['animationstart', 'animationiteration', 'animationend'], 
+		"OAnimation": ['oanimationstart', 'oanimationiteration', 'oanimationend'],
+		"msAnimation": ['MSAnimationStart', 'MSAnimationIteration', 'MSAnimationEnd']
+	};
+	// 3D지원여부 판단자료: ['perspective', 'WebkitPerspective', 'MozPerspective', 'OPerspective', 'msPerspective']
+ 	var environment = { // PC, 사용자 환경
+		//"zindex": 100,
+		"check": { // true, false 
+			"mobile": (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino|android|ipad|playbook|silk/i.test(navigator.userAgent||navigator.vendor||window.opera)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test((navigator.userAgent||navigator.vendor||window.opera).substr(0,4))),
+			"touch": ('ontouchstart' in window || navigator.MaxTouchPoints > 0 || navigator.msMaxTouchPoints > 0),
+			"transform": false,
+			"transition": false/*('transition' in element.style || 'WebkitTransition' in element.style || 'MozTransition' in element.style || 'OTransition' in element.style || 'msTransition' in element.style)*/,
+			"animation": false/*('animationName' in element.style || 'WebkitAnimationName' in element.style || 'MozAnimationName' in element.style || 'OAnimationName' in element.style || 'msAnimationName' in element.style || 'KhtmlAnimationName' in element.style)*/,
+			"fullscreen": (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled || document.msFullscreenEnabled)
+		},
+		"monitor": null, // pc | mobile | tablet (해상도에 따라 설정가능) - check['mobile'] 가 있음에도 따로 구분한 이유는 기기기준과 해상도(모니터) 기준의 영역을 나누어 관리하기 위함
+		"screen": { // browser 사이즈가 아닌 해상도 값
+			"width": screen.availWidth/*Windows Taskbar 제외*/ || screen.width || Math.round(window.innerWidth), 
+			"height": screen.availHeight/*Windows Taskbar 제외*/ || screen.height || Math.round(window.innerHeight)
+		},
+		"browser": {
+			"name": null, // chrome | safari | opera | firefox | explorer (브라우저 구분)
+			"version": null,
+			"scrollbar": (function() { // 브라우저별 스크롤바 폭 (모바일브라우저 주의)
+				var div = document.createElement("div");
+				var scrollbar = 0;
+				div.style.cssText = 'width: 99px; height: 99px; overflow: scroll; position: absolute; top: -9999px;';
+				document.documentElement.appendChild(div);
+				scrollbar = div.offsetWidth - div.clientWidth;
+				document.documentElement.removeChild(div);
+				return scrollbar;
+			})()
+		},
+		"event": {
+			// 마우스 또는 터치
+			"resize": 'onorientationchange' in window ? 'orientationchange' : 'resize',
+			"down": "mousedown",
+			"move": "mousemove",
+			"up": "mouseup",
+			"click": "click",
+			// 트랜지션, 애니메이션
+			"transitionend": "transitionend",
+			"animationstart": "animationstart",
+			"animationiteration": "animationiteration",
+			"animationend": "animationend"
+		},
+		"css": {
+			//"prefix": '', // 벤더 프리픽스
+			//"transform": ''
+		}
+	};
+	// 트랜스폼
+	for(key in transforms) {
+		if(element.style[key] !== undefined) {
+			environment['check']['transform'] = true;
+			//environment['css']['transform'] = transforms[key];
+			break;
+		}
+	}
+	// 트랜지션
+	for(key in transitions) {
+		if(element.style[key] !== undefined) {
+			environment['check']['transition'] = true;
+			environment['event']['transitionend'] = transitions[key];
+			break;
+		}
+	}
+	// 애니메이션 확인
+	for(key in animations) {
+		if(element.style[key] !== undefined) {
+			environment['check']['animation'] = true;
+			environment['event']['animationstart'] = animations[key][0];
+			environment['event']['animationiteration'] = animations[key][1];
+			environment['event']['animationend'] = animations[key][2];
+			break;
+		}
+	}
+
+	// monitor
+	environment['monitor'] = 'pc';
+	if(/android/i.test(userAgent)) { // 안드로이드
+		// mobile 없으면 태블릿임
+		if(/mobile/i.test(userAgent)) {
+			environment['monitor'] = 'mobile';
+		}else {
+			environment['monitor'] = 'tablet';
+		}
+	}else if(/(iphone|ipad|ipod)/i.test(userAgent)) { // 애플
+		if(/ipad/i.test(userAgent)) {
+			environment['monitor'] = 'tablet';
+		}else {
+			environment['monitor'] = 'mobile';
+		}
+	}else if(environment.check.mobile) {
+		environment['monitor'] = 'mobile';
+	}else if(/(MacIntel|MacPPC)/i.test(platform)) {
+		environment['monitor'] = 'pc';
+	}else if(/(win32|win64)/i.test(platform)) {
+		environment['monitor'] = 'pc';
+	}
+
+	// agent 값보다 스크린 크기를 우선 적용하여 태블릿인지 모바일인지 여부를 결정한다.
+	// 테블렛인데 가로 길이가 미달이면 모바일로 인식하게 함
+	/*if((environment['monitor'] = 'tablet') && environment['screen']['width'] && environment['screen']['height'] && (Math.min(environment['screen']['width'], environment['screen']['height']) < 768)) {
+		environment['monitor'] = 'mobile';
+	}*/
+	// 모바일인데 가로 길이가 넘어가면 테블렛으로 인식하게 함
+	/*if((environment['monitor'] = 'mobile') && environment['screen']['width'] && environment['screen']['height'] && (Math.min(environment['screen']['width'], environment['screen']['height']) >= 768)) {
+		environment['monitor'] = 'tablet';
+	}*/
+
+	// browser (if문 순서 중요함)
+	environment['browser']['name'] = navigator.appName;
+	environment['browser']['version'] = String(parseFloat(navigator.appVersion));
+	if((verOffset = userAgent.indexOf("opr/")) !== -1) {
+		environment['browser']['name'] = "opera";
+		environment['browser']['version'] = userAgent.substring(verOffset + 4);
+	}else if((verOffset = userAgent.indexOf("opera")) !== -1) {
+		environment['browser']['name'] = "opera";
+		environment['browser']['version'] = userAgent.substring(verOffset + 6);
+		if((verOffset = userAgent.indexOf("version")) !== -1) {
+			environment['browser']['version'] = userAgent.substring(verOffset + 8);
+		}
+	}else if((verOffset = userAgent.indexOf("msie")) !== -1) {
+		environment['browser']['name'] = "explorer";
+		environment['browser']['version'] = userAgent.substring(verOffset + 5);
+	}else if((verOffset = userAgent.indexOf("chrome")) !== -1) {
+		environment['browser']['name'] = "chrome";
+		environment['browser']['version'] = userAgent.substring(verOffset + 7);
+	}else if((verOffset = userAgent.indexOf("safari")) !== -1) {
+		environment['browser']['name'] = "safari";
+		environment['browser']['version'] = userAgent.substring(verOffset + 7);
+		if((verOffset = userAgent.indexOf("version")) !== -1) {
+			environment['browser']['version'] = userAgent.substring(verOffset + 8);
+		}
+	}else if((verOffset = userAgent.indexOf("firefox")) !== -1) {
+		environment['browser']['name'] = "firefox";
+		environment['browser']['version'] = userAgent.substring(verOffset + 8);
+	}else if((nameOffset = userAgent.lastIndexOf(' ') + 1) < (verOffset = userAgent.lastIndexOf('/'))) { 
+		environment['browser']['name'] = userAgent.substring(nameOffset, verOffset);
+		environment['browser']['version'] = userAgent.substring(verOffset + 1);
+		if(environment['browser']['name'].toLowerCase() == environment['browser']['name'].toUpperCase()) {
+			environment['browser']['name'] = navigator.appName;
+		}
+	}
+	if((verOffset = environment['browser']['version'].indexOf(';')) !== -1) {
+		environment['browser']['version'] = environment['browser']['version'].substring(0, verOffset);
+	}
+	if((verOffset = environment['browser']['version'].indexOf(' ')) !== -1) {
+		environment['browser']['version'] = environment['browser']['version'].substring(0, verOffset);
+	}
+
+	// event
+	if(environment['check']['touch'] === true) {
+		environment['event']['down'] = 'touchstart';
+		environment['event']['move'] = 'touchmove';
+		environment['event']['up'] = 'touchend';
+		environment['event']['click'] = (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click';
+	}
+
+	// public return
+	global.api.key = getKey;
+	global.api.env = environment;
+	if(environment['browser']['name'] !== 'explorer' || (environment['browser']['name'] === 'explorer' && environment['browser']['version'] > 6)) {
+		// 브라우저 버전에 따라 추가 기능제공
+		factory(global);
+	}
+
+})(function(global, undefined) {
+
+	'use strict'; // ES5
+
+	// 정규식
+	var regexp = {
+		pixel_unit_list: /width$|height$|top|right|bottom|left|fontSize|letterSpacing|lineHeight|^margin*|^padding*/i, // 단위 px 해당되는 것
+		time_unit_list: /.+(-duration|-delay)$/i, // seconds (s) or milliseconds (ms)
+		position_list: /^(top|right|bottom|left)$/,
+		display_list: /^(display|visibility|opacity|)$/i,
+		num: /^[+-]?\d+(\.\d+)?$/ // 숫자
+	};
+
 	// event name 크로스브라우저에 따른 자동 변경
 	var setEventTypeChange = function(events) {
 		if(typeof events === 'string' && /transitionend|animationstart|animationiteration|animationend/i.test(events.toLowerCase())) {
 			events = events.toLowerCase(); // 주의! 이벤트명을 모두 소문자로 변경했을 때 작동하지 않는 이벤트가 있다. (DOMMouseScroll)
-			if(/transitionend/i.test(events) && environment['event']['transitionend']) {
-				events = environment['event']['transitionend'];
-			}else if(/animationstart/i.test(events) && environment['event']['animationstart']) {
-				events = environment['event']['animationstart'];
-			}else if(/animationiteration/i.test(events) && environment['event']['animationiteration']) {
-				events = environment['event']['animationiteration'];
-			}else if(/animationend/i.test(events) && environment['event']['animationend']) {
-				events = environment['event']['animationend'];
+			if(/transitionend/i.test(events) && global.api.env['event']['transitionend']) {
+				events = global.api.env['event']['transitionend'];
+			}else if(/animationstart/i.test(events) && global.api.env['event']['animationstart']) {
+				events = global.api.env['event']['animationstart'];
+			}else if(/animationiteration/i.test(events) && global.api.env['event']['animationiteration']) {
+				events = global.api.env['event']['animationiteration'];
+			}else if(/animationend/i.test(events) && global.api.env['event']['animationend']) {
+				events = global.api.env['event']['animationend'];
 			}
 		}
 		return events;
 	};
-
-	// window.ScrollX, window.ScrollY 크로스 브라우저
-	/*var getScrollXY = function() {
-		// https://developer.mozilla.org/ko/docs/Web/API/Window/scrollY
-		var supportPageOffset = window.pageXOffset != undefined;
-		var isCSS1Compat = ((document.compatMode || "") === "CSS1Compat");
-		return {
-			'x': supportPageOffset ? window.pageXOffset : isCSS1Compat ? document.documentElement.scrollLeft : document.body.scrollLeft, 
-			'y': supportPageOffset ? window.pageYOffset : isCSS1Compat ? document.documentElement.scrollTop : document.body.scrollTop
-		};
-	};*/
 
 	// 숫자여부 
 	var isNumeric = function(value) {
@@ -616,7 +546,7 @@ http://www.quirksmode.org/js/detect.html
 				//return false;
 			}else if(typeof selector === 'string') {
 				for(i=0; i<max; i++) { // this.elements[] 연관배열
-					for(search = this.elements[i].parentNode; search && search != context; search = search.parentNode) { 
+					for(search = this.elements[i].parentNode; search && search !== context; search = search.parentNode) { 
 						// 현재 element 부터 검사하기 위해 
 						// 현재 노드의 parentNode 를 search 초기값으로 바인딩하고
 						// search.querySelector() 로 확인 한다.
@@ -1320,7 +1250,7 @@ http://www.quirksmode.org/js/detect.html
 					return;
 				}
 				// 실행 정보 저장
-				if(typeof element['storage'] != 'object') {
+				if(typeof element['storage'] !== 'object') {
 					element.storage = {};
 				}
 				element.storage[key] = {
@@ -1364,7 +1294,7 @@ http://www.quirksmode.org/js/detect.html
 			var that = this;
 			// new Date().getUTCMilliseconds();
 			// new Date().getTime() + Math.random();
-			var key = getKey();
+			var key = global.api.key();
 			var callback = function() {
 				// off
 				that.off('.' + key);
@@ -1448,7 +1378,7 @@ http://www.quirksmode.org/js/detect.html
 					// window, document
 					viewport = getViewport();
 					if('left' in parameter || 'top' in parameter) {
-						window.scrollTo((typeof parameter.left != 'undefined' ? parameter.left : (viewport.left || 0)), (typeof parameter.top != 'undefined' ? parameter.top : (viewport.top || 0)));
+						window.scrollTo((typeof parameter.left !== 'undefined' ? parameter.left : (viewport.left || 0)), (typeof parameter.top !== 'undefined' ? parameter.top : (viewport.top || 0)));
 					}else {
 						return {'left': viewport.left, 'top': viewport.top};
 					}
@@ -1601,7 +1531,7 @@ http://www.quirksmode.org/js/detect.html
 			}
 		}, 1000);
 
-		DOM(document).on(environment['event']['move'] + '.EVENT_MOUSEMOVE_DOM_TOUCH', function(e) {
+		DOM(document).on(global.api.env['event']['move'] + '.EVENT_MOUSEMOVE_DOM_TOUCH', function(e) {
 			var event = e || window.event;
 			var touch = event.touches || event.changedTouches;
 
@@ -1619,7 +1549,7 @@ http://www.quirksmode.org/js/detect.html
 			}
 		});
 
-		DOM(document).on(environment['event']['up'] + '.EVENT_MOUSEUP_DOM_TOUCH', function(e) { // IE7문제: window 가 아닌 document 에 할당해야 한다.
+		DOM(document).on(global.api.env['event']['up'] + '.EVENT_MOUSEUP_DOM_TOUCH', function(e) { // IE7문제: window 가 아닌 document 에 할당해야 한다.
 			var event = e || window.event;
 			var touch = event.changedTouches; // touchend
 
@@ -1680,7 +1610,7 @@ http://www.quirksmode.org/js/detect.html
 							element['storage']['EVENT_DOM_TOUCH_ONE'] = handlers;
 						}
 						if(!element['storage']['EVENT_DOM_TOUCH']) {
-							DOM(element).on(environment['event']['down'] + '.EVENT_DOM_TOUCH', setTouchHandler);
+							DOM(element).on(global.api.env['event']['down'] + '.EVENT_DOM_TOUCH', setTouchHandler);
 						}
 					}
 				});
@@ -1763,11 +1693,11 @@ http://www.quirksmode.org/js/detect.html
 	};
 	DocumentTouch.prototype = {
 		add: function(callback) { // callback 추가
-			if(!callback || typeof callback != 'function') return false;
+			if(!callback || typeof callback !== 'function') return false;
 			this.callback.push(callback);
 		},
 		del: function(callback) { // callback 제거
-			if(!callback || typeof callback != 'function') return false;
+			if(!callback || typeof callback !== 'function') return false;
 			var index = (this.callback.length > 0) ? this.callback.indexOf(callback) : -1; // 존재여부 확인
 			if(index > -1) {
 				this.callback.splice(index, 1); // 대기 리스트 요소 제거
@@ -1776,11 +1706,11 @@ http://www.quirksmode.org/js/detect.html
 		on: (function() { // up 이벤트 작동
 			if(typeof window.addEventListener === 'function') {
 				return function() {
-					window.addEventListener(environment['event']['up'], this.func, false);
+					window.addEventListener(global.api.env['event']['up'], this.func, false);
 				}
 			}else if(typeof document.attachEvent === 'function') { // IE
 				return function() {
-					document.attachEvent('on' + environment['event']['up'], this.func);
+					document.attachEvent('on' + global.api.env['event']['up'], this.func);
 				}
 			}else {
 				return function() {};
@@ -1789,11 +1719,11 @@ http://www.quirksmode.org/js/detect.html
 		off: (function() { // up 이벤트 정지
 			if(typeof window.removeEventListener === 'function') {
 				return function() {
-					window.removeEventListener(environment['event']['up'], this.func, false);
+					window.removeEventListener(global.api.env['event']['up'], this.func, false);
 				}
 			}else if(typeof document.detachEvent === 'function') { // IE
 				return function() {
-					document.detachEvent('on' + environment['event']['up'], this.func);
+					document.detachEvent('on' + global.api.env['event']['up'], this.func);
 				}
 			}
 		})()
@@ -1819,11 +1749,11 @@ http://www.quirksmode.org/js/detect.html
 	};
 	DocumentResize.prototype = {
 		add: function(callback) { // callback 추가
-			if(!callback || typeof callback != 'function') return false;
+			if(!callback || typeof callback !== 'function') return false;
 			this.callback.push(callback);
 		},
 		del: function(callback) { // callback 제거
-			if(!callback || typeof callback != 'function') return false;
+			if(!callback || typeof callback !== 'function') return false;
 			var index = (this.callback.length > 0) ? this.callback.indexOf(callback) : -1; // 존재여부 확인
 			if(index > -1) {
 				this.callback.splice(index, 1); // 대기 리스트 요소 제거
@@ -1832,11 +1762,11 @@ http://www.quirksmode.org/js/detect.html
 		on: (function() { // resize 이벤트 작동
 			if(typeof window.addEventListener === 'function') {
 				return function() {
-					window.addEventListener(environment['event']['resize'], this.func, false);
+					window.addEventListener(global.api.env['event']['resize'], this.func, false);
 				}
 			}else if(typeof document.attachEvent === 'function') { // IE
 				return function() {
-					document.attachEvent('on' + environment['event']['resize'], this.func);
+					document.attachEvent('on' + global.api.env['event']['resize'], this.func);
 				}
 			}else {
 				return function() {};
@@ -1845,11 +1775,11 @@ http://www.quirksmode.org/js/detect.html
 		off: (function() { // resize 이벤트 정지
 			if(typeof window.removeEventListener === 'function') {
 				return function() {
-					window.removeEventListener(environment['event']['resize'], this.func, false);
+					window.removeEventListener(global.api.env['event']['resize'], this.func, false);
 				}
 			}else if(typeof document.detachEvent === 'function') { // IE
 				return function() {
-					document.detachEvent('on' + environment['event']['resize'], this.func);
+					document.detachEvent('on' + global.api.env['event']['resize'], this.func);
 				}
 			}
 		})()
@@ -1872,7 +1802,7 @@ http://www.quirksmode.org/js/detect.html
 		api.animationFrameQueue({'element': '.h2', 'style': {'left': '100px', 'top': '100px', 'width': '100px', 'height': '100px'}});
 		api.animationFrameQueue([{'element': api.dom('#h2'), 'style': {'left': '100px', 'top': '100px'}}, {...}, ... ]);
 		*/
-		if(typeof queue != 'object') {
+		if(typeof queue !== 'object') {
 			return false;
 		}else if(!Array.isArray(queue)) {
 			queue = [queue];
@@ -1993,7 +1923,7 @@ http://www.quirksmode.org/js/detect.html
 		api.animationQueue([{'element': api.dom('#view'), 'animation': 'pt-page-moveToRight'}, {'element': api.dom('#list'), 'animation': 'pt-page-moveToRight'}]);
 		api.animationQueue({'element': api.dom('#view'), 'animation': 'pt-page-moveToLeft', 'complete': function() { ... }});
 		*/
-		if(typeof queue != 'object') {
+		if(typeof queue !== 'object') {
 			return false;
 		}else if(!Array.isArray(queue)) {
 			queue = [queue];
@@ -2017,7 +1947,7 @@ http://www.quirksmode.org/js/detect.html
 						break;
 					case "animationend":
 						element.removeClass(animation);
-						element.off(environment['event']['animationend'] + '.EVENT_ANIMATIONEND_queue');
+						element.off(global.api.env['event']['animationend'] + '.EVENT_ANIMATIONEND_queue');
 						element.removeProp('animationState');
 
 						// complete 실행
@@ -2035,11 +1965,11 @@ http://www.quirksmode.org/js/detect.html
 
 			// element 에 이미 진행중인 애니메이션이 있다면, 대기 했다가 실행한다.
 			time = window.setInterval(function() {
-				if(element.prop('animationState') != 'running') { 
+				if(element.prop('animationState') !== 'running') { 
 					//console.log('[정보] 애니메이션 실행');
 					window.clearInterval(time);
 					element.prop({'animationState': 'running'});
-					element.addClass(animation).on(environment['event']['animationend'] + '.EVENT_ANIMATIONEND_queue', handler);
+					element.addClass(animation).on(global.api.env['event']['animationend'] + '.EVENT_ANIMATIONEND_queue', handler);
 				}else {
 					// 현재 실행중인 애니메이션이 존재 (대기 후 이전 애니메이션이 종료되면 실행)
 					//console.log('[정보] 애니메이션 대기');
@@ -2058,7 +1988,7 @@ http://www.quirksmode.org/js/detect.html
 		api.transitionQueue({'element': api.dom('#view'), 'transition': {'left': '100px', 'top': '100px'}});
 		api.transitionQueue([{'element': api.dom('#view'), 'transition': {'left': '100px', 'top': '100px'}}, {...}, ... ]);
 		*/
-		if(typeof queue != 'object') {
+		if(typeof queue !== 'object') {
 			return false;
 		}else if(!Array.isArray(queue)) {
 			queue = [queue];
@@ -2127,11 +2057,11 @@ http://www.quirksmode.org/js/detect.html
 
 			// 
 			for(i in original) {
-				if(typeof original[i]['storage'] != 'object') {
+				if(typeof original[i]['storage'] !== 'object') {
 					original[i]['storage'] = {};
 				}
 				// 현재 상태값 저장
-				if(typeof original[i]['storage']['transition'] != 'object') {
+				if(typeof original[i]['storage']['transition'] !== 'object') {
 					original[i]['storage']['transition'] = {};
 					for(key in state) {
 						tmp = original[i]['style'][key];
@@ -2165,7 +2095,7 @@ http://www.quirksmode.org/js/detect.html
 						original[i]['style'][key] = original[i]['storage']['transition'][key];
 					}
 				}
-				element.off(environment['event']['transitionend'] + '.EVENT_TRANSITION_queue');
+				element.off(global.api.env['event']['transitionend'] + '.EVENT_TRANSITION_queue');
 				
 				// complete 실행
 				if(typeof complete === 'function') {
@@ -2179,27 +2109,19 @@ http://www.quirksmode.org/js/detect.html
 			};
 
 			// 이벤트
-			element.style(properties).on(environment['event']['transitionend'] + '.EVENT_TRANSITION_queue', handler, true);
+			element.style(properties).on(global.api.env['event']['transitionend'] + '.EVENT_TRANSITION_queue', handler, true);
 		})(queue);
 	};
 
-	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
-
 	// public return
-	return {
-		"version": 0.1,
-		"key": getKey,
-		"dom": DOM,
-		/*"document": {
-			'ready': documentReady,
-			'touch': new DocumentTouch(),
-			'resize': new DocumentResize()
-		},*/
-		"animationFrameQueue": setAnimationFrameQueue,
-		"animationQueue": setAnimationQueue,
-		"transitionQueue": setTransitionQueue,
-		"env": environment,
-		"extend": extend
-	};
+	global.api.dom = DOM;
+	/*global.api.document = {
+		'ready': documentReady,
+		'touch': new DocumentTouch(),
+		'resize': new DocumentResize()
+	};*/
+	global.api.animationFrameQueue = setAnimationFrameQueue;
+	global.api.animationQueue = setAnimationQueue;
+	global.api.transitionQueue = setTransitionQueue;
 
 }, this);

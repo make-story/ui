@@ -1,14 +1,17 @@
 /*
 xhr (XMLHttpRequest level 2)
 
-@version
-0.1 (2015.07.07)
+@date
+2015.07.07
 
 @copyright
 Copyright (c) Sung-min Yu.
 
 @license
 Dual licensed under the MIT and GPL licenses.
+
+@browser compatibility
+
 
 -
 사용예 (파일전송)

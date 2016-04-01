@@ -1,14 +1,17 @@
 /*
 Editor
 
-@version
-0.1 (2015.07.07)
+@date
+2015.07.07
 
 @copyright
 Copyright (c) Sung-min Yu.
 
 @license
 Dual licensed under the MIT and GPL licenses.
+
+@browser compatibility
+
 */
 
 /*
@@ -16,6 +19,9 @@ Dual licensed under the MIT and GPL licenses.
 api.support.js 종속되어 동작한다.
 
 -
+Editor's Draft 10 January 2016
+http://w3c.github.io/selection-api/
+
 window.getSelection(): 현재 선택된 텍스트 범위 (선택영역, 사용자가 드래그 등으로 여러 엘리먼트에 걸쳐 선택한 텍스트를 대표한다.) - 선택된 값은 selection 객체의 toString()을 호출해서 가져올 수 있다.
 window.getSelection().anchorNode: 선택된 글자의 시작노드
 window.getSelection().focusNode: 현재 포커스가 위치한 끝노드
@@ -55,7 +61,7 @@ function getSelectedText() {
 
 // 파이어 폭스의 텍스트 입력 엘리먼트이다.
 function getTextFieldSelection(e) { 
-	if(e.selectionStart != undefined && e.selectionEnd != undefined){
+	if(e.selectionStart !== undefined && e.selectionEnd !== undefined){
 		var start = e.selectionStart;
 		var end = e.selectionEnd;
 		return e.value.substring(start, end);
@@ -79,12 +85,12 @@ if(el.nodeType === Node.TEXT_NODE) {
 ;(function(factory, global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global !== window || !('api' in global)) {
+	if(typeof global === 'undefined' || global !== window || ((!global.api || !global.api.dom) && !global.jQuery)) {
 		return false;
 	}
-	global.api.editor = factory(global);
+	global.api.editor = factory(global, global.jQuery || global.api.dom);
 
-})(function(global, undefined) {
+})(function(global, $, undefined) {
 
 	'use strict'; // ES5
 
@@ -134,12 +140,12 @@ if(el.nodeType === Node.TEXT_NODE) {
 			return;
 		}
 		while(node.parentNode) {
-			// condition 함수 내부 확인 후 true 의 경우 callback 함수 실행
-			// 1. condition 확인
+			// condition 함수를 실행하여 리턴값이 true 의 경우, callback 함수 실행
+			// 1. condition 실행
 			// 2. callback 실행
 			if(condition(node)) {
 				result = callback(node);
-				if(typeof result != 'undefined') {
+				if(typeof result !== 'undefined') {
 					return result; // break
 				}
 			}
@@ -197,7 +203,7 @@ if(el.nodeType === Node.TEXT_NODE) {
 			getParent(
 				selection.focusNode,
 				function(node) {
-					return typeof node.nodeName != 'undefined' && typeof node.style != 'undefined';
+					return typeof node.nodeName !== 'undefined' && typeof node.style !== 'undefined';
 				},
 				function(node) {
 					console.log(node.nodeName.toLowerCase());
@@ -271,7 +277,7 @@ if(el.nodeType === Node.TEXT_NODE) {
 		var tooltip_width, tooltip_height;
 		var top, left;
 
-		if(typeof selection != 'object' || selection.isCollapsed) { // isCollapsed: 셀렉션의 시작지점과 끝지점이 동일한지의 여부
+		if(typeof selection !== 'object' || selection.isCollapsed) { // isCollapsed: 셀렉션의 시작지점과 끝지점이 동일한지의 여부
 			// 텍스트에디터 툴바숨기기
 			elements['text']['tooltip'].style.top = EDGE + "px";
 			elements['text']['tooltip'].style.left = EDGE + "px";
@@ -534,7 +540,7 @@ if(el.nodeType === Node.TEXT_NODE) {
 					prevSibling = parentParagraph.previousSibling; // 하나 전의 노드
 					prevPrevSibling = prevSibling;
 					while(prevPrevSibling) {
-						if(prevPrevSibling.nodeType != Node.TEXT_NODE) { // Node는 전역변수 window.Node (TEXT_NODE: 3)
+						if(prevPrevSibling.nodeType !== Node.TEXT_NODE) { // Node는 전역변수 window.Node (TEXT_NODE: 3)
 							break;
 						}
 						prevPrevSibling = prevPrevSibling.previousSibling; // 하나 전의 노드
@@ -614,7 +620,7 @@ if(el.nodeType === Node.TEXT_NODE) {
 			node = nodes[i];
 
 			// storage
-			if(typeof node.storage != 'object') {
+			if(typeof node.storage !== 'object') {
 				node.storage = {};
 			}else if(node.storage['EVENT_MOUSEUP_editor'] || node.storage['EVENT_KEYDOWN_editor'] || node.storage['EVENT_KEYUP_editor']) {
 				// 이벤트가 중복되지 않도록 이미 적용되어 있는지 확인한다.				
@@ -703,7 +709,7 @@ if(el.nodeType === Node.TEXT_NODE) {
 		var node;
 		for(i=0, max=nodes.length; i<max; i++) {
 			node = nodes[i];
-			if(typeof node.storage != 'object') {
+			if(typeof node.storage !== 'object') {
 				continue;
 			}
 
