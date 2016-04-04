@@ -1,5 +1,5 @@
 /*
-Modals
+Modal
 
 @date
 2016.03
@@ -13,6 +13,25 @@ Dual licensed under the MIT and GPL licenses.
 @browser compatibility
 IE8 이상
 querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
+RGBa: Internet Explorer 9
+
+-
+element 위치
+문서 내에서 렌더링 된 엘리먼트의 절대 위치를 계산해야 한다면,
+getClientRects() 와 getBoundingClientRect() 메서드를 사용해 윈도우 기준으로 렌더링 된 위치를 가져온 후에,
+문서의 스크롤 값을 더해주면 된다.
+
+http://e-rooms.tistory.com/entry/HTML-Element-%EA%B0%9D%EC%B2%B4%EC%97%90%EC%84%9C-%EC%A0%9C%EA%B3%B5%ED%95%98%EB%8A%94-%ED%81%AC%EA%B8%B0-%EB%B0%8F-%EC%9C%84%EC%B9%98-%ED%94%84%EB%A1%9C%ED%8D%BC%ED%8B%B0%EC%99%80-%EB%A9%94%EC%86%8C%EB%93%9C
+http://ohgyun.com/569
+
+getClientRects
+getBoundingClientRect 추천
+
+// For scrollX
+(((t = document.documentElement) || (t = document.body.parentNode)) && typeof t.ScrollLeft == 'number' ? t : document.body).ScrollLeft
+// For scrollY
+(((t = document.documentElement) || (t = document.body.parentNode)) && typeof t.ScrollTop == 'number' ? t : document.body).ScrollTop
+
 */
 
 ;(function(factory, global) {
@@ -23,23 +42,11 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 	}else if(!global.api) {
 		global.api = {};
 	}
-	global.api.modals = factory(global, global.jQuery || global.api.dom);
+	global.api.modal = factory(global, global.jQuery || global.api.dom);
 
 })(function(global, $, undefined) {
 
 	'use strict'; // ES5
-
-	//
-	var getKey;
-	if(global.api && global.api.key) {
-		getKey = global.api.key;
-	}else {
-		getKey = function() {
-			var arr = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'/*,'0','1','2','3','4','5','6','7','8','9'*/];
-			var date = new Date();
-			return [arr[Math.floor(Math.random() * arr.length)], Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1), date.getFullYear(), (Number(date.getMonth()) + 1), date.getDay(), date.getHours(), date.getMinutes()].join('');
-		};
-	}
 
 	//
 	var env = {};
@@ -63,6 +70,18 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 			env['event']['up'] = 'touchend';
 			env['event']['click'] = (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click';
 		}
+	}
+
+	// key (일반적인 고유값)
+	var getKey;
+	if(global.api && global.api.key) {
+		getKey = global.api.key;
+	}else {
+		getKey = function() {
+			var arr = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'/*,'0','1','2','3','4','5','6','7','8','9'*/];
+			var date = new Date();
+			return [arr[Math.floor(Math.random() * arr.length)], Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1), date.getFullYear(), (Number(date.getMonth()) + 1), date.getDay(), date.getHours(), date.getMinutes()].join('');
+		};
 	}
 
 	// 스크롤바 사이즈
@@ -106,11 +125,6 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 				this.elements.layer.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 				this.elements.container.appendChild(this.elements.layer);
 
-				// push
-				this.elements.push = document.createElement('div');
-				this.elements.push.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-				this.elements.container.appendChild(this.elements.push);
-
 				// confirm
 				this.elements.confirm = document.createElement('div');
 				this.elements.confirm.style.cssText = 'position: fixed; left: 0px; top: 0px;';
@@ -121,7 +135,15 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 				this.elements.alert.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 				this.elements.container.appendChild(this.elements.alert);
 
-				document.body.appendChild(fragment);
+				// push
+				this.elements.push = document.createElement('div');
+				this.elements.push.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+				this.elements.container.appendChild(this.elements.push);
+
+				//
+				$(document).ready(function() {
+					document.body.appendChild(fragment);
+				});
 			},
 			setSettings: function(settings, options) {
 				var key;
@@ -165,6 +187,7 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 				if(typeof position === 'string') {
 					width = Math.round($(element).outerWidth(true));
 					height = Math.round($(element).outerHeight(true));
+
 					// center
 					if(/center/ig.test(position)) {
 						// window, document 
@@ -238,7 +261,7 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 		that.settings = {
 			'key': '',
 			'position': 'center',
-			'domain': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
+			'rect': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
 			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
 			'callback': {
 				'show': null,
@@ -252,21 +275,30 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 
 		// private init
 		(function() { 
-			// create element
+			// contents
+			that.elements.contents = $('#' + that.settings.target).get(0);
+			that.elements.contents.style.position = 'relative';
+
+			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; z-index: ' + (++module.zindex) + '; display: none; left: 0px; top: 0px; width: 100%; height: 100%; overflow: auto; background-color: rgba(255, 255, 255, 0.5);';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #363738 none repeat scroll 0 0; opacity: .6;';
 				module.elements.layer.appendChild(that.elements.mask);
+			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask = that.settings.mask;
+				that.elements.mask.display = 'none';
 			}
+
+			// container
 			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: absolute; z-index: ' + (++module.zindex) + '; display: none;';
+			that.elements.container.style.cssText = 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; display: none;';
+			that.elements.container.appendChild(that.elements.contents);
 			module.elements.layer.appendChild(that.elements.container);
-			that.elements.container.appendChild($('#' + that.settings.target).get(0));
 			
 			// 팝업내부 close 버튼 클릭시 닫기
 			if(that.settings.close) {
-				$(that.elements.container).find('.' + that.settings.close).on(env['event']['click'], function(event) {
-					that.close();
+				$(that.elements.contents).find('.' + that.settings.close).on(env['event']['click'], function(event) {
+					that.hide();
 				});
 			}
 		})();
@@ -284,8 +316,12 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 				$('html').css({'margin-right': scrollbar + 'px', 'overflow': 'hidden'});
 			}
 
-			//module.elements.layer.style.display = 'block';
-			module.setLeftTop(that.settings.position, that.elements.container);
+			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask.style.zIndex = ++module.zindex;
+				that.elements.mask.style.display = 'block';
+			}
+			module.setLeftTop(that.settings.position, that.elements.contents);
+			that.elements.container.style.zIndex = ++module.zindex;
 			that.elements.container.style.display = 'block';
 
 			// focus (웹접근성)
@@ -299,6 +335,9 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 			$('html').css({'margin-right': '', 'overflow': ''});
 			that.elements.container.style.display = 'none';
 			//module.elements.layer.style.display = 'none';
+			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask.style.display = 'none';
+			}
 
 			// focus (웹접근성)
 			if(module.active) {
@@ -313,108 +352,6 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 		}
 	};
 
-	// 푸시
-	var Push = function(settings) {
-		var that = this;
-		that.type = 'push';
-		that.settings = {
-			'key': '',
-			'position': 'topright',
-			'domain': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
-			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
-			'callback': {
-				'show': null,
-				'hide': null
-			},
-			'time': 0, // 0 보다 큰 값은 자동닫기 설정
-			'message': ''
-		};
-		that.settings = module.setSettings(that.settings, settings);
-		that.elements = {};
-
-		// private init
-		(function() { 
-			var fragment = document.createDocumentFragment();
-			var key = {};
-
-			// key
-			key.message = getKey();
-			key.close = getKey();
-
-			// create element
-			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
-				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; z-index: ' + (++module.zindex) + '; display: none; left: 0px; top: 0px; width: 100%; height: 100%; overflow: auto; background-color: rgba(255, 255, 255, 0.5);';
-				module.elements.push.appendChild(that.elements.mask);
-			}
-			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; z-index: ' + (++module.zindex) + '; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, .08);';
-			that.elements.container.innerHTML = '\
-				<div id="' + key.title + '" style="padding: 18px 18px 0 0; text-align: right;">\
-					<button id="' + key.close + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #333; background-color: transparent; border: 0 none; cursor: pointer;">CLOSE</button>\
-				</div>\
-				<div id="' + key.message + '" style="padding: 18px;">' + that.settings.message + '</div>\
-			';
-			fragment.appendChild(that.elements.container);
-			module.elements.push.appendChild(fragment);
-
-			// search element
-			that.elements.message = that.elements.container.querySelector('#' + key.message);
-			that.elements.close = that.elements.container.querySelector('#' + key.close);
-
-			// event
-			$(that.elements.close).on(env['event']['click'], function() {
-				that.hide();
-			});
-		})();
-	};
-	Push.prototype = {
-		message: function(message) {
-			var that = this;
-			that.elements.message.textContent = message || '';
-			return that;
-		},
-		callback: function(callback) {
-			var that = this;
-			var key;
-
-			for(key in callback) {
-				if(callback.hasOwnProperty(key) && typeof callback[key] === 'function') {
-					that.settings.callback[key] = callback[key];
-				}
-			}
-			return that;
-		},
-		show: function() {
-			var that = this;
-
-			module.setLeftTop(that.settings.position, that.elements.container);
-			that.elements.container.style.display = 'block';
-
-			// auto hide
-			if(typeof that.settings.time === 'number' && that.settings.time > 0) {
-				global.setTimeout(function() {
-					that.hide();
-				}, that.settings.time);
-			}
-
-			//callback
-			if(typeof that.settings.callback.show === 'function') {
-				that.settings.callback.show();
-			}
-		},
-		hide: function() {
-			var that = this;
-
-			that.elements.container.style.display = 'none';
-
-			//callback
-			if(typeof that.settings.callback.hide === 'function') {
-				return that.settings.callback.hide();
-			}
-		}
-	};
-
 	// 확인
 	var Confirm = function(settings) {
 		var that = this;
@@ -422,7 +359,7 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 		that.settings = {
 			'key': '',
 			'position': 'topcenter',
-			'domain': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
+			'rect': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
 			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
 			'callback': {
 				'show': null,
@@ -451,14 +388,19 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 			key.ok = getKey();
 			key.cancel = getKey();
 
-			// create element
+			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; z-index: ' + (++module.zindex) + '; display: none; left: 0px; top: 0px; width: 100%; height: 100%; overflow: auto; background-color: rgba(255, 255, 255, 0.5);';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #363738 none repeat scroll 0 0; opacity: .6;';
 				module.elements.confirm.appendChild(that.elements.mask);
+			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask = that.settings.mask;
+				that.elements.mask.display = 'none';
 			}
+
+			// container
 			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; z-index: ' + (++module.zindex) + '; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, .08);';
+			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
 			that.elements.container.innerHTML = '\
 				<div id="' + key.title + '" style="padding: 18px;">' + that.settings.title + '</div>\
 				<div id="' + key.message + '" style="padding: 18px; min-height: 60px; background-color: #FAFBFC;">' + that.settings.message + '</div>\
@@ -516,7 +458,13 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 		},
 		show: function() {
 			var that = this;
+
+			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask.style.zIndex = ++module.zindex;
+				that.elements.mask.style.display = 'block';
+			}
 			module.setLeftTop(that.settings.position, that.elements.container);
+			that.elements.container.style.zIndex = ++module.zindex;
 			that.elements.container.style.display = 'block';
 
 			// focus (웹접근성)
@@ -532,6 +480,9 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 		hide: function() {
 			var that = this;
 			that.elements.container.style.display = 'none';
+			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask.style.display = 'none';
+			}
 
 			// focus (웹접근성)
 			if(module.active) {
@@ -552,7 +503,7 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 		that.settings = {
 			'key': '',
 			'position': 'topcenter',
-			'domain': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
+			'rect': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
 			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
 			'callback': {
 				'show': null,
@@ -574,14 +525,19 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 			key.message = getKey();
 			key.ok = getKey();
 
-			// create element
+			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; z-index: ' + (++module.zindex) + '; display: none; left: 0px; top: 0px; width: 100%; height: 100%; overflow: auto; background-color: rgba(255, 255, 255, 0.5);';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #363738 none repeat scroll 0 0; opacity: .6;';
 				module.elements.alert.appendChild(that.elements.mask);
+			}else if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+				that.elements.mask = that.settings.mask;
+				that.elements.mask.display = 'none';
 			}
+
+			// container
 			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; z-index: ' + (++module.zindex) + '; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, .08);';
+			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
 			that.elements.container.innerHTML = '\
 				<div id="' + key.title + '" style="padding: 18px;">' + that.settings.title + '</div>\
 				<div id="' + key.message + '" style="padding: 18px; min-height: 60px; background-color: #FAFBFC;">' + that.settings.message + '</div>\
@@ -626,7 +582,13 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 		},
 		show: function() {
 			var that = this;
+			
+			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask.style.zIndex = ++module.zindex;
+				that.elements.mask.style.display = 'block';
+			}
 			module.setLeftTop(that.settings.position, that.elements.container);
+			that.elements.container.style.zIndex = ++module.zindex;
 			that.elements.container.style.display = 'block';
 
 			// focus (웹접근성)
@@ -642,6 +604,9 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 		hide: function() {
 			var that = this;
 			that.elements.container.style.display = 'none';
+			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask.style.display = 'none';
+			}
 
 			// focus (웹접근성)
 			if(module.active) {
@@ -651,6 +616,121 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 			//callback
 			if(typeof that.settings.callback.hide === 'function') {
 				that.settings.callback.hide();
+			}
+		}
+	};
+
+	// 푸시
+	var Push = function(settings) {
+		var that = this;
+		that.type = 'push';
+		that.settings = {
+			'key': '',
+			'position': 'topright',
+			'rect': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
+			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
+			'callback': {
+				'show': null,
+				'hide': null
+			},
+			'time': 0, // 0 보다 큰 값은 자동닫기 설정
+			'message': ''
+		};
+		that.settings = module.setSettings(that.settings, settings);
+		that.elements = {};
+
+		// private init
+		(function() { 
+			var fragment = document.createDocumentFragment();
+			var key = {};
+
+			// key
+			key.close = getKey();
+			key.message = getKey();
+
+			// mask
+			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
+				that.elements.mask = document.createElement('div');
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #363738 none repeat scroll 0 0; opacity: .6;';
+				module.elements.push.appendChild(that.elements.mask);
+			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask = that.settings.mask;
+				that.elements.mask.display = 'none';
+			}
+
+			// container
+			that.elements.container = document.createElement('div');
+			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
+			that.elements.container.innerHTML = '\
+				<div style="padding: 18px 18px 0 0; text-align: right;">\
+					<button id="' + key.close + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #333; background-color: transparent; border: 0 none; cursor: pointer;">CLOSE</button>\
+				</div>\
+				<div id="' + key.message + '" style="padding: 18px;">' + that.settings.message + '</div>\
+			';
+			fragment.appendChild(that.elements.container);
+			module.elements.push.appendChild(fragment);
+
+			// search element
+			that.elements.close = that.elements.container.querySelector('#' + key.close);
+			that.elements.message = that.elements.container.querySelector('#' + key.message);
+
+			// event
+			$(that.elements.close).on(env['event']['click'], function() {
+				that.hide();
+			});
+		})();
+	};
+	Push.prototype = {
+		message: function(message) {
+			var that = this;
+			that.elements.message.textContent = message || '';
+			return that;
+		},
+		callback: function(callback) {
+			var that = this;
+			var key;
+
+			for(key in callback) {
+				if(callback.hasOwnProperty(key) && typeof callback[key] === 'function') {
+					that.settings.callback[key] = callback[key];
+				}
+			}
+			return that;
+		},
+		show: function() {
+			var that = this;
+
+			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask.style.zIndex = ++module.zindex;
+				that.elements.mask.style.display = 'block';
+			}
+			module.setLeftTop(that.settings.position, that.elements.container);
+			that.elements.container.style.zIndex = ++module.zindex;
+			that.elements.container.style.display = 'block';
+
+			// auto hide
+			if(typeof that.settings.time === 'number' && that.settings.time > 0) {
+				global.setTimeout(function() {
+					that.hide();
+				}, that.settings.time);
+			}
+
+			//callback
+			if(typeof that.settings.callback.show === 'function') {
+				that.settings.callback.show();
+			}
+		},
+		hide: function() {
+			var that = this;
+
+			that.elements.container.style.display = 'none';
+			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask.style.display = 'none';
+			}
+
+			//callback
+			if(typeof that.settings.callback.hide === 'function') {
+				return that.settings.callback.hide();
 			}
 		}
 	};
@@ -667,14 +747,14 @@ querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3
 					case 'layer':
 						instance = new Layer(settings);
 						break;
-					case 'push':
-						instance = new Push(settings);
-						break;
 					case 'confirm':
 						instance = new Confirm(settings);
 						break;
 					case 'alert':
 						instance = new Alert(settings);
+						break;
+					case 'push':
+						instance = new Push(settings);
 						break;
 				}
 				if(settings['key']) {

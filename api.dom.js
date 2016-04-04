@@ -209,7 +209,7 @@ http://www.quirksmode.org/js/detect.html
 	}else if((nameOffset = userAgent.lastIndexOf(' ') + 1) < (verOffset = userAgent.lastIndexOf('/'))) { 
 		environment['browser']['name'] = userAgent.substring(nameOffset, verOffset);
 		environment['browser']['version'] = userAgent.substring(verOffset + 1);
-		if(environment['browser']['name'].toLowerCase() == environment['browser']['name'].toUpperCase()) {
+		if(environment['browser']['name'].toLowerCase() === environment['browser']['name'].toUpperCase()) {
 			environment['browser']['name'] = navigator.appName;
 		}
 	}
@@ -246,7 +246,11 @@ http://www.quirksmode.org/js/detect.html
 		time_unit_list: /.+(-duration|-delay)$/i, // seconds (s) or milliseconds (ms)
 		position_list: /^(top|right|bottom|left)$/,
 		display_list: /^(display|visibility|opacity|)$/i,
-		num: /^[+-]?\d+(\.\d+)?$/ // 숫자
+		text: /^(\D+)$/i, // 텍스트
+		num_unit: /^([0-9]+)(\D+)$/i, // 단위
+		num: /^[+-]?\d+(\.\d+)?$/, // 숫자
+		source_num: /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source, // +=, -= 숫자와 연산자 분리
+		trim: /(^\s*)|(\s*$)/g // 양쪽 여백
 	};
 
 	// event name 크로스브라우저에 따른 자동 변경
@@ -273,8 +277,8 @@ http://www.quirksmode.org/js/detect.html
 
 	// 숫자/단위 분리 (예: 10px -> [0]=>10px, [1]=>10, [2]=>'px')
 	var getNumberUnit = function(value) {
-		var regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source;
-		var regexp_number = new RegExp("^(" + regexp_source_num + ")(.*)$", "i");
+		//var regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source;
+		var regexp_number = new RegExp("^(" + regexp.source_num + ")(.*)$", "i");
 		var matches = regexp_number.exec(value);
 		if(matches) {
 			return matches;
@@ -305,13 +309,13 @@ http://www.quirksmode.org/js/detect.html
 		}
 		for(i=0, max=arr.length; i<max; i++) {
 			// padding
-			tmp = getNumberUnit(elements.style('padding' + arr[i]));
+			tmp = getNumberUnit(elements.css('padding' + arr[i]));
 			value['padding'] += (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
 			// border
-			tmp = getNumberUnit(elements.style('border' + arr[i] + 'Width'));
+			tmp = getNumberUnit(elements.css('border' + arr[i] + 'Width'));
 			value['border'] += (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
 			// margin
-			tmp = getNumberUnit(elements.style('margin' + arr[i]));
+			tmp = getNumberUnit(elements.css('margin' + arr[i]));
 			value['margin'] += (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
 		}
 		
@@ -323,8 +327,8 @@ http://www.quirksmode.org/js/detect.html
 	// is: margin 값 포함여부
 	var getElementWidthHeight = function(elements, property, extra, is) {
 		if(!elements || !elements instanceof DOM || !property || !(/^(width|height)$/i.test(property)) || (extra && !/^(inner|outer)$/i.test(extra))) return 0;
-		var is_border_box = (elements.style('boxSizing') === 'border-box') ? true : false; // IE와 웹킷간의 박스모델 스팩이 다르므로 구분해야 한다.
-		var is_display = (elements.style('display') === 'none') ? true : false;
+		var is_border_box = (elements.css('boxSizing') === 'border-box') ? true : false; // IE와 웹킷간의 박스모델 스팩이 다르므로 구분해야 한다.
+		var is_display = (elements.css('display') === 'none') ? true : false;
 		var queue = { 
 			/*
 			css property 기본값
@@ -343,7 +347,7 @@ http://www.quirksmode.org/js/detect.html
 		if(is_display === true) {
 			// 현재 설정된 css 값 확인
 			for(key in queue) {
-				if(tmp = elements.style(key)) {
+				if(tmp = elements.css(key)) {
 					if(queue[key].test(tmp)) { 
 						// 현재 element에 설정된 style의 값이 queue 목록에 지정된 기본값(style property default value)과 동일하거나 없으므로 
 						// 작업 후 해당 property 초기화(삭제)
@@ -356,14 +360,14 @@ http://www.quirksmode.org/js/detect.html
 				}
 			}
 			// display가 none 상태의 element 의 크기를 정확하게 추출하기 위한 임시 css 설정
-			elements.style({'position': 'absolute', 'visibility': 'hidden', 'display': 'block'});
+			elements.css({'position': 'absolute', 'visibility': 'hidden', 'display': 'block'});
 		}
 
 		// 해당 property 값
 		value = elements.get(0)['offset' + (property.substring(0, 1).toUpperCase() + property.substring(1))]; // offsetWidth, offsetHeight (border + padding + width 값, display: none 의 경우는 0 반환)
-		if(value <= 0 || value == null) {
+		if(value <= 0 || value === null) {
 			// css로 값을 구한다.
-			tmp = getNumberUnit(elements.style(property));
+			tmp = getNumberUnit(elements.css(property));
 			value = (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
 			if(extra) {
 				// inner, outer 추가
@@ -394,7 +398,7 @@ http://www.quirksmode.org/js/detect.html
 		// 값 반환을 위해 임시 수정했던 style 복구
 		if(is_display === true) {
 			// queue
-			elements.style(queue);
+			elements.css(queue);
 		}
 
 		return value;
@@ -505,6 +509,31 @@ http://www.quirksmode.org/js/detect.html
 
 	// DOM prototype
 	DOM.fn = DOM.prototype = {
+		// document ready
+		ready: (function() {
+			if(document.readyState === "interactive" || document.readyState === "complete") {
+				// IE8 등에서 window.setTimeout 파라미터로 바로 함수값을 넣으면 오류가 난다.
+				// 그러므로 function() {} 무명함수로 해당 함수를 실행시킨다.
+				return function(callback) {
+					window.setTimeout(function() {
+						callback();
+					});
+				};
+			}else if(document.addEventListener) { // Mozilla, Opera, Webkit 
+				return function(callback) {
+					document.addEventListener("DOMContentLoaded", callback, false);
+				};
+			}else if(document.attachEvent) { // IE
+				return function(callback) {
+					// https://developer.mozilla.org/ko/docs/Web/API/Document/readyState
+					document.attachEvent("onreadystatechange", function(e) {
+						if(document.readyState === "complete") {
+							callback.call(this, e);
+						}
+					});
+				}
+			}
+		})(),
 		// element return
 		get: function(index) {
 			if(this.elements && this.elements.length > 0) {
@@ -796,6 +825,129 @@ http://www.quirksmode.org/js/detect.html
 			return this;
 		},
 		// stylesheet
+		css: function(parameter) {
+			// x.style.cssText; // 표준
+			// x.currentStyle[styleProp];
+			// document.defaultView.getComputedStyle(x, null).getPropertyValue(styleProp);
+			var i, key, max = (this.elements && this.elements.length) || 0;
+			var value;
+			var property, current, unit;
+			var tmp1, tmp2;
+			var getStyleProperty = function(style, property) {
+				var i, max;
+				var converted = '';
+				if(style === 'js') {
+					// HTML DOM Style Object (CSS 속성방식이 아닌 Jvascript style property 방식)
+					// (예: background-color -> backgroundColor)
+					for(i=0, max=property.length; i<max; ++i) {
+						if(property.charAt(i) === '-' && property.charAt(i+1)) {
+							converted = converted + property.charAt(++i).toUpperCase();
+						}else {
+							converted = converted + property.charAt(i);
+						}
+					}
+				}else if(style === 'css') {
+					// CSS 속성명으로 값을 구한다.
+					// CSS style property 의 경우 대문자를 소문자로 변환하고 그 앞에 '-'를 붙인다. 
+					// (예: backgroundColor -> background-color, zIndex -> z-index, fontSize -> font-size)
+					for(i=0, max=property.length; i<max; ++i) {
+						if(property.charAt(i) === property.charAt(i).toUpperCase()) {
+							converted = converted + '-' + property.charAt(i).toLowerCase();
+						}else {
+							converted = converted + property.charAt(i);
+						}
+					}
+				}else {
+					converted = property;
+				}
+				return converted;
+			};
+
+			/*
+			// transition, animation 처리 방법
+			element.style.webkitTransitionDuration = element.style.MozTransitionDuration = element.style.msTransitionDuration = element.style.OTransitionDuration = element.style.transitionDuration = '1s';
+			element.style.webkitAnimationDelay = element.style.MozAnimationDelay = element.style.msAnimationDelay = element.style.OAnimationDelay = element.style.animationDelay = '1s';
+			*/
+			if(!max || this.elements[0].nodeType === 3 || this.elements[0].nodeType === 8) {
+				return this;
+				//return false;
+			}else if(typeof parameter === 'string') { // get
+				// return this[0].style[property]; // CSS 속성과 JS 에서의 CSS 속성형식이 다르므로 사용불가능
+				// return this[0].style.getPropertyValue(property); // CSS 속성명을 사용하여 정상적 출력가능
+				if(this.elements[0].style[getStyleProperty('js', parameter)]) { // style로 값을 구할 수 있는 경우
+					value = this.elements[0].style[getStyleProperty('js', parameter)];
+				}else if(this.elements[0].currentStyle && this.elements[0].currentStyle[getStyleProperty('js', parameter)]) { // IE의 경우
+					value = this.elements[0].currentStyle[getStyleProperty('js', parameter)];
+				}else if(document.defaultView && document.defaultView.getComputedStyle) {
+					if(document.defaultView.getComputedStyle(this.elements[0], null).getPropertyValue(getStyleProperty('css', parameter))) {
+						value = document.defaultView.getComputedStyle(this.elements[0], null).getPropertyValue(getStyleProperty('css', parameter));
+					}
+				}
+
+				// css 는 단위까지 명확하게 알기위한 성격이 강하므로, 단위/숫자 분리는 하지않고 값 그대로 반환
+				return value;
+			}else if(typeof parameter === 'object') { // set
+				for(i=0; i<max; i++) {
+					for(property in parameter) {
+						// 속성, 값 검사 
+						if(!parameter.hasOwnProperty(property) || this.elements[i].nodeType === 3 || this.elements[i].nodeType === 8) {
+							continue;
+						}else if(tmp1 = new RegExp("^([+-])=(" + regexp.source_num + ")", "i").exec(parameter[property])) { // +=, -= 연산자 분리
+							// tmp1[1]: 연산자
+							// tmp1[2]: 값
+							current = DOM(this.elements[i]).css(property);
+							unit = '';
+							// 단위값 존재 확인
+							if(regexp.text.test(current)) { // 기존 설정값이 단어로 되어 있는 것 (예: auto, none 등)
+								unit = 0;
+							}else if(tmp2 = regexp.num_unit.exec(current)) { // 단위 분리
+								// tmp2[1]: 값
+								// tmp2[2]: 단위 (예: px, em, %, s)
+								current = tmp2[1];
+								unit = tmp2[2];
+							}
+							parameter[property] = ((tmp1[1] + 1) * tmp1[2] + parseFloat(current)) + unit; // ( '연산자' + 1 ) * 값 + 현재css속성값
+						}
+
+						// trim
+						/*if(typeof parameter[property] === 'string') {
+							parameter[property].replace(regexp.trim,  '');
+						}*/
+						
+						// 단위값이 없을 경우 설정
+						if(regexp.num.test(parameter[property]) && !regexp.num_unit.test(parameter[property])) {
+							// property default value 단위가 px 에 해당하는 것
+							if(regexp.pixel_unit_list.test(property)) {
+								parameter[property] = parameter[property] + 'px';
+							}else if(regexp.time_unit_list.test(property)) { // animation, transition
+								parameter[property] = parameter[property] + 's';
+							}
+						}
+
+						// css 값 설정
+						if(parameter[property] === '' || parameter[property] === null) { // 해당 css 프로퍼티 초기화여부 확인
+							// 초기화시 css default value 를 설정해 주는 것이 가장 정확함
+							if(this.elements[i].style.removeProperty) {
+								this.elements[i].style.removeProperty(getStyleProperty('css', property));
+							}else if(this.elements[i].style.removeAttribute) { // IE9 이상
+								this.elements[i].style.removeAttribute(getStyleProperty('js', property));
+							}else if(getStyleProperty('js', property) in this.elements[i].style) {
+								this.elements[i].style[getStyleProperty('js', property)] = null;
+							}
+						}else if(getStyleProperty('js', property) in this.elements[i].style) {
+							// 방법1
+							// 단위(예:px)까지 명확하게 입력해줘야 한다.
+							this.elements[i].style[getStyleProperty('js', property)] = parameter[property];
+						}else if(typeof this.elements[i].style.setProperty !== 'undefined') {
+							// 방법2 (Internet Explorer version 9)
+							this.elements[i].style.setProperty(getStyleProperty('css', property), parameter[property]);	
+						}
+					}
+				}
+			}
+
+			return this;
+		},
 		style: function(parameter) {
 			// x.style.cssText; // 표준
 			// x.currentStyle[styleProp];
@@ -1304,6 +1456,24 @@ http://www.quirksmode.org/js/detect.html
 			// on
 			that.on(events + '.' + key, callback, capture);
 		},
+		trigger: (function() {
+			if(document.createEvent) {
+				return function(events) {
+					var obj = document.createEvent('MouseEvents');
+					obj.initEvent(events, true, false);
+					this.each(function() {
+						this.dispatchEvent(obj);
+					});
+				}
+			}else if(document.createEventObject) { // IE
+				return function(events) {
+					var obj = document.createEventObject();
+					this.each(function() {
+						this.fireEvent('on' + events, obj);
+					});
+				}
+			}
+		})(),
 		// data
 		data: (function() {
 			// x.dataset; // IE11이상 사용가능
@@ -1640,26 +1810,6 @@ http://www.quirksmode.org/js/detect.html
 
 	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 
-	// document Ready
-	var documentReady = function(callback) { 
-		if(typeof callback === 'function') {
-			if(document.readyState === "interactive" || document.readyState === "complete") {
-				// IE8 등에서 window.setTimeout 파라미터로 바로 함수값을 넣으면 오류가 난다.
-				// 그러므로 function() {} 무명함수로 해당 함수를 실행시킨다.
-				window.setTimeout(function() {
-					callback();
-				});
-			}else if(document.addEventListener) { // Mozilla, Opera, Webkit 
-				document.addEventListener("DOMContentLoaded", callback, false);
-			}else if(document.attachEvent) { // IE
-				document.attachEvent("onreadystatechange", function(e) {
-					if(document.readyState === "complete") {
-						callback.call(this, e);
-					}
-				});
-			}
-		}
-	};
 	/*
 	// document mousedown 이벤트 콜백 (레이어 닫기 등)
 	var DocumentTouch = function() {
@@ -2116,7 +2266,6 @@ http://www.quirksmode.org/js/detect.html
 	// public return
 	global.api.dom = DOM;
 	/*global.api.document = {
-		'ready': documentReady,
 		'touch': new DocumentTouch(),
 		'resize': new DocumentResize()
 	};*/
