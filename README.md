@@ -212,7 +212,7 @@ api.flicking - 플리킹 라이브러리
 ----------
 
 
-api.modals - 팝업 라이브러리
+api.modal - 팝업 라이브러리
 
 	작업진행중
 
