@@ -14,24 +14,6 @@ Dual licensed under the MIT and GPL licenses.
 IE8 이상
 querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
 RGBa: Internet Explorer 9
-
--
-element 위치
-문서 내에서 렌더링 된 엘리먼트의 절대 위치를 계산해야 한다면,
-getClientRects() 와 getBoundingClientRect() 메서드를 사용해 윈도우 기준으로 렌더링 된 위치를 가져온 후에,
-문서의 스크롤 값을 더해주면 된다.
-
-http://e-rooms.tistory.com/entry/HTML-Element-%EA%B0%9D%EC%B2%B4%EC%97%90%EC%84%9C-%EC%A0%9C%EA%B3%B5%ED%95%98%EB%8A%94-%ED%81%AC%EA%B8%B0-%EB%B0%8F-%EC%9C%84%EC%B9%98-%ED%94%84%EB%A1%9C%ED%8D%BC%ED%8B%B0%EC%99%80-%EB%A9%94%EC%86%8C%EB%93%9C
-http://ohgyun.com/569
-
-getClientRects
-getBoundingClientRect 추천
-
-// For scrollX
-(((t = document.documentElement) || (t = document.body.parentNode)) && typeof t.ScrollLeft == 'number' ? t : document.body).ScrollLeft
-// For scrollY
-(((t = document.documentElement) || (t = document.body.parentNode)) && typeof t.ScrollTop == 'number' ? t : document.body).ScrollTop
-
 */
 
 ;(function(factory, global) {
@@ -124,6 +106,11 @@ getBoundingClientRect 추천
 				this.elements.layer = document.createElement('div');
 				this.elements.layer.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 				this.elements.container.appendChild(this.elements.layer);
+
+				// step
+				this.elements.step = document.createElement('div');
+				this.elements.step.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+				this.elements.container.appendChild(this.elements.step);
 
 				// confirm
 				this.elements.confirm = document.createElement('div');
@@ -249,6 +236,26 @@ getBoundingClientRect 추천
 						$(element).get(0).style.bottom = position['bottom'] + 'px';
 					}
 				}
+			},
+			getRect: function(element) {
+				/*
+				-
+				element 위치
+				문서 내에서 렌더링 된 엘리먼트의 절대 위치를 계산해야 한다면,
+				getClientRects() 와 getBoundingClientRect() 메서드를 사용해 윈도우 기준으로 렌더링 된 위치를 가져온 후에,
+				문서의 스크롤 값을 더해주면 된다.
+
+				http://e-rooms.tistory.com/entry/HTML-Element-%EA%B0%9D%EC%B2%B4%EC%97%90%EC%84%9C-%EC%A0%9C%EA%B3%B5%ED%95%98%EB%8A%94-%ED%81%AC%EA%B8%B0-%EB%B0%8F-%EC%9C%84%EC%B9%98-%ED%94%84%EB%A1%9C%ED%8D%BC%ED%8B%B0%EC%99%80-%EB%A9%94%EC%86%8C%EB%93%9C
+				http://ohgyun.com/569
+
+				getClientRects
+				getBoundingClientRect 추천
+
+				// For scrollX
+				(((t = document.documentElement) || (t = document.body.parentNode)) && typeof t.ScrollLeft == 'number' ? t : document.body).ScrollLeft
+				// For scrollY
+				(((t = document.documentElement) || (t = document.body.parentNode)) && typeof t.ScrollTop == 'number' ? t : document.body).ScrollTop
+				*/
 			}
 		};
 		return new Module();
@@ -282,7 +289,7 @@ getBoundingClientRect 추천
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #363738 none repeat scroll 0 0; opacity: .6;';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #3C3D3E none repeat scroll 0 0; opacity: .6;';
 				module.elements.layer.appendChild(that.elements.mask);
 			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
 				that.elements.mask = that.settings.mask;
@@ -352,6 +359,30 @@ getBoundingClientRect 추천
 		}
 	};
 
+	// step
+	var Step = function(settings) {
+		var that = this;
+		that.type = 'confirm';
+		that.settings = {
+			'key': '',
+			'callback': {
+				'show': null,
+				'hide': null
+			},
+			'step': [] // 각 step 별로 설정값이 들어가 있음
+		};
+		that.settings = module.setSettings(that.settings, settings);
+		that.elements = {};
+
+		// private init
+		(function() { 
+
+		})();
+	};
+	Step.prototype = {
+
+	};
+
 	// 확인
 	var Confirm = function(settings) {
 		var that = this;
@@ -391,7 +422,7 @@ getBoundingClientRect 추천
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #363738 none repeat scroll 0 0; opacity: .6;';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #3C3D3E none repeat scroll 0 0; opacity: .6;';
 				module.elements.confirm.appendChild(that.elements.mask);
 			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
 				that.elements.mask = that.settings.mask;
@@ -402,11 +433,11 @@ getBoundingClientRect 추천
 			that.elements.container = document.createElement('div');
 			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
 			that.elements.container.innerHTML = '\
-				<div id="' + key.title + '" style="padding: 18px;">' + that.settings.title + '</div>\
-				<div id="' + key.message + '" style="padding: 18px; min-height: 60px; background-color: #FAFBFC;">' + that.settings.message + '</div>\
-				<div style="padding: 18px; text-align: right;">\
-					<button id="' + key.ok + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #333; background-color: transparent; border: 0 none; cursor: pointer;">OK</button>\
-					<button id="' + key.cancel + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #999; background-color: transparent; border: 0 none; cursor: pointer;">CANCEL</button>\
+				<div id="' + key.title + '" style="padding: 13px 18px; border-bottom: 1px solid #F0F1F2;">' + that.settings.title + '</div>\
+				<div id="' + key.message + '" style="padding: 18px; min-height: 78px; background-color: #FDFEFF;">' + that.settings.message + '</div>\
+				<div style="padding: 13px 18px; border-top: 1px solid #F0F1F2; text-align: right;">\
+					<button id="' + key.ok + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #333; border: 0 none; background-color: transparent; cursor: pointer;">OK</button>\
+					<button id="' + key.cancel + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #999; border: 0 none; background-color: transparent; cursor: pointer;">CANCEL</button>\
 				</div>\
 			';
 			fragment.appendChild(that.elements.container);
@@ -528,7 +559,7 @@ getBoundingClientRect 추천
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #363738 none repeat scroll 0 0; opacity: .6;';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #3C3D3E none repeat scroll 0 0; opacity: .6;';
 				module.elements.alert.appendChild(that.elements.mask);
 			}else if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
 				that.elements.mask = that.settings.mask;
@@ -539,10 +570,10 @@ getBoundingClientRect 추천
 			that.elements.container = document.createElement('div');
 			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
 			that.elements.container.innerHTML = '\
-				<div id="' + key.title + '" style="padding: 18px;">' + that.settings.title + '</div>\
-				<div id="' + key.message + '" style="padding: 18px; min-height: 60px; background-color: #FAFBFC;">' + that.settings.message + '</div>\
-				<div style="padding: 18px; text-align: right;">\
-					<button id="' + key.ok + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #333; background-color: transparent; border: 0 none; cursor: pointer;">OK</button>\
+				<div id="' + key.title + '" style="padding: 13px 18px; border-bottom: 1px solid #F0F1F2;">' + that.settings.title + '</div>\
+				<div id="' + key.message + '" style="padding: 18px; min-height: 78px; background-color: #FDFEFF;">' + that.settings.message + '</div>\
+				<div style="padding: 13px 18px; border-top: 1px solid #F0F1F2; text-align: right;">\
+					<button id="' + key.ok + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #333; border: 0 none; background-color: transparent; cursor: pointer;">OK</button>\
 				</div>\
 			';
 			fragment.appendChild(that.elements.container);
@@ -651,7 +682,7 @@ getBoundingClientRect 추천
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #363738 none repeat scroll 0 0; opacity: .6;';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #3C3D3E none repeat scroll 0 0; opacity: .6;';
 				module.elements.push.appendChild(that.elements.mask);
 			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
 				that.elements.mask = that.settings.mask;
@@ -662,10 +693,10 @@ getBoundingClientRect 추천
 			that.elements.container = document.createElement('div');
 			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
 			that.elements.container.innerHTML = '\
-				<div style="padding: 18px 18px 0 0; text-align: right;">\
-					<button id="' + key.close + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #333; background-color: transparent; border: 0 none; cursor: pointer;">CLOSE</button>\
+				<div style="padding: 12px 12px 6px 12px; text-align: right;">\
+					<button id="' + key.close + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #333; border: 0 none; background-color: transparent; cursor: pointer;">CLOSE</button>\
 				</div>\
-				<div id="' + key.message + '" style="padding: 18px;">' + that.settings.message + '</div>\
+				<div id="' + key.message + '" style="padding: 6px 12px 12px 12px;">' + that.settings.message + '</div>\
 			';
 			fragment.appendChild(that.elements.container);
 			module.elements.push.appendChild(fragment);
