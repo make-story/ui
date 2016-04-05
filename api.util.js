@@ -22,7 +22,7 @@ Dual licensed under the MIT and GPL licenses.
 	}else if(!global.api) {
 		global.api = {};
 	}
-	global.api.utility = {
+	global.api.util = {
 		// 상속 - 추후 Object.create() 로 변경하자!
 		inherit: function(C, P) { 
 			/*

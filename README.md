@@ -284,42 +284,42 @@ api.xhr - XMLHttpRequest (레벨2) 라이브러리
 ----------
 
 
-api.utility - 각종 기능들 묶음
+api.util - 각종 기능들 묶음
 
-	api.utility.inherit(객체, 상속할 객체)
+	api.util.inherit(객체, 상속할 객체)
 		함수객체 상속
 
-	api.utility.clone(복사대상, 하위까지 복사여부)
+	api.util.clone(복사대상, 하위까지 복사여부)
 		깊은 복사
 
-	api.utility.jsonDeepCopy(원본, 복사대상)
+	api.util.jsonDeepCopy(원본, 복사대상)
 		json 깊은 복사
 
-	api.utility.sizePercent(대상, 컨텐츠)
+	api.util.sizePercent(대상, 컨텐츠)
 		반응형 공식에 따른 계산값 반환
 
-	api.utility.stopCapture(이벤트)
+	api.util.stopCapture(이벤트)
 		이벤트의 기본 동작 중단
 
-	api.utility.stopBubbling(이벤트)
+	api.util.stopBubbling(이벤트)
 		이벤트의 전파 중단
 
-	api.utility.stopEventDelivery(이벤트)
+	api.util.stopEventDelivery(이벤트)
 		이벤트의 기본동작, 전파 모두 중단
 
-	api.utility.startCall(callback, seconds)
+	api.util.startCall(callback, seconds)
 		setTimeout
 
-	api.utility.closeCall(time)
+	api.util.closeCall(time)
 		clearTimeout
 
-	api.utility.startTime(callback, seconds)
+	api.util.startTime(callback, seconds)
 		setInterval
 
-	api.utility.closeTime(time)
+	api.util.closeTime(time)
 		clearInterval
 
-	api.utility.type(값)
+	api.util.type(값)
 		type({a: 4}); //"object"
 		type([1, 2, 3]); //"array"
 		(function() {console.log(type(arguments))})(); //arguments
@@ -332,60 +332,60 @@ api.utility - 각종 기능들 묶음
 		type(new String("abc")); //"string"
 		type(new Boolean(true)); //"boolean"
 
-	api.utility.trim(값)
+	api.util.trim(값)
 		좌우 공백 제거 
 
-	api.utility.keyboardCode(이벤트)
+	api.util.keyboardCode(이벤트)
 		키보드 이벤트 값 반환
 
-	api.utility.sleep(milliSeconds)
+	api.util.sleep(milliSeconds)
 		대기 상태 실행
 
-	api.utility.setLeftFormatString(add, value, count)
+	api.util.setLeftFormatString(add, value, count)
 		value 앞에 count 수만큼 add를 채운다	
 
-	api.utility.setRequestAnimFrame(callback)
+	api.util.setRequestAnimFrame(callback)
 		requestAnimationFrame
 
-	api.utility.setCancelAnimFrame(time)
+	api.util.setCancelAnimFrame(time)
 		cancelAnimationFrame
 
-	api.utility.getNumberUnit(value)
+	api.util.getNumberUnit(value)
 		숫자값 단위값 분리
 
-	api.utility.isNumeric(value)
+	api.util.isNumeric(value)
 		숫자여부 확인
 
-	api.utility.getNumber(value)
+	api.util.getNumber(value)
 		숫자만 추출
 
-	api.utility.setNumberFormat(value)
+	api.util.setNumberFormat(value)
 		정수값을 금액단위로 표현
 
-	api.utility.setFloatFormat(value)
+	api.util.setFloatFormat(value)
 		소수점값을 금액단위로 표현
 
-	api.utility.setRemoveComma(value)
+	api.util.setRemoveComma(value)
 		금액단위 표현 제거
 
-	api.utility.setRound(값, 자릿수)
+	api.util.setRound(값, 자릿수)
 		지정자리 반올림
 
-	api.utility.setFloor(값, 자릿수)
+	api.util.setFloor(값, 자릿수)
 		지정자리 버림
 
-	api.utility.setCeiling(값, 자릿수)
+	api.util.setCeiling(값, 자릿수)
 		지정자리 올림
 
-	api.utility.dateSpecificInterval()
+	api.util.dateSpecificInterval()
 		몇일째 되는날
 		getDateSpecificInterval({'year': year, 'month': month, 'day': day}, 10); // +10일
 		getDateSpecificInterval({'instance': tmp}, -19); // -19일
 
-	api.utility.dateBetween(시작일2015-10-27, 종료일2015-12-27)
+	api.util.dateBetween(시작일2015-10-27, 종료일2015-12-27)
 		날짜차이
 
-	api.utility.lastday(년도, 월);
+	api.util.lastday(년도, 월);
 		해당 년월의 마지막 날짜
 		
 

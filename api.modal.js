@@ -289,7 +289,7 @@ RGBa: Internet Explorer 9
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #3C3D3E none repeat scroll 0 0; opacity: .6;';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #E9EAEB none repeat scroll 0 0; opacity: .6;';
 				module.elements.layer.appendChild(that.elements.mask);
 			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
 				that.elements.mask = that.settings.mask;
@@ -350,6 +350,10 @@ RGBa: Internet Explorer 9
 			if(module.active) {
 				module.active.focus();
 			}
+		},
+		resize: function() {
+			// width, height 변동에 따른 위치 재조정
+
 		},
 		resizeOn: function() {
 
@@ -422,7 +426,7 @@ RGBa: Internet Explorer 9
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #3C3D3E none repeat scroll 0 0; opacity: .6;';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #E9EAEB none repeat scroll 0 0; opacity: .6;';
 				module.elements.confirm.appendChild(that.elements.mask);
 			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
 				that.elements.mask = that.settings.mask;
@@ -524,6 +528,10 @@ RGBa: Internet Explorer 9
 			if(typeof that.settings.callback.hide === 'function') {
 				return that.settings.callback.hide();
 			}
+		},
+		resize: function() {
+			// width, height 변동에 따른 위치 재조정
+
 		}
 	};
 
@@ -559,7 +567,7 @@ RGBa: Internet Explorer 9
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #3C3D3E none repeat scroll 0 0; opacity: .6;';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #E9EAEB none repeat scroll 0 0; opacity: .6;';
 				module.elements.alert.appendChild(that.elements.mask);
 			}else if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
 				that.elements.mask = that.settings.mask;
@@ -648,6 +656,10 @@ RGBa: Internet Explorer 9
 			if(typeof that.settings.callback.hide === 'function') {
 				that.settings.callback.hide();
 			}
+		},
+		resize: function() {
+			// width, height 변동에 따른 위치 재조정
+
 		}
 	};
 
@@ -682,7 +694,7 @@ RGBa: Internet Explorer 9
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #3C3D3E none repeat scroll 0 0; opacity: .6;';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #E9EAEB none repeat scroll 0 0; opacity: .6;';
 				module.elements.push.appendChild(that.elements.mask);
 			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
 				that.elements.mask = that.settings.mask;
@@ -763,6 +775,10 @@ RGBa: Internet Explorer 9
 			if(typeof that.settings.callback.hide === 'function') {
 				return that.settings.callback.hide();
 			}
+		},
+		resize: function() {
+			// width, height 변동에 따른 위치 재조정
+			
 		}
 	};
 

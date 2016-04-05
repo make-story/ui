@@ -51,10 +51,10 @@ api.xhr({
 			'context': global, // 콜백함수 내부에서 this 키워드로 사용할 객체
 			'dataType': 'text', // 서버 측에서 응답받을 데이터의 형식을 문자열로 지정 (json, text, jsonp)
 
-			//'beforeSend': undefined, // 요청하기 전 실행할 콜백 함수
-			//'complete': undefined, // 요청이 끝난 후 실행할 콜백 함수
 			'progressUpload': undefined, // 업로드 진행률 콜백 함수
 			'progressDownload': undefined, // 다운로드 진행률 콜백 함수
+			'beforeSend': undefined, // 요청하기 전 실행할 콜백 함수
+			'complete': undefined, // 요청이 끝난 후 실행할 콜백 함수
 			'success': undefined // 요청이 성공했을 때 실행할 콜백 함수
 		};
 		var match, callback, pattern, script;
