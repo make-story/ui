@@ -11,7 +11,7 @@ Copyright (c) Sung-min Yu.
 Dual licensed under the MIT and GPL licenses.
 
 @browser compatibility
-
+all
 */
 
 ;(function(global, undefined) {

@@ -14,7 +14,7 @@ Dual licensed under the MIT and GPL licenses.
 
 
 script 삽입: 동적로딩, 의존성관리, 모듈화
-api.support.js 상단에서 동일한 js파일이 load 된 경우, box 가 작동하지 않는다.
+상단에서 동일한 js파일이 load 된 경우, box 가 작동하지 않는다.
 */
 
 ;(function(factory, global) {

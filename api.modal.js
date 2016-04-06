@@ -811,7 +811,7 @@ RGBa: Internet Explorer 9
 			return instance;
 		},
 		'instance': function(key) {
-			return module.instance[key] || null;
+			return module.instance[key] || false;
 		}
 	};
 

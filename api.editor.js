@@ -16,9 +16,6 @@ Dual licensed under the MIT and GPL licenses.
 
 /*
 -
-api.support.js 종속되어 동작한다.
-
--
 Editor's Draft 10 January 2016
 http://w3c.github.io/selection-api/
 
@@ -100,6 +97,30 @@ if(el.nodeType === Node.TEXT_NODE) {
 	*/
 
 	var EDGE = -200;
+
+	//
+	var env = {};
+	if(global.api && global.api.env) {
+		env = global.api.env;
+	}else {
+		env = {
+			'check': {
+				'touch': ('ontouchstart' in window || navigator.MaxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)
+			},
+			'event': {
+				"down": "mousedown",
+				"move": "mousemove",
+				"up": "mouseup",
+				"click": 'click'
+			}
+		};
+		if(env['check']['touch'] === true) {
+			env['event']['down'] = 'touchstart';
+			env['event']['move'] = 'touchmove';
+			env['event']['up'] = 'touchend';
+			env['event']['click'] = (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click';
+		}
+	}
 
 	// elements
 	var elements = {
@@ -609,22 +630,16 @@ if(el.nodeType === Node.TEXT_NODE) {
 	var setContenteditableOn = function(nodes) {
 		//var parameter = parameter || {};
 		//var nodes = parameter['nodes']; // 에디터가 작동하게 될 대상 element 리스트
-		if(!nodes || !nodes.length) {
-			nodes = document.querySelectorAll('[contenteditable="true"]');
-		}
 
 		// 에디터가 사용될 대상이 되는곳에 이벤트 설정
 		var i, max;
-		var node;
-		for(i=0, max=nodes.length; i<max; i++) {
-			node = nodes[i];
-
+		var setEvent = function(node) {
 			// storage
 			if(typeof node.storage !== 'object') {
 				node.storage = {};
 			}else if(node.storage['EVENT_MOUSEUP_editor'] || node.storage['EVENT_KEYDOWN_editor'] || node.storage['EVENT_KEYUP_editor']) {
 				// 이벤트가 중복되지 않도록 이미 적용되어 있는지 확인한다.				
-				continue;
+				return true;
 			}
 
 			// contentEditable
@@ -637,7 +652,7 @@ if(el.nodeType === Node.TEXT_NODE) {
 			}
 
 			// 마우스 이벤트
-			api.dom(node).on(api.env.event.up + '.EVENT_MOUSEUP_editor', setTextSelection);
+			$(node).on(env.event.up + '.EVENT_MOUSEUP_editor', setTextSelection);
 			/*node.addEventListener('mouseup', setTextSelection, false);
 			node.storage['EVENT_MOUSEUP_editor'] = {
 				"events": 'mouseup',
@@ -646,24 +661,38 @@ if(el.nodeType === Node.TEXT_NODE) {
 			};*/
 			
 			// 키보드 이벤트
-			api.dom(node).on('keydown.EVENT_KEYDOWN_editor', setContenteditableKeydown);
+			$(node).on('keydown.EVENT_KEYDOWN_editor', setContenteditableKeydown);
 			/*node.addEventListener('keydown', setContenteditableKeydown, false);
 			node.storage['EVENT_KEYDOWN_editor'] = {
 				"events": 'keydown',
 				"handlers": setContenteditableKeydown,
 				"capture": false
 			};*/
-			api.dom(node).on('keyup.EVENT_KEYUP_editor', setContenteditableKeyup);
+			$(node).on('keyup.EVENT_KEYUP_editor', setContenteditableKeyup);
 			/*node.addEventListener('keyup', setContenteditableKeyup, false);
 			node.storage['EVENT_KEYUP_editor'] = {
 				"events": 'keyup',
 				"handlers": setContenteditableKeyup,
 				"capture": false
 			};*/
-		}
+		};
 
+		if(!nodes) {
+			nodes = document.querySelectorAll('[contenteditable="true"]');
+			if(!nodes.length) {
+				return false;
+			}
+		}
+		if(nodes.nodeType) {
+			setEvent(nodes);
+		}else {
+			for(i=0, max=nodes.length; i<max; i++) {
+				setEvent(nodes[i]);
+			}
+		}
+		
 		// document event
-		api.dom(document).on(api.env.event.up + '.EVENT_MOUSEUP_editor_document', function(event) {
+		/*$(document).on(env.event.up + '.EVENT_MOUSEUP_editor_document', function(event) {
 			var event = event || window.event;
 			//var target = event && (event.target || event.srcElement);
 			// 툴팁내부 클릭된 것인지 확인
@@ -673,25 +702,14 @@ if(el.nodeType === Node.TEXT_NODE) {
 					setTextSelection(event);
 				}, 1);
 			}
-		});
-		/*document.onmouseup = function(event) {
-			var event = event || window.event;
-			//var target = event && (event.target || event.srcElement);
-			// 툴팁내부 클릭된 것인지 확인
-			if(!elements['text']['tooltip'].contains(event.target)) {
-				console.log('document mouseup');
-				setTimeout(function() {
-					setTextSelection(event);
-				}, 1);
-			}
-		};*/
+		});*/
 		
 		// 한글입력관련
-		api.dom(document).on('compositionstart.EVENT_COMPOSITIONSTART_editor', function() {
+		$(document).on('compositionstart.EVENT_COMPOSITIONSTART_editor', function() {
 			composition = true;
 		});
 		//document.addEventListener('compositionstart', onCompositionStart);
-		api.dom(document).on('compositionend.EVENT_COMPOSITIONEND_editor', function() {
+		$(document).on('compositionend.EVENT_COMPOSITIONEND_editor', function() {
 			composition = false;
 		});
 		//document.addEventListener('compositionend', onCompositionEnd);
@@ -714,25 +732,25 @@ if(el.nodeType === Node.TEXT_NODE) {
 			}
 
 			// 마우스 이벤트
-			api.dom(node).off('.EVENT_MOUSEUP_editor');
+			$(node).off('.EVENT_MOUSEUP_editor');
 			/*node.removeEventListener(node['storage']['EVENT_MOUSEUP_editor']['events'], node['storage']['EVENT_MOUSEUP_editor']['handlers'], node['storage']['EVENT_MOUSEUP_editor']['capture']);
 			delete node['storage']['EVENT_MOUSEUP_editor'];*/
 
 			// 키보드 이벤트
-			api.dom(node).off('.EVENT_KEYDOWN_editor');
+			$(node).off('.EVENT_KEYDOWN_editor');
 			/*node.removeEventListener(node['storage']['EVENT_KEYDOWN_editor']['events'], node['storage']['EVENT_KEYDOWN_editor']['handlers'], node['storage']['EVENT_KEYDOWN_editor']['capture']);
 			delete node['storage']['EVENT_KEYDOWN_editor'];*/
-			api.dom(node).off('.EVENT_KEYUP_editor');
+			$(node).off('.EVENT_KEYUP_editor');
 			/*node.removeEventListener(node['storage']['EVENT_KEYUP_editor']['events'], node['storage']['EVENT_KEYUP_editor']['handlers'], node['storage']['EVENT_KEYUP_editor']['capture']);
 			delete node['storage']['EVENT_KEYUP_editor'];*/
 		}
 
 		// document event
-		api.dom(document).off('.EVENT_MOUSEUP_editor_document');
+		$(document).off('.EVENT_MOUSEUP_editor_document');
 
 		// 한글입력관련
-		api.dom(document).off('.EVENT_COMPOSITIONSTART_editor');
-		api.dom(document).off('.EVENT_COMPOSITIONEND_editor');
+		$(document).off('.EVENT_COMPOSITIONSTART_editor');
+		$(document).off('.EVENT_COMPOSITIONEND_editor');
 	};
 
 	// 에디터 button, input 등 생성 및 이벤트 설정
