@@ -54,6 +54,11 @@ RGBa: Internet Explorer 9
 		}
 	}
 
+	// ajax
+	if(!global.jQuery && global.api && global.api.xhr) {
+		$.ajax = global.api.xhr;
+	}
+
 	// key (일반적인 고유값)
 	var getKey;
 	if(global.api && global.api.key) {
@@ -77,9 +82,9 @@ RGBa: Internet Explorer 9
 		return scrollbar;
 	})();
 
-	// 모듈 (공통 사용기능)
+	// 모듈 (공통 사용)
 	var module = (function() {
-		function Module() {
+		function ModalModule() {
 			var that = this;
 			// 팝업 z-index 관리
 			that.zindex = 100;
@@ -92,7 +97,7 @@ RGBa: Internet Explorer 9
 			//
 			that.init();
 		}
-		Module.prototype = {
+		ModalModule.prototype = {
 			init: function() {
 				// fragment
 				var fragment = document.createDocumentFragment();
@@ -111,6 +116,16 @@ RGBa: Internet Explorer 9
 				this.elements.step = document.createElement('div');
 				this.elements.step.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 				this.elements.container.appendChild(this.elements.step);
+
+				// folder container (폴더는 한개만 열린다)
+				that.elements.folder = document.createElement('div');
+				that.elements.folder.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+				that.elements.container.appendChild(that.elements.folder);
+
+				// story container (스토리는 여러개 열릴 수 있다)
+				that.elements.story = document.createElement('div');
+				that.elements.story.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+				that.elements.container.appendChild(that.elements.story);
 
 				// confirm
 				this.elements.confirm = document.createElement('div');
@@ -258,11 +273,11 @@ RGBa: Internet Explorer 9
 				*/
 			}
 		};
-		return new Module();
+		return new ModalModule();
 	})();
 
 	// 레이어
-	var Layer = function(settings) {
+	var ModalLayer = function(settings) {
 		var that = this;
 		that.type = 'layer';
 		that.settings = {
@@ -289,7 +304,7 @@ RGBa: Internet Explorer 9
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #E9EAEB none repeat scroll 0 0; opacity: .6;';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
 				module.elements.layer.appendChild(that.elements.mask);
 			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
 				that.elements.mask = that.settings.mask;
@@ -310,7 +325,7 @@ RGBa: Internet Explorer 9
 			}
 		})();
 	};
-	Layer.prototype = {
+	ModalLayer.prototype = {
 		postion: function(postion) {
 			var that = this;
 			return that;
@@ -351,6 +366,9 @@ RGBa: Internet Explorer 9
 				module.active.focus();
 			}
 		},
+		remove: function() {
+			
+		},
 		resize: function() {
 			// width, height 변동에 따른 위치 재조정
 
@@ -364,7 +382,7 @@ RGBa: Internet Explorer 9
 	};
 
 	// step
-	var Step = function(settings) {
+	var ModalStep = function(settings) {
 		var that = this;
 		that.type = 'confirm';
 		that.settings = {
@@ -383,12 +401,12 @@ RGBa: Internet Explorer 9
 
 		})();
 	};
-	Step.prototype = {
+	ModalStep.prototype = {
 
 	};
 
 	// 확인
-	var Confirm = function(settings) {
+	var ModalConfirm = function(settings) {
 		var that = this;
 		that.type = 'confirm';
 		that.settings = {
@@ -426,7 +444,7 @@ RGBa: Internet Explorer 9
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #E9EAEB none repeat scroll 0 0; opacity: .6;';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
 				module.elements.confirm.appendChild(that.elements.mask);
 			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
 				that.elements.mask = that.settings.mask;
@@ -470,7 +488,7 @@ RGBa: Internet Explorer 9
 			});
 		})();
 	};
-	Confirm.prototype = {
+	ModalConfirm.prototype = {
 		title: function(title) {
 			var that = this;
 			that.elements.title.textContent = title || '';
@@ -529,6 +547,9 @@ RGBa: Internet Explorer 9
 				return that.settings.callback.hide();
 			}
 		},
+		remove: function() {
+			
+		},
 		resize: function() {
 			// width, height 변동에 따른 위치 재조정
 
@@ -536,7 +557,7 @@ RGBa: Internet Explorer 9
 	};
 
 	// 경고
-	var Alert = function(settings) {
+	var ModalAlert = function(settings) {
 		var that = this;
 		that.type = 'alert';
 		that.settings = {
@@ -567,7 +588,7 @@ RGBa: Internet Explorer 9
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #E9EAEB none repeat scroll 0 0; opacity: .6;';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
 				module.elements.alert.appendChild(that.elements.mask);
 			}else if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
 				that.elements.mask = that.settings.mask;
@@ -598,7 +619,7 @@ RGBa: Internet Explorer 9
 			});
 		})();
 	};
-	Alert.prototype = {
+	ModalAlert.prototype = {
 		title: function(title) {
 			var that = this;
 			that.elements.title.textContent = title || '';
@@ -657,6 +678,9 @@ RGBa: Internet Explorer 9
 				that.settings.callback.hide();
 			}
 		},
+		remove: function() {
+			
+		},
 		resize: function() {
 			// width, height 변동에 따른 위치 재조정
 
@@ -664,7 +688,7 @@ RGBa: Internet Explorer 9
 	};
 
 	// 푸시
-	var Push = function(settings) {
+	var ModalPush = function(settings) {
 		var that = this;
 		that.type = 'push';
 		that.settings = {
@@ -694,7 +718,7 @@ RGBa: Internet Explorer 9
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
 				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #E9EAEB none repeat scroll 0 0; opacity: .6;';
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
 				module.elements.push.appendChild(that.elements.mask);
 			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
 				that.elements.mask = that.settings.mask;
@@ -723,7 +747,7 @@ RGBa: Internet Explorer 9
 			});
 		})();
 	};
-	Push.prototype = {
+	ModalPush.prototype = {
 		message: function(message) {
 			var that = this;
 			that.elements.message.textContent = message || '';
@@ -776,6 +800,9 @@ RGBa: Internet Explorer 9
 				return that.settings.callback.hide();
 			}
 		},
+		remove: function() {
+			
+		},
 		resize: function() {
 			// width, height 변동에 따른 위치 재조정
 			
@@ -784,7 +811,7 @@ RGBa: Internet Explorer 9
 
 	// public return
 	return {
-		'setup': function(settings) {
+		setup: function(settings) {
 			// 인스턴스 생성
 			var instance;
 			if(settings['key'] && module.instance[settings['key']]) {
@@ -792,16 +819,16 @@ RGBa: Internet Explorer 9
 			}else {
 				switch(settings['type']) {
 					case 'layer':
-						instance = new Layer(settings);
+						instance = new ModalLayer(settings);
 						break;
 					case 'confirm':
-						instance = new Confirm(settings);
+						instance = new ModalConfirm(settings);
 						break;
 					case 'alert':
-						instance = new Alert(settings);
+						instance = new ModalAlert(settings);
 						break;
 					case 'push':
-						instance = new Push(settings);
+						instance = new ModalPush(settings);
 						break;
 				}
 				if(settings['key']) {
@@ -810,7 +837,7 @@ RGBa: Internet Explorer 9
 			}
 			return instance;
 		},
-		'instance': function(key) {
+		instance: function(key) {
 			return module.instance[key] || false;
 		}
 	};
