@@ -194,7 +194,6 @@ api.dom - 클라이언트 환경정보, DOM handling
 		더블터치, 딜레이터치, 원터치 이벤트 설정
 
 		사용예:
-		“`
 		api.touch.on('#ysm', 
 			{
 				'one': function(e) {
@@ -208,16 +207,13 @@ api.dom - 클라이언트 환경정보, DOM handling
 				}
 			}
 		);
-		“`
 
 	api.touch.off(selector, eventkey);
 		터치 이벤트 해제
 		eventkey: one, two, delay, all
 
 		사용예:
-		“`
 		api.touch.off('#ysm', 'one'); // one 해제
-		“`
 
 ----------
 
@@ -226,7 +222,6 @@ api.dom - 클라이언트 환경정보, DOM handling
 		requestAnimationFrame 애니메이션 리스트 실행
 
 		사용예:
-    
 		api.animationFrameQueue([
 			{
 				'element': api.dom('#h2'), 
@@ -248,13 +243,11 @@ api.dom - 클라이언트 환경정보, DOM handling
 				'height': '100px'
 			}
 		});
-    
 
 	api.animationQueue({})
 		애니메이션 리스트 실행 (class 값으로 제어)
 
 		사용예:
-		“`
 		api.animationQueue([
 			{
 				'element': api.dom('#view'), 
@@ -271,13 +264,11 @@ api.dom - 클라이언트 환경정보, DOM handling
 			'animation': 'pt-page-moveToLeft', 
 			'complete': function() { ... }
 		});
-		“`
 
 	api.transitionQueue({})
 		트랜지션 리스트 실행
 
 		사용예:
-		“`
 		api.transitionQueue([
 			{
 				'element': api.dom('#view'), 
@@ -297,7 +288,6 @@ api.dom - 클라이언트 환경정보, DOM handling
 				'top': '100px'
 			}
 		});
-		“`
 
 
 ----------
@@ -306,10 +296,8 @@ api.dom - 클라이언트 환경정보, DOM handling
 api.editor - 텍스트에디터 라이브러리
 
 	사용예:
-	“`
 	api.editor.on(api.dom('#editor').get(0)); // 해당요소 에디터 설정
 	api.editor.off(api.dom('#editor').get(0)); // 해당요소 에디터 해제
-	“`
 
 
 ----------
@@ -318,7 +306,6 @@ api.editor - 텍스트에디터 라이브러리
 api.flicking - 플리킹 라이브러리
 
 	사용예: 
-	“`
 	var instance = api.flicking.setup({
 		'key': '', // 플리킹 작동 고유키 (옵션)
 		'total': 0, // 전체 슬라이드 수 (필수)
@@ -336,7 +323,6 @@ api.flicking - 플리킹 라이브러리
 	});
 
 	instance = api.flicking.instance(key); // key에 해당하는 플리킹 인스턴스값 반환
-	“`
 
 
 ----------
@@ -345,7 +331,6 @@ api.flicking - 플리킹 라이브러리
 api.modal - 팝업 라이브러리
 
 	레이어 사용예:
-	“`
 	api.modal.setup({
 		'type': 'layer',
 		'key': '',
@@ -358,10 +343,8 @@ api.modal - 팝업 라이브러리
 		'target': '', // #id
 		'close': '' // .class
 	});
-	“`
 
 	Confirm 사용예:
-	“`
 	api.modal.setup({
 		'type': 'confirm',
 		'key': '',
@@ -380,10 +363,8 @@ api.modal - 팝업 라이브러리
 		'title': '',
 		'message': ''
 	});
-	“`
 
 	Alert 사용예:
-	“`
 	api.modal.setup({
 		'type': 'alert',
 		'key': '',
@@ -396,10 +377,8 @@ api.modal - 팝업 라이브러리
 		'title': '',
 		'message': ''
 	});
-	“`
 
 	Push 사용예:
-	“`
 	api.modal.setup({
 		'type': 'push',
 		'key': '',
@@ -412,7 +391,6 @@ api.modal - 팝업 라이브러리
 		'time': 0, // 0 보다 큰 값은 자동닫기 설정
 		'message': ''
 	});
-	“`
 
 
 ----------
@@ -421,7 +399,6 @@ api.modal - 팝업 라이브러리
 api.socket - WebSocket 라이브러리
 
 	사용예:
-	“`
 	api.socket({
 		'url': 'ws://', // 필수
 		'open': 'open 콜백',
@@ -435,7 +412,6 @@ api.socket - WebSocket 라이브러리
 		// 서버로 부터 받은 메시지
 	});
 	socket.send('서버로 전송 데이터');
-	“`
 
 
 ----------
@@ -444,7 +420,6 @@ api.socket - WebSocket 라이브러리
 api.template - 템플릿 {{tag}} 라이브러리
 
 	사용예:
-	“`
 	<script id="template" type="text/template">
 	<p>Use the <strong>{{=power}}</strong>, {{=title}}!</p>
 
@@ -472,7 +447,6 @@ api.template - 템플릿 {{tag}} 라이브러리
 	});
 	document.getElementById('target').innerHTML = paint;
 	</script>
-	“`
 
 
 ----------
@@ -541,14 +515,12 @@ api.xhr - XMLHttpRequest (레벨2) 라이브러리
 	});
 
 	사용예 (파일전송)
-	“`
 	var from = new FormData(api.dom('#form').get(0));
 	api.xhr({
 		'type': 'POST', 
 		'url': '', 
 		'data': from 
 	});
-	“`
 
 ----------
 
