@@ -1,5 +1,8 @@
 
-api.dom - 클라이언트 환경정보, DOM 컴포넌트
+api.dom - 클라이언트 환경정보, DOM handling
+
+	api.key()
+		일반적인 고유값 반환
 
 	api.env.check.mobile
 		모바일 디바이스 여부 true/false
@@ -14,8 +17,8 @@ api.dom - 클라이언트 환경정보, DOM 컴포넌트
 	api.env.check.fullscreen
 		풀스크린 지원 브라우저 여부 true/false
 
-	api.env.device
-		사용자 디바이스 종류 pc/mobile/tablet
+	api.env.monitor
+		사용자 해상도 종류 pc/mobile/tablet
 
 	api.env.screen.width
 		해상도 width
@@ -52,11 +55,17 @@ api.dom - 클라이언트 환경정보, DOM 컴포넌트
 	api.dom(selector, [context])
 		요소 검색
 
+	.ready(handler)
+		Document ready callback
+
 	.get(index)
 		검색된 요소 중 index 번째 요소 반환 또는 전체반환
 
 	.find(selector)
 		context 내부 요소 검색
+
+	.each(callback)
+		요소을 순회하면서 각 요소를 매개변수로 지정한 콜백함수를 호출한다.
 
 	.closest(selector, context)
 		상위 요소 검색
@@ -88,8 +97,8 @@ api.dom - 클라이언트 환경정보, DOM 컴포넌트
 	.val(value)
 		요소에 value 삽입
 
-	.style({name: value})
-	.style(name)
+	.css({name: value})
+	.css(name)
 		요소 style property 추가 또는 반환
 
 	.width(value)
@@ -132,6 +141,7 @@ api.dom - 클라이언트 환경정보, DOM 컴포넌트
 
 	.clone(is)
 		요소 복사
+		is : 자식 노드들도 모두 복제할지 여부(true:복사, false:해당없음)
 
 	.prepend(value)
 		요소의 앞에 추가하기
@@ -160,6 +170,9 @@ api.dom - 클라이언트 환경정보, DOM 컴포넌트
 	.one(events, handlers, [capture])
 		이벤트 발생하면 바인딩 자동해제
 
+	.trigger(events)
+		지정한 이벤트 타입의 이벤트를 발생시켜 이벤트 핸들러 함수를 실행한다.
+
 	.data(value)
 		데이터 추가 또는 반환
 
@@ -175,21 +188,116 @@ api.dom - 클라이언트 환경정보, DOM 컴포넌트
 	api.fn.extend({name: value})
 		api.dom 객체 또는 prototype 에 기능추가
 
+----------
 
 	api.touch.on(selector, handlers)
 		더블터치, 딜레이터치, 원터치 이벤트 설정
 
-	api.touch.off(selector);
-		터치 이벤트 해제
+		사용예:
+		“`
+		api.touch.on('#ysm', 
+			{
+				'one': function(e) {
+					console.log('one touch');
+				},
+				'two': function(e) {
+					console.log('two touch');
+				},
+				'delay': function(e) {
+					console.log('delay touch');
+				}
+			}
+		);
+		“`
 
-	api.key()
-		고유값 반환
+	api.touch.off(selector, eventkey);
+		터치 이벤트 해제
+		eventkey: one, two, delay, all
+
+		사용예:
+		“`
+		api.touch.off('#ysm', 'one'); // one 해제
+		“`
+
+----------
+
+	
 	api.animationFrameQueue({})
 		requestAnimationFrame 애니메이션 리스트 실행
+
+		사용예:
+		“`
+		api.animationFrameQueue([
+			{
+				'element': api.dom('#h2'), 
+				'style': {
+					'left': '100px',
+					'top': '100px'
+				}
+			}, 
+			{...}, 
+			... 
+		]);
+
+		api.animationFrameQueue({
+			'element': '.h2', 
+			'style': {
+				'left': '100px', 
+				'top': '100px', 
+				'width': '100px', 
+				'height': '100px'
+			}
+		});
+		“`
+
 	api.animationQueue({})
-		class 애니메이션 리스트 실행
+		애니메이션 리스트 실행 (class 값으로 제어)
+
+		사용예:
+		“`
+		api.animationQueue([
+			{
+				'element': api.dom('#view'), 
+				'animation': 'pt-page-moveToRight'
+			}, 
+			{
+				'element': api.dom('#list'), 
+				'animation': 'pt-page-moveToRight'
+			}
+		]);
+
+		api.animationQueue({
+			'element': api.dom('#view'), 
+			'animation': 'pt-page-moveToLeft', 
+			'complete': function() { ... }
+		});
+		“`
+
 	api.transitionQueue({})
 		트랜지션 리스트 실행
+
+		사용예:
+		“`
+		api.transitionQueue([
+			{
+				'element': api.dom('#view'), 
+				'transition': {
+					'left': '100px', 
+					'top': '100px'
+				}
+			}, 
+			{...}, 
+			... 
+		]);
+
+		api.transitionQueue({
+			'element': api.dom('#view'), 
+			'transition': {
+				'left': '100px', 
+				'top': '100px'
+			}
+		});
+		“`
 
 
 ----------
@@ -197,8 +305,11 @@ api.dom - 클라이언트 환경정보, DOM 컴포넌트
 
 api.editor - 텍스트에디터 라이브러리
 
+	사용예:
+	“`
 	api.editor.on(api.dom('#editor').get(0)); // 해당요소 에디터 설정
 	api.editor.off(api.dom('#editor').get(0)); // 해당요소 에디터 해제
+	“`
 
 
 ----------
@@ -206,7 +317,26 @@ api.editor - 텍스트에디터 라이브러리
 
 api.flicking - 플리킹 라이브러리
 
-	작업진행중
+	사용예: 
+	“`
+	var instance = api.flicking.setup({
+		'key': '', // 플리킹 작동 고유키 (옵션)
+		'total': 0, // 전체 슬라이드 수 (필수)
+		'width': 0, // 슬라이드 width 픽셀값 (필수)
+		'element': null, // 플리킹 element (필수)
+		'speed': 300, // 플리킹 속도 (기본값: 300)
+		'touch': true, // 터치 또는 클릭으로 슬라이드 작동여부 (기본값: true)
+		'callback': null, // 플리킹 작동 callback
+		'transitionend': null // 플리킹 transitionend 이벤트 callback
+	});
+	instance.on(); // 플리킹 터치(또는 클릭) 이벤트 On
+	instance.off(); // 플리킹 터치(또는 클릭) 이벤트 Off
+	instance.slide({
+		'value': '', // 슬라이드 이동(숫자값: 해당슬라이드 index 이동, 문자값: 'next' 다음슬라이드 이동 'prev' 이전슬라이드 이동)
+	});
+
+	instance = api.flicking.instance(key); // key에 해당하는 플리킹 인스턴스값 반환
+	“`
 
 
 ----------
@@ -214,7 +344,75 @@ api.flicking - 플리킹 라이브러리
 
 api.modal - 팝업 라이브러리
 
-	작업진행중
+	레이어 사용예:
+	“`
+	api.modal.setup({
+		'type': 'layer',
+		'key': '',
+		'position': 'center',
+		'mask': null, 
+		'callback': {
+			'show': null,
+			'hide': null
+		},
+		'target': '', // #id
+		'close': '' // .class
+	});
+	“`
+
+	Confirm 사용예:
+	“`
+	api.modal.setup({
+		'type': 'confirm',
+		'key': '',
+		'position': 'topcenter',
+		'mask': null, 
+		'callback': {
+			'show': null,
+			'hide': null,
+			'ok': function() {
+				return true;
+			},
+			'cancel': function() {
+				return false;
+			}
+		},
+		'title': '',
+		'message': ''
+	});
+	“`
+
+	Alert 사용예:
+	“`
+	api.modal.setup({
+		'type': 'alert',
+		'key': '',
+		'position': 'topcenter',
+		'mask': null,
+		'callback': {
+			'show': null,
+			'hide': null
+		},
+		'title': '',
+		'message': ''
+	});
+	“`
+
+	Push 사용예:
+	“`
+	api.modal.setup({
+		'type': 'push',
+		'key': '',
+		'position': 'topright',
+		'mask': null,
+		'callback': {
+			'show': null,
+			'hide': null
+		},
+		'time': 0, // 0 보다 큰 값은 자동닫기 설정
+		'message': ''
+	});
+	“`
 
 
 ----------
@@ -222,6 +420,8 @@ api.modal - 팝업 라이브러리
 
 api.socket - WebSocket 라이브러리
 
+	사용예:
+	“`
 	api.socket({
 		'url': 'ws://', // 필수
 		'open': 'open 콜백',
@@ -235,6 +435,7 @@ api.socket - WebSocket 라이브러리
 		// 서버로 부터 받은 메시지
 	});
 	socket.send('서버로 전송 데이터');
+	“`
 
 
 ----------
@@ -242,15 +443,79 @@ api.socket - WebSocket 라이브러리
 
 api.template - 템플릿 {{tag}} 라이브러리
 
-	작업진행중
+	사용예:
+	“`
+	<script id="template" type="text/template">
+	<p>Use the <strong>{{=power}}</strong>, {{=title}}!</p>
+
+	{{<people}}
+		<p class="{{=test}}">{{=title}}</p>
+		{{<deep}}
+			<div>{{=ysm}}</div>
+			{{<haha}}
+				{{=ysm}}
+			{{haha>}}
+		{{deep>}}
+	{{people>}}
+	<p>ysm</p>
+	</script>
+
+	<script>
+	var parse = api.template.parse(document.getElementById('template').innerHTML);
+	var paint = api.template.paint(parse, {
+		'power': 'aa',
+		'title': 'bb',
+		'people': [
+			{'test': 'ysm', 'title': 'cc', 'deep': {'ysm': 'aaa', 'haha': {'ysm': '유성민'}}},
+			{'title': 'cc', 'deep': {'ysm': 'bbb', 'haha': false}}
+		]
+	});
+	document.getElementById('target').innerHTML = paint;
+	</script>
+	“`
 
 
 ----------
 
 
-api.validate - 유효성검사 라이브러리
+api.validate - 유효성검사 라이브러리 (nodeJS 에서 사용가능)
 
-	작업진행중
+	api.validate.isText(value)
+		text 빈값 검사
+
+	api.validate.isNumber(value)
+		number 값 검사
+
+	api.validate.isDate(value)
+		날짜타입 검사
+
+	api.validate.isEmail(value)
+		이메일타입 검사
+
+	api.validate.isUrl(value)
+		URL타입 검사
+
+	api.validate.isEqualTo(value, string)
+		글자 포함여부
+
+	api.validate.isMinlength(value, number)
+		최소글자
+
+	api.validate.isMaxlength(value, number)
+		최대글자
+
+	api.validate.isMin(value, number)
+		최소값
+
+	api.validate.isMax(value, number)
+		최대값
+
+	api.validate.isPhone(value)
+		전화번호
+
+	api.validate.isExtension(value, extension)
+		확장자 
+		extension : jpg,jpeg,gif,png,pdf,hwp,exl
 
 
 ----------
@@ -259,6 +524,7 @@ api.validate - 유효성검사 라이브러리
 api.xhr - XMLHttpRequest (레벨2) 라이브러리
 
 	api.xhr({
+		'contentType': 'application/x-www-form-urlencoded',
 		'type': 'GET', // GET, POST, DELETE, PUT 같은 HTTP 메서드 타입
 		'url': '', // 요청할 URL 주소
 		'async': true, // 동기/비동기 방식
@@ -269,17 +535,20 @@ api.xhr - XMLHttpRequest (레벨2) 라이브러리
 
 		'progressUpload': undefined, // 업로드 진행률 콜백 함수
 		'progressDownload': undefined, // 다운로드 진행률 콜백 함수
+		'beforeSend': undefined, // 요청하기 전 실행할 콜백 함수
+		'complete': undefined, // 요청이 끝난 후 실행할 콜백 함수
 		'success': undefined // 요청이 성공했을 때 실행할 콜백 함수
 	});
 
 	사용예 (파일전송)
+	“`
 	var from = new FormData(api.dom('#form').get(0));
 	api.xhr({
 		'type': 'POST', 
 		'url': '', 
 		'data': from 
 	});
-
+	“`
 
 ----------
 
@@ -343,6 +612,9 @@ api.util - 각종 기능들 묶음
 
 	api.util.setLeftFormatString(add, value, count)
 		value 앞에 count 수만큼 add를 채운다	
+
+	api.util.setFragmentHtml(html)
+		fragment 에 html 삽입 후 반환
 
 	api.util.setRequestAnimFrame(callback)
 		requestAnimationFrame
