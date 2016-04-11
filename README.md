@@ -226,7 +226,7 @@ api.dom - 클라이언트 환경정보, DOM handling
 		requestAnimationFrame 애니메이션 리스트 실행
 
 		사용예:
-“`
+    
 		api.animationFrameQueue([
 			{
 				'element': api.dom('#h2'), 
@@ -248,7 +248,7 @@ api.dom - 클라이언트 환경정보, DOM handling
 				'height': '100px'
 			}
 		});
-“`
+    
 
 	api.animationQueue({})
 		애니메이션 리스트 실행 (class 값으로 제어)
