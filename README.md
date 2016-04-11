@@ -331,7 +331,7 @@ api.flicking - 플리킹 라이브러리
 api.modal - 팝업 라이브러리
 
 	레이어 사용예:
-	api.modal.setup({
+	var instance = api.modal.setup({
 		'type': 'layer',
 		'key': '',
 		'position': 'center',
@@ -343,9 +343,11 @@ api.modal - 팝업 라이브러리
 		'target': '', // #id
 		'close': '' // .class
 	});
+	instance.show(); // 열기
+	instance.hide(); // 닫기
 
 	Confirm 사용예:
-	api.modal.setup({
+	var instance = api.modal.setup({
 		'type': 'confirm',
 		'key': '',
 		'position': 'topcenter',
@@ -363,9 +365,11 @@ api.modal - 팝업 라이브러리
 		'title': '',
 		'message': ''
 	});
+	instance.show(); // 열기
+	instance.hide(); // 닫기
 
 	Alert 사용예:
-	api.modal.setup({
+	var instance = api.modal.setup({
 		'type': 'alert',
 		'key': '',
 		'position': 'topcenter',
@@ -377,9 +381,11 @@ api.modal - 팝업 라이브러리
 		'title': '',
 		'message': ''
 	});
+	instance.show(); // 열기
+	instance.hide(); // 닫기
 
 	Push 사용예:
-	api.modal.setup({
+	var instance = api.modal.setup({
 		'type': 'push',
 		'key': '',
 		'position': 'topright',
@@ -391,6 +397,8 @@ api.modal - 팝업 라이브러리
 		'time': 0, // 0 보다 큰 값은 자동닫기 설정
 		'message': ''
 	});
+	instance.show(); // 열기
+	instance.hide(); // 닫기
 
 
 ----------
