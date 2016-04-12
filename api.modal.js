@@ -39,6 +39,17 @@ RGBa: Internet Explorer 9
 			'check': {
 				'touch': ('ontouchstart' in window || navigator.MaxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)
 			},
+			'browser': {
+				"scrollbar": (function() { // 브라우저별 스크롤바 폭 (모바일브라우저 주의)
+					var div = document.createElement("div");
+					var scrollbar = 0;
+					div.style.cssText = 'width: 99px; height: 99px; overflow: scroll; position: absolute; top: -9999px;';
+					document.documentElement.appendChild(div);
+					scrollbar = div.offsetWidth - div.clientWidth;
+					document.documentElement.removeChild(div);
+					return scrollbar;
+				})()
+			},
 			'event': {
 				"down": "mousedown",
 				"move": "mousemove",
@@ -54,11 +65,6 @@ RGBa: Internet Explorer 9
 		}
 	}
 
-	// ajax
-	if(!global.jQuery && global.api && global.api.xhr) {
-		$.ajax = global.api.xhr;
-	}
-
 	// key (일반적인 고유값)
 	var getKey;
 	if(global.api && global.api.key) {
@@ -71,23 +77,17 @@ RGBa: Internet Explorer 9
 		};
 	}
 
-	// 스크롤바 사이즈
-	var scrollbar = (function() { // 브라우저별 스크롤바 폭 (모바일브라우저 주의)
-		var div = document.createElement("div");
-		var scrollbar = 0;
-		div.style.cssText = 'width: 99px; height: 99px; overflow: scroll; position: absolute; top: -9999px;';
-		document.documentElement.appendChild(div);
-		scrollbar = div.offsetWidth - div.clientWidth;
-		document.documentElement.removeChild(div);
-		return scrollbar;
-	})();
+	// ajax
+	if(!global.jQuery && global.api && global.api.xhr) {
+		$.ajax = global.api.xhr;
+	}
 
 	// 모듈 (공통 사용)
 	var module = (function() {
 		function ModalModule() {
 			var that = this;
 			// 팝업 z-index 관리
-			that.zindex = 100;
+			that.zindex = 200;
 			// 현재 포커스 위치
 			that.active;
 			// key가 있는 인스턴스
@@ -104,7 +104,7 @@ RGBa: Internet Explorer 9
 
 				// container
 				this.elements.container = document.createElement('div');
-				this.elements.container.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+				this.elements.container.style.cssText = 'position: fixed; left: 0px; top: 0px; z-index: 2147483647;'; // z-index 최대값: 2147483647
 				fragment.appendChild(this.elements.container);
 
 				// layer
@@ -116,16 +116,6 @@ RGBa: Internet Explorer 9
 				this.elements.step = document.createElement('div');
 				this.elements.step.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 				this.elements.container.appendChild(this.elements.step);
-
-				// folder container (폴더는 한개만 열린다)
-				that.elements.folder = document.createElement('div');
-				that.elements.folder.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-				that.elements.container.appendChild(that.elements.folder);
-
-				// story container (스토리는 여러개 열릴 수 있다)
-				that.elements.story = document.createElement('div');
-				that.elements.story.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-				that.elements.container.appendChild(that.elements.story);
 
 				// confirm
 				this.elements.confirm = document.createElement('div');
@@ -144,6 +134,7 @@ RGBa: Internet Explorer 9
 
 				//
 				$(document).ready(function() {
+					//document.body.insertBefore(fragment, document.body.firstChild);
 					document.body.appendChild(fragment);
 				});
 			},
@@ -316,6 +307,9 @@ RGBa: Internet Explorer 9
 			that.elements.container.style.cssText = 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; display: none;';
 			that.elements.container.appendChild(that.elements.contents);
 			module.elements.layer.appendChild(that.elements.container);
+			if(that.elements.contents.style.display === 'none') {
+				that.elements.contents.style.display = 'block';
+			}
 			
 			// 팝업내부 close 버튼 클릭시 닫기
 			if(that.settings.close) {
@@ -335,7 +329,7 @@ RGBa: Internet Explorer 9
 
 			// 스크롤바 사이즈만큼 여백
 			if(document.documentElement.clientHeight < document.body.offsetHeight) {
-				$('html').css({'margin-right': scrollbar + 'px', 'overflow': 'hidden'});
+				$('html').css({'margin-right': env['browser']['scrollbar'] + 'px', 'overflow': 'hidden'});
 			}
 
 			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
@@ -367,11 +361,29 @@ RGBa: Internet Explorer 9
 			}
 		},
 		remove: function() {
-			
+			var that = this;
+
+			// element
+			if(that.elements.mask) {
+				that.elements.mask.parentNode.removeChild(that.elements.mask);
+			}
+			if(that.elements.container) {
+				that.elements.container.parentNode.removeChild(that.elements.container);
+			}
+			that.elements = {};
+
+			// instance
+			if(that.settings['key'] && module.instance[that.settings['key']]) {
+				delete module.instance[that.settings['key']];
+			}
 		},
 		resize: function() {
 			// width, height 변동에 따른 위치 재조정
 
+		},
+		find: function(selector) {
+			var that = this;
+			return $(that.elements.container).find(selector);
 		},
 		resizeOn: function() {
 
@@ -424,7 +436,7 @@ RGBa: Internet Explorer 9
 					return false;
 				}
 			},
-			'title': '',
+			'title': 'Message',
 			'message': ''
 		};
 		that.settings = module.setSettings(that.settings, settings);
@@ -476,14 +488,14 @@ RGBa: Internet Explorer 9
 				that.hide();
 				//callback
 				if(typeof that.settings.callback.ok === 'function') {
-					return that.settings.callback.ok();
+					return that.settings.callback.ok.call(that);
 				}
 			});
 			$(that.elements.cancel).on(env['event']['click'], function() {
 				that.hide();
 				//callback
 				if(typeof that.settings.callback.cancel === 'function') {
-					return that.settings.callback.cancel();
+					return that.settings.callback.cancel.call(that);
 				}
 			});
 		})();
@@ -527,7 +539,7 @@ RGBa: Internet Explorer 9
 
 			//callback
 			if(typeof that.settings.callback.show === 'function') {
-				that.settings.callback.show();
+				that.settings.callback.show.call(that);
 			}
 		},
 		hide: function() {
@@ -544,11 +556,25 @@ RGBa: Internet Explorer 9
 
 			//callback
 			if(typeof that.settings.callback.hide === 'function') {
-				return that.settings.callback.hide();
+				return that.settings.callback.hide.call(that);
 			}
 		},
 		remove: function() {
-			
+			var that = this;
+
+			// element
+			if(that.elements.mask) {
+				that.elements.mask.parentNode.removeChild(that.elements.mask);
+			}
+			if(that.elements.container) {
+				that.elements.container.parentNode.removeChild(that.elements.container);
+			}
+			that.elements = {};
+
+			// instance
+			if(that.settings['key'] && module.instance[that.settings['key']]) {
+				delete module.instance[that.settings['key']];
+			}
 		},
 		resize: function() {
 			// width, height 변동에 따른 위치 재조정
@@ -569,7 +595,7 @@ RGBa: Internet Explorer 9
 				'show': null,
 				'hide': null
 			},
-			'title': '',
+			'title': 'Message',
 			'message': ''
 		};
 		that.settings = module.setSettings(that.settings, settings);
@@ -658,7 +684,7 @@ RGBa: Internet Explorer 9
 
 			//callback
 			if(typeof that.settings.callback.show === 'function') {
-				that.settings.callback.show();
+				that.settings.callback.show.call(that);
 			}
 		},
 		hide: function() {
@@ -675,11 +701,25 @@ RGBa: Internet Explorer 9
 
 			//callback
 			if(typeof that.settings.callback.hide === 'function') {
-				that.settings.callback.hide();
+				that.settings.callback.hide.call(that);
 			}
 		},
 		remove: function() {
-			
+			var that = this;
+
+			// element
+			if(that.elements.mask) {
+				that.elements.mask.parentNode.removeChild(that.elements.mask);
+			}
+			if(that.elements.container) {
+				that.elements.container.parentNode.removeChild(that.elements.container);
+			}
+			that.elements = {};
+
+			// instance
+			if(that.settings['key'] && module.instance[that.settings['key']]) {
+				delete module.instance[that.settings['key']];
+			}
 		},
 		resize: function() {
 			// width, height 변동에 따른 위치 재조정
@@ -748,6 +788,11 @@ RGBa: Internet Explorer 9
 		})();
 	};
 	ModalPush.prototype = {
+		time: function(time) {
+			var that = this;
+			that.settings.time = !isNaN(parseFloat(time)) && time || 0;
+			return that;
+		},
 		message: function(message) {
 			var that = this;
 			that.elements.message.textContent = message || '';
@@ -776,6 +821,7 @@ RGBa: Internet Explorer 9
 			that.elements.container.style.display = 'block';
 
 			// auto hide
+			global.clearTimeout(that.settings.time);
 			if(typeof that.settings.time === 'number' && that.settings.time > 0) {
 				global.setTimeout(function() {
 					that.hide();
@@ -784,7 +830,7 @@ RGBa: Internet Explorer 9
 
 			//callback
 			if(typeof that.settings.callback.show === 'function') {
-				that.settings.callback.show();
+				that.settings.callback.show.call(that);
 			}
 		},
 		hide: function() {
@@ -797,11 +843,25 @@ RGBa: Internet Explorer 9
 
 			//callback
 			if(typeof that.settings.callback.hide === 'function') {
-				return that.settings.callback.hide();
+				return that.settings.callback.hide.call(that);
 			}
 		},
 		remove: function() {
-			
+			var that = this;
+
+			// element
+			if(that.elements.mask) {
+				that.elements.mask.parentNode.removeChild(that.elements.mask);
+			}
+			if(that.elements.container) {
+				that.elements.container.parentNode.removeChild(that.elements.container);
+			}
+			that.elements = {};
+
+			// instance
+			if(that.settings['key'] && module.instance[that.settings['key']]) {
+				delete module.instance[that.settings['key']];
+			}
 		},
 		resize: function() {
 			// width, height 변동에 따른 위치 재조정
