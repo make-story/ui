@@ -73,6 +73,7 @@ socket.message(콜백설정);
 		that.queue = [];
 		//that.storage = {};
 		try {
+			url = /^ws:\/\//.test(url) ? url : 'ws://' + url;
 			that.socket = new WebSocket(url);
 		}catch(e) {
 			if(typeof error === 'function') {
@@ -127,7 +128,7 @@ socket.message(콜백설정);
 					break;
 			}
 
-			return this;
+			return that;
 		},
 		message: function(callback) {
 			var that = this;
@@ -136,20 +137,12 @@ socket.message(콜백설정);
 				that.socket.onmessage = function(event) { // 메시지가 도착할 시점
 					callback.call(this, event['data']);
 				}; 
-				return true;
 			}
 
-			return false;
+			return that;
 		},
-		close: function(callback) {
-			var that = this;
-
-			if(typeof callback === 'function') {
-				that.socket.close = callback; // 소켓이 닫히는 시점
-			}
-			that.socket.close();
-
-			return this;
+		close: function() {
+			this.socket.close();
 		}
 	};
 
