@@ -15,11 +15,11 @@ Dual licensed under the MIT and GPL licenses.
 http://www.opensource.org/licenses/MIT
 
 @browser compatibility
-IE9 이상(IE7, IE8 부분지원하며, 트랜지션, 애니메이션 등의 사용은 IE10 이상)
+IE7 이상(IE7, IE8 부분지원하며, 트랜지션, 애니메이션 등의 사용은 IE10 이상)
 querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
 element.classList: Chrome 8.0, Firefox 3.6, Internet Explorer 10, Opera 11.50, Safari 5.1
-getBoundingClientRect(): width/height IE9부터 지원
 box-sizing: border-box; IE8 이상 (boder 효과가 화면상에 안보일 수 있으니 주의한다.)
+localStorage, sessionStorage: IE8 이상
 
 @webapi 참고
 https://developer.mozilla.org/en-US/docs/Web/API
@@ -49,6 +49,16 @@ http://www.quirksmode.org/js/detect.html
 		var arr = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'/*,'0','1','2','3','4','5','6','7','8','9'*/];
 		var date = new Date();
 		return [arr[Math.floor(Math.random() * arr.length)], Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1), date.getFullYear(), (Number(date.getMonth()) + 1), date.getDay(), date.getHours(), date.getMinutes()].join('');
+		/*
+		-
+		페이스북 참고
+		 1. 'f' + : 'f' 문자열에 뒤의 것을 더할 건데, // f
+		 2. Math.random() : 0~1 사이의 랜덤한 수 생성에  //  0.13190673617646098 
+		 3. * (1 << 30) : 2의 30승을 곱하고, //  0.13190673617646098  *  1073741824  = 141633779.5
+		 4. .toString(16) : 16진수로 문자열로 표현한 후에, // Number(141633779.9).toString(16) = 87128f3.8
+		 5. .replace('.', '') : 문자열에서 닷(소수점)을 제거한다. // 'f' + 87128f38 = f87128f38
+		return 'f' + (Math.random() * (1 << 30)).toString(16).replace('.', '');
+		*/
 	};
 
 	// 클라이언트 브라우저 환경
@@ -147,7 +157,6 @@ http://www.quirksmode.org/js/detect.html
 	}
 
 	// monitor
-	environment['monitor'] = 'pc';
 	if(/android/i.test(userAgent)) { // 안드로이드
 		// mobile 없으면 태블릿임
 		if(/mobile/i.test(userAgent)) {
@@ -1810,131 +1819,69 @@ http://www.quirksmode.org/js/detect.html
 
 	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 
-	/*
-	// document mousedown 이벤트 콜백 (레이어 닫기 등)
-	var DocumentTouch = function() {
-		var that = this;
-		that.callback = [];
-		that.func = function(event) { // mouseup 이벤트 헨들러 (mouseup 가 발생하면 실행)
-			var event = event || window.event;
-			var index;
-			for(index in that.callback) { // 콜백 배열 실행
-				that.callback[index].call(this, event);
+	// localStorage, sessionStorage (IE8 이상)
+	var browserStorage = global.localStorage && global.sessionStorage && (function() {
+		return {
+			clear: function(type) {
+				switch(type) {
+					case 'local':
+						window.localStorage.clear();
+						break;
+					case 'session':
+						window.sessionStorage.clear();
+						break;
+				}
+			},
+			length: function(type) {
+				var count = 0;
+				switch(type) {
+					case 'local':
+						count = window.localStorage.length;
+						break;
+					case 'session':
+						count = window.sessionStorage.length;
+						break;
+				}
+				return count;
+			},
+			select: function(type, key) {
+				var item = {};
+				if(getStorageLength(type) > 0) {
+					switch(type) {
+						case 'local':
+							item = window.localStorage.getItem(key);
+							break;
+						case 'session':
+							item = window.sessionStorage.getItem(key);
+							break;
+					}
+					item = (item.length > 2) ? JSON.parse(item) : {}; // storage.length > 2: {}
+				}
+				return item;
+			},
+			update: function(type, key, item) {
+				item = (typeof item === 'object' && Object.keys(item).length > 0) ? JSON.stringify(item) : '{}';
+				switch(type) {
+					case 'local':
+						window.localStorage.setItem(key, item);
+						break;
+					case 'session':
+						window.sessionStorage.setItem(key, item);
+						break;
+				}
+			},
+			delete: function(type, key) {
+				switch(type) {
+					case 'local':
+						window.localStorage.removeItem(key);
+						break;
+					case 'session':
+						window.sessionStorage.removeItem(key);
+						break;
+				}
 			}
 		};
-		// 실행(대기)
-		if(document.readyState === "interactive" || document.readyState === "complete") {
-			// IE8 등에서 window.setTimeout 파라미터로 바로 함수값을 넣으면 오류가 난다.
-			// 그러므로 function() {} 무명함수로 해당 함수를 실행시킨다.
-			window.setTimeout(function() {
-				that.on();
-			});
-		}else if(document.addEventListener) { // Mozilla, Opera, Webkit 
-			document.addEventListener("DOMContentLoaded", function() {
-				that.on();
-			}, false);
-		}else if(document.attachEvent) { // IE
-			document.attachEvent("onreadystatechange", function() {
-				if(document.readyState === "complete") {
-					that.on();
-				}
-			});
-		}
-	};
-	DocumentTouch.prototype = {
-		add: function(callback) { // callback 추가
-			if(!callback || typeof callback !== 'function') return false;
-			this.callback.push(callback);
-		},
-		del: function(callback) { // callback 제거
-			if(!callback || typeof callback !== 'function') return false;
-			var index = (this.callback.length > 0) ? this.callback.indexOf(callback) : -1; // 존재여부 확인
-			if(index > -1) {
-				this.callback.splice(index, 1); // 대기 리스트 요소 제거
-			}
-		},
-		on: (function() { // up 이벤트 작동
-			if(typeof window.addEventListener === 'function') {
-				return function() {
-					window.addEventListener(global.api.env['event']['up'], this.func, false);
-				}
-			}else if(typeof document.attachEvent === 'function') { // IE
-				return function() {
-					document.attachEvent('on' + global.api.env['event']['up'], this.func);
-				}
-			}else {
-				return function() {};
-			}
-		})(),
-		off: (function() { // up 이벤트 정지
-			if(typeof window.removeEventListener === 'function') {
-				return function() {
-					window.removeEventListener(global.api.env['event']['up'], this.func, false);
-				}
-			}else if(typeof document.detachEvent === 'function') { // IE
-				return function() {
-					document.detachEvent('on' + global.api.env['event']['up'], this.func);
-				}
-			}
-		})()
-	};
-
-	// document 리사이즈될 때 콜백 실행
-	var DocumentResize = function() {
-		var that = this;
-		that.callback = [];
-		that.time = null;
-		that.func = function(event) { // resize 이벤트 헨들러 (resize 가 발생하면 실행)
-			var event = event || window.event;
-			var index;
-			window.clearTimeout(that.time);
-			that.time = window.setTimeout(function(){ 
-				for(index in that.callback) { // 콜백 배열 실행
-					that.callback[index].call(this, event);
-				}
-			}, 500);
-		};
-		//
-		that.on();
-	};
-	DocumentResize.prototype = {
-		add: function(callback) { // callback 추가
-			if(!callback || typeof callback !== 'function') return false;
-			this.callback.push(callback);
-		},
-		del: function(callback) { // callback 제거
-			if(!callback || typeof callback !== 'function') return false;
-			var index = (this.callback.length > 0) ? this.callback.indexOf(callback) : -1; // 존재여부 확인
-			if(index > -1) {
-				this.callback.splice(index, 1); // 대기 리스트 요소 제거
-			}
-		},
-		on: (function() { // resize 이벤트 작동
-			if(typeof window.addEventListener === 'function') {
-				return function() {
-					window.addEventListener(global.api.env['event']['resize'], this.func, false);
-				}
-			}else if(typeof document.attachEvent === 'function') { // IE
-				return function() {
-					document.attachEvent('on' + global.api.env['event']['resize'], this.func);
-				}
-			}else {
-				return function() {};
-			}
-		})(),
-		off: (function() { // resize 이벤트 정지
-			if(typeof window.removeEventListener === 'function') {
-				return function() {
-					window.removeEventListener(global.api.env['event']['resize'], this.func, false);
-				}
-			}else if(typeof document.detachEvent === 'function') { // IE
-				return function() {
-					document.detachEvent('on' + global.api.env['event']['resize'], this.func);
-				}
-			}
-		})()
-	};
-	*/
+	})();
 
 	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 
@@ -1945,7 +1892,7 @@ http://www.quirksmode.org/js/detect.html
 	var setCancelAnimFrame = (function() {
 		return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function(time) { return window.clearTimeout(time); };
 	})();
-	var setAnimationFrameQueue = function(queue) {
+	var animationFrameQueue = function(queue) {
 		/*
 		-
 		사용예
@@ -2066,7 +2013,7 @@ http://www.quirksmode.org/js/detect.html
 	// 애니메이션 순차 실행 (이미 실행되고 있는 element는 대기 후 실행)
 	// element.style 로 애니메이션을 주는 것이 아닌, 애니메이션값이 있는 class 값을 toggle 하는 방식이다.
 	// https://developer.mozilla.org/ko/docs/Web/CSS/CSS_Animations/Detecting_CSS_animation_support
-	var setAnimationQueue = function(queue) {
+	var animationQueue = function(queue) {
 		/*
 		-
 		사용예
@@ -2131,7 +2078,7 @@ http://www.quirksmode.org/js/detect.html
 
 	// 트랜지션 순차실행 
 	// 트랜지션을 지원하지 않는 브라우저에서는 requestAnimationFrame, cancelAnimationFrame 으로 실행한다.
-	var setTransitionQueue = function(queue) {
+	var transitionQueue = function(queue) {
 		/*
 		-
 		사용예
@@ -2265,12 +2212,9 @@ http://www.quirksmode.org/js/detect.html
 
 	// public return
 	global.api.dom = DOM;
-	/*global.api.document = {
-		'touch': new DocumentTouch(),
-		'resize': new DocumentResize()
-	};*/
-	global.api.animationFrameQueue = setAnimationFrameQueue;
-	global.api.animationQueue = setAnimationQueue;
-	global.api.transitionQueue = setTransitionQueue;
+	global.api.storage = browserStorage;
+	global.api.animationFrameQueue = animationFrameQueue;
+	global.api.animationQueue = animationQueue;
+	global.api.transitionQueue = transitionQueue;
 
 }, this);
