@@ -1855,12 +1855,12 @@ http://www.quirksmode.org/js/detect.html
 							item = window.sessionStorage.getItem(key); // return type string
 							break;
 					}
-					item = (item.length > 2) ? JSON.parse(item) : {}; // storage.length > 2: {}
+					item = (/^{.*}$/.test(item)) ? JSON.parse(item) : item;
 				}
 				return item;
 			},
 			update: function(type, key, item) {
-				item = (item && typeof item === 'object' && Object.keys(item).length > 0) ? JSON.stringify(item) : '{}';
+				item = (item && typeof item === 'object' && Object.keys(item).length > 0) ? JSON.stringify(item) : item;
 				switch(type) {
 					case 'local':
 						window.localStorage.setItem(key, item);
