@@ -11,7 +11,7 @@ Copyright (c) Sung-min Yu.
 Dual licensed under the MIT and GPL licenses.
 
 @browser compatibility
-
+https://developer.mozilla.org/ko/docs/Web/API/WebSocket
 
 -
 사용예
@@ -65,6 +65,7 @@ socket.message(콜백설정);
 		that.settings = {
 			'url': '',
 			'open': null,
+			'close': null,
 			'message': null,
 			'error': null
 		};
@@ -73,6 +74,7 @@ socket.message(콜백설정);
 				that.settings[key] = settings[key];
 			}
 		}
+		that.settings.url = /^ws:\/\//.test(that.settings.url) ? that.settings.url : 'ws://' + that.settings.url;
 
 		// 연결
 		that.queue = [];
@@ -87,22 +89,25 @@ socket.message(콜백설정);
 			var that = this;
 
 			try {
-				that.settings.url = /^ws:\/\//.test(that.settings.url) ? that.settings.url : 'ws://' + that.settings.url;
 				that.socket = new WebSocket(that.settings.url);
-			}catch(e) {
-				if(typeof that.settings.error === 'function') {
-					that.settings.error.call(this, Array.prototype.slice.call(arguments));
-				}
-			}
-			that.socket.onopen = function() { // 연결 (소켓이 열리는 시점)
+			}catch(e) {}
+			that.socket.onopen = function() { // readyState changes to OPEN
 				that.send();
 				if(typeof that.settings.open === 'function') {
-					that.settings.open.call(this, Array.prototype.slice.call(arguments));
+					that.settings.open.call(that, Array.prototype.slice.call(arguments));
+				}
+			};
+			that.socket.onclose = function(event) { // readyState changes to CLOSED
+				var code = event.code; // 연결이 종료되는 이유를 가리키는 숫자 값입니다. 지정되지 않을 경우 기본값은 1000으로 간주됩니다. (일반적인 경우의 "transaction complete" 종료를 나타내는 값).
+				var reason = event.reason; // 연결이 왜 종료되는지를 사람이 읽을 수 있도록 나타내는 문자열입니다. 이 문자열은 UTF-8 포멧이며, 123 바이트를 넘을 수 없습니다.
+				var wasClean = event.wasClean;
+				if(typeof that.settings.close === 'function') {
+					that.settings.close.call(that, Array.prototype.slice.call(arguments));
 				}
 			};
 			that.socket.onerror = function() { // 에러
 				if(typeof that.settings.error === 'function') {
-					that.settings.error.call(this, Array.prototype.slice.call(arguments));
+					that.settings.error.call(that, Array.prototype.slice.call(arguments));
 				}
 			};
 
@@ -147,8 +152,8 @@ socket.message(콜백설정);
 		close: function() {
 			var that = this;
 
-			if(typeof that.socket === 'object') {
-				that.socket = that.socket.close();
+			if(typeof that.socket === 'object' && that.socket.readyState <= 1) {
+				that.socket.close();
 				delete connect[that.settings.url];
 			}
 
