@@ -410,7 +410,6 @@ api.socket - WebSocket 라이브러리
 	api.socket({
 		'url': 'ws://', // 필수
 		'open': 'open 콜백',
-		'send': '서버전송 메시지',
 		'message': '서버로 부터 받은 메시지 콜백',
 		'error': '에러 콜백'
 	});

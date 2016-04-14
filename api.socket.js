@@ -48,70 +48,73 @@ socket.message(콜백설정);
 	var connect = {};
 
 	// 소켓
-	var Socket = function Socket(parameter) {
+	var Socket = function Socket(settings) {
 		var that = this;
+		var key;
 
-		// parameter
-		var parameter = parameter || {};
-		var url = parameter['url'];
-		var open = parameter['open'];
-		var send = parameter['send'];
-		var message = parameter['message'];
-		var error = parameter['error'];
-
-		// 
-		if(!url) {
+		// 기존 연결 url 여부
+		if(!settings.url) {
 			return false;
-		}else if(typeof connect[url] === 'object') {
-			return connect[url];
+		}else if(typeof connect[settings.url] === 'object') {
+			return connect[settings.url];
 		}else if(!(this instanceof Socket)) {
-			// return instance
-			return connect[url] = new Socket(parameter);
+			return connect[settings.url] = new Socket(settings);
 		}
 
-		//
+		// settings
+		that.settings = {
+			'url': '',
+			'open': null,
+			'message': null,
+			'error': null
+		};
+		for(key in settings) {
+			if(settings.hasOwnProperty(key)) {
+				that.settings[key] = settings[key];
+			}
+		}
+
+		// 연결
 		that.queue = [];
-		//that.storage = {};
-		try {
-			url = /^ws:\/\//.test(url) ? url : 'ws://' + url;
-			that.socket = new WebSocket(url);
-		}catch(e) {
-			if(typeof error === 'function') {
-				error.call(this, Array.prototype.slice.call(arguments));
-			}
-		}
-		that.socket.onopen = function() { // 연결 (소켓이 열리는 시점)
-			while(that.queue.length) {
-				that.socket.send(that.queue.shift()); // 서버로 메시지 전송
-			}
-			if(typeof open === 'function') {
-				open.call(this, Array.prototype.slice.call(arguments));
-			}
-		};
-		that.socket.onerror = function() { // 에러
-			if(typeof error === 'function') {
-				error.call(this, Array.prototype.slice.call(arguments));
-			}
-		};
-
-		//
-		if(send) {
-			that.send(send);
-		}
-		if(typeof message === 'function') {
-			that.message(message);
+		that.socket;
+		that.open();
+		if(typeof that.settings.message === 'function') {
+			that.message(that.settings.message);
 		}
 	};
 	Socket.prototype = {
+		open: function() {
+			var that = this;
+
+			try {
+				that.settings.url = /^ws:\/\//.test(that.settings.url) ? that.settings.url : 'ws://' + that.settings.url;
+				that.socket = new WebSocket(that.settings.url);
+			}catch(e) {
+				if(typeof that.settings.error === 'function') {
+					that.settings.error.call(this, Array.prototype.slice.call(arguments));
+				}
+			}
+			that.socket.onopen = function() { // 연결 (소켓이 열리는 시점)
+				that.send();
+				if(typeof that.settings.open === 'function') {
+					that.settings.open.call(this, Array.prototype.slice.call(arguments));
+				}
+			};
+			that.socket.onerror = function() { // 에러
+				if(typeof that.settings.error === 'function') {
+					that.settings.error.call(this, Array.prototype.slice.call(arguments));
+				}
+			};
+
+			return that;
+		},
 		send: function(data) { // 보낼 수 있는 데이터는 String, Blob, 또는 ArrayBuffer
 			var that = this;
 
-			if(!data) {
-				return false;
-			}
-
 			// send 데이터 추가
-			that.queue.push(data);
+			if(data) {
+				that.queue.push(data);
+			}
 			//console.log('bufferedAmount: ' + that.socket.bufferedAmount);
 
 			// 실행
@@ -142,7 +145,14 @@ socket.message(콜백설정);
 			return that;
 		},
 		close: function() {
-			this.socket.close();
+			var that = this;
+
+			if(typeof that.socket === 'object') {
+				that.socket = that.socket.close();
+				delete connect[that.settings.url];
+			}
+
+			return that;
 		}
 	};
 
