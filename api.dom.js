@@ -1845,17 +1845,17 @@ http://www.quirksmode.org/js/detect.html
 				return count;
 			},
 			select: function(type, key) {
-				var item = {};
+				var item = '';
 				if(this.length(type) > 0) {
 					switch(type) {
 						case 'local':
-							item = window.localStorage.getItem(key);
+							item = window.localStorage.getItem(key); // return type string
 							break;
 						case 'session':
-							item = window.sessionStorage.getItem(key);
+							item = window.sessionStorage.getItem(key); // return type string
 							break;
 					}
-					item = (item && typeof item === 'object' && item.length > 2) ? JSON.parse(item) : {}; // storage.length > 2: {}
+					item = (item.length > 2) ? JSON.parse(item) : {}; // storage.length > 2: {}
 				}
 				return item;
 			},
