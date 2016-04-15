@@ -1860,7 +1860,7 @@ http://www.quirksmode.org/js/detect.html
 				return item;
 			},
 			update: function(type, key, item) {
-				item = (item && typeof item === 'object' && Object.keys(item).length > 0) ? JSON.stringify(item) : item;
+				item = (item && typeof item === 'object' && Object.keys(item).length > 0) ? JSON.stringify(item) : (item || '');
 				switch(type) {
 					case 'local':
 						window.localStorage.setItem(key, item);
