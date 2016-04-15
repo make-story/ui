@@ -377,13 +377,13 @@ RGBa: Internet Explorer 9
 				delete module.instance[that.settings['key']];
 			}
 		},
-		resize: function() {
-			// width, height 변동에 따른 위치 재조정
-
-		},
 		find: function(selector) {
 			var that = this;
 			return $(that.elements.container).find(selector);
+		},
+		resize: function() {
+			// width, height 변동에 따른 위치 재조정
+
 		},
 		resizeOn: function() {
 
@@ -450,8 +450,8 @@ RGBa: Internet Explorer 9
 			// key
 			key.title = getKey();
 			key.message = getKey();
-			key.ok = getKey();
 			key.cancel = getKey();
+			key.ok = getKey();
 
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
@@ -467,11 +467,11 @@ RGBa: Internet Explorer 9
 			that.elements.container = document.createElement('div');
 			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
 			that.elements.container.innerHTML = '\
-				<div id="' + key.title + '" style="padding: 13px 18px; border-bottom: 1px solid #F0F1F2;">' + that.settings.title + '</div>\
-				<div id="' + key.message + '" style="padding: 18px; min-height: 78px; background-color: #FDFEFF;">' + that.settings.message + '</div>\
-				<div style="padding: 13px 18px; border-top: 1px solid #F0F1F2; text-align: right;">\
-					<button id="' + key.ok + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #333; border: 0 none; background-color: transparent; cursor: pointer;">OK</button>\
-					<button id="' + key.cancel + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #999; border: 0 none; background-color: transparent; cursor: pointer;">CANCEL</button>\
+				<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.title + '</div>\
+				<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
+				<div style="padding: 10px 18px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
+					<button id="' + key.cancel + '" style="margin-left: 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-weight: bold; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">CANCEL</button>\
+					<button id="' + key.ok + '" style="margin-left: 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #5F6061; font-weight: bold; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">OK</button>\
 				</div>\
 			';
 			fragment.appendChild(that.elements.container);
@@ -480,22 +480,22 @@ RGBa: Internet Explorer 9
 			// search element
 			that.elements.title = that.elements.container.querySelector('#' + key.title);
 			that.elements.message = that.elements.container.querySelector('#' + key.message);
-			that.elements.ok = that.elements.container.querySelector('#' + key.ok);
 			that.elements.cancel = that.elements.container.querySelector('#' + key.cancel);
+			that.elements.ok = that.elements.container.querySelector('#' + key.ok);
 
 			// event
-			$(that.elements.ok).on(env['event']['click'], function() {
-				that.hide();
-				//callback
-				if(typeof that.settings.callback.ok === 'function') {
-					return that.settings.callback.ok.call(that);
-				}
-			});
 			$(that.elements.cancel).on(env['event']['click'], function() {
 				that.hide();
 				//callback
 				if(typeof that.settings.callback.cancel === 'function') {
 					return that.settings.callback.cancel.call(that);
+				}
+			});
+			$(that.elements.ok).on(env['event']['click'], function() {
+				that.hide();
+				//callback
+				if(typeof that.settings.callback.ok === 'function') {
+					return that.settings.callback.ok.call(that);
 				}
 			});
 		})();
@@ -508,7 +508,8 @@ RGBa: Internet Explorer 9
 		},
 		message: function(message) {
 			var that = this;
-			that.elements.message.textContent = message || '';
+			//that.elements.message.textContent = message || '';
+			that.elements.message.innerHTML = message || '';
 			return that;
 		},
 		callback: function(callback) {
@@ -625,10 +626,10 @@ RGBa: Internet Explorer 9
 			that.elements.container = document.createElement('div');
 			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
 			that.elements.container.innerHTML = '\
-				<div id="' + key.title + '" style="padding: 13px 18px; border-bottom: 1px solid #F0F1F2;">' + that.settings.title + '</div>\
-				<div id="' + key.message + '" style="padding: 18px; min-height: 78px; background-color: #FDFEFF;">' + that.settings.message + '</div>\
-				<div style="padding: 13px 18px; border-top: 1px solid #F0F1F2; text-align: right;">\
-					<button id="' + key.ok + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #333; border: 0 none; background-color: transparent; cursor: pointer;">OK</button>\
+				<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.title + '</div>\
+				<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
+				<div style="padding: 10px 18px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
+					<button id="' + key.ok + '" style="margin-left: 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #5F6061; font-weight: bold; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">OK</button>\
 				</div>\
 			';
 			fragment.appendChild(that.elements.container);
@@ -653,7 +654,8 @@ RGBa: Internet Explorer 9
 		},
 		message: function(message) {
 			var that = this;
-			that.elements.message.textContent = message || '';
+			//that.elements.message.textContent = message || '';
+			that.elements.message.innerHTML = message || '';
 			return that;
 		},
 		callback: function(callback) {
@@ -752,8 +754,8 @@ RGBa: Internet Explorer 9
 			var key = {};
 
 			// key
-			key.close = getKey();
 			key.message = getKey();
+			key.close = getKey();
 
 			// mask
 			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
@@ -769,17 +771,17 @@ RGBa: Internet Explorer 9
 			that.elements.container = document.createElement('div');
 			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
 			that.elements.container.innerHTML = '\
-				<div style="padding: 12px 12px 6px 12px; text-align: right;">\
-					<button id="' + key.close + '" style="margin: 0 0 0 18px; padding: 0; font-size: 12px; color: #333; border: 0 none; background-color: transparent; cursor: pointer;">CLOSE</button>\
+				<div id="' + key.message + '" style="padding: 12px 12px 6px 12px; min-height: 33px; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.message + '</div>\
+				<div style="padding: 6px 12px 12px 12px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
+					<button id="' + key.close + '" style="color: #5F6061; text-shadow: 0 1px #FFF; white-space: nowrap; cursor: pointer;">CLOSE</button>\
 				</div>\
-				<div id="' + key.message + '" style="padding: 6px 12px 12px 12px;">' + that.settings.message + '</div>\
 			';
 			fragment.appendChild(that.elements.container);
 			module.elements.push.appendChild(fragment);
 
 			// search element
-			that.elements.close = that.elements.container.querySelector('#' + key.close);
 			that.elements.message = that.elements.container.querySelector('#' + key.message);
+			that.elements.close = that.elements.container.querySelector('#' + key.close);
 
 			// event
 			$(that.elements.close).on(env['event']['click'], function() {
@@ -795,7 +797,8 @@ RGBa: Internet Explorer 9
 		},
 		message: function(message) {
 			var that = this;
-			that.elements.message.textContent = message || '';
+			//that.elements.message.textContent = message || '';
+			that.elements.message.innerHTML = message || '';
 			return that;
 		},
 		callback: function(callback) {

@@ -1855,7 +1855,7 @@ http://www.quirksmode.org/js/detect.html
 							item = window.sessionStorage.getItem(key); // return type string
 							break;
 					}
-					item = (/^{.*}$/.test(item)) ? JSON.parse(item) : item;
+					item = (/^{.*}$|^\[.*\]$/.test(item)) ? JSON.parse(item) : item;
 				}
 				return item;
 			},
@@ -1881,7 +1881,7 @@ http://www.quirksmode.org/js/detect.html
 				}
 			}
 		};
-	})();
+	})() || {};
 
 	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 
