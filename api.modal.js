@@ -747,6 +747,7 @@ RGBa: Internet Explorer 9
 		};
 		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {};
+		that.time;
 
 		// private init
 		(function() { 
@@ -773,7 +774,7 @@ RGBa: Internet Explorer 9
 			that.elements.container.innerHTML = '\
 				<div id="' + key.message + '" style="padding: 12px 12px 6px 12px; min-height: 33px; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.message + '</div>\
 				<div style="padding: 6px 12px 12px 12px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
-					<button id="' + key.close + '" style="color: #5F6061; text-shadow: 0 1px #FFF; white-space: nowrap; cursor: pointer;">CLOSE</button>\
+					<button id="' + key.close + '" style="color: #5F6061; text-shadow: 0 1px #FFF; white-space: nowrap; cursor: pointer; background: transparent; border: none;">CLOSE</button>\
 				</div>\
 			';
 			fragment.appendChild(that.elements.container);
@@ -824,9 +825,9 @@ RGBa: Internet Explorer 9
 			that.elements.container.style.display = 'block';
 
 			// auto hide
-			global.clearTimeout(that.settings.time);
+			global.clearTimeout(that.time);
 			if(typeof that.settings.time === 'number' && that.settings.time > 0) {
-				global.setTimeout(function() {
+				that.time = global.setTimeout(function() {
 					that.hide();
 				}, that.settings.time);
 			}
