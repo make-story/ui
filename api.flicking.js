@@ -86,7 +86,9 @@ transitionend: Chrome 1.0, Firefox 4.0 (2.0), Internet Explorer 10, Opera 10.5, 
 			setSettings: function(settings, options) {
 				var key;
 				for(key in options) {
-					if(options[key].constructor === Object) {
+					if(!options.hasOwnProperty(key)) {
+						continue;
+					}else if(options[key] && typeof options[key] === 'object') {
 						settings[key] = this.setSettings(settings[key], options[key]);
 					}else {
 						settings[key] = options[key];

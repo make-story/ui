@@ -71,9 +71,7 @@ RGBa: Internet Explorer 9
 		getKey = global.api.key;
 	}else {
 		getKey = function() {
-			var arr = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'/*,'0','1','2','3','4','5','6','7','8','9'*/];
-			var date = new Date();
-			return [arr[Math.floor(Math.random() * arr.length)], Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1), date.getFullYear(), (Number(date.getMonth()) + 1), date.getDay(), date.getHours(), date.getMinutes()].join('');
+			return ['api', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
 		};
 	}
 
@@ -141,7 +139,9 @@ RGBa: Internet Explorer 9
 			setSettings: function(settings, options) {
 				var key;
 				for(key in options) {
-					if(options[key].constructor === Object) {
+					if(!options.hasOwnProperty(key)) {
+						continue;
+					}else if(options[key] && typeof options[key] === 'object') {
 						settings[key] = this.setSettings(settings[key], options[key]);
 					}else {
 						settings[key] = options[key];
@@ -486,14 +486,14 @@ RGBa: Internet Explorer 9
 			// event
 			$(that.elements.cancel).on(env['event']['click'], function() {
 				that.hide();
-				//callback
+				// callback
 				if(typeof that.settings.callback.cancel === 'function') {
 					return that.settings.callback.cancel.call(that);
 				}
 			});
 			$(that.elements.ok).on(env['event']['click'], function() {
 				that.hide();
-				//callback
+				// callback
 				if(typeof that.settings.callback.ok === 'function') {
 					return that.settings.callback.ok.call(that);
 				}
@@ -538,7 +538,7 @@ RGBa: Internet Explorer 9
 			that.elements.container.setAttribute('tabindex', -1);
 			that.elements.container.focus();
 
-			//callback
+			// callback
 			if(typeof that.settings.callback.show === 'function') {
 				that.settings.callback.show.call(that);
 			}
@@ -555,7 +555,7 @@ RGBa: Internet Explorer 9
 				module.active.focus();
 			}
 
-			//callback
+			// callback
 			if(typeof that.settings.callback.hide === 'function') {
 				return that.settings.callback.hide.call(that);
 			}
@@ -584,150 +584,154 @@ RGBa: Internet Explorer 9
 	};
 
 	// 경고
-	var ModalAlert = function(settings) {
-		var that = this;
-		that.type = 'alert';
-		that.settings = {
-			'key': '',
-			'position': 'topcenter',
-			'rect': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
-			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
-			'callback': {
-				'show': null,
-				'hide': null
-			},
-			'title': 'Message',
-			'message': ''
-		};
-		that.settings = module.setSettings(that.settings, settings);
-		that.elements = {};
-
-		// private init
-		(function() { 
-			var fragment = document.createDocumentFragment();
-			var key = {};
-
-			// key
-			key.title = getKey();
-			key.message = getKey();
-			key.ok = getKey();
-
-			// mask
-			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
-				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
-				module.elements.alert.appendChild(that.elements.mask);
-			}else if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-				that.elements.mask = that.settings.mask;
-				that.elements.mask.display = 'none';
-			}
-
-			// container
-			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
-			that.elements.container.innerHTML = '\
-				<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.title + '</div>\
-				<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
-				<div style="padding: 10px 18px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
-					<button id="' + key.ok + '" style="margin-left: 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #5F6061; font-weight: bold; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">OK</button>\
-				</div>\
-			';
-			fragment.appendChild(that.elements.container);
-			module.elements.alert.appendChild(fragment);
-
-			// search element
-			that.elements.title = that.elements.container.querySelector('#' + key.title);
-			that.elements.message = that.elements.container.querySelector('#' + key.message);
-			that.elements.ok = that.elements.container.querySelector('#' + key.ok);
-
-			// event
-			$(that.elements.ok).on(env['event']['click'], function() {
-				that.hide();
-			});
-		})();
-	};
-	ModalAlert.prototype = {
-		title: function(title) {
+	var ModalAlert = (function() {
+		var queue = []; // 순차 실행
+		var ModalAlert = function(settings) {
 			var that = this;
-			that.elements.title.textContent = title || '';
-			return that;
-		},
-		message: function(message) {
-			var that = this;
-			//that.elements.message.textContent = message || '';
-			that.elements.message.innerHTML = message || '';
-			return that;
-		},
-		callback: function(callback) {
-			var that = this;
-			var key;
-			for(key in callback) {
-				if(callback.hasOwnProperty(key) && typeof callback[key] === 'function') {
-					that.settings.callback[key] = callback[key];
-				}
-			}
-			return that;
-		},
-		show: function() {
-			var that = this;
-			
-			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
-				that.elements.mask.style.zIndex = ++module.zindex;
-				that.elements.mask.style.display = 'block';
-			}
-			module.setLeftTop(that.settings.position, that.elements.container);
-			that.elements.container.style.zIndex = ++module.zindex;
-			that.elements.container.style.display = 'block';
-
-			// focus (웹접근성)
-			module.active = document.activeElement;
-			that.elements.container.setAttribute('tabindex', -1);
-			that.elements.container.focus();
-
-			//callback
-			if(typeof that.settings.callback.show === 'function') {
-				that.settings.callback.show.call(that);
-			}
-		},
-		hide: function() {
-			var that = this;
-			that.elements.container.style.display = 'none';
-			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
-				that.elements.mask.style.display = 'none';
-			}
-
-			// focus (웹접근성)
-			if(module.active) {
-				module.active.focus();
-			}
-
-			//callback
-			if(typeof that.settings.callback.hide === 'function') {
-				that.settings.callback.hide.call(that);
-			}
-		},
-		remove: function() {
-			var that = this;
-
-			// element
-			if(that.elements.mask) {
-				that.elements.mask.parentNode.removeChild(that.elements.mask);
-			}
-			if(that.elements.container) {
-				that.elements.container.parentNode.removeChild(that.elements.container);
-			}
+			that.type = 'alert';
+			that.settings = {
+				'key': '',
+				'position': 'topcenter',
+				'rect': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
+				'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
+				'callback': {
+					'show': null,
+					'hide': null
+				},
+				'title': 'Message',
+				'message': ''
+			};
+			that.settings = module.setSettings(that.settings, settings);
 			that.elements = {};
 
-			// instance
-			if(that.settings['key'] && module.instance[that.settings['key']]) {
-				delete module.instance[that.settings['key']];
-			}
-		},
-		resize: function() {
-			// width, height 변동에 따른 위치 재조정
+			// private init
+			(function() { 
+				var fragment = document.createDocumentFragment();
+				var key = {};
 
-		}
-	};
+				// key
+				key.title = getKey();
+				key.message = getKey();
+				key.ok = getKey();
+
+				// mask
+				if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
+					that.elements.mask = document.createElement('div');
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					module.elements.alert.appendChild(that.elements.mask);
+				}else if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+					that.elements.mask = that.settings.mask;
+					that.elements.mask.display = 'none';
+				}
+
+				// container
+				that.elements.container = document.createElement('div');
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
+				that.elements.container.innerHTML = '\
+					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.title + '</div>\
+					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
+					<div style="padding: 10px 18px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
+						<button id="' + key.ok + '" style="margin-left: 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #5F6061; font-weight: bold; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">OK</button>\
+					</div>\
+				';
+				fragment.appendChild(that.elements.container);
+				module.elements.alert.appendChild(fragment);
+
+				// search element
+				that.elements.title = that.elements.container.querySelector('#' + key.title);
+				that.elements.message = that.elements.container.querySelector('#' + key.message);
+				that.elements.ok = that.elements.container.querySelector('#' + key.ok);
+
+				// event
+				$(that.elements.ok).on(env['event']['click'], function() {
+					that.hide();
+				});
+			})();
+		};
+		ModalAlert.prototype = {
+			title: function(title) {
+				var that = this;
+				that.elements.title.textContent = title || '';
+				return that;
+			},
+			message: function(message) {
+				var that = this;
+				//that.elements.message.textContent = message || '';
+				that.elements.message.innerHTML = message || '';
+				return that;
+			},
+			callback: function(callback) {
+				var that = this;
+				var key;
+				for(key in callback) {
+					if(callback.hasOwnProperty(key) && typeof callback[key] === 'function') {
+						that.settings.callback[key] = callback[key];
+					}
+				}
+				return that;
+			},
+			show: function() {
+				var that = this;
+
+				if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+					that.elements.mask.style.zIndex = ++module.zindex;
+					that.elements.mask.style.display = 'block';
+				}
+				module.setLeftTop(that.settings.position, that.elements.container);
+				that.elements.container.style.zIndex = ++module.zindex;
+				that.elements.container.style.display = 'block';
+
+				// focus (웹접근성)
+				module.active = document.activeElement;
+				that.elements.container.setAttribute('tabindex', -1);
+				that.elements.container.focus();
+
+				// callback
+				if(typeof that.settings.callback.show === 'function') {
+					that.settings.callback.show.call(that);
+				}
+			},
+			hide: function() {
+				var that = this;
+				that.elements.container.style.display = 'none';
+				if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+					that.elements.mask.style.display = 'none';
+				}
+
+				// focus (웹접근성)
+				if(module.active) {
+					module.active.focus();
+				}
+
+				// callback
+				if(typeof that.settings.callback.hide === 'function') {
+					that.settings.callback.hide.call(that);
+				}
+			},
+			remove: function() {
+				var that = this;
+
+				// element
+				if(that.elements.mask) {
+					that.elements.mask.parentNode.removeChild(that.elements.mask);
+				}
+				if(that.elements.container) {
+					that.elements.container.parentNode.removeChild(that.elements.container);
+				}
+				that.elements = {};
+
+				// instance
+				if(that.settings['key'] && module.instance[that.settings['key']]) {
+					delete module.instance[that.settings['key']];
+				}
+			},
+			resize: function() {
+				// width, height 변동에 따른 위치 재조정
+
+			}
+		};
+		return ModalAlert;
+	})();
 
 	// 푸시
 	var ModalPush = function(settings) {
@@ -773,7 +777,7 @@ RGBa: Internet Explorer 9
 			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
 			that.elements.container.innerHTML = '\
 				<div id="' + key.message + '" style="padding: 12px 12px 6px 12px; min-height: 33px; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.message + '</div>\
-				<div style="padding: 6px 12px 12px 12px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
+				<div style="padding: 6px 12px 12px 12px; background: rgba(248, 249, 250, .97); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
 					<button id="' + key.close + '" style="color: #5F6061; text-shadow: 0 1px #FFF; white-space: nowrap; cursor: pointer; background: transparent; border: none;">CLOSE</button>\
 				</div>\
 			';
@@ -832,7 +836,7 @@ RGBa: Internet Explorer 9
 				}, that.settings.time);
 			}
 
-			//callback
+			// callback
 			if(typeof that.settings.callback.show === 'function') {
 				that.settings.callback.show.call(that);
 			}
@@ -845,7 +849,7 @@ RGBa: Internet Explorer 9
 				that.elements.mask.style.display = 'none';
 			}
 
-			//callback
+			// callback
 			if(typeof that.settings.callback.hide === 'function') {
 				return that.settings.callback.hide.call(that);
 			}
@@ -880,7 +884,9 @@ RGBa: Internet Explorer 9
 			var instance;
 			if(settings['key'] && module.instance[settings['key']]) {
 				instance = module.instance[settings['key']];
+				instance.settings = module.setSettings(instance.settings, settings);
 			}else {
+				settings['key'] = settings['key'] || getKey();
 				switch(settings['type']) {
 					case 'layer':
 						instance = new ModalLayer(settings);
@@ -895,9 +901,7 @@ RGBa: Internet Explorer 9
 						instance = new ModalPush(settings);
 						break;
 				}
-				if(settings['key']) {
-					module.instance[settings['key']] = instance;
-				}
+				module.instance[settings['key']] = instance;
 			}
 			return instance;
 		},
