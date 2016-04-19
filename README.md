@@ -365,8 +365,10 @@ api.modal - 팝업 라이브러리
 		'title': '',
 		'message': ''
 	});
+	instance.change({'title': '', ...}); // 재설정
 	instance.show(); // 열기
 	instance.hide(); // 닫기
+	instance.remove(); // elememt 제거
 
 	Alert 사용예:
 	var instance = api.modal.setup({
@@ -381,8 +383,10 @@ api.modal - 팝업 라이브러리
 		'title': '',
 		'message': ''
 	});
+	instance.change({'title': '', ...}); // 재설정
 	instance.show(); // 열기
 	instance.hide(); // 닫기
+	instance.remove(); // elememt 제거
 
 	Push 사용예:
 	var instance = api.modal.setup({
@@ -397,8 +401,10 @@ api.modal - 팝업 라이브러리
 		'time': 0, // 0 보다 큰 값은 자동닫기 설정
 		'message': ''
 	});
+	instance.change({'time': 2000, ...}); // 재설정
 	instance.show(); // 열기
 	instance.hide(); // 닫기
+	instance.remove(); // elememt 제거
 
 
 ----------
