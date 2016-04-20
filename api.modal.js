@@ -97,51 +97,54 @@ RGBa: Internet Explorer 9
 		}
 		ModalModule.prototype = {
 			init: function() {
-				// fragment
-				var fragment = document.createDocumentFragment();
+				var fragment;
 
-				// container
-				this.elements.container = document.createElement('div');
-				this.elements.container.style.cssText = 'position: fixed; left: 0px; top: 0px; z-index: 2147483647;'; // z-index 최대값: 2147483647
-				fragment.appendChild(this.elements.container);
+				if(document.body && (!this.elements.container || typeof this.elements.container !== 'object' || !this.elements.container.nodeType)) {
+					// fragment
+					fragment = document.createDocumentFragment();
+				
+					// container
+					this.elements.container = document.createElement('div');
+					this.elements.container.style.cssText = 'position: fixed; left: 0px; top: 0px; z-index: 2147483647;'; // z-index 최대값: 2147483647
+					fragment.appendChild(this.elements.container);
 
-				// layer
-				this.elements.layer = document.createElement('div');
-				this.elements.layer.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-				this.elements.container.appendChild(this.elements.layer);
+					// layer
+					this.elements.layer = document.createElement('div');
+					this.elements.layer.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.layer);
 
-				// step
-				this.elements.step = document.createElement('div');
-				this.elements.step.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-				this.elements.container.appendChild(this.elements.step);
+					// step
+					this.elements.step = document.createElement('div');
+					this.elements.step.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.step);
 
-				// confirm
-				this.elements.confirm = document.createElement('div');
-				this.elements.confirm.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-				this.elements.container.appendChild(this.elements.confirm);
+					// confirm
+					this.elements.confirm = document.createElement('div');
+					this.elements.confirm.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.confirm);
 
-				// alert
-				this.elements.alert = document.createElement('div');
-				this.elements.alert.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-				this.elements.container.appendChild(this.elements.alert);
+					// alert
+					this.elements.alert = document.createElement('div');
+					this.elements.alert.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.alert);
 
-				// push
-				this.elements.push = document.createElement('div');
-				this.elements.push.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-				this.elements.container.appendChild(this.elements.push);
+					// push
+					this.elements.push = document.createElement('div');
+					this.elements.push.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.push);
 
-				//
-				$(document).ready(function() {
-					//document.body.insertBefore(fragment, document.body.firstChild);
-					document.body.appendChild(fragment);
-				});
+					try {
+						//document.body.insertBefore(fragment, document.body.firstChild);
+						document.body.appendChild(fragment);
+					}catch(e) {}
+				}
 			},
 			setSettings: function(settings, options) {
 				var key;
 				for(key in options) {
 					if(!options.hasOwnProperty(key)) {
 						continue;
-					}else if(options[key] && typeof options[key] === 'object') {
+					}else if(options[key] && typeof options[key] === 'object' && !options[key].nodeType) {
 						settings[key] = this.setSettings(settings[key], options[key]);
 					}else {
 						settings[key] = options[key];
@@ -170,7 +173,7 @@ RGBa: Internet Explorer 9
 				};
 			},
 			// 위치설정
-			setLeftTop: function(position, element) {
+			setPosition: function(position, element) {
 				// 위치 설정
 				var width = 0;
 				var height = 0;
@@ -178,6 +181,7 @@ RGBa: Internet Explorer 9
 				var center = {'left': 0, 'top': 0};
 				var tmp_height, tmp_top;
 				if(typeof position === 'string') {
+					// element 크기
 					width = Math.round($(element).outerWidth(true));
 					height = Math.round($(element).outerHeight(true));
 
@@ -243,25 +247,59 @@ RGBa: Internet Explorer 9
 					}
 				}
 			},
-			getRect: function(element) {
-				/*
-				-
-				element 위치
-				문서 내에서 렌더링 된 엘리먼트의 절대 위치를 계산해야 한다면,
-				getClientRects() 와 getBoundingClientRect() 메서드를 사용해 윈도우 기준으로 렌더링 된 위치를 가져온 후에,
-				문서의 스크롤 값을 더해주면 된다.
+			// 지정된 위치 기준점으로 modal 출력
+			setRect: function(position, element, rect) {
+				var width, height;
+				var target = {};
+				var info = rect.getBoundingClientRect();
+				var scroll = (function() {
+					if('pageXOffset' in window && 'pageYOffset' in window) {
+						return {'left': window.pageXOffset, 'top': window.pageYOffset};
+					}else if(document.body && ('scrollLeft' in document.body && 'scrollTop' in document.body)) {
+						return {'left': document.body.scrollLeft, 'top': document.body.scrollTop};
+					}else if(document.documentElement && ('scrollLeft' in document.documentElement && 'scrollTop' in document.documentElement)) {
+						return {'left': document.documentElement.scrollLeft, 'top': document.documentElement.scrollTop};
+					}
+				})();
+				var tmp;
 
-				http://e-rooms.tistory.com/entry/HTML-Element-%EA%B0%9D%EC%B2%B4%EC%97%90%EC%84%9C-%EC%A0%9C%EA%B3%B5%ED%95%98%EB%8A%94-%ED%81%AC%EA%B8%B0-%EB%B0%8F-%EC%9C%84%EC%B9%98-%ED%94%84%EB%A1%9C%ED%8D%BC%ED%8B%B0%EC%99%80-%EB%A9%94%EC%86%8C%EB%93%9C
-				http://ohgyun.com/569
+				// element 크기
+				width = Math.round($(element).outerWidth(true));
+				height = Math.round($(element).outerHeight(true));
 
-				getClientRects
-				getBoundingClientRect 추천
+				// target 정보
+				target.left = info.left + (scroll.left || 0);
+				target.top = info.top + (scroll.top || 0);
+				target.width = Math.round($(rect).outerWidth(true));
+				target.height = Math.round($(rect).outerHeight(true));
 
-				// For scrollX
-				(((t = document.documentElement) || (t = document.body.parentNode)) && typeof t.ScrollLeft == 'number' ? t : document.body).ScrollLeft
-				// For scrollY
-				(((t = document.documentElement) || (t = document.body.parentNode)) && typeof t.ScrollTop == 'number' ? t : document.body).ScrollTop
-				*/
+				// topleft, topcenter, topright
+				// centerleft, center, centerright
+				// bottomleft, bottomcenter, bottomright
+				if(/^top/.test(position)) {
+					$(element).get(0).style.top = (target.top - height) + 'px';
+				}else if(/^bottom/.test(position)) {
+					$(element).get(0).style.top = (target.top + target.height) + 'px';
+				}else if(/^center/.test(position)) {
+					tmp = Math.round(Math.abs(height - target.height) / 2);
+					if(height > target.height) {
+						$(element).get(0).style.top = (target.top - tmp) + 'px';
+					}else {
+						$(element).get(0).style.top = (target.top + tmp) + 'px';
+					}
+				}
+				if(/left$/.test(position)) {
+					$(element).get(0).style.left = (target.left - width) + 'px';
+				}else if(/right$/.test(position)) {
+					$(element).get(0).style.left = (target.left + target.width) + 'px';
+				}else if(/center$/.test(position)) {
+					tmp = Math.round(Math.abs(width - target.width) / 2);
+					if(width > target.width) {
+						$(element).get(0).style.left = (target.left - tmp) + 'px';
+					}else {
+						$(element).get(0).style.left = (target.left + tmp) + 'px';
+					}
+				}
 			}
 		};
 		return new ModalModule();
@@ -274,7 +312,6 @@ RGBa: Internet Explorer 9
 		that.settings = {
 			'key': '',
 			'position': 'center',
-			'rect': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
 			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
 			'callback': {
 				'show': null,
@@ -287,9 +324,10 @@ RGBa: Internet Explorer 9
 		that.elements = {};
 
 		// private init
+		module.init();
 		(function() { 
 			// contents
-			that.elements.contents = $('#' + that.settings.target).get(0);
+			that.elements.contents = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $('#' + that.settings.target).get(0));
 			that.elements.contents.style.position = 'relative';
 
 			// mask
@@ -326,6 +364,7 @@ RGBa: Internet Explorer 9
 		},
 		position: function() {
 			var that = this;
+			module.setPosition(that.settings.position, that.elements.contents);
 			return that;
 		},
 		show: function() {
@@ -340,7 +379,7 @@ RGBa: Internet Explorer 9
 				that.elements.mask.style.zIndex = ++module.zindex;
 				that.elements.mask.style.display = 'block';
 			}
-			module.setLeftTop(that.settings.position, that.elements.contents);
+			that.position();
 			that.elements.container.style.zIndex = ++module.zindex;
 			that.elements.container.style.display = 'block';
 
@@ -354,8 +393,7 @@ RGBa: Internet Explorer 9
 
 			$('html').css({'margin-right': '', 'overflow': ''});
 			that.elements.container.style.display = 'none';
-			//module.elements.layer.style.display = 'none';
-			if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 				that.elements.mask.style.display = 'none';
 			}
 
@@ -397,6 +435,111 @@ RGBa: Internet Explorer 9
 		}
 	};
 
+	// Rect
+	var ModalRect = function(settings) {
+		var that = this;
+		that.type = 'rect';
+		that.settings = {
+			'key': '',
+			'position': 'topcenter',
+			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
+			'callback': {
+				'show': null,
+				'hide': null
+			},
+			'target': '', // #id
+			'rect': ''
+		};
+		that.settings = module.setSettings(that.settings, settings);
+		that.elements = {};
+
+		// private init
+		module.init();
+		(function() { 
+			// contents
+			that.elements.contents = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $('#' + that.settings.target).get(0));
+			that.elements.contents.style.position = 'relative';
+
+			// mask
+			if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+				that.elements.mask = that.settings.mask;
+				that.elements.mask.display = 'none';
+			}else {
+				that.elements.mask = document.createElement('div');
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+				document.body.appendChild(that.elements.mask);
+			}
+
+			// container
+			that.elements.container = document.createElement('div');
+			that.elements.container.style.cssText = 'position: absolute; left: 0; top: 0; display: none;';
+			that.elements.container.appendChild(that.elements.contents);
+			document.body.appendChild(that.elements.container);
+			if(that.elements.contents.style.display === 'none') {
+				that.elements.contents.style.display = 'block';
+			}
+
+			// rect
+			that.elements.rect = (typeof that.settings.rect === 'object' && that.settings.rect.nodeType ? that.settings.rect : $('#' + that.settings.rect).get(0));
+		})();
+	};
+	ModalRect.prototype = {
+		change: function(settings) {
+
+		},
+		position: function() {
+			var that = this;
+			module.setRect(that.settings.position, that.elements.container, that.elements.rect);
+			return that;
+		},
+		show: function() {
+			var that = this;
+
+			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+				that.elements.mask.style.zIndex = ++module.zindex;
+				that.elements.mask.style.display = 'block';
+			}
+			that.position();
+			that.elements.container.style.zIndex = ++module.zindex;
+			that.elements.container.style.display = 'block';
+
+			// focus (웹접근성)
+			module.active = document.activeElement;
+			that.elements.container.setAttribute('tabindex', -1);
+			that.elements.container.focus();
+		},
+		hide: function() {
+			var that = this;
+
+			that.elements.container.style.display = 'none';
+			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+				that.elements.mask.style.display = 'none';
+			}
+
+			// focus (웹접근성)
+			if(module.active) {
+				module.active.focus();
+			}
+		},
+		remove: function() {
+			var that = this;
+
+			// element
+			if(that.elements.mask) {
+				that.elements.mask.parentNode.removeChild(that.elements.mask);
+			}
+			if(that.elements.container) {
+				that.elements.container.parentNode.removeChild(that.elements.container);
+			}
+			that.elements = {};
+
+			// instance
+			if(that.settings['key'] && module.instance[that.settings['key']]) {
+				delete module.instance[that.settings['key']];
+			}
+		}
+	};
+
 	// step
 	var ModalStep = function(settings) {
 		var that = this;
@@ -413,6 +556,7 @@ RGBa: Internet Explorer 9
 		that.elements = {};
 
 		// private init
+		module.init();
 		(function() { 
 
 		})();
@@ -428,7 +572,6 @@ RGBa: Internet Explorer 9
 		that.settings = {
 			'key': '',
 			'position': 'topcenter',
-			'rect': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
 			'mask': true, // 값이 있으면 해당 mask element 를 실행한다.
 			'callback': {
 				'show': null,
@@ -447,6 +590,7 @@ RGBa: Internet Explorer 9
 		that.elements = {};
 
 		// private init
+		module.init();
 		(function() { 
 			var fragment = document.createDocumentFragment();
 			var key = {};
@@ -510,6 +654,9 @@ RGBa: Internet Explorer 9
 			var key, tmp;
 			for(key in settings) {
 				switch(key) {
+					case 'type':
+					case 'key':
+						break;
 					case 'title':
 						that.elements.title.textContent = settings[key] || '';
 						break;
@@ -533,7 +680,7 @@ RGBa: Internet Explorer 9
 		},
 		position: function() {
 			var that = this;
-			module.setLeftTop(that.settings.position, that.elements.container);
+			module.setPosition(that.settings.position, that.elements.container);
 			return that;
 		},
 		show: function() {
@@ -560,7 +707,7 @@ RGBa: Internet Explorer 9
 		hide: function() {
 			var that = this;
 			that.elements.container.style.display = 'none';
-			if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 				that.elements.mask.style.display = 'none';
 			}
 
@@ -604,7 +751,6 @@ RGBa: Internet Explorer 9
 		that.settings = {
 			'key': '',
 			'position': 'topcenter',
-			'rect': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
 			'mask': true, // 값이 있으면 해당 mask element 를 실행한다.
 			'callback': {
 				'show': null,
@@ -615,8 +761,9 @@ RGBa: Internet Explorer 9
 		};
 		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {};
-
+		
 		// private init
+		module.init();
 		(function() { 
 			var fragment = document.createDocumentFragment();
 			var key = {};
@@ -666,6 +813,9 @@ RGBa: Internet Explorer 9
 			var key, tmp;
 			for(key in settings) {
 				switch(key) {
+					case 'type':
+					case 'key':
+						break;
 					case 'title':
 						that.elements.title.textContent = settings[key] || '';
 						break;
@@ -689,7 +839,7 @@ RGBa: Internet Explorer 9
 		},
 		position: function() {
 			var that = this;
-			module.setLeftTop(that.settings.position, that.elements.container);
+			module.setPosition(that.settings.position, that.elements.container);
 			return that;
 		},
 		show: function() {
@@ -716,7 +866,7 @@ RGBa: Internet Explorer 9
 		hide: function() {
 			var that = this;
 			that.elements.container.style.display = 'none';
-			if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 				that.elements.mask.style.display = 'none';
 			}
 
@@ -760,7 +910,6 @@ RGBa: Internet Explorer 9
 		that.settings = {
 			'key': '',
 			'position': 'topright',
-			'rect': null, // 기본은 document(body) 이나 값이 있을 경우 해당 타겟기준으로 위치가 설정됨
 			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
 			'callback': {
 				'show': null,
@@ -774,6 +923,7 @@ RGBa: Internet Explorer 9
 		that.time;
 
 		// private init
+		module.init();
 		(function() { 
 			var fragment = document.createDocumentFragment();
 			var key = {};
@@ -820,6 +970,9 @@ RGBa: Internet Explorer 9
 			var key, tmp;
 			for(key in settings) {
 				switch(key) {
+					case 'type':
+					case 'key':
+						break;
 					case 'time':
 						that.settings.time = !isNaN(parseFloat(settings[key])) && settings[key] || 0;
 						break;
@@ -843,7 +996,7 @@ RGBa: Internet Explorer 9
 		},
 		position: function() {
 			var that = this;
-			module.setLeftTop(that.settings.position, that.elements.container);
+			module.setPosition(that.settings.position, that.elements.container);
 			return that;
 		},
 		show: function() {
@@ -874,7 +1027,7 @@ RGBa: Internet Explorer 9
 			var that = this;
 
 			that.elements.container.style.display = 'none';
-			if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 				that.elements.mask.style.display = 'none';
 			}
 
@@ -913,24 +1066,35 @@ RGBa: Internet Explorer 9
 			var instance;
 			if(settings['key'] && module.instance[settings['key']]) {
 				instance = module.instance[settings['key']];
-				instance.settings = module.setSettings(instance.settings, settings);
-			}else {
-				settings['key'] = settings['key'] || getKey();
+				instance.change(settings);
+			}else {				
 				switch(settings['type']) {
 					case 'layer':
-						instance = new ModalLayer(settings);
+						if(settings['key']) {
+							instance = new ModalLayer(settings);
+						}
+						break;
+					case 'rect':
+						if(settings['key']) {
+							instance = new ModalRect(settings);
+						}
 						break;
 					case 'confirm':
+						//settings['key'] = settings['key'] || getKey();
 						instance = new ModalConfirm(settings);
 						break;
 					case 'alert':
+						//settings['key'] = settings['key'] || getKey();
 						instance = new ModalAlert(settings);
 						break;
 					case 'push':
+						//settings['key'] = settings['key'] || getKey();
 						instance = new ModalPush(settings);
 						break;
 				}
-				module.instance[settings['key']] = instance;
+				if(settings['key']) {
+					module.instance[settings['key']] = instance;
+				}
 			}
 			return instance;
 		},
