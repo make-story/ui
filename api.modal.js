@@ -1,7 +1,7 @@
 /*
 Modal
 
-@date
+@date (버전관리)
 2016.03
 
 @copyright
@@ -144,6 +144,7 @@ RGBa: Internet Explorer 9
 				for(key in options) {
 					if(!options.hasOwnProperty(key)) {
 						continue;
+					//}else if(options[key].constructor === Object) {
 					}else if(options[key] && typeof options[key] === 'object' && !options[key].nodeType) {
 						settings[key] = this.setSettings(settings[key], options[key]);
 					}else {
@@ -328,7 +329,8 @@ RGBa: Internet Explorer 9
 		(function() { 
 			// contents
 			that.elements.contents = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $('#' + that.settings.target).get(0));
-			that.elements.contents.style.position = 'relative';
+			//that.elements.contents.style.position = 'relative';
+			that.elements.contents.style.position = 'absolute';
 
 			// mask
 			if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
@@ -342,7 +344,7 @@ RGBa: Internet Explorer 9
 
 			// container
 			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; display: none;';
+			that.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none;';
 			that.elements.container.appendChild(that.elements.contents);
 			module.elements.layer.appendChild(that.elements.container);
 			if(that.elements.contents.style.display === 'none') {
@@ -379,9 +381,9 @@ RGBa: Internet Explorer 9
 				that.elements.mask.style.zIndex = ++module.zindex;
 				that.elements.mask.style.display = 'block';
 			}
-			that.position();
 			that.elements.container.style.zIndex = ++module.zindex;
 			that.elements.container.style.display = 'block';
+			that.position(); // parent element 가 페인팅되어있지 않으면, child element 의 width, height 값을 구할 수 없다. (that.elements.contents 의 정확한 width, height 값을 알려면, 이를 감싸고 있는 that.elements.container 가 diplay block 상태에 있어야 한다.)
 
 			// focus (웹접근성)
 			module.active = document.activeElement;
@@ -472,7 +474,7 @@ RGBa: Internet Explorer 9
 
 			// container
 			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: absolute; left: 0; top: 0; display: none;';
+			that.elements.container.style.cssText = 'position: absolute; display: none; left: 0; top: 0; outline: none;';
 			that.elements.container.appendChild(that.elements.contents);
 			document.body.appendChild(that.elements.container);
 			if(that.elements.contents.style.display === 'none') {
@@ -499,9 +501,9 @@ RGBa: Internet Explorer 9
 				that.elements.mask.style.zIndex = ++module.zindex;
 				that.elements.mask.style.display = 'block';
 			}
-			that.position();
 			that.elements.container.style.zIndex = ++module.zindex;
 			that.elements.container.style.display = 'block';
+			that.position();
 
 			// focus (웹접근성)
 			module.active = document.activeElement;
@@ -536,6 +538,15 @@ RGBa: Internet Explorer 9
 			// instance
 			if(that.settings['key'] && module.instance[that.settings['key']]) {
 				delete module.instance[that.settings['key']];
+			}
+		},
+		toggle: function() {
+			var that = this;
+
+			if(that.elements.container.style.display === 'none') {
+				that.show();
+			}else {
+				that.hide();
 			}
 		}
 	};
@@ -613,7 +624,7 @@ RGBa: Internet Explorer 9
 
 			// container
 			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
+			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
 			that.elements.container.innerHTML = '\
 				<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.title + '</div>\
 				<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
@@ -690,9 +701,9 @@ RGBa: Internet Explorer 9
 				that.elements.mask.style.zIndex = ++module.zindex;
 				that.elements.mask.style.display = 'block';
 			}
-			that.position();
 			that.elements.container.style.zIndex = ++module.zindex;
 			that.elements.container.style.display = 'block';
+			that.position();
 
 			// focus (웹접근성)
 			module.active = document.activeElement;
@@ -785,7 +796,7 @@ RGBa: Internet Explorer 9
 
 			// container
 			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
+			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
 			that.elements.container.innerHTML = '\
 				<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.title + '</div>\
 				<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
@@ -849,9 +860,9 @@ RGBa: Internet Explorer 9
 				that.elements.mask.style.zIndex = ++module.zindex;
 				that.elements.mask.style.display = 'block';
 			}
-			that.position();
 			that.elements.container.style.zIndex = ++module.zindex;
 			that.elements.container.style.display = 'block';
+			that.position();
 
 			// focus (웹접근성)
 			module.active = document.activeElement;
@@ -944,7 +955,7 @@ RGBa: Internet Explorer 9
 
 			// container
 			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08);';
+			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
 			that.elements.container.innerHTML = '\
 				<div id="' + key.message + '" style="padding: 12px 12px 6px 12px; min-height: 33px; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.message + '</div>\
 				<div style="padding: 6px 12px 12px 12px; background: rgba(248, 249, 250, .97); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
@@ -1006,9 +1017,9 @@ RGBa: Internet Explorer 9
 				that.elements.mask.style.zIndex = ++module.zindex;
 				that.elements.mask.style.display = 'block';
 			}
-			that.position();
 			that.elements.container.style.zIndex = ++module.zindex;
 			that.elements.container.style.display = 'block';
+			that.position();
 
 			// auto hide
 			global.clearTimeout(that.time);
