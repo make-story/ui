@@ -130,7 +130,7 @@ all
 		isCheck: function(element) {
 			if(typeof element === 'object') {
 				element = getElement(element);
-				return element.checked;
+				return element.disabled ? this.isText(element) : (element.checked && this.isText(element) || false);
 			}else {
 				return this.isText(element);
 			}
