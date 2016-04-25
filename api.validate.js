@@ -28,9 +28,13 @@ all
 		return String(text).replace(/(^\s*)|(\s*$)/g, "");
 	};
 
-	// jQuery element
-	var getElement = function(element) {
-		return jQuery && element instanceof jQuery && element[0] || element; // jQuery 대응
+	// element
+	var getElement = function(element, index) {
+		if(jQuery && element instanceof jQuery) {
+			return index === -1 ? element.get() : element.get(index || 0); // jQuery 대응 
+		}else {
+			return element;
+		}
 	};
 
 	// element value 값
@@ -119,8 +123,8 @@ all
 		},
 		//select
 		isSelect: function(element) {
+			element = getElement(element);
 			if(typeof element === 'object') {
-				element = getElement(element);
 				return this.isText(element.options[element.selectedIndex].value);
 			}else {
 				return this.isText(element);
@@ -128,9 +132,17 @@ all
 		},
 		//check
 		isCheck: function(element) {
+			var is = false;
+			var i = 0;
+			element = getElement(element, -1);
 			if(typeof element === 'object') {
-				element = getElement(element);
-				return element.disabled ? this.isText(element) : (element.checked && this.isText(element) || false);
+				while(!is && i < element.length) {
+			    	if(element[i].checked && this.isText(element[i])) {
+			        	is = true;
+			        }
+			        i++;
+				}
+				return is;
 			}else {
 				return this.isText(element);
 			}
