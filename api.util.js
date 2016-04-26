@@ -1,7 +1,7 @@
 /*
 Utility
 
-@date
+@date (버전관리)
 2015.07.07
 
 @copyright
@@ -23,7 +23,7 @@ Dual licensed under the MIT and GPL licenses.
 		global.api = {};
 	}
 	global.api.util = {
-		// 상속 - 추후 Object.create() 로 변경하자!
+		// 상속 - Object.create() 효과
 		inherit: function(C, P) { 
 			/*
 			원칙적으로 재사용할 멤버는 this가 아니라 프로토타입에 추가되어야 한다.
@@ -132,32 +132,35 @@ Dual licensed under the MIT and GPL licenses.
 			return result; 
 		},
 		/*
-		 * 캡쳐단계(capture phase, 기본 이벤트 중지) : 이벤트가 발생 대상까지 전달되는 단계(아래로)
-		 * - 설명1 : 이벤트가 다른 이벤트로 전파되기 전에 폼 전송과 같은 이벤트를 취소 (기본 동작을 중지한다)
-		 * - 설명2 : 처리를 완료하기 전에 이벤트(기본 또는 다른이벤트)를 취고하고 싶을 때
-		 *
-		 * 대상단계(target phase) : 이벤트가 발생 대상에 도달한 단계
-		 * 
-		 * 버블링단계(bubbling phase, 사용자 이벤트 중지) : 발생 대상에서 document까지 전달되는 단계(위로)
-		 * - 설명1 : 내부에 다른 요소를 포함한 어떤 요소(<div><div></div></div>)가 있습니다. 두요소 모두 클릭 이벤트를 캡쳐합니다. 안쪽요소에서 발생한 클릭 이벤트가 바깥쪽 요소로 전파되는 것을 막음
-		 * - 설명2 : 이벤트를 취소하고 싶지는 않지만 전파하는 것을 막을 때
-		 *
-		 * stopImmediatePropagation: 현재 이벤트가 상위뿐 아니라 현재 레벨에 걸린 다른 이벤트도 동작하지 않도록 중단한다.
-		 *
-		 * 
-		 사용자가 발생한(설정한) 현재 element 이벤트의 상위 element 이벤트를 중지시키는냐, 
-		 브라우저 기본 이벤트를 중지하느냐의 차이
-		 	<a href="http://test.com">
-		 		<div id="div">
+		-
+		IE는 캡쳐를 지원하지 않기 때문에 addEventListener 는 버블링으로 설정하여 사용하는 것이 좋음 
+		
+		-
+		캡쳐 : 이벤트가 발생 대상까지 전달되는 단계(아래로)
+		 > 설명1 : 이벤트가 다른 이벤트로 전파되기 전에 폼 전송과 같은 이벤트를 취소 (기본 동작을 중지한다)
+		 > 설명2 : 처리를 완료하기 전에 이벤트(기본 또는 다른이벤트)를 취고하고 싶을 때
+		
+		버블링 : 발생 대상에서 document까지 전달되는 단계(위로)
+		 > 설명1 : 내부에 다른 요소를 포함한 어떤 요소(<div><div></div></div>)가 있습니다. 두요소 모두 클릭 이벤트를 캡쳐합니다. 안쪽요소에서 발생한 클릭 이벤트가 바깥쪽 요소로 전파되는 것을 막음
+		 > 설명2 : 이벤트를 취소하고 싶지는 않지만 전파하는 것을 막을 때
+		
+		-
+		stopImmediatePropagation: 현재 이벤트가 상위뿐 아니라 현재 레벨에 걸린 다른 이벤트도 동작하지 않도록 중단한다.
+		
+		-
+		사용자가 발생한(설정한) 현재 element 이벤트의 상위 element 이벤트를 중지시키는냐, 
+		브라우저 기본 이벤트를 중지하느냐의 차이
+			<a href="http://test.com">
+				<div id="div">
 					<img src="" id="img" />
-		 		</div>
-		 	</a>
-		 	document.getElementById('div').onclick = function() { alert('div'); };
-		 	document.getElementById('img').onclick = function() { alert('img'); };
+				</div>
+			</a>
+			document.getElementById('div').onclick = function() { alert('div'); };
+			document.getElementById('img').onclick = function() { alert('img'); };
 
-		 	- 일반적인 이벤트(img를 클릭했을 경우): img -> div -> a 순서로 이벤트 발생
-		 	- stopPropagation 사용: img 를 클릭했을 경우 div 이벤트를 막을 수 있다. 그러나 a 이벤트는 중지되지 않으며 href에 따른 페이지 이동이 발생한다.
-		 	- preventDefault 사용: a 기본 이벤트인 href 의 이동을 중지 시킨다.
+		 	> 일반적인 이벤트(img를 클릭했을 경우): img -> div -> a 순서로 이벤트 발생
+		 	> stopPropagation 사용: img 를 클릭했을 경우 div 이벤트를 막을 수 있다. 그러나 a 이벤트는 중지되지 않으며 href에 따른 페이지 이동이 발생한다.
+		 	> preventDefault 사용: a 기본 이벤트인 href 의 이동을 중지 시킨다.
 		 */
 		stopCapture: function(event) {
 			var event = event || window.event;
@@ -232,6 +235,25 @@ Dual licensed under the MIT and GPL licenses.
 				return text;
 			}else {
 				return String(text).replace(/(^\s*)|(\s*$)/g, "");
+			}
+		},
+		// html 제거
+		stripTags: function(html) {
+			/*
+			// HTML 태그 제거 (사용법은 php 의 strip_tags 와 동일)
+			var strip_tags = function(input, allowed) {
+				allowed = (((allowed || "") + "").toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join(''); // making sure the allowed arg is a string containing only tags in lowercase (<a><b><c>)
+				var tags = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi;
+				var commentsAndPhpTags = /<!--[\s\S]*?-->|<\?(?:php)?[\s\S]*?\?>/gi;
+				return input.replace(commentsAndPhpTags, '').replace(tags, function ($0, $1) {
+					return allowed.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : '';
+				});
+			};
+			*/
+			if(html && typeof html === 'string') {
+				return html.replace(/(<([^>]+)>)/ig,"");
+			}else {
+				return html;
 			}
 		},
 		// 키보드 이벤트 정보 
@@ -371,7 +393,7 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// value 앞에 count 수만큼 add를 채운다
 		// 사용예: '0'. '3', 2 => '03' 
-		setLeftFormatString: function(add, value, count) {
+		leftFormatString: function(add, value, count) {
 			var value = String(value);
 			var result = '';
 			var i;
@@ -381,7 +403,7 @@ Dual licensed under the MIT and GPL licenses.
 			return result + value;
 		},
 		// fragment 에 html 삽입 후 반환
-		setFragmentHtml: function(html) {
+		fragmentHtml: function(html) {
 			// Source: https://github.com/Alhadis/Snippets/blob/master/js/polyfills/IE8-child-elements.js
 			/*if(!("firstElementChild" in document.documentElement)){
 				Object.defineProperty(Element.prototype, "firstElementChild", {
@@ -416,10 +438,11 @@ Dual licensed under the MIT and GPL licenses.
 			return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function(time) { return window.clearTimeout(time); };
 		})(),
 
-		// ---------- ---------- ---------- 숫자 ---------- ---------- ---------- 
+		// ---------- ---------- ---------- ---------- ---------- ---------- 
+		// 숫자
 
 		// 단위 분리
-		getNumberUnit: function(value) { 
+		numberUnit: function(value) { 
 			// [1]: 숫자값
 			// [2]: 단위
 			return /^([0-9]+)(\D+)$/i.exec(value);
@@ -429,11 +452,11 @@ Dual licensed under the MIT and GPL licenses.
 			return !isNaN(parseFloat(value)) && isFinite(value);
 		},
 		// 숫자만 추출
-		getNumber: function(value) { 
+		numberReturn: function(value) { 
 			return Number(String(value).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')); // 음의 실수 포함
 		},
 		// 금액
-		setNumberFormat: function(value) { 
+		numberFormat: function(value) { 
 			var value = String(value);
 			var reg = /(^[+-]?\d+)(\d{3})/;
 			while(reg.test(value)) {
@@ -442,7 +465,7 @@ Dual licensed under the MIT and GPL licenses.
 			return value;
 		},
 		// 소수점 단위 금액
-		setFloatFormat: function(value) {
+		floatFormat: function(value) {
 			var value = String(value);
 			var orgnum = value;
 			var arrayOfStrings = [];
@@ -473,7 +496,7 @@ Dual licensed under the MIT and GPL licenses.
 			}
 		},
 		// 콤마 제거
-		setRemoveComma: function(value) {
+		removeComma: function(value) {
 			var value = String(value);
 			var result = '';
 			var substr = '';
@@ -487,7 +510,7 @@ Dual licensed under the MIT and GPL licenses.
 			return result;
 		},
 		// 지정자리 반올림 (값, 자릿수)
-		setRound: function(n, pos) {
+		round: function(n, pos) {
 			var digits = Math.pow(10, pos);
 			var sign = 1;
 			if(n < 0) {
@@ -500,19 +523,20 @@ Dual licensed under the MIT and GPL licenses.
 			return num.toFixed(pos); // toFixed: string 타입 반환
 		},
 		// 지정자리 버림 (값, 자릿수) - 양수만 가능
-		setFloor: function(n, pos) {
+		floor: function(n, pos) {
 			var digits = Math.pow(10, pos);
 			var num = Math.floor(n * digits) / digits;
 			return num.toFixed(pos); // toFixed: string 타입 반환
 		},
 		// 지정자리 올림 (값, 자릿수)
-		setCeiling: function(n, pos) {
+		ceiling: function(n, pos) {
 			var digits = Math.pow(10, pos);
 			var num = Math.ceil(n * digits) / digits;
 			return num.toFixed(pos); // toFixed: string 타입 반환
 		},
 
-		// ---------- ---------- ---------- 날짜 ---------- ---------- ----------
+		// ---------- ---------- ---------- ---------- ---------- ----------
+		// 날짜 
 
 		// 몇일째 되는날
 		/*

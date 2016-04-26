@@ -30,7 +30,7 @@ all
 
 	// element
 	var getElement = function(element, index) {
-		if(jQuery && element instanceof jQuery) {
+		if((jQuery && element instanceof jQuery) || (api && api.dom && element instanceof api.dom)) {
 			return index === -1 ? element.get() : element.get(index || 0); // jQuery 대응 
 		}else {
 			return element;
