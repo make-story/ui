@@ -121,7 +121,7 @@ all
 			value = value.substr(value.lastIndexOf(".") + 1).toLowerCase(); //첨부된 확장자
 			return this.isText(value) && extension.indexOf(value) !== -1;
 		},
-		//select
+		// select
 		isSelect: function(element) {
 			element = getElement(element);
 			if(typeof element === 'object') {
@@ -130,7 +130,7 @@ all
 				return this.isText(element);
 			}
 		},
-		//check
+		// check
 		isCheck: function(element) {
 			var is = false;
 			var i = 0;

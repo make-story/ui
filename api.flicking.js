@@ -1,7 +1,7 @@
 /*
 Flicking
 
-@date
+@date (버전관리)
 2016.03
 
 @copyright
@@ -88,7 +88,7 @@ transitionend: Chrome 1.0, Firefox 4.0 (2.0), Internet Explorer 10, Opera 10.5, 
 				for(key in options) {
 					if(!options.hasOwnProperty(key)) {
 						continue;
-					}else if(options[key] && typeof options[key] === 'object' && !options[key].nodeType) {
+					}else if(options[key] && options[key].constructor === Object && !options[key].nodeType) {
 						settings[key] = this.setSettings(settings[key], options[key]);
 					}else {
 						settings[key] = options[key];
@@ -101,12 +101,12 @@ transitionend: Chrome 1.0, Firefox 4.0 (2.0), Internet Explorer 10, Opera 10.5, 
 				var parameter = parameter || {};
 				var duration = parameter['duration'];
 				var translateX = parameter['translateX'];
-				var style = parameter['element'] && parameter['element'].style;
+				var target = parameter['target'];
 
 				try {
-					style.webkitTransitionDuration = style.MozTransitionDuration = style.msTransitionDuration = style.OTransitionDuration = style.transitionDuration = duration + 's';
-					style.webkitTransform = 'translate(' + translateX + 'px, 0)' + 'translateZ(0)';
-					style.msTransform = style.MozTransform = style.OTransform = 'translateX(' + translateX + 'px)';
+					target.style.webkitTransitionDuration = target.style.MozTransitionDuration = target.style.msTransitionDuration = target.style.OTransitionDuration = target.style.transitionDuration = duration + 's';
+					target.style.webkitTransform = 'translate(' + translateX + 'px, 0)' + 'translateZ(0)';
+					target.style.msTransform = target.style.MozTransform = target.style.OTransform = 'translateX(' + translateX + 'px)';
 				}catch(e) {
 					console.log(e);
 					return false;	
@@ -126,7 +126,7 @@ transitionend: Chrome 1.0, Firefox 4.0 (2.0), Internet Explorer 10, Opera 10.5, 
 			'key': '',
 			'total': 0, // 총 슬라이드 수
 			'width': 0, // 슬라이드 width 값
-			'element': null, // 슬라이드를 감싸고 있는 wrap
+			'target': null, // 슬라이드를 감싸고 있는 wrap
 			'speed': 300, // 슬라이드 속도
 			'touch': true, // 클릭 또는 터치 슬라이드 작동여부
 			'auto': 0, // 자동 슬라이드 작동여부 (0 이상의 값이 입력되면 작동합니다.)
@@ -167,7 +167,7 @@ transitionend: Chrome 1.0, Firefox 4.0 (2.0), Internet Explorer 10, Opera 10.5, 
 			that.off();
 			if(that.settings.touch === true) {
 				// down 이벤트
-				$(that['settings']['element']).on(env['event']['down'] + '.EVENT_MOUSEDOWN_flicking', function(e) {
+				$(that['settings']['target']).on(env['event']['down'] + '.EVENT_MOUSEDOWN_flicking', function(e) {
 					//console.log('[정보] flicking MOUSEDOWN');
 					var event = e || window.event;
 					//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
@@ -246,7 +246,7 @@ transitionend: Chrome 1.0, Firefox 4.0 (2.0), Internet Explorer 10, Opera 10.5, 
 							}
 							// slide 이동
 							translate = (left - that['start']['left']) + that['translate'];
-							module.setTranslate({'duration': 0, 'translateX': translate, 'element': that['settings']['element']});
+							module.setTranslate({'duration': 0, 'translateX': translate, 'target': that['settings']['target']});
 						}
 					});
 					
@@ -321,10 +321,10 @@ transitionend: Chrome 1.0, Firefox 4.0 (2.0), Internet Explorer 10, Opera 10.5, 
 
 				// 트랜지션 (하위 자식 노드의 transition 전파에 따라 실행될 수 있다. 자식의 transition 전파를 막으려면 해당 자식 이벤트에 stopPropagation 실행)
 				if(typeof that['settings']['transitionend'] === 'function') {
-					$(that['settings']['element']).on(env['event']['transitionend'] + '.EVENT_TRANSITION_flicking', function(e) {
+					$(that['settings']['target']).on(env['event']['transitionend'] + '.EVENT_TRANSITION_flicking', function(e) {
 						var event = e || window.event;
-						if(that['settings']['element'].isEqualNode(event.target)) {
-							that['settings']['transitionend'].call(that['settings']['element'], that['index']);
+						if(that['settings']['target'].isEqualNode(event.target)) {
+							that['settings']['transitionend'].call(that['settings']['target'], that['index']);
 						}
 					});
 				}
@@ -336,8 +336,8 @@ transitionend: Chrome 1.0, Firefox 4.0 (2.0), Internet Explorer 10, Opera 10.5, 
 			var that = this;
 			$(window).off('.EVENT_MOUSEMOVE_flicking');
 			$(window).off('.EVENT_MOUSEUP_flicking');
-			$(that['settings']['element']).off('.EVENT_MOUSEDOWN_flicking');
-			$(that['settings']['element']).off('.EVENT_TRANSITION_flicking');
+			$(that['settings']['target']).off('.EVENT_MOUSEDOWN_flicking');
+			$(that['settings']['target']).off('.EVENT_TRANSITION_flicking');
 			return that;
 		},
 		slide: function(parameter) {
@@ -377,11 +377,11 @@ transitionend: Chrome 1.0, Firefox 4.0 (2.0), Internet Explorer 10, Opera 10.5, 
 			}
 
 			// slide 이동
-			module.setTranslate({'duration': duration, 'translateX': that['translate'], 'element': that['settings']['element']});
+			module.setTranslate({'duration': duration, 'translateX': that['translate'], 'target': that['settings']['target']});
 
 			// callback
 			if(typeof that['settings']['callback'] === 'function') {
-				that['settings']['callback'].call(that['settings']['element'], that['index']);
+				that['settings']['callback'].call(that['settings']['target'], that['index']);
 			}
 
 			// auto
@@ -424,7 +424,7 @@ transitionend: Chrome 1.0, Firefox 4.0 (2.0), Internet Explorer 10, Opera 10.5, 
 			}
 			return instance;
 		},
-		instance: function(key) {
+		search: function(key) {
 			return module.instance[key] || false;
 		}
 	};

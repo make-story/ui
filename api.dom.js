@@ -4,7 +4,7 @@ BOM, DOM
 브라우저 정보, 해상도, 사용자 정보 등 확인
 브라우저 기능지원 여부: http://modernizr.com/download/
 
-@date
+@date (버전관리)
 2015.04.09
 
 @copyright
@@ -123,7 +123,7 @@ http://www.quirksmode.org/js/detect.html
 			"down": "mousedown",
 			"move": "mousemove",
 			"up": "mouseup",
-			"click": "click",
+			"click": window.DocumentTouch && document instanceof DocumentTouch ? 'tap' : 'click',
 			// 트랜지션, 애니메이션
 			"transitionend": "transitionend",
 			"animationstart": "animationstart",
@@ -240,7 +240,6 @@ http://www.quirksmode.org/js/detect.html
 		environment['event']['down'] = 'touchstart';
 		environment['event']['move'] = 'touchmove';
 		environment['event']['up'] = 'touchend';
-		environment['event']['click'] = (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click';
 	}
 
 	// public return
@@ -429,6 +428,7 @@ http://www.quirksmode.org/js/detect.html
 
 		var match1, match2, elements, i, max;
 		this.elements = [];
+		this.length = 0;
 		if(typeof selector === 'object') { 
 			/*
 			nodeType
@@ -445,10 +445,10 @@ http://www.quirksmode.org/js/detect.html
 			11 : DocumentFragment 노드를 의미
 			12 : Notation 노드를 의미
 			*/
-			if(selector.nodeType || selector === window) { // DOMElement, window (querySelectorAll 반환값 nodeType 은 undefined)
-				this.elements[0] = selector;
-			}else if('elements' in selector) {
+			if('elements' in selector) {
 				return selector;
+			}else if(selector.nodeType || selector === window) { // DOMElement, window (querySelectorAll 반환값 nodeType 은 undefined)
+				this.elements[0] = selector;
 			}else if(Object.prototype.toString.call(selector) === '[object Array]'/*Array.isArray(selector)*/) { // array list (api.dom 으로 리턴된 것)
 				this.elements = selector;
 			}else if(Object.keys(selector).length > 0) { // object list (querySelectorAll 으로 리턴된 것)
@@ -518,6 +518,12 @@ http://www.quirksmode.org/js/detect.html
 				}
 			}
 		}
+
+		// this.elements -> this 연관배열 
+		for(i=0, max=this.elements.length; i<max; i++) {
+			this[i] = this.elements[i];
+		}
+		this.length = this.elements.length;
 
 		return this;
 	};
@@ -1547,8 +1553,8 @@ http://www.quirksmode.org/js/detect.html
 			var parameter = parameter || {};
 			var key, property;
 			var i, max = (this.elements && this.elements.length) || 0;
-			var viewport;
-			var getViewport = function() {
+			var scroll;
+			var getScroll = function() {
 				if('pageXOffset' in window && 'pageYOffset' in window) {
 					return {'left': window.pageXOffset, 'top': window.pageYOffset};
 				}else if(document.body && ('scrollLeft' in document.body && 'scrollTop' in document.body)) {
@@ -1561,11 +1567,11 @@ http://www.quirksmode.org/js/detect.html
 			if(max) {
 				if(this.elements[0] === window || this.elements[0].nodeType === 9) { 
 					// window, document
-					viewport = getViewport();
+					scroll = getScroll();
 					if('left' in parameter || 'top' in parameter) {
-						window.scrollTo((typeof parameter.left !== 'undefined' ? parameter.left : (viewport.left || 0)), (typeof parameter.top !== 'undefined' ? parameter.top : (viewport.top || 0)));
+						window.scrollTo((typeof parameter.left !== 'undefined' ? parameter.left : (scroll.left || 0)), (typeof parameter.top !== 'undefined' ? parameter.top : (scroll.top || 0)));
 					}else {
-						return {'left': viewport.left, 'top': viewport.top};
+						return {'left': scroll.left, 'top': scroll.top};
 					}
 				}else { 
 					// element

@@ -146,8 +146,7 @@ RGBa: Internet Explorer 9
 				for(key in options) {
 					if(!options.hasOwnProperty(key)) {
 						continue;
-					//}else if(options[key].constructor === Object) {
-					}else if(options[key] && typeof options[key] === 'object' && !options[key].nodeType) {
+					}else if(options[key] && options[key].constructor === Object && !options[key].nodeType) {
 						settings[key] = this.setSettings(settings[key], options[key]);
 					}else {
 						settings[key] = options[key];
@@ -319,7 +318,8 @@ RGBa: Internet Explorer 9
 			'callback': {
 				'show': null,
 				'hide': null,
-				'remove': null
+				'remove': null,
+				'error': null
 			},
 			'target': '', // #id 또는 element
 			'close': '' // .class
@@ -331,35 +331,41 @@ RGBa: Internet Explorer 9
 		// private init
 		module.init();
 		(function() { 
-			// contents
-			that.elements.contents = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $('#' + that.settings.target).get(0));
-			that.elements.contents.style.position = 'absolute';
-			that.elements.contents.style.transition = 'all .5s';
+			try {
+				// target, contents
+				that.settings.target = (typeof that.settings.target === 'string' && /^[a-z]+/i.test(that.settings.target) ? '#' + that.settings.target : that.settings.target);
+				that.elements.contents = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $(that.settings.target).get(0));
+				that.elements.contents.style.position = 'absolute';
 
-			// mask
-			if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-				that.elements.mask = that.settings.mask;
-				that.elements.mask.display = 'none';
-			}else {
-				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
-				module.elements.layer.appendChild(that.elements.mask);
-			}
+				// mask
+				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+					that.elements.mask = that.settings.mask;
+					that.elements.mask.display = 'none';
+				}else {
+					that.elements.mask = document.createElement('div');
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					module.elements.layer.appendChild(that.elements.mask);
+				}
 
-			// container
-			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none;';
-			that.elements.container.appendChild(that.elements.contents);
-			module.elements.layer.appendChild(that.elements.container);
-			if(that.elements.contents.style.display === 'none') {
-				that.elements.contents.style.display = 'block';
-			}
-			
-			// 팝업내부 close 버튼 클릭시 닫기
-			if(that.settings.close) {
-				$(that.elements.contents).find('.' + that.settings.close).on(env['event']['click'], function(event) {
-					that.hide();
-				});
+				// container
+				that.elements.container = document.createElement('div');
+				that.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none;';
+				that.elements.container.appendChild(that.elements.contents);
+				module.elements.layer.appendChild(that.elements.container);
+				if(that.elements.contents.style.display === 'none') {
+					that.elements.contents.style.display = 'block';
+				}
+				
+				// 팝업내부 close 버튼 클릭시 닫기
+				if(that.settings.close) {
+					$(that.elements.contents).find('.' + that.settings.close).on(env['event']['click'], function(event) {
+						that.hide();
+					});
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
 		})();
 	};
@@ -370,105 +376,139 @@ RGBa: Internet Explorer 9
 		},
 		position: function() {
 			var that = this;
-			module.setPosition(that.settings.position, that.elements.contents);
+
+			try {
+				module.setPosition(that.settings.position, that.elements.contents);
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
+
 			return that;
 		},
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			// 스크롤바 사이즈만큼 여백
-			if(document.documentElement.clientHeight < document.body.offsetHeight) {
-				$('html').css({'margin-right': env['browser']['scrollbar'] + 'px', 'overflow': 'hidden'});
-			}
+			try {
+				// 스크롤바 사이즈만큼 여백
+				if(document.documentElement.clientHeight < document.body.offsetHeight) {
+					$('html').css({'margin-right': env['browser']['scrollbar'] + 'px', 'overflow': 'hidden'});
+				}
 
-			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-				that.elements.mask.style.zIndex = ++module.zindex;
-				that.elements.mask.style.display = 'block';
-			}
-			that.elements.container.style.zIndex = ++module.zindex;
-			that.elements.container.style.display = 'block';
-			that.position(); // parent element 가 페인팅되어있지 않으면, child element 의 width, height 값을 구할 수 없다. (that.elements.contents 의 정확한 width, height 값을 알려면, 이를 감싸고 있는 that.elements.container 가 diplay block 상태에 있어야 한다.)
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.zIndex = ++module.zindex;
+					that.elements.mask.style.display = 'block';
+				}
+				that.elements.container.style.zIndex = ++module.zindex;
+				that.elements.container.style.display = 'block';
+				that.position(); // parent element 가 페인팅되어있지 않으면, child element 의 width, height 값을 구할 수 없다. (that.elements.contents 의 정확한 width, height 값을 알려면, 이를 감싸고 있는 that.elements.container 가 diplay block 상태에 있어야 한다.)
+				that.elements.contents.style.transition = 'all .3s';
 
-			// focus (웹접근성)
-			module.active = document.activeElement;
-			that.elements.container.setAttribute('tabindex', -1);
-			that.elements.container.focus();
+				// focus (웹접근성)
+				module.active = document.activeElement;
+				that.elements.container.setAttribute('tabindex', -1);
+				that.elements.container.focus();
 
-			// callback
-			if(typeof that.settings.callback.show === 'function') {
-				that.settings.callback.show.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
-			}
+				// callback
+				if(typeof that.settings.callback.show === 'function') {
+					that.settings.callback.show.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
 
-			// resize 이벤트 실행 (이벤트 키는 that.settings.key 를 활용한다.)
-			$(window).on(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key, function(e) {
-				window.clearTimeout(that.time);
-				that.time = window.setTimeout(function(){ 
-					that.position();
-				}, 200);
-			});
+				// resize 이벤트 실행 (이벤트 키는 that.settings.key 를 활용한다.)
+				$(window).on(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key, function(e) {
+					window.clearTimeout(that.time);
+					that.time = window.setTimeout(function(){ 
+						that.position();
+					}, 200);
+				});
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
 		},
 		hide: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			$('html').css({'margin-right': '', 'overflow': ''});
-			that.elements.container.style.display = 'none';
-			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-				that.elements.mask.style.display = 'none';
-			}
+			try {
+				$('html').css({'margin-right': '', 'overflow': ''});
+				that.elements.container.style.display = 'none';
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.display = 'none';
+				}
 
-			// focus (웹접근성)
-			if(module.active) {
-				module.active.focus();
-			}
+				// focus (웹접근성)
+				if(module.active) {
+					module.active.focus();
+				}
 
-			// callback
-			if(typeof that.settings.callback.hide === 'function') {
-				that.settings.callback.hide.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
-			}
+				// callback
+				if(typeof that.settings.callback.hide === 'function') {
+					that.settings.callback.hide.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
 
-			// resize 이벤트 종료
-			$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
+				// resize 이벤트 종료
+				$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
 		},
 		remove: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			// element
-			if(that.elements.mask) {
-				that.elements.mask.parentNode.removeChild(that.elements.mask);
-			}
-			if(that.elements.container) {
-				that.elements.container.parentNode.removeChild(that.elements.container);
-			}
-			that.elements = {};
+			try {
+				// element
+				if(that.elements.mask) {
+					that.elements.mask.parentNode.removeChild(that.elements.mask);
+				}
+				if(that.elements.container) {
+					that.elements.container.parentNode.removeChild(that.elements.container);
+				}
+				that.elements = {};
 
-			// instance
-			if(that.settings['key'] && module.instance[that.settings['key']]) {
-				delete module.instance[that.settings['key']];
-			}
+				// instance
+				if(that.settings['key'] && module.instance[that.settings['key']]) {
+					delete module.instance[that.settings['key']];
+				}
 
-			// callback
-			if(typeof that.settings.callback.remove === 'function') {
-				that.settings.callback.remove.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
-			}
+				// callback
+				if(typeof that.settings.callback.remove === 'function') {
+					that.settings.callback.remove.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
 
-			// resize 이벤트 종료
-			$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
+				// resize 이벤트 종료
+				$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
 		},
 		find: function(selector) {
 			var that = this;
-			return $(that.elements.container).find(selector);
+
+			try {
+				return $(that.elements.container).find(selector);
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
 		}
 	};
 
@@ -483,10 +523,11 @@ RGBa: Internet Explorer 9
 			'callback': {
 				'show': null,
 				'hide': null,
-				'remove': null
+				'remove': null,
+				'error': null
 			},
 			'target': '', // #id 또는 element
-			'rect': ''
+			'rect': '' // #id 또는 element
 		};
 		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {};
@@ -495,31 +536,39 @@ RGBa: Internet Explorer 9
 		// private init
 		module.init();
 		(function() { 
-			// contents
-			that.elements.contents = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $('#' + that.settings.target).get(0));
-			//that.elements.contents.style.position = 'relative';
+			try {
+				// target, contents
+				that.settings.target = (typeof that.settings.target === 'string' && /^[a-z]+/i.test(that.settings.target) ? '#' + that.settings.target : that.settings.target);
+				that.elements.contents = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $(that.settings.target).get(0));
+				//that.elements.contents.style.position = 'relative';
 
-			// mask
-			if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-				that.elements.mask = that.settings.mask;
-				that.elements.mask.display = 'none';
-			}else {
-				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
-				document.body.appendChild(that.elements.mask);
+				// mask
+				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+					that.elements.mask = that.settings.mask;
+					that.elements.mask.display = 'none';
+				}else {
+					that.elements.mask = document.createElement('div');
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					document.body.appendChild(that.elements.mask);
+				}
+
+				// container
+				that.elements.container = document.createElement('div');
+				that.elements.container.style.cssText = 'position: absolute; display: none; left: 0; top: 0; outline: none;';
+				that.elements.container.appendChild(that.elements.contents);
+				document.body.appendChild(that.elements.container);
+				if(that.elements.contents.style.display === 'none') {
+					that.elements.contents.style.display = 'block';
+				}
+
+				// rect (target 의 출력위치 기준점이 될 element)
+				that.settings.rect = (typeof that.settings.rect === 'string' && /^[a-z]+/i.test(that.settings.rect) ? '#' + that.settings.rect : that.settings.rect);
+				that.elements.rect = (typeof that.settings.rect === 'object' && that.settings.rect.nodeType ? that.settings.rect : $(that.settings.rect).get(0));
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
-
-			// container
-			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: absolute; display: none; left: 0; top: 0; outline: none;';
-			that.elements.container.appendChild(that.elements.contents);
-			document.body.appendChild(that.elements.container);
-			if(that.elements.contents.style.display === 'none') {
-				that.elements.contents.style.display = 'block';
-			}
-
-			// rect (target 의 출력위치 기준점이 될 element)
-			that.elements.rect = (typeof that.settings.rect === 'object' && that.settings.rect.nodeType ? that.settings.rect : $('#' + that.settings.rect).get(0));
 		})();
 	};
 	ModalRect.prototype = {
@@ -528,103 +577,135 @@ RGBa: Internet Explorer 9
 		},
 		position: function() {
 			var that = this;
-			module.setRect(that.settings.position, that.elements.container, that.elements.rect);
+
+			try {
+				module.setRect(that.settings.position, that.elements.container, that.elements.rect);
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
+
 			return that;
 		},
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-				that.elements.mask.style.zIndex = ++module.zindex;
-				that.elements.mask.style.display = 'block';
-			}
-			that.elements.container.style.zIndex = ++module.zindex;
-			that.elements.container.style.display = 'block';
-			that.position();
+			try {
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.zIndex = ++module.zindex;
+					that.elements.mask.style.display = 'block';
+				}
+				that.elements.container.style.zIndex = ++module.zindex;
+				that.elements.container.style.display = 'block';
+				that.position();
 
-			// focus (웹접근성)
-			module.active = document.activeElement;
-			that.elements.container.setAttribute('tabindex', -1);
-			that.elements.container.focus();
+				// focus (웹접근성)
+				module.active = document.activeElement;
+				that.elements.container.setAttribute('tabindex', -1);
+				that.elements.container.focus();
 
-			// callback
-			if(typeof that.settings.callback.show === 'function') {
-				that.settings.callback.show.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
-			}
+				// callback
+				if(typeof that.settings.callback.show === 'function') {
+					that.settings.callback.show.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
 
-			// resize 이벤트 실행 (이벤트 키는 that.settings.key 를 활용한다.)
-			$(window).on(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key, function(e) {
-				window.clearTimeout(that.time);
-				that.time = window.setTimeout(function(){ 
-					that.position();
-				}, 200);
-			});
+				// resize 이벤트 실행 (이벤트 키는 that.settings.key 를 활용한다.)
+				$(window).on(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key, function(e) {
+					window.clearTimeout(that.time);
+					that.time = window.setTimeout(function(){ 
+						that.position();
+					}, 200);
+				});
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
 		},
 		hide: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			that.elements.container.style.display = 'none';
-			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-				that.elements.mask.style.display = 'none';
-			}
+			try {
+				that.elements.container.style.display = 'none';
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.display = 'none';
+				}
 
-			// focus (웹접근성)
-			if(module.active) {
-				module.active.focus();
-			}
+				// focus (웹접근성)
+				if(module.active) {
+					module.active.focus();
+				}
 
-			// callback
-			if(typeof that.settings.callback.hide === 'function') {
-				that.settings.callback.hide.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
-			}
+				// callback
+				if(typeof that.settings.callback.hide === 'function') {
+					that.settings.callback.hide.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
 
-			// resize 이벤트 종료
-			$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
+				// resize 이벤트 종료
+				$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
 		},
 		remove: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			// element
-			if(that.elements.mask) {
-				that.elements.mask.parentNode.removeChild(that.elements.mask);
-			}
-			if(that.elements.container) {
-				that.elements.container.parentNode.removeChild(that.elements.container);
-			}
-			that.elements = {};
+			try {
+				// element
+				if(that.elements.mask) {
+					that.elements.mask.parentNode.removeChild(that.elements.mask);
+				}
+				if(that.elements.container) {
+					that.elements.container.parentNode.removeChild(that.elements.container);
+				}
+				that.elements = {};
 
-			// instance
-			if(that.settings['key'] && module.instance[that.settings['key']]) {
-				delete module.instance[that.settings['key']];
-			}
+				// instance
+				if(that.settings['key'] && module.instance[that.settings['key']]) {
+					delete module.instance[that.settings['key']];
+				}
 
-			// callback
-			if(typeof that.settings.callback.remove === 'function') {
-				that.settings.callback.remove.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
-			}
+				// callback
+				if(typeof that.settings.callback.remove === 'function') {
+					that.settings.callback.remove.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
 
-			// resize 이벤트 종료
-			$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
+				// resize 이벤트 종료
+				$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
 		},
 		toggle: function() {
 			var that = this;
 
-			if(that.elements.container.style.display === 'none') {
-				that.show();
-			}else {
-				that.hide();
+			try {
+				if(that.elements.container.style.display === 'none') {
+					that.show();
+				}else {
+					that.hide();
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
 		}
 	};
@@ -643,6 +724,7 @@ RGBa: Internet Explorer 9
 				'show': null,
 				'hide': null,
 				'remove': null,
+				'error': null,
 				'prev': null, // 이전 콜백
 				'next': null // 다음 콜백
 			},
@@ -662,55 +744,60 @@ RGBa: Internet Explorer 9
 			var li = '';
 			var i, max;
 
-			// key
-			
+			try {
+				// key
+				
 
-			// mask
-			if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-				that.elements.mask = that.settings.mask;
-				that.elements.mask.display = 'none';
-			}else {
-				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
-				module.elements.step.appendChild(that.elements.mask);
+				// mask
+				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+					that.elements.mask = that.settings.mask;
+					that.elements.mask.display = 'none';
+				}else {
+					that.elements.mask = document.createElement('div');
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					module.elements.step.appendChild(that.elements.mask);
+				}
+
+				// container
+				that.elements.container = document.createElement('div');
+				that.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none;';
+				for(i=0, max=that.settings.step.length; i<max; i++) {
+					li += '<li></li>';
+				}
+				that.elements.container.innerHTML = '\
+					<div id="" style="">\
+						<ul>' + li + '</ul>\
+					</div>\
+					<div id="" style=""></div>\
+					<div id="" style="">\
+						<button id="" style="float: left;"></button>\
+						<button id="" style="float: right;"></button>\
+					</div>\
+				';
+				fragment.appendChild(that.elements.container);
+
+				// search element
+				//that.elements.title = that.elements.container.querySelector('#' + key.title);
+				//that.elements.message = that.elements.container.querySelector('#' + key.message);
+				//that.elements.cancel = that.elements.container.querySelector('#' + key.cancel);
+				//that.elements.ok = that.elements.container.querySelector('#' + key.ok);
+
+				// contents
+				that.elements.contents = [];
+				for(i=0, max=that.settings.step.length; i<max; i++) {
+					that.elements.contents[i] = (typeof that.settings.step[i] === 'object' && that.settings.step[i].nodeType ? that.settings.step[i] : $('#' + that.settings.step[i]).get(0));
+					that.elements.contents[i].style.display = 'none';
+					//that.elements.container.appendChild(that.elements.contents[i]);
+				}
+				module.elements.step.appendChild(fragment);
+
+				// event
+
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
-
-			// container
-			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none;';
-			for(i=0, max=that.settings.step.length; i<max; i++) {
-				li += '<li></li>';
-			}
-			that.elements.container.innerHTML = '\
-				<div id="" style="">\
-					<ul>' + li + '</ul>\
-				</div>\
-				<div id="" style=""></div>\
-				<div id="" style="">\
-					<button id="" style="float: left;"></button>\
-					<button id="" style="float: right;"></button>\
-				</div>\
-			';
-			fragment.appendChild(that.elements.container);
-
-			// search element
-			//that.elements.title = that.elements.container.querySelector('#' + key.title);
-			//that.elements.message = that.elements.container.querySelector('#' + key.message);
-			//that.elements.cancel = that.elements.container.querySelector('#' + key.cancel);
-			//that.elements.ok = that.elements.container.querySelector('#' + key.ok);
-
-			// contents
-			that.elements.contents = [];
-			for(i=0, max=that.settings.step.length; i<max; i++) {
-				that.elements.contents[i] = (typeof that.settings.step[i] === 'object' && that.settings.step[i].nodeType ? that.settings.step[i] : $('#' + that.settings.step[i]).get(0));
-				that.elements.contents[i].style.display = 'none';
-				//that.elements.container.appendChild(that.elements.contents[i]);
-			}
-			module.elements.step.appendChild(fragment);
-
-			// event
-
-		
 		})();
 	};
 	ModalStep.prototype = {
@@ -746,6 +833,7 @@ RGBa: Internet Explorer 9
 				'show': null,
 				'hide': null,
 				'remove': null,
+				'error': null,
 				'ok': function() {
 					return true;
 				},
@@ -765,165 +853,205 @@ RGBa: Internet Explorer 9
 			var fragment = document.createDocumentFragment();
 			var key = {};
 
-			// key
-			key.title = getKey();
-			key.message = getKey();
-			key.cancel = getKey();
-			key.ok = getKey();
+			try {
+				// key
+				key.title = getKey();
+				key.message = getKey();
+				key.cancel = getKey();
+				key.ok = getKey();
 
-			// mask
-			if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-				that.elements.mask = that.settings.mask;
-				that.elements.mask.display = 'none';
-			}else {
-				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
-				module.elements.confirm.appendChild(that.elements.mask);
+				// mask
+				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+					that.elements.mask = that.settings.mask;
+					that.elements.mask.display = 'none';
+				}else {
+					that.elements.mask = document.createElement('div');
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					module.elements.confirm.appendChild(that.elements.mask);
+				}
+
+				// container
+				that.elements.container = document.createElement('div');
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
+				that.elements.container.innerHTML = '\
+					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.title + '</div>\
+					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
+					<div style="padding: 10px 18px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
+						<button id="' + key.cancel + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">CANCEL</button>\
+						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">OK</button>\
+					</div>\
+				';
+				fragment.appendChild(that.elements.container);
+				module.elements.confirm.appendChild(fragment);
+
+				// search element
+				that.elements.title = that.elements.container.querySelector('#' + key.title);
+				that.elements.message = that.elements.container.querySelector('#' + key.message);
+				that.elements.cancel = that.elements.container.querySelector('#' + key.cancel);
+				that.elements.ok = that.elements.container.querySelector('#' + key.ok);
+
+				// event
+				$(that.elements.cancel).on(env['event']['click'], function() {
+					that.hide();
+					// callback
+					if(typeof that.settings.callback.cancel === 'function') {
+						return that.settings.callback.cancel.call(that);
+					}
+				});
+				$(that.elements.ok).on(env['event']['click'], function() {
+					that.hide();
+					// callback
+					if(typeof that.settings.callback.ok === 'function') {
+						return that.settings.callback.ok.call(that);
+					}
+				});
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
-
-			// container
-			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
-			that.elements.container.innerHTML = '\
-				<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.title + '</div>\
-				<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
-				<div style="padding: 10px 18px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
-					<button id="' + key.cancel + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">CANCEL</button>\
-					<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">OK</button>\
-				</div>\
-			';
-			fragment.appendChild(that.elements.container);
-			module.elements.confirm.appendChild(fragment);
-
-			// search element
-			that.elements.title = that.elements.container.querySelector('#' + key.title);
-			that.elements.message = that.elements.container.querySelector('#' + key.message);
-			that.elements.cancel = that.elements.container.querySelector('#' + key.cancel);
-			that.elements.ok = that.elements.container.querySelector('#' + key.ok);
-
-			// event
-			$(that.elements.cancel).on(env['event']['click'], function() {
-				that.hide();
-				// callback
-				if(typeof that.settings.callback.cancel === 'function') {
-					return that.settings.callback.cancel.call(that);
-				}
-			});
-			$(that.elements.ok).on(env['event']['click'], function() {
-				that.hide();
-				// callback
-				if(typeof that.settings.callback.ok === 'function') {
-					return that.settings.callback.ok.call(that);
-				}
-			});
 		})();
 	};
 	ModalConfirm.prototype = {
 		change: function(settings) {
 			var that = this;
 			var key, tmp;
-			for(key in settings) {
-				switch(key) {
-					case 'type':
-					case 'key':
-						break;
-					case 'title':
-						that.elements.title.textContent = settings[key] || '';
-						break;
-					case 'message':
-						//that.elements.message.textContent = settings[key] || '';
-						that.elements.message.innerHTML = settings[key] || '';
-						break;
-					case 'callback':
-						for(tmp in settings[key]) {
-							if(settings[key].hasOwnProperty(tmp) && typeof settings[key][tmp] === 'function') {
-								that.settings.callback[tmp] = settings[key][tmp];
+
+			try {
+				for(key in settings) {
+					switch(key) {
+						case 'type':
+						case 'key':
+							break;
+						case 'title':
+							that.elements.title.textContent = settings[key] || '';
+							break;
+						case 'message':
+							//that.elements.message.textContent = settings[key] || '';
+							that.elements.message.innerHTML = settings[key] || '';
+							break;
+						case 'callback':
+							for(tmp in settings[key]) {
+								if(settings[key].hasOwnProperty(tmp) && typeof settings[key][tmp] === 'function') {
+									that.settings.callback[tmp] = settings[key][tmp];
+								}
 							}
-						}
-						break;
-					default:
-						that.settings[key] = settings[key];
-						break;
+							break;
+						default:
+							that.settings[key] = settings[key];
+							break;
+					}
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
 				}
 			}
+
 			return that;
 		},
 		position: function() {
 			var that = this;
-			module.setPosition(that.settings.position, that.elements.container);
+
+			try {
+				module.setPosition(that.settings.position, that.elements.container);
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
+
 			return that;
 		},
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-				that.elements.mask.style.zIndex = ++module.zindex;
-				that.elements.mask.style.display = 'block';
-			}
-			that.elements.container.style.zIndex = ++module.zindex;
-			that.elements.container.style.display = 'block';
-			that.position();
+			try {
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.zIndex = ++module.zindex;
+					that.elements.mask.style.display = 'block';
+				}
+				that.elements.container.style.zIndex = ++module.zindex;
+				that.elements.container.style.display = 'block';
+				that.position();
 
-			// focus (웹접근성)
-			module.active = document.activeElement;
-			that.elements.container.setAttribute('tabindex', -1);
-			that.elements.container.focus();
+				// focus (웹접근성)
+				module.active = document.activeElement;
+				that.elements.container.setAttribute('tabindex', -1);
+				that.elements.container.focus();
 
-			// callback
-			if(typeof that.settings.callback.show === 'function') {
-				that.settings.callback.show.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
+				// callback
+				if(typeof that.settings.callback.show === 'function') {
+					that.settings.callback.show.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
 		},
 		hide: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			that.elements.container.style.display = 'none';
-			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-				that.elements.mask.style.display = 'none';
-			}
+			try {
+				that.elements.container.style.display = 'none';
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.display = 'none';
+				}
 
-			// focus (웹접근성)
-			if(module.active) {
-				module.active.focus();
-			}
+				// focus (웹접근성)
+				if(module.active) {
+					module.active.focus();
+				}
 
-			// callback
-			if(typeof that.settings.callback.hide === 'function') {
-				return that.settings.callback.hide.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
+				// callback
+				if(typeof that.settings.callback.hide === 'function') {
+					return that.settings.callback.hide.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
 		},
 		remove: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			// element
-			if(that.elements.mask) {
-				that.elements.mask.parentNode.removeChild(that.elements.mask);
-			}
-			if(that.elements.container) {
-				that.elements.container.parentNode.removeChild(that.elements.container);
-			}
-			that.elements = {};
+			try {
+				// element
+				if(that.elements.mask) {
+					that.elements.mask.parentNode.removeChild(that.elements.mask);
+				}
+				if(that.elements.container) {
+					that.elements.container.parentNode.removeChild(that.elements.container);
+				}
+				that.elements = {};
 
-			// instance
-			if(that.settings['key'] && module.instance[that.settings['key']]) {
-				delete module.instance[that.settings['key']];
-			}
+				// instance
+				if(that.settings['key'] && module.instance[that.settings['key']]) {
+					delete module.instance[that.settings['key']];
+				}
 
-			// callback
-			if(typeof that.settings.callback.remove === 'function') {
-				that.settings.callback.remove.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
+				// callback
+				if(typeof that.settings.callback.remove === 'function') {
+					that.settings.callback.remove.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
 		}
 	};
@@ -939,7 +1067,8 @@ RGBa: Internet Explorer 9
 			'callback': {
 				'show': null,
 				'hide': null,
-				'remove': null
+				'remove': null,
+				'error': null
 			},
 			'title': 'Message',
 			'message': ''
@@ -953,151 +1082,191 @@ RGBa: Internet Explorer 9
 			var fragment = document.createDocumentFragment();
 			var key = {};
 
-			// key
-			key.title = getKey();
-			key.message = getKey();
-			key.ok = getKey();
+			try {
+				// key
+				key.title = getKey();
+				key.message = getKey();
+				key.ok = getKey();
 
-			// mask
-			if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-				that.elements.mask = that.settings.mask;
-				that.elements.mask.display = 'none';
-			}else {
-				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
-				module.elements.alert.appendChild(that.elements.mask);
+				// mask
+				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+					that.elements.mask = that.settings.mask;
+					that.elements.mask.display = 'none';
+				}else {
+					that.elements.mask = document.createElement('div');
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					module.elements.alert.appendChild(that.elements.mask);
+				}
+
+				// container
+				that.elements.container = document.createElement('div');
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
+				that.elements.container.innerHTML = '\
+					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.title + '</div>\
+					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
+					<div style="padding: 10px 18px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
+						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">OK</button>\
+					</div>\
+				';
+				fragment.appendChild(that.elements.container);
+				module.elements.alert.appendChild(fragment);
+
+				// search element
+				that.elements.title = that.elements.container.querySelector('#' + key.title);
+				that.elements.message = that.elements.container.querySelector('#' + key.message);
+				that.elements.ok = that.elements.container.querySelector('#' + key.ok);
+
+				// event
+				$(that.elements.ok).on(env['event']['click'], function() {
+					that.hide();
+				});
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
-
-			// container
-			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
-			that.elements.container.innerHTML = '\
-				<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.title + '</div>\
-				<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
-				<div style="padding: 10px 18px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
-					<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">OK</button>\
-				</div>\
-			';
-			fragment.appendChild(that.elements.container);
-			module.elements.alert.appendChild(fragment);
-
-			// search element
-			that.elements.title = that.elements.container.querySelector('#' + key.title);
-			that.elements.message = that.elements.container.querySelector('#' + key.message);
-			that.elements.ok = that.elements.container.querySelector('#' + key.ok);
-
-			// event
-			$(that.elements.ok).on(env['event']['click'], function() {
-				that.hide();
-			});
 		})();
 	};
 	ModalAlert.prototype = {
 		change: function(settings) {
 			var that = this;
 			var key, tmp;
-			for(key in settings) {
-				switch(key) {
-					case 'type':
-					case 'key':
-						break;
-					case 'title':
-						that.elements.title.textContent = settings[key] || '';
-						break;
-					case 'message':
-						//that.elements.message.textContent = settings[key] || '';
-						that.elements.message.innerHTML = settings[key] || '';
-						break;
-					case 'callback':
-						for(tmp in settings[key]) {
-							if(settings[key].hasOwnProperty(tmp) && typeof settings[key][tmp] === 'function') {
-								that.settings.callback[tmp] = settings[key][tmp];
+
+			try {
+				for(key in settings) {
+					switch(key) {
+						case 'type':
+						case 'key':
+							break;
+						case 'title':
+							that.elements.title.textContent = settings[key] || '';
+							break;
+						case 'message':
+							//that.elements.message.textContent = settings[key] || '';
+							that.elements.message.innerHTML = settings[key] || '';
+							break;
+						case 'callback':
+							for(tmp in settings[key]) {
+								if(settings[key].hasOwnProperty(tmp) && typeof settings[key][tmp] === 'function') {
+									that.settings.callback[tmp] = settings[key][tmp];
+								}
 							}
-						}
-						break;
-					default:
-						that.settings[key] = settings[key];
-						break;
+							break;
+						default:
+							that.settings[key] = settings[key];
+							break;
+					}
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
 				}
 			}
+
 			return that;
 		},
 		position: function() {
 			var that = this;
-			module.setPosition(that.settings.position, that.elements.container);
+
+			try {
+				module.setPosition(that.settings.position, that.elements.container);
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
+
 			return that;
 		},
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-				that.elements.mask.style.zIndex = ++module.zindex;
-				that.elements.mask.style.display = 'block';
-			}
-			that.elements.container.style.zIndex = ++module.zindex;
-			that.elements.container.style.display = 'block';
-			that.position();
+			try {
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.zIndex = ++module.zindex;
+					that.elements.mask.style.display = 'block';
+				}
+				that.elements.container.style.zIndex = ++module.zindex;
+				that.elements.container.style.display = 'block';
+				that.position();
 
-			// focus (웹접근성)
-			module.active = document.activeElement;
-			that.elements.container.setAttribute('tabindex', -1);
-			that.elements.container.focus();
+				// focus (웹접근성)
+				module.active = document.activeElement;
+				that.elements.container.setAttribute('tabindex', -1);
+				that.elements.container.focus();
 
-			// callback
-			if(typeof that.settings.callback.show === 'function') {
-				that.settings.callback.show.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
+				// callback
+				if(typeof that.settings.callback.show === 'function') {
+					that.settings.callback.show.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
 		},
 		hide: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			that.elements.container.style.display = 'none';
-			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-				that.elements.mask.style.display = 'none';
-			}
+			try {
+				that.elements.container.style.display = 'none';
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.display = 'none';
+				}
 
-			// focus (웹접근성)
-			if(module.active) {
-				module.active.focus();
-			}
+				// focus (웹접근성)
+				if(module.active) {
+					module.active.focus();
+				}
 
-			// callback
-			if(typeof that.settings.callback.hide === 'function') {
-				that.settings.callback.hide.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
+				// callback
+				if(typeof that.settings.callback.hide === 'function') {
+					that.settings.callback.hide.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
 		},
 		remove: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			// element
-			if(that.elements.mask) {
-				that.elements.mask.parentNode.removeChild(that.elements.mask);
-			}
-			if(that.elements.container) {
-				that.elements.container.parentNode.removeChild(that.elements.container);
-			}
-			that.elements = {};
+			try {
+				// element
+				if(that.elements.mask) {
+					that.elements.mask.parentNode.removeChild(that.elements.mask);
+				}
+				if(that.elements.container) {
+					that.elements.container.parentNode.removeChild(that.elements.container);
+				}
+				that.elements = {};
 
-			// instance
-			if(that.settings['key'] && module.instance[that.settings['key']]) {
-				delete module.instance[that.settings['key']];
-			}
+				// instance
+				if(that.settings['key'] && module.instance[that.settings['key']]) {
+					delete module.instance[that.settings['key']];
+				}
 
-			// callback
-			if(typeof that.settings.callback.remove === 'function') {
-				that.settings.callback.remove.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
+				// callback
+				if(typeof that.settings.callback.remove === 'function') {
+					that.settings.callback.remove.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
 		}
 	};
@@ -1113,7 +1282,8 @@ RGBa: Internet Explorer 9
 			'callback': {
 				'show': null,
 				'hide': null,
-				'remove': null
+				'remove': null,
+				'error': null
 			},
 			'time': 0, // 0 보다 큰 값은 자동닫기 설정
 			'message': ''
@@ -1128,146 +1298,186 @@ RGBa: Internet Explorer 9
 			var fragment = document.createDocumentFragment();
 			var key = {};
 
-			// key
-			key.message = getKey();
-			key.close = getKey();
+			try {
+				// key
+				key.message = getKey();
+				key.close = getKey();
 
-			// mask
-			if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-				that.elements.mask = that.settings.mask;
-				that.elements.mask.display = 'none';
-			}else {
-				that.elements.mask = document.createElement('div');
-				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
-				module.elements.push.appendChild(that.elements.mask);
+				// mask
+				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+					that.elements.mask = that.settings.mask;
+					that.elements.mask.display = 'none';
+				}else {
+					that.elements.mask = document.createElement('div');
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					module.elements.push.appendChild(that.elements.mask);
+				}
+
+				// container
+				that.elements.container = document.createElement('div');
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
+				that.elements.container.innerHTML = '\
+					<div id="' + key.message + '" style="padding: 12px 12px 6px 12px; min-height: 33px; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.message + '</div>\
+					<div style="padding: 6px 12px 12px 12px; background: rgba(248, 249, 250, .97); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
+						<button id="' + key.close + '" style="margin: 0; padding: 0; color: #5F6061; font-size: 12px; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; cursor: pointer; background: transparent; border: none;">CLOSE</button>\
+					</div>\
+				';
+				fragment.appendChild(that.elements.container);
+				module.elements.push.appendChild(fragment);
+
+				// search element
+				that.elements.message = that.elements.container.querySelector('#' + key.message);
+				that.elements.close = that.elements.container.querySelector('#' + key.close);
+
+				// event
+				$(that.elements.close).on(env['event']['click'], function() {
+					that.hide();
+				});
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
-
-			// container
-			that.elements.container = document.createElement('div');
-			that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
-			that.elements.container.innerHTML = '\
-				<div id="' + key.message + '" style="padding: 12px 12px 6px 12px; min-height: 33px; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.message + '</div>\
-				<div style="padding: 6px 12px 12px 12px; background: rgba(248, 249, 250, .97); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
-					<button id="' + key.close + '" style="margin: 0; padding: 0; color: #5F6061; font-size: 12px; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; cursor: pointer; background: transparent; border: none;">CLOSE</button>\
-				</div>\
-			';
-			fragment.appendChild(that.elements.container);
-			module.elements.push.appendChild(fragment);
-
-			// search element
-			that.elements.message = that.elements.container.querySelector('#' + key.message);
-			that.elements.close = that.elements.container.querySelector('#' + key.close);
-
-			// event
-			$(that.elements.close).on(env['event']['click'], function() {
-				that.hide();
-			});
 		})();
 	};
 	ModalPush.prototype = {
 		change: function(settings) {
 			var that = this;
 			var key, tmp;
-			for(key in settings) {
-				switch(key) {
-					case 'type':
-					case 'key':
-						break;
-					case 'time':
-						that.settings.time = !isNaN(parseFloat(settings[key])) && settings[key] || 0;
-						break;
-					case 'message':
-						//that.elements.message.textContent = settings[key] || '';
-						that.elements.message.innerHTML = settings[key] || '';
-						break;
-					case 'callback':
-						for(tmp in settings[key]) {
-							if(settings[key].hasOwnProperty(tmp) && typeof settings[key][tmp] === 'function') {
-								that.settings.callback[tmp] = settings[key][tmp];
+
+			try {
+				for(key in settings) {
+					switch(key) {
+						case 'type':
+						case 'key':
+							break;
+						case 'time':
+							that.settings.time = !isNaN(parseFloat(settings[key])) && settings[key] || 0;
+							break;
+						case 'message':
+							//that.elements.message.textContent = settings[key] || '';
+							that.elements.message.innerHTML = settings[key] || '';
+							break;
+						case 'callback':
+							for(tmp in settings[key]) {
+								if(settings[key].hasOwnProperty(tmp) && typeof settings[key][tmp] === 'function') {
+									that.settings.callback[tmp] = settings[key][tmp];
+								}
 							}
-						}
-						break;
-					default:
-						that.settings[key] = settings[key];
-						break;
+							break;
+						default:
+							that.settings[key] = settings[key];
+							break;
+					}
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
 				}
 			}
+
 			return that;
 		},
 		position: function() {
 			var that = this;
-			module.setPosition(that.settings.position, that.elements.container);
+
+			try {
+				module.setPosition(that.settings.position, that.elements.container);
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
+
 			return that;
 		},
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-				that.elements.mask.style.zIndex = ++module.zindex;
-				that.elements.mask.style.display = 'block';
-			}
-			that.elements.container.style.zIndex = ++module.zindex;
-			that.elements.container.style.display = 'block';
-			that.position();
+			try {
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.zIndex = ++module.zindex;
+					that.elements.mask.style.display = 'block';
+				}
+				that.elements.container.style.zIndex = ++module.zindex;
+				that.elements.container.style.display = 'block';
+				that.position();
 
-			// auto hide
-			global.clearTimeout(that.time);
-			if(typeof that.settings.time === 'number' && that.settings.time > 0) {
-				that.time = global.setTimeout(function() {
-					that.hide();
-				}, that.settings.time);
-			}
+				// auto hide
+				global.clearTimeout(that.time);
+				if(typeof that.settings.time === 'number' && that.settings.time > 0) {
+					that.time = global.setTimeout(function() {
+						that.hide();
+					}, that.settings.time);
+				}
 
-			// callback
-			if(typeof that.settings.callback.show === 'function') {
-				that.settings.callback.show.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
+				// callback
+				if(typeof that.settings.callback.show === 'function') {
+					that.settings.callback.show.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
 		},
 		hide: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			that.elements.container.style.display = 'none';
-			if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-				that.elements.mask.style.display = 'none';
-			}
+			try {
+				that.elements.container.style.display = 'none';
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.display = 'none';
+				}
 
-			// callback
-			if(typeof that.settings.callback.hide === 'function') {
-				return that.settings.callback.hide.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
+				// callback
+				if(typeof that.settings.callback.hide === 'function') {
+					return that.settings.callback.hide.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
 		},
 		remove: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
-			// element
-			if(that.elements.mask) {
-				that.elements.mask.parentNode.removeChild(that.elements.mask);
-			}
-			if(that.elements.container) {
-				that.elements.container.parentNode.removeChild(that.elements.container);
-			}
-			that.elements = {};
+			try {
+				// element
+				if(that.elements.mask) {
+					that.elements.mask.parentNode.removeChild(that.elements.mask);
+				}
+				if(that.elements.container) {
+					that.elements.container.parentNode.removeChild(that.elements.container);
+				}
+				that.elements = {};
 
-			// instance
-			if(that.settings['key'] && module.instance[that.settings['key']]) {
-				delete module.instance[that.settings['key']];
-			}
+				// instance
+				if(that.settings['key'] && module.instance[that.settings['key']]) {
+					delete module.instance[that.settings['key']];
+				}
 
-			// callback
-			if(typeof that.settings.callback.remove === 'function') {
-				that.settings.callback.remove.call(that);
-			}
-			if(typeof parameter.callback === 'function') {
-				parameter.callback.call(that);	
+				// callback
+				if(typeof that.settings.callback.remove === 'function') {
+					that.settings.callback.remove.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
 			}
 		}
 	};
@@ -1311,7 +1521,7 @@ RGBa: Internet Explorer 9
 			}
 			return instance;
 		},
-		instance: function(key) {
+		search: function(key) {
 			return module.instance[key] || false;
 		}
 	};
