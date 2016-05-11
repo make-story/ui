@@ -59,7 +59,7 @@ Dual licensed under the MIT and GPL licenses.
 
 				// 네임스페이스 확인
 				for(i=0, max=arr.length-1; i<max; i++) {
-					if(/*arr[i] in parent*/parent[arr[i]] && typeof parent[arr[i]] === 'object') {
+					if(typeof parent[arr[i]] === 'object') {
 						parent = parent[arr[i]];
 					}else {
 						parent = parent[arr[i]] = {};
@@ -70,7 +70,7 @@ Dual licensed under the MIT and GPL licenses.
 				if(is) { // set (값 설정)
 					parent = parent[arr[i]] = value;
 				}else if(arr[i] in parent) { // get (값 반환)
-					if(typeof parent[arr[i]] === 'object' && (Array.isArray(parent[arr[i]]) || Object.keys(parent[arr[i]]))) {
+					if(parent[arr[i]] && typeof parent[arr[i]] === 'object' && (Array.isArray(parent[arr[i]]) || /^{.*}$/.test(JSON.stringify(parent[arr[i]])))) {
 						// 값복사 
 						// 오브젝트 타입을 반환할 때 사용자가 프로퍼티값을 수동으로 변경하지 못하도록 하기 위함. 
 						// 수동으로 변경할 경우 콜백작동이 안함

@@ -429,91 +429,93 @@ http://www.quirksmode.org/js/detect.html
 		var match1, match2, elements, i, max;
 		this.elements = [];
 		this.length = 0;
-		if(typeof selector === 'object') { 
-			/*
-			nodeType
-			1 : Element 노드를 의미
-			2 : Attribute 노드를 의미
-			3 : Text 노드를 의미
-			4 : CDATASection 노드를 의미
-			5 : EntityReference 노드를 의미
-			6 : Entity 노드를 의미
-			7 : ProcessingInstruction 노드를 의미
-			8 : Comment 노드를 의미
-			9 : Document 노드를 의미
-			10 : DocumentType 노드를 의미
-			11 : DocumentFragment 노드를 의미
-			12 : Notation 노드를 의미
-			*/
-			if('elements' in selector) {
-				return selector;
-			}else if(selector.nodeType || selector === window) { // DOMElement, window (querySelectorAll 반환값 nodeType 은 undefined)
-				this.elements[0] = selector;
-			}else if(Object.prototype.toString.call(selector) === '[object Array]'/*Array.isArray(selector)*/) { // array list (api.dom 으로 리턴된 것)
-				this.elements = selector;
-			}else if(Object.keys(selector).length > 0) { // object list (querySelectorAll 으로 리턴된 것)
-				max = 0;
-				for(i in selector) {
-					if(selector.hasOwnProperty(i) && selector[i].nodeType) {
-						this.elements[max] = selector[i];
-						max++;
-					}
-				}
-			}else {
-				//console.log('[오류] dom search error');
-			}
-		}else if(typeof selector === 'string') { 
-			match1 = /<(\w+:\w+|\w+)[^>]*/.exec(selector); // tag create 확인 정규식 (<svg:g> 또는 <div> 형식)
-			//match1 = /<(\w+)[^>]*/.exec(selector); // tag create 확인 정규식 (createElementNS 사용안할경우)
-			if(match1 && match1[1]) { // create element
-				match2 = /(\w+):(\w+)/.exec(selector);
-				switch(match2 && match2[1] && match2[2] && match2[1].toLowerCase()) {
-					case 'xhtml':
-						this.elements[0] = document.createElementNS("http://www.w3.org/1999/xhtml", match2[2]);
-						break;
-					case 'math':
-						this.elements[0] = document.createElementNS("http://www.w3.org/1998/Math/MathML", match2[2]);
-						break;
-					case 'svg':
-						this.elements[0] = document.createElementNS("http://www.w3.org/2000/svg", match2[2]);
-						break;
-					case 'text':
-						// text node
-						// http://www.mediaevent.de/javascript/DOM-Neue-Knoten.html
-						this.elements[0] = document.createTextNode(match2[2]);
-						break;
-					default:
-						// element node
-						this.elements[0] = document.createElement(match1[1]);
-						break;
-				}
-			}else { // search element
-				try {
-					// document.querySelectorAll(x); // IE8이상 사용가능 ('.testClass + p' selector 형태는 IE9이상 사용가능) 
-					elements = (context || document).querySelectorAll(selector); // querySelectorAll: length 있음, querySelector: length 없음
-					if(elements instanceof NodeList || elements instanceof HTMLCollection) {
-						for(i=0, max=elements.length; i<max; i++) {
-							this.elements[i] = elements[i];
+		if(selector) {
+			if(typeof selector === 'object') { 
+				/*
+				nodeType
+				1 : Element 노드를 의미
+				2 : Attribute 노드를 의미
+				3 : Text 노드를 의미
+				4 : CDATASection 노드를 의미
+				5 : EntityReference 노드를 의미
+				6 : Entity 노드를 의미
+				7 : ProcessingInstruction 노드를 의미
+				8 : Comment 노드를 의미
+				9 : Document 노드를 의미
+				10 : DocumentType 노드를 의미
+				11 : DocumentFragment 노드를 의미
+				12 : Notation 노드를 의미
+				*/
+				if('elements' in selector) {
+					return selector;
+				}else if(selector.nodeType || selector === window) { // DOMElement, window (querySelectorAll 반환값 nodeType 은 undefined)
+					this.elements[0] = selector;
+				}else if(Object.prototype.toString.call(selector) === '[object Array]'/*Array.isArray(selector)*/) { // array list (api.dom 으로 리턴된 것)
+					this.elements = selector;
+				}else if(Object.keys(selector).length > 0) { // object list (querySelectorAll 으로 리턴된 것)
+					max = 0;
+					for(i in selector) {
+						if(selector.hasOwnProperty(i) && selector[i].nodeType) {
+							this.elements[max] = selector[i];
+							max++;
 						}
 					}
-				}catch(e) {
-					// IE7, 8 대응시 아래 코드 사용
-					if(selector.charAt(0) === '#') { // id
-						elements = document.getElementById(selector.slice(1)); // getElementById context 하위 검색 불가능
-						try {
-							if(elements && elements.nodeType) {
-								this.elements[0] = elements;
+				}else {
+					//console.log('[오류] dom search error');
+				}
+			}else if(typeof selector === 'string') { 
+				match1 = /<(\w+:\w+|\w+)[^>]*/.exec(selector); // tag create 확인 정규식 (<svg:g> 또는 <div> 형식)
+				//match1 = /<(\w+)[^>]*/.exec(selector); // tag create 확인 정규식 (createElementNS 사용안할경우)
+				if(match1 && match1[1]) { // create element
+					match2 = /(\w+):(\w+)/.exec(selector);
+					switch(match2 && match2[1] && match2[2] && match2[1].toLowerCase()) {
+						case 'xhtml':
+							this.elements[0] = document.createElementNS("http://www.w3.org/1999/xhtml", match2[2]);
+							break;
+						case 'math':
+							this.elements[0] = document.createElementNS("http://www.w3.org/1998/Math/MathML", match2[2]);
+							break;
+						case 'svg':
+							this.elements[0] = document.createElementNS("http://www.w3.org/2000/svg", match2[2]);
+							break;
+						case 'text':
+							// text node
+							// http://www.mediaevent.de/javascript/DOM-Neue-Knoten.html
+							this.elements[0] = document.createTextNode(match2[2]);
+							break;
+						default:
+							// element node
+							this.elements[0] = document.createElement(match1[1]);
+							break;
+					}
+				}else { // search element
+					try {
+						// document.querySelectorAll(x); // IE8이상 사용가능 ('.testClass + p' selector 형태는 IE9이상 사용가능) 
+						elements = (context || document).querySelectorAll(selector); // querySelectorAll: length 있음, querySelector: length 없음
+						if(elements instanceof NodeList || elements instanceof HTMLCollection) {
+							for(i=0, max=elements.length; i<max; i++) {
+								this.elements[i] = elements[i];
 							}
-						}catch(e) {}
-					}else { // tag
-						elements = (context || document).getElementsByTagName(selector);
-						try {
-							if(elements && (elements.length || elements instanceof NodeList || elements instanceof HTMLCollection)) { // IE7 문제: NodeList, HTMLCollection
-								for(i=0, max=elements.length; i<max; i++) {
-									this.elements[i] = elements[i];
+						}
+					}catch(e) {
+						// IE7, 8 대응시 아래 코드 사용
+						if(selector.charAt(0) === '#') { // id
+							elements = document.getElementById(selector.slice(1)); // getElementById context 하위 검색 불가능
+							try {
+								if(elements && elements.nodeType) {
+									this.elements[0] = elements;
 								}
-							}
-						}catch(e) {}
+							}catch(e) {}
+						}else { // tag
+							elements = (context || document).getElementsByTagName(selector);
+							try {
+								if(elements && (elements.length || elements instanceof NodeList || elements instanceof HTMLCollection)) { // IE7 문제: NodeList, HTMLCollection
+									for(i=0, max=elements.length; i<max; i++) {
+										this.elements[i] = elements[i];
+									}
+								}
+							}catch(e) {}
+						}
 					}
 				}
 			}
