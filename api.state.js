@@ -115,9 +115,9 @@ Dual licensed under the MIT and GPL licenses.
 				// 이벤트 설정
 				on: function(parameter) {
 					var parameter = parameter || {};
-					var name = parameter['name'];
-					var value = parameter['value'];
-					var key = parameter['key'] || api.key();
+					var name = parameter['name']; // namespace
+					var value = parameter['value']; // value
+					var key = parameter['key'] || api.key(); // 이벤트키
 					var handler = typeof parameter['handler'] === 'function' ? parameter['handler'] : function() {};
 
 					var i, max;
@@ -148,8 +148,8 @@ Dual licensed under the MIT and GPL licenses.
 				// 이벤트 해제
 				off: function(parameter) {
 					var parameter = parameter || {};
-					var name = parameter['name'] || '';
-					var key = parameter['key'];
+					var name = parameter['name'] || ''; // namespace
+					var key = parameter['key']; // 이벤트키
 					var i, max;
 					var is = false;
 
