@@ -1,7 +1,7 @@
 /*
 template
 
-@date
+@date (버전관리)
 2016.03.16
 
 @copyright

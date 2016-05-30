@@ -45,15 +45,11 @@ http://www.quirksmode.org/js/detect.html
 		ES6
 		심볼(Symbol)은 프로그램이 이름 충돌의 위험 없이 속성(property)의 키(key)로 쓰기 위해 생성하고 사용할 수 있는 값입니다.
 		Symbol()을 호출하면 새로운 심볼 값이 생성됩니다. 이 값은 다른 어떤 값과도 다릅니다.
-		*/
-		/*
 		-
 		랜덤, 날짜 결합
 		var arr = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
 		var date = new Date();
 		return [arr[Math.floor(Math.random() * arr.length)], Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1), date.getFullYear(), (Number(date.getMonth()) + 1), date.getDate(), date.getHours(), date.getMinutes()].join('');
-		*/
-		/*
 		-
 		페이스북 참고
 		 1. 'f' + : 'f' 문자열에 뒤의 것을 더할 건데, // f
@@ -63,7 +59,6 @@ http://www.quirksmode.org/js/detect.html
 		 5. .replace('.', '') : 문자열에서 닷(소수점)을 제거한다. // 'f' + 87128f38 = f87128f38
 		return 'f' + (Math.random() * (1 << 30)).toString(16).replace('.', '');
 		*/
-		
 		return ['api', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
 	};
 
@@ -267,7 +262,7 @@ http://www.quirksmode.org/js/detect.html
 		trim: /(^\s*)|(\s*$)/g // 양쪽 여백
 	};
 
-	// event name 크로스브라우저에 따른 자동 변경
+	// event name 브라우저에 따른 자동 변경
 	var setEventTypeChange = function(events) {
 		if(typeof events === 'string' && /transitionend|animationstart|animationiteration|animationend/i.test(events.toLowerCase())) {
 			events = events.toLowerCase(); // 주의! 이벤트명을 모두 소문자로 변경했을 때 작동하지 않는 이벤트가 있다. (DOMMouseScroll)
@@ -315,7 +310,7 @@ http://www.quirksmode.org/js/detect.html
 			return value;
 		}
 
-		// width, height 에 따라 추가할 위치
+		// width, height 에 따라 분기 (paddingLeft, paddingRight, paddingTop, paddingBottom, ...)
 		if(property === 'width') {
 			arr = ["Left", "Right"];
 		}else if(property === 'height') {
@@ -337,12 +332,13 @@ http://www.quirksmode.org/js/detect.html
 	};
 
 	// width, height 등 사이즈 정보 반환
+	// property: width, height
 	// extra: inner(padding), outer(border) 값 포함구분
 	// is: margin 값 포함여부
-	var getElementWidthHeight = function(elements, property, extra, is) {
-		if(!elements || !elements instanceof DOM || !property || !(/^(width|height)$/i.test(property)) || (extra && !/^(inner|outer)$/i.test(extra))) return 0;
-		var is_border_box = (elements.css('boxSizing') === 'border-box') ? true : false; // IE와 웹킷간의 박스모델 스팩이 다르므로 구분해야 한다.
-		var is_display = (elements.css('display') === 'none') ? true : false;
+	var getElementWidthHeight = function(element, property, extra, is) {
+		if(!element || !element instanceof DOM || !property || !(/^(width|height)$/i.test(property)) || (extra && !/^(inner|outer)$/i.test(extra))) return 0;
+		var is_border_box = (element.css('boxSizing') === 'border-box') ? true : false; // IE와 웹킷간의 박스모델 스팩이 다르므로 구분해야 한다.
+		var is_display = (element.css('display') === 'none') ? true : false;
 		var queue = { 
 			/*
 			css property 기본값
@@ -361,7 +357,7 @@ http://www.quirksmode.org/js/detect.html
 		if(is_display === true) {
 			// 현재 설정된 css 값 확인
 			for(key in queue) {
-				if(tmp = elements.css(key)) {
+				if(tmp = element.css(key)) {
 					if(queue[key].test(tmp)) { 
 						// 현재 element에 설정된 style의 값이 queue 목록에 지정된 기본값(style property default value)과 동일하거나 없으므로 
 						// 작업 후 해당 property 초기화(삭제)
@@ -374,18 +370,18 @@ http://www.quirksmode.org/js/detect.html
 				}
 			}
 			// display가 none 상태의 element 의 크기를 정확하게 추출하기 위한 임시 css 설정
-			elements.css({'position': 'absolute', 'visibility': 'hidden', 'display': 'block'});
+			element.css({'position': 'absolute', 'visibility': 'hidden', 'display': 'block'});
 		}
 
 		// 해당 property 값
-		value = elements.get(0)['offset' + (property.substring(0, 1).toUpperCase() + property.substring(1))]; // offsetWidth, offsetHeight (border + padding + width 값, display: none 의 경우는 0 반환)
+		value = element.get(0)['offset' + (property.substring(0, 1).toUpperCase() + property.substring(1))]; // offsetWidth, offsetHeight (border + padding + width 값, display: none 의 경우는 0 반환)
 		if(value <= 0 || value === null) {
 			// css로 값을 구한다.
-			tmp = getNumberUnit(elements.css(property));
+			tmp = getNumberUnit(element.css(property));
 			value = (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
 			if(extra) {
 				// inner, outer 추가
-				tmp = getAugmentWidthHeight(elements, property);
+				tmp = getAugmentWidthHeight(element, property);
 				value += tmp['padding'];
 				if(extra === 'outer') {
 					value += tmp['border'];
@@ -396,7 +392,7 @@ http://www.quirksmode.org/js/detect.html
 			}
 		}else {
 			// offset 값 가공 (margin, border, padding)
-			tmp = getAugmentWidthHeight(elements, property);
+			tmp = getAugmentWidthHeight(element, property);
 			if(extra) {
 				if(extra === 'inner') {
 					value -= tmp['border'];
@@ -412,7 +408,7 @@ http://www.quirksmode.org/js/detect.html
 		// 값 반환을 위해 임시 수정했던 style 복구
 		if(is_display === true) {
 			// queue
-			elements.css(queue);
+			element.css(queue);
 		}
 
 		return value;

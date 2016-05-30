@@ -1,7 +1,7 @@
 /*
 xhr (XMLHttpRequest level 2)
 
-@date
+@date (버전관리)
 2015.07.07
 
 @copyright
@@ -64,9 +64,7 @@ api.xhr({
 		// 사용자 설정값
 		for(key in settings) {
 			if(settings.hasOwnProperty(key)) {
-				if(parameter[key]) {
-					settings[key] = parameter[key];
-				}
+				settings[key] = parameter[key];
 			}
 		}
 

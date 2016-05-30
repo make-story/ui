@@ -1,5 +1,6 @@
 /*
-Modal
+Modal (Grid 사용버전)
+layer, step, confirm, alert, push 수정은 api.modal.git.js 파일로 하자
 
 @date (버전관리)
 2016.03
@@ -12,8 +13,11 @@ Dual licensed under the MIT and GPL licenses.
 
 @browser compatibility
 IE8 이상
-querySelector: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
+querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
 RGBa: Internet Explorer 9
+
+-
+jQuery 또는 api.dom 에 종속적 실행
 */
 
 ;(function(factory, global) {
@@ -30,6 +34,11 @@ RGBa: Internet Explorer 9
 
 	'use strict'; // ES5
 
+	// ajax
+	if(!global.jQuery && global.api && global.api.xhr) {
+		$.ajax = global.api.xhr;
+	}
+
 	//
 	var env = {};
 	if(global.api && global.api.env) {
@@ -38,9 +47,13 @@ RGBa: Internet Explorer 9
 		env = {
 			'check': {
 				'mobile': (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino|android|ipad|playbook|silk/i.test(navigator.userAgent||navigator.vendor||window.opera)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test((navigator.userAgent||navigator.vendor||window.opera).substr(0,4))),
-				'touch': ('ontouchstart' in window || navigator.MaxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)
+				'touch': ('ontouchstart' in window || navigator.MaxTouchPoints > 0 || navigator.msMaxTouchPoints > 0),
+				'fullscreen': (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled || document.msFullscreenEnabled)
 			},
+			'monitor': 'pc', // pc | mobile | tablet (해상도에 따라 설정가능) - check['mobile'] 가 있음에도 따로 구분한 이유는 기기기준과 해상도(모니터) 기준의 영역을 나누어 관리하기 위함
 			'browser': {
+				"name": null, // chrome | safari | opera | firefox | explorer (브라우저 구분)
+				"version": null,
 				"scrollbar": (function() { // 브라우저별 스크롤바 폭 (모바일브라우저 주의)
 					var div = document.createElement("div");
 					var scrollbar = 0;
@@ -65,6 +78,72 @@ RGBa: Internet Explorer 9
 			env['event']['up'] = 'touchend';
 			env['event']['click'] = (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click';
 		}
+		(function() {
+			var userAgent = (navigator.userAgent || navigator.vendor || window.opera).toLowerCase();
+			var platform = navigator.platform;
+			var nameOffset, verOffset;
+			// monitor
+			if(/android/i.test(userAgent)) { // 안드로이드
+				// mobile 없으면 태블릿임
+				if(/mobile/i.test(userAgent)) {
+					env['monitor'] = 'mobile';
+				}else {
+					env['monitor'] = 'tablet';
+				}
+			}else if(/(iphone|ipad|ipod)/i.test(userAgent)) { // 애플
+				if(/ipad/i.test(userAgent)) {
+					env['monitor'] = 'tablet';
+				}else {
+					env['monitor'] = 'mobile';
+				}
+			}else if(env.check.mobile) {
+				env['monitor'] = 'mobile';
+			}else if(/(MacIntel|MacPPC)/i.test(platform)) {
+				env['monitor'] = 'pc';
+			}else if(/(win32|win64)/i.test(platform)) {
+				env['monitor'] = 'pc';
+			}
+			// browser (if문 순서 중요함)
+			env['browser']['name'] = navigator.appName;
+			env['browser']['version'] = String(parseFloat(navigator.appVersion));
+			if((verOffset = userAgent.indexOf("opr/")) !== -1) {
+				env['browser']['name'] = "opera";
+				env['browser']['version'] = userAgent.substring(verOffset + 4);
+			}else if((verOffset = userAgent.indexOf("opera")) !== -1) {
+				env['browser']['name'] = "opera";
+				env['browser']['version'] = userAgent.substring(verOffset + 6);
+				if((verOffset = userAgent.indexOf("version")) !== -1) {
+					env['browser']['version'] = userAgent.substring(verOffset + 8);
+				}
+			}else if((verOffset = userAgent.indexOf("msie")) !== -1) {
+				env['browser']['name'] = "explorer";
+				env['browser']['version'] = userAgent.substring(verOffset + 5);
+			}else if((verOffset = userAgent.indexOf("chrome")) !== -1) {
+				env['browser']['name'] = "chrome";
+				env['browser']['version'] = userAgent.substring(verOffset + 7);
+			}else if((verOffset = userAgent.indexOf("safari")) !== -1) {
+				env['browser']['name'] = "safari";
+				env['browser']['version'] = userAgent.substring(verOffset + 7);
+				if((verOffset = userAgent.indexOf("version")) !== -1) {
+					env['browser']['version'] = userAgent.substring(verOffset + 8);
+				}
+			}else if((verOffset = userAgent.indexOf("firefox")) !== -1) {
+				env['browser']['name'] = "firefox";
+				env['browser']['version'] = userAgent.substring(verOffset + 8);
+			}else if((nameOffset = userAgent.lastIndexOf(' ') + 1) < (verOffset = userAgent.lastIndexOf('/'))) { 
+				env['browser']['name'] = userAgent.substring(nameOffset, verOffset);
+				env['browser']['version'] = userAgent.substring(verOffset + 1);
+				if(env['browser']['name'].toLowerCase() === env['browser']['name'].toUpperCase()) {
+					env['browser']['name'] = navigator.appName;
+				}
+			}
+			if((verOffset = env['browser']['version'].indexOf(';')) !== -1) {
+				env['browser']['version'] = env['browser']['version'].substring(0, verOffset);
+			}
+			if((verOffset = env['browser']['version'].indexOf(' ')) !== -1) {
+				env['browser']['version'] = env['browser']['version'].substring(0, verOffset);
+			}
+		})();
 	}
 
 	// key (일반적인 고유값)
@@ -75,11 +154,6 @@ RGBa: Internet Explorer 9
 		getKey = function() {
 			return ['api', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
 		};
-	}
-
-	// ajax
-	if(!global.jQuery && global.api && global.api.xhr) {
-		$.ajax = global.api.xhr;
 	}
 
 	// 모듈 (공통 사용)
@@ -107,32 +181,27 @@ RGBa: Internet Explorer 9
 				
 					// container
 					this.elements.container = document.createElement('div');
-					this.elements.container.style.cssText = 'position: fixed; left: 0px; top: 0px; z-index: 2147483647;'; // z-index 최대값: 2147483647
+					this.elements.container.style.cssText = 'z-index: 2147483647;'; // z-index 최대값: 2147483647
 					fragment.appendChild(this.elements.container);
 
 					// layer
 					this.elements.layer = document.createElement('div');
-					this.elements.layer.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					//this.elements.layer.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 					this.elements.container.appendChild(this.elements.layer);
-
-					// step
-					this.elements.step = document.createElement('div');
-					this.elements.step.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-					this.elements.container.appendChild(this.elements.step);
 
 					// confirm
 					this.elements.confirm = document.createElement('div');
-					this.elements.confirm.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					//this.elements.confirm.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 					this.elements.container.appendChild(this.elements.confirm);
 
 					// alert
 					this.elements.alert = document.createElement('div');
-					this.elements.alert.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					//this.elements.alert.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 					this.elements.container.appendChild(this.elements.alert);
 
 					// push
 					this.elements.push = document.createElement('div');
-					this.elements.push.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					//this.elements.push.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 					this.elements.container.appendChild(this.elements.push);
 
 					try {
@@ -147,6 +216,7 @@ RGBa: Internet Explorer 9
 					if(!options.hasOwnProperty(key)) {
 						continue;
 					}else if(options[key] && options[key].constructor === Object && !options[key].nodeType) {
+						settings[key] = settings[key] || {};
 						settings[key] = this.setSettings(settings[key], options[key]);
 					}else {
 						settings[key] = options[key];
@@ -173,6 +243,16 @@ RGBa: Internet Explorer 9
 						)
 					}
 				};
+			},
+			// 스크롤 위치
+			getScroll: function() {
+				if('pageXOffset' in window && 'pageYOffset' in window) {
+					return {'left': window.pageXOffset, 'top': window.pageYOffset};
+				}else if(document.body && ('scrollLeft' in document.body && 'scrollTop' in document.body)) {
+					return {'left': document.body.scrollLeft, 'top': document.body.scrollTop};
+				}else if(document.documentElement && ('scrollLeft' in document.documentElement && 'scrollTop' in document.documentElement)) {
+					return {'left': document.documentElement.scrollLeft, 'top': document.documentElement.scrollTop};
+				}
 			},
 			// 위치설정
 			setPosition: function(position, element) {
@@ -254,15 +334,7 @@ RGBa: Internet Explorer 9
 				var width, height;
 				var target = {};
 				var info = rect.getBoundingClientRect();
-				var scroll = (function() {
-					if('pageXOffset' in window && 'pageYOffset' in window) {
-						return {'left': window.pageXOffset, 'top': window.pageYOffset};
-					}else if(document.body && ('scrollLeft' in document.body && 'scrollTop' in document.body)) {
-						return {'left': document.body.scrollLeft, 'top': document.body.scrollTop};
-					}else if(document.documentElement && ('scrollLeft' in document.documentElement && 'scrollTop' in document.documentElement)) {
-						return {'left': document.documentElement.scrollLeft, 'top': document.documentElement.scrollTop};
-					}
-				})();
+				var scroll = this.getScroll();
 				var tmp;
 
 				// element 크기
@@ -275,10 +347,11 @@ RGBa: Internet Explorer 9
 				target.width = Math.round($(rect).outerWidth(true));
 				target.height = Math.round($(rect).outerHeight(true));
 
-				// topleft, topcenter, topright
-				// centerleft, center, centerright
-				// bottomleft, bottomcenter, bottomright
-				if(/^top/.test(position)) {
+
+				// topleft, topcenter, topright 
+				// centerleft, center, centerright 
+				// bottomleft, bottomcenter, bottomright 
+				/*if(/^top/.test(position)) {
 					$(element).get(0).style.top = (target.top - height) + 'px';
 				}else if(/^bottom/.test(position)) {
 					$(element).get(0).style.top = (target.top + target.height) + 'px';
@@ -301,6 +374,55 @@ RGBa: Internet Explorer 9
 					}else {
 						$(element).get(0).style.left = (target.left + tmp) + 'px';
 					}
+				}*/
+
+				
+				// topleft, topcenter, topright
+				// bottomleft, bottomcenter, bottomright
+				// lefttop, leftmiddle, leftbottom
+				// righttop, rightmiddle, rightbottom
+				if(/^top/.test(position)) {
+					$(element).get(0).style.top = (target.top - height) + 'px';
+				}else if(/^bottom/.test(position)) {
+					$(element).get(0).style.top = (target.top + target.height) + 'px';
+				}else if(/^left/.test(position)) {
+					$(element).get(0).style.left = (target.left - width) + 'px';
+				}else if(/^right/.test(position)) {
+					$(element).get(0).style.left = (target.left + target.width) + 'px';
+				}
+
+				if(/left$/.test(position)) {
+					$(element).get(0).style.left = target.left + 'px';
+				}else if(/center$/.test(position)) {
+					tmp = Math.round(Math.abs(width - target.width) / 2);
+					if(width > target.width) {
+						$(element).get(0).style.left = (target.left - tmp) + 'px';
+					}else {
+						$(element).get(0).style.left = (target.left + tmp) + 'px';
+					}
+				}else if(/right$/.test(position)) {
+					tmp = Math.round(Math.abs(width - target.width));
+					if(width > target.width) {
+						$(element).get(0).style.left = (target.left - tmp) + 'px';
+					}else {
+						$(element).get(0).style.left = (target.left + tmp) + 'px';
+					}
+				}else if(/top$/.test(position)) {
+					$(element).get(0).style.top = target.top + 'px';
+				}else if(/middle$/.test(position)) {
+					tmp = Math.round(Math.abs(height - target.height) / 2);
+					if(height > target.height) {
+						$(element).get(0).style.top = (target.top - tmp) + 'px';
+					}else {
+						$(element).get(0).style.top = (target.top + tmp) + 'px';
+					}
+				}else if(/bottom$/.test(position)) {
+					tmp = Math.round(Math.abs(height - target.height));
+					if(height > target.height) {
+						$(element).get(0).style.top = (target.top - tmp) + 'px';
+					}else {
+						$(element).get(0).style.top = (target.top + tmp) + 'px';
+					}
 				}
 			}
 		};
@@ -310,7 +432,6 @@ RGBa: Internet Explorer 9
 	// 레이어
 	var ModalLayer = function(settings) {
 		var that = this;
-		that.type = 'layer';
 		that.settings = {
 			'key': '',
 			'position': 'center',
@@ -319,8 +440,10 @@ RGBa: Internet Explorer 9
 				'show': null,
 				'hide': null,
 				'remove': null,
-				'error': null
+				'error': null,
+				'resize': null
 			},
+			'theme:': {}, // 테마 (스타일 변경)
 			'target': '', // #id 또는 element
 			'close': '' // .class
 		};
@@ -349,7 +472,7 @@ RGBa: Internet Explorer 9
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none;';
+				that.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none; -webkit-overflow-scrolling: touch;';
 				that.elements.container.appendChild(that.elements.contents);
 				module.elements.layer.appendChild(that.elements.container);
 				if(that.elements.contents.style.display === 'none') {
@@ -376,8 +499,16 @@ RGBa: Internet Explorer 9
 		},
 		position: function() {
 			var that = this;
+			var scroll;
 
 			try {
+				// iOS에서는 position: fixed 버그가 있음
+				if(env['browser']['name'] === 'safari') {
+					scroll = module.getScroll();
+					that.elements.container.style.position = 'absolute';
+					that.elements.container.style.left = scroll.left + 'px';
+					that.elements.container.style.top = scroll.top + 'px';
+				}
 				module.setPosition(that.settings.position, that.elements.contents);
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
@@ -390,10 +521,11 @@ RGBa: Internet Explorer 9
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
+			var size = module.getWinDocWidthHeight();
 
 			try {
 				// 스크롤바 사이즈만큼 여백
-				if(document.documentElement.clientHeight < document.body.offsetHeight) {
+				if(size.window.height < size.document.height) {
 					$('html').css({'margin-right': env['browser']['scrollbar'] + 'px', 'overflow': 'hidden'});
 				}
 
@@ -404,20 +536,12 @@ RGBa: Internet Explorer 9
 				that.elements.container.style.zIndex = ++module.zindex;
 				that.elements.container.style.display = 'block';
 				that.position(); // parent element 가 페인팅되어있지 않으면, child element 의 width, height 값을 구할 수 없다. (that.elements.contents 의 정확한 width, height 값을 알려면, 이를 감싸고 있는 that.elements.container 가 diplay block 상태에 있어야 한다.)
-				that.elements.contents.style.transition = 'all .3s';
+				//that.elements.contents.style.transition = 'all .3s';
 
 				// focus (웹접근성)
 				module.active = document.activeElement;
 				that.elements.container.setAttribute('tabindex', -1);
 				that.elements.container.focus();
-
-				// callback
-				if(typeof that.settings.callback.show === 'function') {
-					that.settings.callback.show.call(that);
-				}
-				if(typeof parameter.callback === 'function') {
-					parameter.callback.call(that);	
-				}
 
 				// resize 이벤트 실행 (이벤트 키는 that.settings.key 를 활용한다.)
 				$(window).on(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key, function(e) {
@@ -426,6 +550,14 @@ RGBa: Internet Explorer 9
 						that.position();
 					}, 200);
 				});
+
+				// callback
+				if(typeof that.settings.callback.show === 'function') {
+					that.settings.callback.show.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -448,6 +580,9 @@ RGBa: Internet Explorer 9
 					module.active.focus();
 				}
 
+				// resize 이벤트 종료
+				$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
+
 				// callback
 				if(typeof that.settings.callback.hide === 'function') {
 					that.settings.callback.hide.call(that);
@@ -455,9 +590,6 @@ RGBa: Internet Explorer 9
 				if(typeof parameter.callback === 'function') {
 					parameter.callback.call(that);	
 				}
-
-				// resize 이벤트 종료
-				$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -483,6 +615,9 @@ RGBa: Internet Explorer 9
 					delete module.instance[that.settings['key']];
 				}
 
+				// resize 이벤트 종료
+				$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
+
 				// callback
 				if(typeof that.settings.callback.remove === 'function') {
 					that.settings.callback.remove.call(that);
@@ -490,9 +625,6 @@ RGBa: Internet Explorer 9
 				if(typeof parameter.callback === 'function') {
 					parameter.callback.call(that);	
 				}
-
-				// resize 이벤트 종료
-				$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -515,10 +647,9 @@ RGBa: Internet Explorer 9
 	// Rect
 	var ModalRect = function(settings) {
 		var that = this;
-		that.type = 'rect';
 		that.settings = {
 			'key': '',
-			'position': 'topcenter',
+			'position': 'bottomcenter',
 			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
 			'callback': {
 				'show': null,
@@ -526,6 +657,7 @@ RGBa: Internet Explorer 9
 				'remove': null,
 				'error': null
 			},
+			'theme:': {}, // 테마 (스타일 변경)
 			'target': '', // #id 또는 element
 			'rect': '' // #id 또는 element
 		};
@@ -554,7 +686,7 @@ RGBa: Internet Explorer 9
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: absolute; display: none; left: 0; top: 0; outline: none;';
+				that.elements.container.style.cssText = 'position: absolute; display: none; left: 0; top: 0; outline: none; -webkit-overflow-scrolling: touch;';
 				that.elements.container.appendChild(that.elements.contents);
 				document.body.appendChild(that.elements.container);
 				if(that.elements.contents.style.display === 'none') {
@@ -606,14 +738,6 @@ RGBa: Internet Explorer 9
 				that.elements.container.setAttribute('tabindex', -1);
 				that.elements.container.focus();
 
-				// callback
-				if(typeof that.settings.callback.show === 'function') {
-					that.settings.callback.show.call(that);
-				}
-				if(typeof parameter.callback === 'function') {
-					parameter.callback.call(that);	
-				}
-
 				// resize 이벤트 실행 (이벤트 키는 that.settings.key 를 활용한다.)
 				$(window).on(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key, function(e) {
 					window.clearTimeout(that.time);
@@ -621,6 +745,14 @@ RGBa: Internet Explorer 9
 						that.position();
 					}, 200);
 				});
+
+				// callback
+				if(typeof that.settings.callback.show === 'function') {
+					that.settings.callback.show.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -642,6 +774,9 @@ RGBa: Internet Explorer 9
 					module.active.focus();
 				}
 
+				// resize 이벤트 종료
+				$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
+
 				// callback
 				if(typeof that.settings.callback.hide === 'function') {
 					that.settings.callback.hide.call(that);
@@ -649,9 +784,6 @@ RGBa: Internet Explorer 9
 				if(typeof parameter.callback === 'function') {
 					parameter.callback.call(that);	
 				}
-
-				// resize 이벤트 종료
-				$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -677,6 +809,9 @@ RGBa: Internet Explorer 9
 					delete module.instance[that.settings['key']];
 				}
 
+				// resize 이벤트 종료
+				$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
+
 				// callback
 				if(typeof that.settings.callback.remove === 'function') {
 					that.settings.callback.remove.call(that);
@@ -684,9 +819,6 @@ RGBa: Internet Explorer 9
 				if(typeof parameter.callback === 'function') {
 					parameter.callback.call(that);	
 				}
-
-				// resize 이벤트 종료
-				$(window).off(env['event']['resize'] + '.EVENT_RESIZE_' + that.settings.key);
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -710,121 +842,9 @@ RGBa: Internet Explorer 9
 		}
 	};
 
-	// step
-	var ModalStep = function(settings) {
-		var that = this;
-		that.type = 'confirm';
-		that.settings = {
-			'key': '',
-			'display': {
-				'index': false, // 현재 step 위치 출력여부
-				'button': false // 이전, 다음 버튼 출력여부
-			},
-			'callback': {
-				'show': null,
-				'hide': null,
-				'remove': null,
-				'error': null,
-				'prev': null, // 이전 콜백
-				'next': null // 다음 콜백
-			},
-			'prev': '', // .class 이번버튼
-			'next': '', // .class 다음버튼
-			'step': [] // 각 step 별로 설정값이 들어가 있음
-		};
-		that.settings = module.setSettings(that.settings, settings);
-		that.elements = {};
-		that.index = 0;
-
-		// private init
-		module.init();
-		(function() { 
-			var fragment = document.createDocumentFragment();
-			var key = {};
-			var li = '';
-			var i, max;
-
-			try {
-				// key
-				
-
-				// mask
-				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-					that.elements.mask = that.settings.mask;
-					that.elements.mask.display = 'none';
-				}else {
-					that.elements.mask = document.createElement('div');
-					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
-					module.elements.step.appendChild(that.elements.mask);
-				}
-
-				// container
-				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none;';
-				for(i=0, max=that.settings.step.length; i<max; i++) {
-					li += '<li></li>';
-				}
-				that.elements.container.innerHTML = '\
-					<div id="" style="">\
-						<ul>' + li + '</ul>\
-					</div>\
-					<div id="" style=""></div>\
-					<div id="" style="">\
-						<button id="" style="float: left;"></button>\
-						<button id="" style="float: right;"></button>\
-					</div>\
-				';
-				fragment.appendChild(that.elements.container);
-
-				// search element
-				//that.elements.title = that.elements.container.querySelector('#' + key.title);
-				//that.elements.message = that.elements.container.querySelector('#' + key.message);
-				//that.elements.cancel = that.elements.container.querySelector('#' + key.cancel);
-				//that.elements.ok = that.elements.container.querySelector('#' + key.ok);
-
-				// contents
-				that.elements.contents = [];
-				for(i=0, max=that.settings.step.length; i<max; i++) {
-					that.elements.contents[i] = (typeof that.settings.step[i] === 'object' && that.settings.step[i].nodeType ? that.settings.step[i] : $('#' + that.settings.step[i]).get(0));
-					that.elements.contents[i].style.display = 'none';
-					//that.elements.container.appendChild(that.elements.contents[i]);
-				}
-				module.elements.step.appendChild(fragment);
-
-				// event
-
-			}catch(e) {
-				if(typeof that.settings.callback.error === 'function') {
-					that.settings.callback.error.call(that, e);
-				}
-			}
-		})();
-	};
-	ModalStep.prototype = {
-		change: function() {
-
-		},
-		position: function() {
-			
-		},
-		show: function() {
-
-		},
-		hide: function() {
-
-		},
-		prev: function() {
-
-		},
-		next: function() {
-
-		}
-	};
-
 	// 확인
 	var ModalConfirm = function(settings) {
 		var that = this;
-		that.type = 'confirm';
 		that.settings = {
 			'key': '',
 			'position': 'topcenter',
@@ -841,6 +861,7 @@ RGBa: Internet Explorer 9
 					return false;
 				}
 			},
+			'theme:': {}, // 테마 (스타일 변경)
 			'title': 'Message',
 			'message': ''
 		};
@@ -1059,7 +1080,6 @@ RGBa: Internet Explorer 9
 	// 경고
 	var ModalAlert = function(settings) {
 		var that = this;
-		that.type = 'alert';
 		that.settings = {
 			'key': '',
 			'position': 'topcenter',
@@ -1070,6 +1090,7 @@ RGBa: Internet Explorer 9
 				'remove': null,
 				'error': null
 			},
+			'theme:': {}, // 테마 (스타일 변경)
 			'title': 'Message',
 			'message': ''
 		};
@@ -1274,7 +1295,6 @@ RGBa: Internet Explorer 9
 	// 푸시
 	var ModalPush = function(settings) {
 		var that = this;
-		that.type = 'push';
 		that.settings = {
 			'key': '',
 			'position': 'topright',
@@ -1285,6 +1305,7 @@ RGBa: Internet Explorer 9
 				'remove': null,
 				'error': null
 			},
+			'theme:': {}, // 테마 (스타일 변경)
 			'time': 0, // 0 보다 큰 값은 자동닫기 설정
 			'message': ''
 		};
@@ -1482,6 +1503,8 @@ RGBa: Internet Explorer 9
 		}
 	};
 
+	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
+
 	// public return
 	return {
 		setup: function(settings) {
@@ -1489,7 +1512,9 @@ RGBa: Internet Explorer 9
 			var instance;
 			if(settings['key'] && module.instance[settings['key']]) {
 				instance = module.instance[settings['key']];
-				instance.change(settings);
+				if(instance.change) {
+					instance.change(settings);
+				}
 			}else {				
 				switch(settings['type']) {
 					case 'layer':
@@ -1513,6 +1538,16 @@ RGBa: Internet Explorer 9
 					case 'push':
 						//settings['key'] = settings['key'] || getKey();
 						instance = new ModalPush(settings);
+						break;
+					case 'folder':
+						if(settings['key']) { // 중복생성 방지
+							instance = new ModalFolder(settings);
+						}
+						break;
+					case 'story':
+						if(settings['key']) { // 중복생성 방지
+							instance = new ModalStory(settings);
+						}
 						break;
 				}
 				if(settings['key']) {

@@ -14,7 +14,7 @@ Dual licensed under the MIT and GPL licenses.
 
 */
 
-;(function(global) {
+;(function(global, undefined) {
 
 	'use strict'; // ES5
 	if(typeof global === 'undefined' || global !== window) {
@@ -53,6 +53,9 @@ Dual licensed under the MIT and GPL licenses.
 				var arr = [];
 				var i, max;
 				var parent = storage;
+
+				// eval 사용 고려 (속도문제)
+				
 				
 				// 프로퍼티 분리
 				arr = name.split('.');
@@ -61,15 +64,17 @@ Dual licensed under the MIT and GPL licenses.
 				for(i=0, max=arr.length-1; i<max; i++) {
 					if(typeof parent[arr[i]] === 'object') {
 						parent = parent[arr[i]];
-					}else {
+					}/*else if(is) { // set (값 설정모드)
+						parent = parent[arr[i]] = {};
+					}*/else {
 						parent = parent[arr[i]] = {};
 					}
 				}
 
 				// 마지막 프로퍼티값 확인 (네임스페이스의 마지막)
-				if(is) { // set (값 설정)
+				if(is) { // set (값 설정모드)
 					parent = parent[arr[i]] = value;
-				}else if(arr[i] in parent) { // get (값 반환)
+				}else if(arr[i] in parent) { // get (값 반환모드)
 					if(parent[arr[i]] && typeof parent[arr[i]] === 'object' && (Array.isArray(parent[arr[i]]) || /^{.*}$/.test(JSON.stringify(parent[arr[i]])))) {
 						// 값복사 
 						// 오브젝트 타입을 반환할 때 사용자가 프로퍼티값을 수동으로 변경하지 못하도록 하기 위함. 
@@ -105,7 +110,7 @@ Dual licensed under the MIT and GPL licenses.
 						for(i=0, max=dictionary[name].length; i<max; i++) {
 							if(dictionary[name][i]['value'] === value) {
 								for(key in dictionary[name][i]['handler']) {
-									dictionary[name][i]['handler'][key](value);
+									dictionary[name][i]['handler'][key].call(this, value);
 								}
 								break;
 							}
