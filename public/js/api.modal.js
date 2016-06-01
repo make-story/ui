@@ -1,6 +1,5 @@
 /*
-Modal (Grid 사용버전)
-layer, step, confirm, alert, push 수정은 api.modal.git.js 파일로 하자
+Modal
 
 @date (버전관리)
 2016.03
@@ -15,6 +14,9 @@ Dual licensed under the MIT and GPL licenses.
 IE8 이상
 querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
 RGBa: Internet Explorer 9
+
+-
+사용예
 
 -
 jQuery 또는 api.dom 에 종속적 실행
@@ -450,6 +452,13 @@ jQuery 또는 api.dom 에 종속적 실행
 		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {};
 		that.time = null;
+		that.before = { // 값 변경전 기존 설정값 저장
+			'margin-right': '',
+			'overflow': '',
+			'position': '',
+			'width': '',
+			'height': ''
+		};
 
 		// private init
 		module.init();
@@ -478,6 +487,22 @@ jQuery 또는 api.dom 에 종속적 실행
 				if(that.elements.contents.style.display === 'none') {
 					that.elements.contents.style.display = 'block';
 				}
+
+				// iOS에서는 position: fixed 버그가 있음
+				if(env['browser']['name'] === 'safari') {
+					$(that.elements.mask).on(env['event']['down'] + '.EVENT_DOWN_' + that.settings.key, function(e) {
+						module.stopCapture(e);
+						module.stopBubbling(e);
+					});
+					$(that.elements.mask).on(env['event']['move'] + '.EVENT_MOVE_' + that.settings.key, function(e) {
+						module.stopCapture(e);
+						module.stopBubbling(e);
+					});
+					$(that.elements.mask).on(env['event']['up'] + '.EVENT_UP_' + that.settings.key, function(e) {
+						module.stopCapture(e);
+						module.stopBubbling(e);
+					});
+				}
 				
 				// 팝업내부 close 버튼 클릭시 닫기
 				if(that.settings.close) {
@@ -499,16 +524,22 @@ jQuery 또는 api.dom 에 종속적 실행
 		},
 		position: function() {
 			var that = this;
-			var scroll;
+			var size, scroll;
 
 			try {
 				// iOS에서는 position: fixed 버그가 있음
-				if(env['browser']['name'] === 'safari') {
+				/*if(env['browser']['name'] === 'safari') {
+					size = module.getWinDocWidthHeight();
 					scroll = module.getScroll();
 					that.elements.container.style.position = 'absolute';
 					that.elements.container.style.left = scroll.left + 'px';
 					that.elements.container.style.top = scroll.top + 'px';
-				}
+
+					//that.elements.container.style.width = (Math.max(size.window.width, size.document.width) - env['browser']['scrollbar']) + 'px';
+					//that.elements.container.style.height = (Math.max(size.window.height, size.document.height) - env['browser']['scrollbar']) + 'px';
+					//that.elements.contents.style.left = (Number(String(that.elements.contents.style.left).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) + scroll.left) + 'px';
+					//that.elements.contents.style.top = (Number(String(that.elements.contents.style.top).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) + scroll.top) + 'px';
+				}*/
 				module.setPosition(that.settings.position, that.elements.contents);
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
@@ -525,8 +556,16 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			try {
 				// 스크롤바 사이즈만큼 여백
+				that.before['margin-right'] = $('html').css('margin-right');
+				that.before['overflow'] = $('html').css('overflow');
 				if(size.window.height < size.document.height) {
 					$('html').css({'margin-right': env['browser']['scrollbar'] + 'px', 'overflow': 'hidden'});
+				}
+
+				// iOS에서는 position: fixed 버그가 있음
+				that.before['position'] = $('html').css('position');
+				if(env['browser']['name'] === 'safari') {
+					$('html').css({'position': 'fixed'});
 				}
 
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
@@ -569,7 +608,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
-				$('html').css({'margin-right': '', 'overflow': ''});
+				$('html').css({'margin-right': that.before['margin-right'], 'overflow': that.before['overflow'], 'position': that.before['position']}); // 닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.
 				that.elements.container.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';
@@ -601,7 +640,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
-				// element
+				$('html').css({'margin-right': that.before['margin-right'], 'overflow': that.before['overflow'], 'position': that.before['position']}); // 닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.
 				if(that.elements.mask) {
 					that.elements.mask.parentNode.removeChild(that.elements.mask);
 				}
@@ -725,6 +764,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
+				// element
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.zIndex = ++module.zindex;
 					that.elements.mask.style.display = 'block';
@@ -764,6 +804,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
+				// element
 				that.elements.container.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';
@@ -989,6 +1030,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
+				// element
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.zIndex = ++module.zindex;
 					that.elements.mask.style.display = 'block';
@@ -1020,6 +1062,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
+				// element
 				that.elements.container.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';
@@ -1204,6 +1247,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
+				// element
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.zIndex = ++module.zindex;
 					that.elements.mask.style.display = 'block';
@@ -1235,6 +1279,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
+				// element
 				that.elements.container.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';
@@ -1417,6 +1462,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
+				// element
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.zIndex = ++module.zindex;
 					that.elements.mask.style.display = 'block';
@@ -1451,6 +1497,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
+				// element
 				that.elements.container.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';

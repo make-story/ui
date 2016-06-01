@@ -16,6 +16,9 @@ transform: Chrome Yes, Firefox 3.5 (1.9.1), Internet Explorer 9.0, Opera 10.5, S
 transitionend: Chrome 1.0, Firefox 4.0 (2.0), Internet Explorer 10, Opera 10.5, Safari 3.2
 
 -
+사용예
+
+-
 jQuery 또는 api.dom 에 종속적 실행
 */
 

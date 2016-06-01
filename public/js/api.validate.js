@@ -12,6 +12,10 @@ Dual licensed under the MIT and GPL licenses.
 
 @browser compatibility
 all
+
+-
+사용예
+
 */
 
 ;(function(global, undefined) {
