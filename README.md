@@ -322,7 +322,7 @@ api.flicking - 플리킹 라이브러리
 		'value': '', // 슬라이드 이동(숫자값: 해당슬라이드 index 이동, 문자값: 'next' 다음슬라이드 이동 'prev' 이전슬라이드 이동)
 	});
 
-	instance = api.flicking.instance(key); // key에 해당하는 플리킹 인스턴스값 반환
+	instance = api.flicking.search(key); // key에 해당하는 플리킹 인스턴스값 반환
 
 
 ----------
@@ -345,6 +345,15 @@ api.modal - 팝업 라이브러리
 	});
 	instance.show(); // 열기
 	instance.hide(); // 닫기
+
+	Rect 사용예:
+	api.modal.setup({
+		'type': 'rect', 
+		'key': 'rect',
+		'position': '', // 출력위치
+		'target': '', // 출력레이어 타겟
+		'rect': '' // 위치기준 타켓
+	}).toggle();
 
 	Confirm 사용예:
 	var instance = api.modal.setup({
@@ -406,6 +415,8 @@ api.modal - 팝업 라이브러리
 	instance.hide(); // 닫기
 	instance.remove(); // elememt 제거
 
+
+	instance = api.modal.search(key); // key에 해당하는 팝업 인스턴스값 반환
 
 ----------
 
@@ -503,6 +514,12 @@ api.validate - 유효성검사 라이브러리 (nodeJS 에서 사용가능)
 	api.validate.isExtension(value, extension)
 		확장자 
 		extension : jpg,jpeg,gif,png,pdf,hwp,exl
+
+	api.validate.isSelect(element)
+		select box 검사
+
+	api.validate.isCheck(element)
+		checkbox, radio 등 검사
 
 
 ----------
@@ -607,31 +624,31 @@ api.util - 각종 기능들 묶음
 	api.util.setCancelAnimFrame(time)
 		cancelAnimationFrame
 
-	api.util.getNumberUnit(value)
+	api.util.numberUnit(value)
 		숫자값 단위값 분리
 
 	api.util.isNumeric(value)
 		숫자여부 확인
 
-	api.util.getNumber(value)
+	api.util.numberReturn(value)
 		숫자만 추출
 
-	api.util.setNumberFormat(value)
+	api.util.numberFormat(value)
 		정수값을 금액단위로 표현
 
-	api.util.setFloatFormat(value)
+	api.util.floatFormat(value)
 		소수점값을 금액단위로 표현
 
-	api.util.setRemoveComma(value)
+	api.util.removeComma(value)
 		금액단위 표현 제거
 
-	api.util.setRound(값, 자릿수)
+	api.util.round(값, 자릿수)
 		지정자리 반올림
 
-	api.util.setFloor(값, 자릿수)
+	api.util.floor(값, 자릿수)
 		지정자리 버림
 
-	api.util.setCeiling(값, 자릿수)
+	api.util.ceiling(값, 자릿수)
 		지정자리 올림
 
 	api.util.dateSpecificInterval()
@@ -649,7 +666,7 @@ api.util - 각종 기능들 묶음
 ----------
 
 
-api.script - js 파일 동적로딩
+api.script - js 파일 동적로딩 (캐시문제에 따른 보완진행중)
 
 	// 사용예 1
 	api.script('js load 파일');
