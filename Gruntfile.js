@@ -56,7 +56,7 @@ module.exports = function(grunt) {
 		//uglify 설정
 		uglify: {
 			options: {
-				banner: '/* <%= grunt.template.today("yyyy-mm-dd") %> / ' //파일의 맨처음 붙는 banner 설정
+				banner: '/* <%= grunt.template.today("yyyy-mm-dd") %> */ ' //파일의 맨처음 붙는 banner 설정
 			},
 			my_target: {
 				files: {
