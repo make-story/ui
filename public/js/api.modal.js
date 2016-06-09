@@ -191,6 +191,11 @@ jQuery 또는 api.dom 에 종속적 실행
 					//this.elements.layer.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 					this.elements.container.appendChild(this.elements.layer);
 
+					// step
+					this.elements.step = document.createElement('div');
+					//this.elements.step.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.step);
+
 					// confirm
 					this.elements.confirm = document.createElement('div');
 					//this.elements.confirm.style.cssText = 'position: fixed; left: 0px; top: 0px;';
@@ -205,6 +210,16 @@ jQuery 또는 api.dom 에 종속적 실행
 					this.elements.push = document.createElement('div');
 					//this.elements.push.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 					this.elements.container.appendChild(this.elements.push);
+
+					// folder
+					this.elements.folder = document.createElement('div');
+					//this.elements.folder.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.folder);
+
+					// story
+					this.elements.story = document.createElement('div');
+					//this.elements.story.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.story);
 
 					try {
 						//document.body.insertBefore(fragment, document.body.firstChild);
@@ -697,8 +712,8 @@ jQuery 또는 api.dom 에 종속적 실행
 				'error': null
 			},
 			'theme:': {}, // 테마 (스타일 변경)
-			'target': '', // #id 또는 element
-			'rect': '' // #id 또는 element
+			'target': '', // #id 또는 element (출력레이어 타겟)
+			'rect': '' // #id 또는 element (위치기준 타켓)
 		};
 		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {};
@@ -883,6 +898,117 @@ jQuery 또는 api.dom 에 종속적 실행
 		}
 	};
 
+	// step
+	var ModalStep = function(settings) {
+		var that = this;
+		that.settings = {
+			'key': '',
+			'display': {
+				'index': false, // 현재 step 위치 출력여부
+				'button': false // 이전, 다음 버튼 출력여부
+			},
+			'callback': {
+				'show': null,
+				'hide': null,
+				'remove': null,
+				'error': null,
+				'prev': null, // 이전 콜백
+				'next': null // 다음 콜백
+			},
+			'theme:': {}, // 테마 (스타일 변경)
+			'prev': '', // .class 이번버튼
+			'next': '', // .class 다음버튼
+			'step': [] // 각 step 별로 설정값이 들어가 있음
+		};
+		that.settings = module.setSettings(that.settings, settings);
+		that.elements = {};
+		that.index = 0;
+
+		// private init
+		module.init();
+		(function() { 
+			var fragment = document.createDocumentFragment();
+			var key = {};
+			var li = '';
+			var i, max;
+
+			try {
+				// key
+				
+
+				// mask
+				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
+					that.elements.mask = that.settings.mask;
+					that.elements.mask.display = 'none';
+				}else {
+					that.elements.mask = document.createElement('div');
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					module.elements.step.appendChild(that.elements.mask);
+				}
+
+				// container
+				that.elements.container = document.createElement('div');
+				that.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none; -webkit-overflow-scrolling: touch;';
+				for(i=0, max=that.settings.step.length; i<max; i++) {
+					li += '<li></li>';
+				}
+				that.elements.container.innerHTML = '\
+					<div id="" style="">\
+						<ul>' + li + '</ul>\
+					</div>\
+					<div id="" style=""></div>\
+					<div id="" style="">\
+						<button id="" style="float: left;"></button>\
+						<button id="" style="float: right;"></button>\
+					</div>\
+				';
+				fragment.appendChild(that.elements.container);
+
+				// search element
+				//that.elements.title = that.elements.container.querySelector('#' + key.title);
+				//that.elements.message = that.elements.container.querySelector('#' + key.message);
+				//that.elements.cancel = that.elements.container.querySelector('#' + key.cancel);
+				//that.elements.ok = that.elements.container.querySelector('#' + key.ok);
+
+				// contents
+				that.elements.contents = [];
+				for(i=0, max=that.settings.step.length; i<max; i++) {
+					that.elements.contents[i] = (typeof that.settings.step[i] === 'object' && that.settings.step[i].nodeType ? that.settings.step[i] : $('#' + that.settings.step[i]).get(0));
+					that.elements.contents[i].style.display = 'none';
+					//that.elements.container.appendChild(that.elements.contents[i]);
+				}
+				module.elements.step.appendChild(fragment);
+
+				// event
+
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
+		})();
+	};
+	ModalStep.prototype = {
+		change: function() {
+
+		},
+		position: function() {
+			
+		},
+		show: function() {
+
+		},
+		hide: function() {
+
+		},
+		prev: function() {
+
+		},
+		next: function() {
+
+		}
+	};
+
 	// 확인
 	var ModalConfirm = function(settings) {
 		var that = this;
@@ -934,13 +1060,13 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 7px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
 				that.elements.container.innerHTML = '\
-					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.title + '</div>\
+					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 7px 7px 0 0;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
-					<div style="padding: 10px 18px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
-						<button id="' + key.cancel + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">CANCEL</button>\
-						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">OK</button>\
+					<div style="padding: 10px 18px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
+						<button id="' + key.cancel + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 7px; vertical-align: middle; cursor: pointer;">CANCEL</button>\
+						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 7px; vertical-align: middle; cursor: pointer;">OK</button>\
 					</div>\
 				';
 				fragment.appendChild(that.elements.container);
@@ -1164,12 +1290,12 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 7px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
 				that.elements.container.innerHTML = '\
-					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.title + '</div>\
+					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 7px 7px 0 0;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
-					<div style="padding: 10px 18px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
-						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 3px; vertical-align: middle; cursor: pointer;">OK</button>\
+					<div style="padding: 10px 18px; background: rgba(248, 249, 250, .97); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
+						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 7px; vertical-align: middle; cursor: pointer;">OK</button>\
 					</div>\
 				';
 				fragment.appendChild(that.elements.container);
@@ -1381,10 +1507,10 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 3px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 7px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
 				that.elements.container.innerHTML = '\
-					<div id="' + key.message + '" style="padding: 12px 12px 6px 12px; min-height: 33px; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 3px 3px 0 0;">' + that.settings.message + '</div>\
-					<div style="padding: 6px 12px 12px 12px; background: rgba(248, 249, 250, .97); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 3px 3px;">\
+					<div id="' + key.message + '" style="padding: 12px 12px 6px 12px; min-height: 33px; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 7px 7px 0 0;">' + that.settings.message + '</div>\
+					<div style="padding: 6px 12px 12px 12px; background: rgba(248, 249, 250, .97); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
 						<button id="' + key.close + '" style="margin: 0; padding: 0; color: #5F6061; font-size: 12px; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; cursor: pointer; background: transparent; border: none;">CLOSE</button>\
 					</div>\
 				';
@@ -1549,6 +1675,1134 @@ jQuery 또는 api.dom 에 종속적 실행
 			}
 		}
 	};
+
+	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
+
+	// folder
+	var ModalFolder = function(settings) {
+		var that = this;
+		that.settings = {
+			'key': '',
+			'position': 'center',
+			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
+			'callback': {
+				'show': null,
+				'hide': null,
+				'remove': null,
+				'error': null,
+				'title': null
+			},
+			'theme:': {}, // 테마 (스타일 변경)
+			'grid': ''
+		};
+		that.settings = module.setSettings(that.settings, settings);
+		that.elements = {};
+		that.width = 300;
+		that.width += env.browser.scrollbar; // 스크롤바 가로 픽셀
+
+		// private init
+		(function() { 
+			var fragment = document.createDocumentFragment();
+			var key = {};
+
+			// key
+			key.header = getKey();
+			key.title_input = getKey();
+			key.title_button = getKey();
+			key.close_button = getKey();
+			key.grid = getKey();
+			key.parent = getKey();
+
+			// mask
+			if(typeof that.settings.mask === 'boolean' && that.settings.mask === true) { // mask 값이 element 가 아닌 boolean 타입일 때
+				that.elements.mask = document.createElement('div');
+				that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+				module.elements.push.appendChild(that.elements.mask);
+			}else if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask = that.settings.mask;
+				that.elements.mask.display = 'none';
+			}
+
+			// container
+			that.elements.container = document.createElement('div');
+			that.elements.container.style.cssText = 'position: fixed; width: ' + that.width + 'px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .04); border: 1px solid rgb(240, 241, 242); border-radius: 7px; transition: left .5s, top .5s; outline: none;';
+			that.elements.container.innerHTML = '\
+				<!-- header //-->\
+				<header id="' + key.header + '" style="margin: 0 auto; height: 50px; background-color: rgb(255, 255, 255); border-radius: 7px 7px 0 0;">\
+					<!-- 폴더명 입력 //-->\
+					<div style="position: absolute; left: 20px; top: 12px;">\
+						<input type="text" name="" value="" id="' + key.title_input + '" style="padding: 5px; width: 170px; height: 17px; background-color: rgb(248, 249, 250); border: 0; font-size: 13px; color: #4C4D4E; border-radius: 7px;">\
+						<button id="' + key.title_button + '" style="padding: 0px; display: inline-block; position: relative; left: -45px; border: 0; background-color: transparent; font-size: 13px;">Done</button>\
+					</div>\
+					<!-- 폴더 닫기 등 버튼 //-->\
+					<div style="position: absolute; right: 20px; top: 14px;">\
+						<button id="' + key.close_button + '" style="padding: 0px; border: 0; background-color: transparent; font-size: 13px;">Close</button>\
+					</div>\
+				</header>\
+				<!-- grid //-->\
+				<div style="max-height: 200px; background-color: rgba(255, 255, 255, .97); border-top: 1px dashed rgb(240, 241, 242); border-bottom: 1px dashed rgb(240, 241, 242); overflow-x: hidden; overflow-y: auto;">\
+					<div id="' + key.grid + '" data-type="content" style="margin: 0 auto;">\
+						<!-- grid 로딩 메시지 //-->\
+						<div style="min-height: 100px; font-size: 14px; color: #E1E2E3; text-align: center;">Grid Lodding...</div>\
+					</div>\
+				</div>\
+				<!-- parent grid move //-->\
+				<div id="' + key.parent + '" data-type="parent" data-folder="' + that.settings['key'] + '" data-grid="' + that.settings['grid'] + '" style="margin: 0 auto; padding-top: 32px; height: 68px; font-size: 14px; color: #E1E2E3; text-align: center; background-color: rgb(255, 255, 255); border-radius: 0 0 7px 7px; -moz-user-select: none;">\
+					<!-- 상위폴더로 이동할 경우 여기로 드래그 //-->\
+					If you go to the parent folder<br>and drag it here\
+				</div>\
+			';
+			fragment.appendChild(that.elements.container);
+			module.elements.push.appendChild(fragment);
+
+			// search element
+			that.elements.header = that.elements.container.querySelector('#' + key.header);
+			that.elements.title_input = that.elements.container.querySelector('#' + key.title_input);
+			that.elements.title_button = that.elements.container.querySelector('#' + key.title_button);
+			that.elements.close_button = that.elements.container.querySelector('#' + key.close_button);
+			that.elements.grid = that.elements.container.querySelector('#' + key.grid);
+			that.elements.parent = that.elements.container.querySelector('#' + key.parent);
+
+			// event
+			$(that.elements.title_button).on(env['event']['click'], function(e) {
+				var event = e || window.event;
+				var value = title_input.value;
+				// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+				if(event.stopPropagation) { 
+					event.stopPropagation();
+				}else {
+					event.cancelBubble = true;
+				}
+				// 현재 이벤트의 기본 동작을 중단한다.
+				if(event.preventDefault) { 
+					event.preventDefault();
+				}else {
+					event.returnValue = false;
+				}
+				// 폴더 제목 변경
+				if(typeof that.settings.callback.title === 'function') {
+					that.settings.callback.title(encodeURIComponent(value || ''));
+				}
+			});
+			// 폴더 닫기 버튼 이벤트
+			$(that.elements.close_button).on(env['event']['down'], function(e) {
+				var event = e || window.event;
+				// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+				if(event.stopPropagation) { 
+					event.stopPropagation();
+				}else {
+					event.cancelBubble = true;
+				}
+				// 현재 이벤트의 기본 동작을 중단한다.
+				if(event.preventDefault) { 
+					event.preventDefault();
+				}else {
+					event.returnValue = false;
+				}
+				that.hide();
+			});
+		})();
+	};
+	ModalFolder.prototype = {
+		change: function(settings) {
+
+		},
+		position: function() {
+			var that = this;
+
+			try {
+				module.setPosition(that.settings.position, that.elements.container);
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
+
+			return that;
+		},
+		show: function(parameter) {
+			var that = this;
+			var parameter = parameter || {};
+			
+			// element
+			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask.style.zIndex = ++module.zindex;
+				that.elements.mask.style.display = 'block';
+			}
+			that.elements.container.style.zIndex = ++module.zindex;
+			that.elements.container.style.display = 'block';
+			that.position();
+
+			// focus (웹접근성)
+			module.active = document.activeElement;
+			that.elements.container.setAttribute('tabindex', -1);
+			that.elements.container.focus();
+
+			// callback
+			if(typeof that.settings.callback.show === 'function') {
+				that.settings.callback.show.call(that);
+			}
+			if(typeof parameter.callback === 'function') {
+				parameter.callback.call(that);	
+			}
+		},
+		hide: function(parameter) {
+			var that = this;
+			var parameter = parameter || {};
+
+			// element
+			that.elements.container.style.display = 'none';
+			if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+				that.elements.mask.style.display = 'none';
+			}
+
+			// focus (웹접근성)
+			if(module.active) {
+				module.active.focus();
+			}
+
+			// callback
+			if(typeof that.settings.callback.hide === 'function') {
+				that.settings.callback.hide.call(that);
+			}
+			if(typeof parameter.callback === 'function') {
+				parameter.callback.call(that);	
+			}
+		},
+		remove: function(parameter) {
+			var that = this;
+			var parameter = parameter || {};
+
+			// element
+			if(that.elements.mask) {
+				that.elements.mask.parentNode.removeChild(that.elements.mask);
+			}
+			if(that.elements.container) {
+				that.elements.container.parentNode.removeChild(that.elements.container);
+			}
+			that.elements = {};
+
+			// instance
+			if(that.settings['key'] && module.instance[that.settings['key']]) {
+				delete module.instance[that.settings['key']];
+			}
+
+			// callback
+			if(typeof parameter.callback === 'function') {
+				parameter.callback.call(that);	
+			}
+		}
+	};
+
+	// story
+	var ModalStory = (function() {
+		// private init
+		var init = (function() {
+			// 모바일, PC 분기
+			if(env['monitor'] === 'mobile') {
+				return function() {
+					var that = this;
+					var fragment = document.createDocumentFragment();
+					var key = {};
+
+					// key
+					key.header = getKey();
+					key.progress = getKey();
+					key.bar = getKey();
+					key.content = getKey();
+					key.iframe = getKey();
+					key.button_group = getKey();
+					key.button_refresh = getKey();
+					key.button_hidden = getKey();
+					key.button_close = getKey();
+
+					// container
+					/*
+					-
+					// 팝업 타이틀, 제어 버튼 등 toolkit (모바일에서는 하단에 적용)
+					-
+					// iframe 은 상위 element의 고정된 height 픽셀값이 있어야 정확한 height="100%" 가 적용된다.
+					// 그러므로 iframe 를 감싸는 content(div) 를 만든다.
+					that.elements.content.style.boxSizing = that.elements.content.style.mozBoxSizing = that.elements.content.style.webkitBoxSizing = 'border-box';
+					*/
+					that.elements.container = document.createElement('section');
+					that.elements.container.style.cssText = 'position: fixed; outline: none;'; // 모바일은 전체화면으로 출력
+					that.elements.container.innerHTML = '\
+						<!-- content //-->\
+						<div id="' + key.content + '" style="clear: both; width: 100%; box-sizing: border-box; height: 382px;">\
+							<iframe id="' + key.iframe + '" srcdoc="" marginheight="0" marginwidth="0" scrolling="auto" src="" style="margin: 0px; padding: 0px; pointer-events: auto; background-color: rgb(245, 246, 247); box-sizing: border-box;" frameborder="0" height="100%" width="100%"></iframe>\
+						</div>\
+						<!-- header //-->\
+						<header id="' + key.header + '" style="position: fixed; bottom: 5px; right: 5px; box-sizing: border-box;">\
+							<!-- progressbar //-->\
+							<div id="' + key.progress + '" style="position: absolute; top: -4px; width: 100%;">\
+								<div id="' + key.bar + '" style="background-color: rgba(237, 85, 101, 0.97); width: 100%; height: 3px; border-radius: 1px; display: none;"></div>\
+							</div>\
+							<!-- button //-->\
+							<div id="' + key.button_group + '" style="background-color: rgba(44, 45, 46, 0.97); box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, 0.1); border-radius: 7px;">\
+								<button id="' + key.button_refresh + '" style="width: 40px; height: 40px; background-image: url(&quot;./images/popup-buttons-40.png&quot;); background-position: 0px 0px; background-repeat: no-repeat;"></button>\
+								<button id="' + key.button_hidden + '" style="width: 40px; height: 40px; background-image: url(&quot;./images/popup-buttons-40.png&quot;); background-position: -40px 0px; background-repeat: no-repeat;"></button>\
+								<button id="' + key.button_close + '" style="width: 40px; height: 40px; background-image: url(&quot;./images/popup-buttons-40.png&quot;); background-position: -80px 0px; background-repeat: no-repeat;"></button>\
+							</div>\
+						</header>\
+					';
+					fragment.appendChild(that.elements.container);
+					module.elements.story.appendChild(fragment);
+
+					// search element
+					that.elements.header = that.elements.container.querySelector('#' + key.header);
+					that.elements.progress = that.elements.container.querySelector('#' + key.progress);
+					that.elements.bar = that.elements.container.querySelector('#' + key.bar);
+					that.elements.content = that.elements.container.querySelector('#' + key.content);
+					that.elements.iframe = that.elements.container.querySelector('#' + key.iframe);
+					that.elements.button_group = that.elements.container.querySelector('#' + key.button_group);
+					that.elements.button_refresh = that.elements.container.querySelector('#' + key.button_refresh);
+					that.elements.button_hidden = that.elements.container.querySelector('#' + key.button_hidden);
+					that.elements.button_close = that.elements.container.querySelector('#' + key.button_close);
+
+					// safari 에서는 iframe 내부에 스크롤바가 생기도록 하려면 아래 div 가 필요하다.
+					if(env['browser']['name'] === 'safari') {
+						that.elements.content.style.cssText = "overflow: auto; -webkit-overflow-scrolling: touch;"; // webkitOverflowScrolling
+					}
+
+					// event
+					that.elements.iframe.onload = that.imports.bind(that);
+					$(that.elements.button_refresh).on(env['event']['down'], function(e) { // iframe 새로고침
+						var event = e || window.event;
+						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+						var touch = event.touches; // touchstart
+						
+						// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+						if(event.stopPropagation) { 
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
+						// 현재 이벤트의 기본 동작을 중단한다.
+						if(event.preventDefault) { 
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+
+						//that.elements.iframe.contentWindow.location.reload(true); // 비표준
+						//that.elements.iframe.src += '';
+						that.imports.call(that);
+					});
+					$(that.elements.button_hidden).on(env['event']['down'], function(e) { // 팝업 숨기기
+						var event = e || window.event;
+						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+						var touch = event.touches; // touchstart
+
+						// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+						if(event.stopPropagation) { 
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
+						// 현재 이벤트의 기본 동작을 중단한다.
+						if(event.preventDefault) { 
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+
+						//that.elements.container.style.display = 'none';
+						that.hide();
+					});
+					$(that.elements.button_close).on(env['event']['down'], function(e) { // 팝업 닫기 (element 삭제)
+						var event = e || window.event;
+						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+						var touch = event.touches; // touchstart
+						
+						// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+						if(event.stopPropagation) { 
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
+						// 현재 이벤트의 기본 동작을 중단한다.
+						if(event.preventDefault) { 
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+
+						// iframe 중지
+						that.elements.iframe.onload = null;
+						//that.elements.container.style.display = 'none';
+						that.remove();
+					});
+				};
+			}else {
+				return function() {
+					var that = this;
+					var fragment = document.createDocumentFragment();
+					var key = {};
+
+					// key
+					key.header = getKey();
+					key.title = getKey();
+					key.progress = getKey();
+					key.bar = getKey();
+					key.content = getKey();
+					key.iframe = getKey();
+					key.button_group = getKey();
+					key.button_refresh = getKey();
+					key.button_hidden = getKey();
+					key.button_size = getKey();
+					key.button_close = getKey();
+					key.right_resize = getKey();
+					key.bottom_resize = getKey();
+					key.right_bottom_resize = getKey();
+
+					// resize 버튼 크기
+					var resize_domain = 0; 
+					if(env['check']['touch'] === true) { // 터치 기기에서는 사용자 손가락 터치 영역을 고려하여 범위를 넓게 한다.
+						resize_domain = 16;
+					}else {
+						resize_domain = 10;
+					}
+
+					// container
+					that.elements.container = document.createElement('section');
+					that.elements.container.style.cssText = 'position: fixed; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .04); border: 1px solid rgb(44, 45, 46); outline: none;'; // border 스타일 변경시 리사이즈 후 스타일도 함께 변경해 줘야한다.
+					that.elements.container.innerHTML = '\
+						<!-- header //-->\
+						<header id="' + key.header + '" style="position: relative; width: 100%; height: 30px; background-color: rgba(44, 45, 46, 0.97); box-sizing: border-box;">\
+							<!-- title //-->\
+							<div id="' + key.title + '" style="position: absolute; top: 7px; left: 18px; font-size: 12px; color: rgb(217, 217, 217); cursor: move; -moz-user-select: none;">' + that.settings.title + '</div>\
+							<!-- progress //-->\
+							<div id="' + key.progress + '" style="position: absolute; width: 100%; bottom: -4px;">\
+								<div id="' + key.bar + '" style="background-color: rgba(237, 85, 101, 0.97); width: 100%; height: 3px; border-radius: 1px; display: none;"></div>\
+							</div>\
+							<!-- button //-->\
+							<div id="' + key.button_group + '" style="position: absolute; top: 0px; right: 0px; padding: 0px 9px;">\
+								<button id="' + key.button_refresh + '" style="width: 30px; height: 30px; background-image: url(&quot;./images/popup-buttons-30.png&quot;); background-position: 0px 0px; background-repeat: no-repeat;"></button>\
+								<button id="' + key.button_hidden + '" style="width: 30px; height: 30px; background-image: url(&quot;./images/popup-buttons-30.png&quot;); background-position: -30px 0px; background-repeat: no-repeat;"></button>\
+								' + (env['check']['fullscreen'] === true ? '<button id="' + key.button_size + '" style="width: 30px; height: 30px; background-image: url(&quot;./images/popup-buttons-30.png&quot;); background-position: -60px 0px; background-repeat: no-repeat;"></button>' : '') + '\
+								<button id="' + key.button_close + '" style="width: 30px; height: 30px; background-image: url(&quot;./images/popup-buttons-30.png&quot;); background-position: -90px 0px; background-repeat: no-repeat;"></button>\
+							</div>\
+						</header>\
+						<!-- content //-->\
+						<div id="' + key.content + '" style="width: 100%; clear: both; box-sizing: border-box; height: 352px;">\
+							<iframe id="' + key.iframe + '" width="100%" height="100%" frameborder="0" style="margin: 0px; padding: 0px; pointer-events: auto; background-color: rgb(245, 246, 247); box-sizing: border-box;" src="" scrolling="auto" marginwidth="0" marginheight="0" srcdoc=""></iframe>\
+						</div>\
+						<!-- resize //-->\
+						<div id="' + key.right_resize + '" style="top: 0px; right: -' + resize_domain + 'px; width: ' + resize_domain + 'px; height: 100%; cursor: e-resize; position: absolute; display: block;"></div>\
+						<div id="' + key.bottom_resize + '" style="left: 0px; bottom: -' + resize_domain + 'px; width: 100%; height: ' + resize_domain + 'px; cursor: s-resize; position: absolute; display: block;"></div>\
+						<div id="' + key.right_bottom_resize + '" style="right: -' + resize_domain + 'px; bottom: -' + resize_domain + 'px; width: ' + resize_domain + 'px; height: ' + resize_domain + 'px; cursor: se-resize; position: absolute; display: block;"></div>\
+					';
+					fragment.appendChild(that.elements.container);
+					module.elements.story.appendChild(fragment);
+
+					// search element
+					/*
+					-
+					// 팝업 타이틀, 제어 버튼 등 toolkit (모바일에서는 하단에 적용)
+					-
+					// iframe 은 상위 element의 고정된 height 픽셀값이 있어야 정확한 height="100%" 가 적용된다.
+					// 그러므로 iframe 를 감싸는 content(div) 를 만든다.
+					*/
+					that.elements.header = that.elements.container.querySelector('#' + key.header);
+					that.elements.title = that.elements.container.querySelector('#' + key.title);
+					that.elements.progress = that.elements.container.querySelector('#' + key.progress);
+					that.elements.bar = that.elements.container.querySelector('#' + key.bar);
+					that.elements.content = that.elements.container.querySelector('#' + key.content);
+					that.elements.iframe = that.elements.container.querySelector('#' + key.iframe);
+					that.elements.button_group = that.elements.container.querySelector('#' + key.button_group);
+					that.elements.button_refresh = that.elements.container.querySelector('#' + key.button_refresh);
+					that.elements.button_hidden = that.elements.container.querySelector('#' + key.button_hidden);
+					that.elements.button_size = that.elements.container.querySelector('#' + key.button_size);
+					that.elements.button_close = that.elements.container.querySelector('#' + key.button_close);
+					that.elements.right_resize = that.elements.container.querySelector('#' + key.right_resize);
+					that.elements.bottom_resize = that.elements.container.querySelector('#' + key.bottom_resize);
+					that.elements.right_bottom_resize = that.elements.container.querySelector('#' + key.right_bottom_resize);
+
+					// event
+					that.elements.iframe.onload = that.imports.bind(that);
+					$(that.elements.button_refresh).on(env['event']['down'], function(e) { // iframe 새로고침
+						var event = e || window.event;
+						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+						var touch = event.touches; // touchstart
+						
+						// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+						if(event.stopPropagation) { 
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
+						// 현재 이벤트의 기본 동작을 중단한다.
+						if(event.preventDefault) { 
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+
+						//that.elements.iframe.contentWindow.location.reload(true); // 비표준
+						//that.elements.iframe.src += '';
+						that.imports.call(that);
+					});
+					$(that.elements.button_hidden).on(env['event']['down'], function(e) { // 팝업 숨기기
+						var event = e || window.event;
+						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+						var touch = event.touches; // touchstart
+
+						// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+						if(event.stopPropagation) { 
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
+						// 현재 이벤트의 기본 동작을 중단한다.
+						if(event.preventDefault) { 
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+
+						//that.elements.container.style.display = 'none';
+						that.hide();
+					});
+					$(that.elements.button_size).on(env['event']['down'], function(e) { // // fullscreen button
+						var event = e || window.event;
+						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+						var touch = event.touches; // touchstart
+
+						if(((document.fullscreenElement && document.fullscreenElement !== null) || document.mozFullScreen || document.webkitIsFullScreen)) {
+							// 축소
+							if(document.exitFullscreen) {
+								document.exitFullscreen();
+							}else if(document.mozCancelFullScreen) {
+								document.mozCancelFullScreen();
+							}else if(document.webkitExitFullscreen) {
+								document.webkitExitFullscreen();
+							}
+						}else {
+							// 확대
+							if(that.elements.iframe.requestFullscreen) {
+								that.elements.iframe.requestFullscreen();
+							}else if(that.elements.iframe.mozRequestFullScreen) {
+								that.elements.iframe.mozRequestFullScreen();
+							}else if(that.elements.iframe.webkitRequestFullscreen) {
+								that.elements.iframe.webkitRequestFullscreen();
+							}else if(that.elements.iframe.msRequestFullscreen) {
+								that.elements.iframe.msRequestFullscreen();
+							}
+						}
+
+						// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+						if(event.stopPropagation) { 
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
+						// 현재 이벤트의 기본 동작을 중단한다.
+						if(event.preventDefault) { 
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+					});
+					$(that.elements.button_close).on(env['event']['down'], function(e) { // 팝업 닫기 (삭제)
+						var event = e || window.event;
+						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+						var touch = event.touches; // touchstart
+						
+						// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+						if(event.stopPropagation) { 
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
+						// 현재 이벤트의 기본 동작을 중단한다.
+						if(event.preventDefault) { 
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+
+						// iframe 중지
+						that.elements.iframe.onload = null;
+						//that.elements.container.style.display = 'none';
+						that.remove();
+					});
+					$(that.elements.header).on(env['event']['down'], function(e) { // 팝업이동 mouse down
+						var event = e || window.event;
+						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+						var touch = event.touches; // touchstart
+
+						// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+						if(event.stopPropagation) { 
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
+						// 현재 이벤트의 기본 동작을 중단한다.
+						if(event.preventDefault) { 
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+
+						// 멀티터치 방지
+						if(touch && touch.length && 1 < touch.length) {
+							return;
+						}
+
+						// button_group 내부에서 클릭된 이벤트
+						if($(that.elements.button_group).contains(event.target)) {
+							console.log('[경고] button_group 내부 target');
+							return false;
+						}
+
+						// 팝업의 마지막 left, top 값을 초기화 한다.
+						that.left = 0;
+						that.top = 0;
+
+						// z-index
+						module.zindex += 1;
+						that.elements.container.style.zIndex = module.zindex;
+
+						// 마우스 위치
+						var mouse = {
+							'down': {
+								'left': 0,
+								'top': 0
+							},
+							'move': {
+								'left': 0,
+								'top': 0
+							}
+						};
+						if(touch) {
+							mouse.down.top = touch[0].pageY;
+							mouse.down.left = touch[0].pageX;
+						}else {
+							mouse.down.top = event.pageY;
+							mouse.down.left = event.pageX;
+						}
+						mouse.down.top = mouse.down.top - Number(String(that.elements.container.style.top).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5'));
+						mouse.down.left = mouse.down.left - Number(String(that.elements.container.style.left).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5'));
+
+						// snap 대상 element 배열에 저장
+						var snap = [];
+						var section = module.elements.story.querySelectorAll('section');
+						var i, max;
+						for(i=0, max=section.length; i<max; i++) {
+							// 현재 element(story)를 제외한 element 들을 리스트에 담는다 (현재 display되고 있는 다른 story layer)
+							if(that.elements.container.isEqualNode(section[i]) === false && section[i].style && section[i].style.display !== 'none') { 
+								snap.push({
+									'top': parseInt(section[i].offsetTop),
+									'left': parseInt(section[i].offsetLeft),
+									'bottom': parseInt(section[i].offsetTop + section[i].offsetHeight),
+									'right': parseInt(section[i].offsetLeft + section[i].offsetWidth)
+								});
+							}
+						}
+
+						// mouse move (left, top 이동)
+						that.elements.iframe.style.pointerEvents = 'none';
+						$(window).on(env['event']['move'] + '.EVENT_MOUSEMOVE_popup_story_move', function(e) {
+							var event = e || window.event;
+							//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+							var touch = event.touches || event.changedTouches;
+
+							// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+							if(event.stopPropagation) { 
+								event.stopPropagation();
+							}else {
+								event.cancelBubble = true;
+							}
+							// 현재 이벤트의 기본 동작을 중단한다.
+							if(event.preventDefault) { 
+								event.preventDefault();
+							}else {
+								event.returnValue = false;
+							}
+
+							// 마우스 위치
+							if(touch) {
+								mouse.move.top = touch[0].pageY;
+								mouse.move.left = touch[0].pageX;
+							}else {
+								mouse.move.top = event.pageY;
+								mouse.move.left = event.pageX;
+							}
+
+							// 현재 팝업의 위치(영역)
+							var top = (mouse.move.top - mouse.down.top);
+							var left = (mouse.move.left - mouse.down.left);
+							var bottom = parseInt(top + that.elements.container.offsetHeight);
+							var right = parseInt(left + that.elements.container.offsetWidth);
+
+							// 스크롤 제어
+							that.elements.container.scrollIntoView(false); // true 일 경우 엘리먼트가 스크롤 영역의 상단에 위치하도록 스크롤 됩니다. 만약  false 인 경우 스크롤 영역의 하단에 위치하게 됩니다.
+							//that.elements.container.scrollIntoView({block: "end", behavior: "instant"}); // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView
+
+							// snap 영역 검사
+							var i, max;
+							var interval = that.snap; // snap 을 발생시키도록하는 element와 element 간의 간격
+							for(i=0, max=snap.length; i<max; i++) {
+								/*
+								-
+								사각형(top, left, bottom, right) snap 가능 영역 산정
+								top영역: (snap[i].top - interval)
+								left영역: (snap[i].left - interval)
+								bottom영역: (snap[i].bottom + interval)
+								righr영역: (snap[i].right + interval)
+								위 영역(다른 팝업 element)안으로 움직이고 있는 팝업이 들어오면 snap 을 검사한다.
+								*/
+								if(top < (snap[i].bottom + interval) && bottom > (snap[i].top - interval) && right > (snap[i].left - interval) && left < (snap[i].right + interval)) {
+									// left 또는 right
+									if(Math.abs(snap[i].left - left) <= interval) {
+										left = snap[i].left;
+									}else if(Math.abs(snap[i].left - right) <= interval) {
+										left = snap[i].left - that.elements.container.offsetWidth;
+									}else if(Math.abs(snap[i].right - right) <= interval) {
+										left = snap[i].right - that.elements.container.offsetWidth;
+									}else if(Math.abs(snap[i].right - left) <= interval) {
+										left = snap[i].right;
+									}
+
+									// top 또는 bottom
+									if(Math.abs(snap[i].top - top) <= interval) {
+										top = snap[i].top;
+									}else if(Math.abs(snap[i].top - bottom) <= interval) {
+										top = snap[i].top - that.elements.container.offsetHeight;
+									}if(Math.abs(snap[i].bottom - bottom) <= interval) {
+										top = snap[i].bottom - that.elements.container.offsetHeight;
+									}else if(Math.abs(snap[i].bottom - top) <= interval) {
+										top = snap[i].bottom;
+									}
+
+									break;
+								}
+							}
+							
+							// 위치 적용
+							if(0 <= top) {
+								that.elements.container.style.top = top + 'px';
+							}
+							if(0 <= left) {
+								that.elements.container.style.left = left + 'px';
+							}
+						});
+						// mouse up
+						$(window).on(env['event']['up'] + '.EVENT_MOUSEUP_popup_story_move', function(e) {
+							var event = e || window.event;
+							var touch = event.changedTouches; // touchend
+
+							// 현재 이벤트의 기본 동작을 중단한다.
+							if(event.preventDefault) { 
+								event.preventDefault();
+							}else {
+								event.returnValue = false;
+							}
+
+							$(window).off('.EVENT_MOUSEMOVE_popup_story_move');
+							$(window).off('.EVENT_MOUSEUP_popup_story_move');
+							that.elements.iframe.style.pointerEvents = 'auto';
+						});
+					});
+
+					// resize event
+					var setMousePositionOn = function(callback) {
+						if(!callback || typeof callback !== 'function') {
+							return false;
+						}
+						
+						// z-index
+						module.zindex += 1;
+						that.elements.container.style.zIndex = module.zindex;
+
+						console.log('on');
+						that.elements.container.style.border = '1px dashed rgb(44, 45, 46)';
+						$('iframe', module.elements.story).css({'pointerEvents': 'none'});
+						$(window).on(env['event']['move'] + '.EVENT_MOUSEMOVE_popup_story_resize', function(e) {
+							var event = e || window.event;
+							//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+							var touch = event.touches || event.changedTouches;
+
+							// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+							if(event.stopPropagation) { 
+								event.stopPropagation();
+							}else {
+								event.cancelBubble = true;
+							}
+							// 현재 이벤트의 기본 동작을 중단한다.
+							if(event.preventDefault) { 
+								event.preventDefault();
+							}else {
+								event.returnValue = false;
+							}
+
+							/*
+							pageX/pageY : <html> element in CSS pixels.
+							clientX/clientY : viewport(browser) in CSS pixels.
+							screenX/screenY : screen in device pixels.
+							*/
+							var top, left;
+							// 마우스 위치
+							if(touch) {
+								top = touch[0].clientY;
+								left = touch[0].clientX;
+							}else {
+								top = event.clientY;
+								left = event.clientX;
+							}
+
+							//console.log('top: ' + top + ', left: ' + left);
+							callback({'top': top, 'left': left});
+						});
+					};
+					var setMousePositionOff = function(callback) {
+						$(window).on(env['event']['up'] + '.EVENT_MOUSEUP_popup_story_resize', function(e) {
+							var event = e || window.event;
+							var touch = event.changedTouches; // touchend
+
+							console.log('off');
+							$(window).off('.EVENT_MOUSEMOVE_popup_story_resize');
+							$(window).off('.EVENT_MOUSEUP_popup_story_resize');
+							$('iframe', module.elements.story).css({'pointerEvents': 'auto'});
+							//that.elements.iframe.style.pointerEvents = 'auto';
+							that.elements.container.style.border = '1px solid rgb(44, 45, 46)';
+							document.documentElement.style.cursor = 'auto'; // <html>
+							if(callback && typeof callback === 'function') {
+								callback();
+							}
+						});
+					};
+					
+					// localStorage 에 width, height 의 값을 저장한다.
+					$(that.elements.right_resize).on(env['event']['down'], function(e) {
+						var event = e || window.event;
+						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+						var touch = event.touches; // touchstart
+				
+						// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+						if(event.stopPropagation) { 
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
+						// 현재 이벤트의 기본 동작을 중단한다.
+						if(event.preventDefault) { 
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+
+						// 멀티터치 방지
+						if(touch && touch.length && 1 < touch.length) {
+							return;
+						}
+				
+						document.documentElement.style.cursor = 'e-resize'; // <html>
+						setMousePositionOn(function(position) {
+							var position = position || {};
+							var left = position.left || 0;
+							var top = position.top || 0;
+				
+							left -= Number(String(that.elements.container.style.left).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')); // 현재 팝업의 left 값
+							left -= resize_domain; // resize 버튼 크기
+							if(0 <= left && that.settings.min.width <= left) {
+								window.localStorage.setItem(('modal' + that.settings.key + 'width'), left);
+								that.elements.container.style.width = left + 'px';
+							}
+						});
+						setMousePositionOff();
+					});
+					$(that.elements.bottom_resize).on(env['event']['down'], function(e) {
+						var event = e || window.event;
+						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+						var touch = event.touches; // touchstart
+				
+						// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+						if(event.stopPropagation) { 
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
+						// 현재 이벤트의 기본 동작을 중단한다.
+						if(event.preventDefault) { 
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+
+						// 멀티터치 방지
+						if(touch && touch.length && 1 < touch.length) {
+							return;
+						}
+				
+						document.documentElement.style.cursor = 's-resize'; // <html>
+						setMousePositionOn(function(position) {
+							var position = position || {};
+							var left = position.left || 0;
+							var top = position.top || 0;
+				
+							top -= Number(String(that.elements.container.style.top).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')); // 현재 팝업의 top 값
+							top -= resize_domain; // resize 버튼 크기
+							if(0 <= top && that.settings.min.height <= top) {
+								window.localStorage.setItem(('modal' + that.settings.key + 'height'), top);
+								that.elements.container.style.height = top + 'px';
+								//that.elements.content.style.height = (Number(String(that.elements.container.style.height).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) - Number(String(that.elements.container.style.borderTopWidth).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) - Number(String(that.elements.container.style.borderBottomWidth).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) - Number(String(that.elements.header.style.height)).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5'))) + 'px';
+								that.elements.content.style.height = (Number(String(that.elements.container.style.height).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) - Number(String(that.elements.header.style.height).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5'))) + 'px';
+							}
+						});
+						setMousePositionOff();
+					});
+					$(that.elements.right_bottom_resize).on(env['event']['down'], function(e) {
+						var event = e || window.event;
+						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+						var touch = event.touches; // touchstart
+				
+						// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+						if(event.stopPropagation) { 
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
+						// 현재 이벤트의 기본 동작을 중단한다.
+						if(event.preventDefault) { 
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+
+						// 멀티터치 방지
+						if(touch && touch.length && 1 < touch.length) {
+							return;
+						}
+				
+						document.documentElement.style.cursor = 'se-resize'; // <html>
+						setMousePositionOn(function(position) {
+							var position = position || {};
+							var left = position.left || 0;
+							var top = position.top || 0;
+				
+							left -= Number(String(that.elements.container.style.left).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')); // 현재 팝업의 left 값
+							left -= resize_domain;
+							if(0 <= left && that.settings.min.width <= left) {
+								window.localStorage.setItem(('modal' + that.settings.key + 'width'), left);
+								that.elements.container.style.width = left + 'px';
+							}
+							top -= Number(String(that.elements.container.style.top).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')); // 현재 팝업의 top 값
+							top -= resize_domain;
+							if(0 <= top && that.settings.min.height <= top) {
+								window.localStorage.setItem(('modal' + that.settings.key + 'height'), top);
+								that.elements.container.style.height = top + 'px';
+								//that.elements.iframe.height = Number(String(that.elements.container.style.height).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) - Number(String(that.elements.header.style.height).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5'));
+								//that.elements.content.style.height = (Number(String(that.elements.container.style.height).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) - Number(String(that.elements.container.style.borderTopWidth).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) - Number(String(that.elements.container.style.borderBottomWidth).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) - Number(String(that.elements.header.style.height).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5'))) + 'px';
+								that.elements.content.style.height = (Number(String(that.elements.container.style.height).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) - Number(String(that.elements.header.style.height).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5'))) + 'px';
+							}
+						});
+						setMousePositionOff();
+					});
+				};
+			}
+		})();
+		var ModalStory = function(settings) {
+			var that = this;
+			that.settings = {
+				'key': '',
+				'callback': {
+					'show': null,
+					'hide': null,
+					'remove': null,
+					'error': null
+				},
+				'theme:': {}, // 테마 (스타일 변경)
+				'title': '',
+				'min': { // 최소 크기
+					'width': 300,
+					'height': 300
+				}
+			};
+			that.settings = module.setSettings(that.settings, settings);
+			that.elements = {};
+
+			// story 팝업간 차이
+			that.gap = 20; 
+			// snap 을 발생시키도록하는 element와 element 간의 간격
+			that.snap = 10; 
+			// 마지막 열었던 story 팝업 left, top 값
+			that.left = 0;
+			that.top = 0;
+
+			// private init
+			init.call(that);
+		};
+		ModalStory.prototype = {
+			change: function(settings) {
+
+			},
+			show: function(parameter) {
+				var that = this;
+				var parameter = parameter || {};
+				var size;
+
+				// 이미 show 되어 있는 상태인지 확인
+
+				
+				// element
+				if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+					that.elements.mask.style.zIndex = ++module.zindex;
+					that.elements.mask.style.display = 'block';
+				}
+				if(env['monitor'] === 'mobile') {
+					// 모바일에서의 style
+					size = module.getWinDocWidthHeight();
+					that.elements.container.style.width = (size.window.width - env['browser']['scrollbar']) + 'px';
+					that.elements.container.style.height = size.window.height + 'px';
+					that.elements.content.style.height = size.window.height + 'px';
+					
+					//
+					that.elements.container.style.left = '0px';
+					that.elements.container.style.top = '0px';
+				}else {
+					// that.settings.key, 'modal' 값으로 localStorage 에 width, height 의 마지막 값이 저장되어 있는지 확인한다.
+					that.elements.container.style.width = (window.localStorage.getItem(('modal' + that.settings.key + 'width')) || that.settings.min.width) + 'px';
+					that.elements.container.style.height = (window.localStorage.getItem(('modal' + that.settings.key + 'height')) || that.settings.min.height) + 'px';
+					that.elements.content.style.height = (Number(String(that.elements.container.style.height).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) - Number(String(that.elements.header.style.height).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5'))) + 'px';
+
+					// childElementCount 를 활용하여 story 팝업 element개수 * childElementCount 계산하여 사용하자
+					if((that.gap * 5) < that.left || (that.gap * 5) < that.top) {
+						that.left = 0;
+						that.top = 0;
+					}
+					that.left += that.gap;
+					that.top += that.gap;
+					that.elements.container.style.left = that.left + 'px';
+					that.elements.container.style.top = that.top + 'px';
+				}
+				that.elements.container.style.zIndex = ++module.zindex;
+				that.elements.container.style.display = 'block';
+
+				// focus (웹접근성)
+				module.active = document.activeElement;
+				that.elements.container.setAttribute('tabindex', -1);
+				that.elements.container.focus();
+
+				// callback
+				if(typeof that.settings.callback.show === 'function') {
+					that.settings.callback.show.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
+			},
+			hide: function(parameter) {
+				var that = this;
+				var parameter = parameter || {};
+
+				// element
+				that.elements.container.style.display = 'none';
+				if(that.settings.mask && typeof that.elements.mask === 'object' && that.elements.mask.nodeType) {
+					that.elements.mask.style.display = 'none';
+				}
+
+				// focus (웹접근성)
+				if(module.active) {
+					module.active.focus();
+				}
+
+				// story 팝업의 겹쳐서 열리는 것을 방지하기 위한 값 다시계산
+				if(0 <= (that.left - that.gap)) {
+					that.left -= that.gap;
+				}
+				if(0 <= (that.top - that.gap)) {
+					that.top -= that.gap;
+				}
+
+				// callback
+				if(typeof that.settings.callback.hide === 'function') {
+					that.settings.callback.hide.call(that);
+				}
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
+			},
+			remove: function(parameter) {
+				var that = this;
+				var parameter = parameter || {};
+
+				// element
+				if(that.elements.mask) {
+					that.elements.mask.parentNode.removeChild(that.elements.mask);
+				}
+				if(that.elements.container) {
+					that.elements.container.parentNode.removeChild(that.elements.container);
+				}
+				that.elements = {};
+
+				// instance
+				if(that.settings['key'] && module.instance[that.settings['key']]) {
+					delete module.instance[that.settings['key']];
+				}
+
+				// callback
+				if(typeof parameter.callback === 'function') {
+					parameter.callback.call(that);	
+				}
+			},
+			imports: function(parameter) { // story 내부 html 불러오기
+				var that = this;
+				var parameter = parameter || {};
+
+				/*
+				오프라인 실행과 온라인 실행을 구분
+				오프라인: that.settings.url 값이 있음
+				*/
+				$.ajax({
+					'type': 'get',
+					'url': './grid/story', 
+					'data': {
+						'block': that.settings['key']
+					},
+					'progressDownload': function(progress) {
+						//console.log(progress);
+						if(typeof that.elements.bar === 'object') {
+							that.elements.bar.style.display = 'block';
+							that.elements.bar.style.width = progress + '%';
+							if(progress >= 100) {
+								that.elements.bar.style.display = 'none';
+							}
+						}
+					},
+					'success': function(html) {
+						that.elements.iframe.onload = null; // 이벤트 정지
+						//console.log('load HTML: ' + html);
+
+						// sandbox
+						//that.elements.iframe.sandbox = "allow-script"; // iframe 내부 스크립트
+
+						// srcdoc: 
+						// 코드 중 큰따옴표("")를 사용해서는 안 되므로 대신 &quot;를 사용해야 한다.
+						// src 속성과 srcdoc 속성을 둘다 지정했을 때는 srcdoc 속성이 우선되며, srcdoc가 지원하지 않는 브라우저에서는 src 속성이 동작하게 됩니다.
+						// https://github.com/jugglinmike/srcdoc-polyfill
+						that.elements.iframe.srcdoc = decodeURIComponent(html || ''); // encodeURIComponent / decodeURIComponent
+
+						// html
+						//(that.elements.iframe.contentDocument || that.elements.iframe.contentWindow.document).body.innerHTML = 'test'; // body
+						//(that.elements.iframe.contentDocument || that.elements.iframe.contentWindow.document).write('test'); // body
+						//(that.elements.iframe.contentDocument || that.elements.iframe.contentWindow.document).documentElement.innerHTML = html;
+
+						// srcdoc 폴리필
+
+
+						// callback
+						if(typeof parameter.callback === 'function') {
+							parameter.callback.call(that);	
+						}
+					}
+				});
+			}
+		};
+		//
+		return ModalStory;
+	})();
 
 	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 

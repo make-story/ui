@@ -402,6 +402,14 @@ Dual licensed under the MIT and GPL licenses.
 			}
 			return result + value;
 		},
+		// 글자 Byte 수 출력
+		stringByteLength: function(value) {
+			var bytes = 0;
+			if(typeof value === 'string') {
+				bytes = value.replace(/[\0-\x7f]|([0-\u07ff]|(.))/g,"$&$1$2").length;
+			}
+			return bytes;
+		},
 		// fragment 에 html 삽입 후 반환
 		fragmentHtml: function(html) {
 			// Source: https://github.com/Alhadis/Snippets/blob/master/js/polyfills/IE8-child-elements.js
@@ -429,6 +437,51 @@ Dual licensed under the MIT and GPL licenses.
 			}
 
 			return fragment;
+		},
+		// window popup
+		windowPopup: function(url, name, width, height, features) {
+			/*
+			//features
+			- menubar : 메뉴바를 보여주거나 숨긴다. (옵션 : yes/no, 1/0)
+			- toolbar : 도구막대를 보여주거나 숨긴다. (옵션 : yes/no, 1/0) 
+			- directories : 디렉토리바를 보여주거나 숨긴다. (옵션 : yes/no, 1/0)
+			- scrollbars : 스크롤바를 보여주거나 숨긴다. (옵션 : yes/no, 1/0)
+			- status : 상태표시줄을 보여주거나 숨긴다. (옵션 : yes/no, 1/0)
+			- location : 주소표시줄을 보여주거나 숨긴다. (옵션 : yes/no, 1/0)
+			- width : 팝업 윈도우의 가로크기를 지정한다. (옵션 : 픽셀) 
+			- height : 팝업 윈도우의 높이를 지정한다. (옵션 : 픽셀)
+			- left : 팝업 윈도우의 x축 위치를 지정한다. (옵션 : 픽셀)
+			- top : 팝업 윈도우의 y축 위치를 지정한다. (옵션 : 픽셀)
+			- resizable : 팝업윈도우의 크기를 사용자가 임의로 수정할 수 있는지 여부를 지정한다. (옵션 : yes/no, 1/0)
+			- fullscreen : 전체화면 모드로 열어준다.
+			- channelmode : 채널모드 창으로 열어준다.
+			 */
+			var win;
+			var name = name || 'popup';
+			var width = width || 400;
+			var height = height || 600;
+			//var features = features || '';
+			if(typeof features === 'undefined') {
+				win = window.open(url, name, 'width=' + width + ', height=' + height + ', menubar=no, status=no, location=no');
+			}else {	
+				win = window.open(url, name, 'width=' + width + ', height=' + height + ',' + features);
+			}
+			if(win !== null) {
+				win.focus();
+			}
+		},
+		//팝업차단확인
+		isWindowPopup: function() {
+			var win = window.open('', 'isWindowPopup', 'width=1, height=1, left=-10, top=-10, scrollbars=yes, resizable=yes');
+		    var is = true;
+			if(win == null || typeof win === "undefined" || (!win && win.outerWidth === 0) || (win && win.outerHeight === 0) || (win && win.innerWidth === 0))  {
+				alert("팝업 차단 기능이 설정되어있습니다\n차단 기능을 해제(팝업허용)한 후 이용해 주세요.");
+				is = false;
+			}
+			if(win) { 
+				win.close();
+			}
+			return is;
 		},
 		// requestAnimationFrame for Smart Animating http://goo.gl/sx5sts
 		setRequestAnimFrame: (function() { 

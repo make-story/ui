@@ -967,7 +967,7 @@ http://www.quirksmode.org/js/detect.html
 
 			return this;
 		},
-		style: function(parameter) {
+		style: function(parameter) { // javascript 의 css 프로퍼티로 직접 접근
 			// x.style.cssText; // 표준
 			// x.currentStyle[styleProp];
 			// document.defaultView.getComputedStyle(x, null).getPropertyValue(styleProp);
