@@ -128,7 +128,7 @@ all
 		// select
 		isSelect: function(element) {
 			element = getElement(element);
-			if(typeof element === 'object') {
+			if(typeof element === 'object' && element.options) {
 				return this.isText(element.options[element.selectedIndex].value);
 			}else {
 				return this.isText(element);
