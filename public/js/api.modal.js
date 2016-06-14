@@ -451,7 +451,6 @@ jQuery 또는 api.dom 에 종속적 실행
 		};
 		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {};
-		that.time = null;
 		that.before = { // 값 변경전 기존 설정값 저장
 			'margin-right': '',
 			'overflow': '',
@@ -459,6 +458,8 @@ jQuery 또는 api.dom 에 종속적 실행
 			'width': '',
 			'height': ''
 		};
+		that.time = null;
+		that.isIOS = /(iphone|ipad|ipod)/i.test((navigator.userAgent || navigator.vendor || window.opera).toLowerCase());
 
 		// private init
 		module.init();
@@ -489,18 +490,45 @@ jQuery 또는 api.dom 에 종속적 실행
 				}
 
 				// iOS에서는 position: fixed 버그가 있음
-				if(env['browser']['name'] === 'safari') {
+				if(that.isIOS === true) {
 					$(that.elements.mask).on(env['event']['down'] + '.EVENT_DOWN_' + that.settings.key, function(e) {
-						module.stopCapture(e);
-						module.stopBubbling(e);
+						var event = e || window.event;
+						if(event.preventDefault) {
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+						if(event.stopPropagation) {
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
 					});
 					$(that.elements.mask).on(env['event']['move'] + '.EVENT_MOVE_' + that.settings.key, function(e) {
-						module.stopCapture(e);
-						module.stopBubbling(e);
+						var event = e || window.event;
+						if(event.preventDefault) {
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+						if(event.stopPropagation) {
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
 					});
 					$(that.elements.mask).on(env['event']['up'] + '.EVENT_UP_' + that.settings.key, function(e) {
-						module.stopCapture(e);
-						module.stopBubbling(e);
+						var event = e || window.event;
+						if(event.preventDefault) {
+							event.preventDefault();
+						}else {
+							event.returnValue = false;
+						}
+						if(event.stopPropagation) {
+							event.stopPropagation();
+						}else {
+							event.cancelBubble = true;
+						}
 					});
 				}
 				
@@ -528,7 +556,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			try {
 				// iOS에서는 position: fixed 버그가 있음
-				/*if(env['browser']['name'] === 'safari') {
+				/*if(that.isIOS === true) {
 					size = module.getWinDocWidthHeight();
 					scroll = module.getScroll();
 					that.elements.container.style.position = 'absolute';
@@ -556,18 +584,19 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			try {
 				// 스크롤바 사이즈만큼 여백
-				that.before['margin-right'] = $('html').css('margin-right');
-				that.before['overflow'] = $('html').css('overflow');
+				that.before['margin-right'] = $('html').css('margin-right'); // document.documentElement.style.marginRight
+				that.before['overflow'] = $('html').css('overflow'); // document.documentElement.style.overflow
 				if(size.window.height < size.document.height) {
 					$('html').css({'margin-right': env['browser']['scrollbar'] + 'px', 'overflow': 'hidden'});
 				}
 
 				// iOS에서는 position: fixed 버그가 있음
-				that.before['position'] = $('html').css('position');
-				if(env['browser']['name'] === 'safari') {
+				that.before['position'] = $('html').css('position'); // document.documentElement.style.position
+				if(that.isIOS === true) {
 					$('html').css({'position': 'fixed'});
 				}
 
+				// element
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.zIndex = ++module.zindex;
 					that.elements.mask.style.display = 'block';
@@ -608,6 +637,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
+				// element
 				$('html').css({'margin-right': that.before['margin-right'], 'overflow': that.before['overflow'], 'position': that.before['position']}); // 닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.
 				that.elements.container.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
@@ -640,6 +670,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
+				// element
 				$('html').css({'margin-right': that.before['margin-right'], 'overflow': that.before['overflow'], 'position': that.before['position']}); // 닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.
 				if(that.elements.mask) {
 					that.elements.mask.parentNode.removeChild(that.elements.mask);
@@ -1563,12 +1594,12 @@ jQuery 또는 api.dom 에 종속적 실행
 			}else {				
 				switch(settings['type']) {
 					case 'layer':
-						if(settings['key']) { // 중복생성 방지
+						if(settings['key']) { // 중복생성 방지 key 검사
 							instance = new ModalLayer(settings);
 						}
 						break;
 					case 'rect':
-						if(settings['key']) { // 중복생성 방지
+						if(settings['key']) { // 중복생성 방지 key 검사
 							instance = new ModalRect(settings);
 						}
 						break;
