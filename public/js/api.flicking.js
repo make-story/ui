@@ -417,11 +417,15 @@ jQuery 또는 api.dom 에 종속적 실행
 
 	// public return
 	return {
+		search: function(key) {
+			return module.instance[key] || false;
+		},
 		setup: function(settings) {
 			// 인스턴스 생성
 			var instance;
-			if(settings['key'] && module.instance[settings['key']]) {
-				instance = module.instance[settings['key']];
+			if(settings['key'] && this.search(settings['key'])) {
+				//instance = module.instance[settings['key']];
+				instance = this.search(settings['key']);
 				instance.change(settings);
 			}else {
 				instance = new Flicking(settings);
@@ -431,8 +435,27 @@ jQuery 또는 api.dom 에 종속적 실행
 			}
 			return instance;
 		},
-		search: function(key) {
-			return module.instance[key] || false;
+		on: function(key) { // 전체 또는 해당 key
+			if(key) {
+				this.search(key) && this.search(key).on();
+			}else {
+				for(key in module.instance) {
+					if(module.instance.hasOwnProperty(key)) {
+						module.instance[key].on();
+					}
+				}
+			}
+		},
+		off: function(key) { // 전체 또는 해당 key
+			if(key) {
+				this.search(key) && this.search(key).off();
+			}else {
+				for(key in module.instance) {
+					if(module.instance.hasOwnProperty(key)) {
+						module.instance[key].off();
+					}
+				}
+			}
 		}
 	};
 
