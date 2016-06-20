@@ -36,11 +36,6 @@ jQuery 또는 api.dom 에 종속적 실행
 
 	'use strict'; // ES5
 
-	// ajax
-	if(!global.jQuery && global.api && global.api.xhr) {
-		$.ajax = global.api.xhr;
-	}
-
 	//
 	var env = {};
 	if(global.api && global.api.env) {
