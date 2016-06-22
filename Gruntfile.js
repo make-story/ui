@@ -53,39 +53,49 @@ module.exports = function(grunt) {
 	// Project configuration.
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		//uglify 설정
+		// uglify 설정 (file minifying)
 		uglify: {
 			options: {
 				banner: '/* <%= grunt.template.today("yyyy-mm-dd") %> Copyright (c) Sung-min Yu. */ ' //파일의 맨처음 붙는 banner 설정
 			},
 			my_target: {
 				files: {
-					'public/build/api.dom.min.js': ['public/js/api.dom.js'],
-					'public/build/api.flicking.min.js': ['public/js/api.flicking.js'],
-					'public/build/api.modal.min.js': ['public/js/api.modal.js'],
-					'public/build/api.socket.min.js': ['public/js/api.socket.js'],
-					'public/build/api.state.min.js': ['public/js/api.state.js'],
-					'public/build/api.template.min.js': ['public/js/api.template.js'],
-					'public/build/api.util.min.js': ['public/js/api.util.js'],
-					'public/build/api.validate.min.js': ['public/js/api.validate.js'],
-					'public/build/api.xhr.min.js': ['public/js/api.xhr.js']
+					'public/build/api.dom.min.js': ['public/build/api.dom.js'],
+					'public/build/api.editor.min.js': ['public/build/api.editor.js'],
+					'public/build/api.flicking.min.js': ['public/build/api.flicking.js'],
+					'public/build/api.modal.min.js': ['public/build/api.modal.js'],
+					'public/build/api.socket.min.js': ['public/build/api.socket.js'],
+					'public/build/api.state.min.js': ['public/build/api.state.js'],
+					'public/build/api.template.min.js': ['public/build/api.template.js'],
+					'public/build/api.util.min.js': ['public/build/api.util.js'],
+					'public/build/api.validate.min.js': ['public/build/api.validate.js'],
+					'public/build/api.xhr.min.js': ['public/build/api.xhr.js']
 				}
 			}
 		},
-		//concat 설정
+		// concat 설정 (File을 통합)
 		concat:{
 			basic: {
-				src: ['public/js/api.dom.js', 'public/js/api.flicking.js', 'public/js/api.modal.js', 'public/js/api.socket.js', 'public/js/api.state.js', 'public/js/api.template.js', 'public/js/api.util.js', 'public/js/api.validate.js', 'public/js/api.xhr.js'], //concat 타겟 설정(앞에서부터 순서대로 합쳐진다.)
+				src: ['public/build/api.dom.js', 'public/build/api.flicking.js', 'public/build/api.modal.js', 'public/build/api.socket.js', 'public/build/api.state.js', 'public/build/api.template.js', 'public/build/api.util.js', 'public/build/api.validate.js', 'public/build/api.xhr.js'], //concat 타겟 설정(앞에서부터 순서대로 합쳐진다.)
 				dest: 'public/build/api.js' //concat 결과 파일
 			}
-		}
+		},
+		// jshint 설정 (file Validation)
+		jshint:{
+            all: ['public/build/api.dom.js', 'public/build/api.flicking.js', 'public/build/api.modal.js'],
+            options:{
+            	force: true, // error 검출 시 task를  fail시키지 않고 계속 진단
+                reporter: require('jshint-stylish') // output을 modifying할 수 있는 옵션 (jshint-stylish 설치 :  $npm install jshint-stylish --save-dev)
+            }
+        }
 	});
  
 	// Load the plugin that provides the "uglify", "concat" tasks.
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-concat');
+	grunt.loadNpmTasks('grunt-contrib-jshint');
  
 	// Default task(s).
-	grunt.registerTask('default', ['concat', 'uglify']); //grunt 명령어로 실행할 작업
+	grunt.registerTask('default', ['concat', 'uglify', 'jshint']); // grunt 명령어로 실행할 작업
  
 };

@@ -119,6 +119,10 @@ Dual licensed under the MIT and GPL licenses.
 				return original;
 			}
 		},
+		// json 데이터 여부
+		isJSON: function(value) {
+			return value && typeof value === 'object' && (/*Array.isArray(value)*/Object.prototype.toString.call(value) === "[object Array]" || /^{.*}$/.test(JSON.stringify(value)));
+		},
 		// 반응형 계산
 		sizePercent: function(t, c) {
 			//공식 : target / content = result
@@ -432,7 +436,7 @@ Dual licensed under the MIT and GPL licenses.
 			var temp = document.createElement('div');
 			var child;
 			temp.innerHTML = html;
-			while (child = temp.firstChild) { // temp.firstElementChild (textnode 제외)
+			while(child = temp.firstChild) { // temp.firstElementChild (textnode 제외)
 				fragment.appendChild(child);
 			}
 
@@ -484,10 +488,10 @@ Dual licensed under the MIT and GPL licenses.
 			return is;
 		},
 		// requestAnimationFrame for Smart Animating http://goo.gl/sx5sts
-		setRequestAnimFrame: (function() { 
+		requestAnimationFrame: (function() { 
 			return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback) { return window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
 		})(),
-		setCancelAnimFrame: (function() {
+		cancelAnimationFrame: (function() {
 			return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function(time) { return window.clearTimeout(time); };
 		})(),
 
@@ -506,7 +510,8 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// 숫자만 추출
 		numberReturn: function(value) { 
-			return Number(String(value).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')); // 음의 실수 포함
+			//return Number(String(value).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')); // 음의 실수 포함
+			return Number(String(value).replace(/\D/g, '') || 0);
 		},
 		// 금액
 		numberFormat: function(value) { 

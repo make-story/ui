@@ -171,7 +171,9 @@ jQuery 또는 api.dom 에 종속적 실행
 		on: function() {
 			var that = this;
 
-			that.off();
+			// 이벤트 초기화
+			that.off(); 
+			
 			if(that.settings.touch === true) {
 				// down 이벤트
 				$(that['settings']['target']).on(env['event']['down'] + '.EVENT_MOUSEDOWN_flicking', function(e) {

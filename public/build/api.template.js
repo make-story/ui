@@ -43,6 +43,10 @@ document.getElementById('target').innerHTML = paint;
 참고
 http://handlebarsjs.com/
 https://mustache.github.io/mustache.5.html
+
+-
+템플릿 파일 (TMPL 파일)
+
 */
 
 ;(function(factory, global) {
@@ -149,6 +153,7 @@ https://mustache.github.io/mustache.5.html
 					// tag 내부에 {{ 열기 부분이 존재하는지 확인 (닫기 전에 열기가 발생한 것)
 
 
+					// 
 					this.template = this.template.substring(match_tag_close.index + match_tag_close[0].length);
 				}
 			}
@@ -160,24 +165,24 @@ https://mustache.github.io/mustache.5.html
 			//debug.log('this.template', this.template);
 
 			// code
-			this.tree.push({'type': 'code', 'value': code});
+			this.tree.push({'type': 'code', 'value': code}); // html 등의 tag
 
 			// tag
 			if(regexp.type.variable.test(tag)) { // =tag
-				// =tag 의 name 추출
+				// =tag 에서 tag에 해당하는 부분 추출 (변수명)
 				match_tag_name = tag.match(regexp.type.variable);
 				if(match_tag_name) {
-					this.tree.push({'type': 'variable', 'value': match_tag_name[1]});	
+					this.tree.push({'type': 'variable', 'value': match_tag_name[1]}); // 변수 (json 데이터에서 변수명에 해당하는 값을 바인딩)
 				}
 			}else if(regexp.type.context_open.test(tag)) { // <tag
-				// <tag 의 name 추출
+				// <tag 에서 tag에 해당하는 부분 추출 (컨텍스트명)
 				match_tag_name = tag.match(regexp.type.context_open); 
 				if(match_tag_name) {
-					// tag> 찾기 (<tag와 같은 name)
+					// tag> 찾기 (<tag와 같은 name, 컨텍스트가 끝나는 부분)
 					match_close = this.template.match(new RegExp(escapeRegExp('{{') + match_tag_name[1] + '[>|\\s*>|>\\s*]' + escapeRegExp('}}')));
 					if(match_close) {
 						// {{<tag}} ... {{tag>}}  사이의 텍스트로 새로운 컨텍스트(파싱)생성
-						this.tree.push({'type': 'context', 'value': new Parse(this.template.substring(0, match_close.index), match_tag_name[1], this)});
+						this.tree.push({'type': 'context', 'value': new Parse(this.template.substring(0, match_close.index), match_tag_name[1], this)}); // 컨텍스트 (해당 컨텍스트 파싱)
 						this.template = this.template.substring(match_close[0].length + match_close.index);
 					}
 				}
@@ -195,11 +200,12 @@ https://mustache.github.io/mustache.5.html
 		하위로 들어갈때, 해당하는 key의 값을 value 파라미터로 넘긴다.
 		*/
 
-		var tree = parse.tree || [];
-		var contents = contents || {};
+		var tree = parse.tree || []; // 파싱된 트리
+		var contents = contents || {}; // 변수에 할당(파싱된 트리)할 json 데이터
 		var tokens = [];
 		var i, max;
 
+		//debug.dir('tree', tree);
 		//debug.dir('contents', contents);
 
 		var j, max2;
@@ -214,9 +220,9 @@ https://mustache.github.io/mustache.5.html
 						//debug.log('variable value', value);
 						if(!value) {
 							continue;
-						}else if(typeof value === 'function') {
-							tokens.push({'type': 'code', 'value': value.call(contents)});
-						}else if(Array.isArray(value)) {
+						}else if(typeof value === 'function') { // function type
+							tokens.push({'type': 'code', 'value': value.call(contents)}); 
+						}else if(Array.isArray(value)) { // array type
 							for(j=0, max2=value.length; j<max2; j++) {
 								tokens.push({'type': 'code', 'value': value[j]});
 							}
@@ -230,15 +236,15 @@ https://mustache.github.io/mustache.5.html
 						//debug.log('context value', value);
 						if(!value) {
 							continue;
-						}else if(typeof value === 'function') {
+						}else if(typeof value === 'function') { // json 값이 function type
 							result = render(tree[i].value, value.call(contents));
 							tokens = tokens.concat(result);
-						}else if(Array.isArray(value)) {
+						}else if(Array.isArray(value)) { // json 값이 array type
 							for(j=0, max2=value.length; j<max2; j++) {
 								result = render(tree[i].value, value[j]);
 								tokens = tokens.concat(result);
 							}
-						}else if(typeof value === 'object') {
+						}else if(typeof value === 'object') { // json 값이 object type (json 형식)
 							result = render(tree[i].value, value);
 							tokens = tokens.concat(result);
 						}
@@ -277,14 +283,14 @@ https://mustache.github.io/mustache.5.html
 	};
 	Template.prototype = {
 		'parse': function(template) {
-			if(!this.cache[template]) {
+			if(!this.cache[template]) { // 기존 파싱되었던 템플릿인지 확인
 				this.cache[template] = new Parse(template);
 			}
 			//debug.dir('this.cache[template]', this.cache[template]);
 			return this.cache[template];
 		},
 		'render': function(template, contents) {
-			var parse = this.cache[template];
+			var parse = this.cache[template]; // 기존 파싱되었던 템플릿인지 확인
 			if(!parse) {
 				parse = this.parse(template);
 			}

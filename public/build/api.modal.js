@@ -471,7 +471,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					that.elements.mask.display = 'none';
 				}else {
 					that.elements.mask = document.createElement('div');
-					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: rgb(240, 241, 242) none repeat scroll 0 0; opacity: .7;';
 					module.elements.layer.appendChild(that.elements.mask);
 				}
 
@@ -745,7 +745,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					that.elements.mask.display = 'none';
 				}else {
 					that.elements.mask = document.createElement('div');
-					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: rgb(240, 241, 242) none repeat scroll 0 0; opacity: .7;';
 					document.body.appendChild(that.elements.mask);
 				}
 
@@ -954,13 +954,13 @@ jQuery 또는 api.dom 에 종속적 실행
 					that.elements.mask.display = 'none';
 				}else {
 					that.elements.mask = document.createElement('div');
-					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: rgb(240, 241, 242) none repeat scroll 0 0; opacity: .7;';
 					module.elements.confirm.appendChild(that.elements.mask);
 				}
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 7px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid rgb(215, 216, 217); background-color: #FFF; border-radius: 7px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
 				that.elements.container.innerHTML = '\
 					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 7px 7px 0 0;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
@@ -1184,13 +1184,13 @@ jQuery 또는 api.dom 에 종속적 실행
 					that.elements.mask.display = 'none';
 				}else {
 					that.elements.mask = document.createElement('div');
-					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: rgb(240, 241, 242) none repeat scroll 0 0; opacity: .7;';
 					module.elements.alert.appendChild(that.elements.mask);
 				}
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 7px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid rgb(215, 216, 217); background-color: #FFF; border-radius: 7px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
 				that.elements.container.innerHTML = '\
 					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 7px 7px 0 0;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .97);">' + that.settings.message + '</div>\
@@ -1401,13 +1401,13 @@ jQuery 또는 api.dom 에 종속적 실행
 					that.elements.mask.display = 'none';
 				}else {
 					that.elements.mask = document.createElement('div');
-					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: #F0F1F2 none repeat scroll 0 0; opacity: .7;';
+					that.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: rgb(240, 241, 242) none repeat scroll 0 0; opacity: .7;';
 					module.elements.push.appendChild(that.elements.mask);
 				}
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid #D7D8D9; background-color: #FFF; border-radius: 7px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid rgb(215, 216, 217); background-color: #FFF; border-radius: 7px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
 				that.elements.container.innerHTML = '\
 					<div id="' + key.message + '" style="padding: 12px 12px 6px 12px; min-height: 33px; color: #333; background-color: rgba(255, 255, 255, .97); border-radius: 7px 7px 0 0;">' + that.settings.message + '</div>\
 					<div style="padding: 6px 12px 12px 12px; background: rgba(248, 249, 250, .97); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
