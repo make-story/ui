@@ -89,6 +89,7 @@ http://www.quirksmode.org/js/detect.html
 		"check": { // true, false 
 			"mobile": (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino|android|ipad|playbook|silk/i.test(navigator.userAgent||navigator.vendor||window.opera)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test((navigator.userAgent||navigator.vendor||window.opera).substr(0,4))),
 			"touch": ('ontouchstart' in window || navigator.MaxTouchPoints > 0 || navigator.msMaxTouchPoints > 0),
+			//"orientationchange": 'onorientationchange' in window, // 모바일기기 회전
 			"transform": false,
 			"transition": false/*('transition' in element.style || 'WebkitTransition' in element.style || 'MozTransition' in element.style || 'OTransition' in element.style || 'msTransition' in element.style)*/,
 			"animation": false/*('animationName' in element.style || 'WebkitAnimationName' in element.style || 'MozAnimationName' in element.style || 'OAnimationName' in element.style || 'msAnimationName' in element.style || 'KhtmlAnimationName' in element.style)*/,
@@ -114,7 +115,6 @@ http://www.quirksmode.org/js/detect.html
 		},
 		"event": {
 			// 마우스 또는 터치
-			"resize": 'onorientationchange' in window ? 'orientationchange' : 'resize',
 			"down": "mousedown",
 			"move": "mousemove",
 			"up": "mouseup",
@@ -577,7 +577,10 @@ http://www.quirksmode.org/js/detect.html
 
 			if(this.elements && this.elements.length > 0 && typeof callback === 'function') {
 				for(i=0, max=this.elements.length; i<max; i++) {
-					callback.apply(this.elements[i], [i, this.elements[i]]); // i:key, this.elements[i]:element
+					// i:key, this.elements[i]:element
+					if(callback.apply(this.elements[i], [i, this.elements[i]]) === false) {
+						break;
+					}
 				}
 			}
 		},
@@ -1384,93 +1387,159 @@ http://www.quirksmode.org/js/detect.html
 			return this;
 		},
 		// event
-		on: function(events, handlers, capture) {
-			var events = events || undefined,
-				handlers = handlers || undefined,
-				capture = (typeof capture === 'undefined') ? false : capture, // IE의 경우 캡쳐 미지원 (기본값: false 버블링으로 함)
-				arr = [], key;
+		on: function(events, handler, capture) {
+			var events = events || undefined; // 띄어쓰기 기준 여러개의 이벤트를 설정할 수 있다.
+			var handler = handler || undefined;
+			var capture = typeof capture !== 'boolean' ? false : capture; // IE의 경우 캡쳐 미지원 (기본값: false 버블링으로 함)
+			var arr = [], key;
+			var setListener;
 
 			// 이벤트 키
 			arr = events.split('.');
-			if(arr.length > 1) {
+			if(1 < arr.length) { 
+				// key 존재함
 				events = arr.shift();
+				key = arr.join('');
 			}
-			key = arr.join('');
+			events = events.split(/\s+/);
 
 			// 이벤트 설정
-			this.each(function(i, element) {
-				var callback = handlers;
-				// element 에 event key 가 이미 설정되어 있는지 확인
-				/*if(typeof element['storage'] === 'object' && element['storage'][key]) {
-					return;
-				}*/
-				if(typeof element.addEventListener === 'function') {
-					element.addEventListener(events, callback, capture); // IE9이상 사용가능
-				}else if(element.attachEvent) { // IE (typeof 검사시 IE8에서는 function 이 아닌 object 반환)
-					callback = function(e) { // IE this 바인딩 문제
-						handlers(e, element);
-					};
-					/*
-					// 아래 같이 선언했을 경우 IE에서 스택풀 발생
-					handlers = function(e) { // IE this 바인딩 문제
-						handlers(e, element);
-					};
-					*/
-					element.attachEvent('on' + events, callback); 
-				}else {
-					return;
-				}
-				// 실행 정보 저장
-				if(typeof element['storage'] !== 'object') {
+			this.each(function(index, element) {
+				var i, max;
+				var callback = handler;
+				var result = {};
+
+				if(typeof element.storage !== 'object') {
 					element.storage = {};
 				}
-				element.storage[key] = {
-					"events": events,
-					"handlers": callback,
-					"capture": capture
-				};
+				for(i=0, max=events.length; i<max; i++) {
+					//
+					if(typeof element.addEventListener === 'function') {
+						element.addEventListener(events[i], callback, capture); // IE9이상 사용가능
+					}else if(element.attachEvent) { // IE (typeof 검사시 IE8에서는 function 이 아닌 object 반환)
+						callback = function(e) { // IE this 바인딩 문제
+							handler(e, element);
+						};
+						/*
+						// 아래 같이 선언했을 경우 IE에서 스택풀 발생
+						handler = function(e) { // IE this 바인딩 문제
+							handler(e, element);
+						};
+						*/
+						element.attachEvent('on' + events[i], callback); 
+					}
+
+					// 실행 정보 저장
+					result = {
+						"key": key,
+						"event": events[i],
+						"handler": callback,
+						"capture": capture
+					};
+					if(typeof element.storage[events[i]] !== 'object') {
+						element.storage[events[i]] = [];
+					}
+					element.storage[events[i]].push(result);
+					if(key) {
+						if(typeof element.storage[key] !== 'object') {
+							element.storage[key] = {};
+						}
+						element.storage[key][events[i]] = result;
+					}
+				}
 			});
 
 			return this;
 		},
 		off: function(events) {
-			var events = events || undefined,
-				arr = [], key;
+			var events = events || undefined; // 띄어쓰기 기준 여러개의 이벤트를 해제할 수 있다.
+			var arr = [], key;
+			var setListener, setRemove;
 
 			// 이벤트 키
 			arr = events.split('.');
-			if(arr.length > 1) {
+			if(1 < arr.length) { 
+				// key 존재함
 				events = arr.shift();
+				key = arr.join('');
 			}
-			key = arr.join('');
+			events = events.split(/\s+/);
 
 			// 이벤트 해제
-			this.each(function(i, element) {
-				if(typeof element['storage'] === 'object' && element.storage[key]) {
-					if(typeof element.removeEventListener === 'function') {
-						element.removeEventListener(element.storage[key].events, element.storage[key].handlers, element.storage[key].capture);
-					}else if(element.detachEvent) { // IE
-						element.detachEvent('on' + element.storage[key].events, element.storage[key].handlers);
-					}else {
-						return;
+			setListener = function(element, event, handler, capture) {
+				if(typeof element.removeEventListener === 'function') {
+					element.removeEventListener(event, handler, capture);
+				}else if(element.detachEvent) { // IE
+					element.detachEvent('on' + event, handler);
+				}
+			};
+			if(key) { 
+				if(events[0]) {
+					// 헤당키 이벤트 선택 해제
+					setRemove = function(element) {
+						var i, max;
+						var result = {};
+
+						if(element.storage[key]) {
+							for(i=0, max=events.length; i<max; i++) {
+								result = element.storage[key][events[i]];
+								setListener(element, result.event, result.handler, result.capture);
+								delete element.storage[key][events[i]];
+							}
+						}
+					};
+				}else {
+					// 해당키 이벤트 전체 해제
+					setRemove = function(element) {
+						var event;
+						var result = {};
+
+						if(element.storage[key]) {
+							for(event in element.storage[key]) {
+								if(element.storage[key].hasOwnProperty(event)) {
+									result = element.storage[key][event];
+									setListener(element, result.event, result.handler, result.capture);
+									delete element.storage[key][event];
+								}
+							}
+							delete element.storage[key];
+						}
+					};
+				}
+			}else { 
+				// 이벤트명 전체 해제
+				setRemove = function(element) {
+					var i, max;
+					var result = {};
+
+					for(i=0, max=events.length; i<max; i++) {
+						while(element.storage[events[i]].length) {
+							result = element.storage[events[i]].shift();
+							setListener(element, result.event, result.handler, result.capture);
+							if(result.key && element.storage[result.key]) {
+								delete element.storage[result.key][events[i]];
+							}
+						}
+						delete element.storage[events[i]];
 					}
-					// 저장된 이벤트 정보 제거
-					delete element.storage[key]; 
+				};
+			}
+			this.each(function(i, element) {
+				if(typeof element.storage === 'object') {
+					setRemove(element);
 				}
 			});
 
 			return this;
 		},
-		one: function(events, handlers, capture) {
+		one: function(events, handler, capture) {
 			var that = this;
-			// new Date().getUTCMilliseconds();
-			// new Date().getTime() + Math.random();
 			var key = global.api.key();
 			var callback = function() {
 				// off
 				that.off('.' + key);
-				// handlers
-				handlers.apply(this, Array.prototype.slice.call(arguments));
+				// handler
+				handler.apply(this, Array.prototype.slice.call(arguments));
 			};
 			// on
 			that.on(events + '.' + key, callback, capture);
@@ -1765,7 +1834,7 @@ http://www.quirksmode.org/js/detect.html
 					var end = that.touchCheck[that.touchCount-1]['end'];
 					var time = Number(that.touchCheck['time']['end']) - Number(that.touchCheck['time']['start']);
 
-					// handlers(callback) 실행
+					// handler(callback) 실행
 					if(time <= 180/* 클릭된 상태가 지속될 수 있으므로 시간검사 */ && Math.abs(start['top'] - end['top']) <= radius && Math.abs(start['left'] - end['left']) <= radius) {
 						if(that.touchCount === 1 && that['storage']['EVENT_DOM_TOUCH_ONE'] && typeof that['storage']['EVENT_DOM_TOUCH_ONE'] === 'function') {
 							that['storage']['EVENT_DOM_TOUCH_ONE'].call(that, e);
@@ -1780,8 +1849,8 @@ http://www.quirksmode.org/js/detect.html
 		});
 	};
 	DOM.touch = {
-		on: function(selector, handlers) {
-			if(selector && (typeof handlers === 'object' || typeof handlers === 'function')) {
+		on: function(selector, handler) {
+			if(selector && (typeof handler === 'object' || typeof handler === 'function')) {
 				DOM(selector).each(function(i, element) {
 					var key;
 
@@ -1789,14 +1858,14 @@ http://www.quirksmode.org/js/detect.html
 						if(typeof element['storage'] !== 'object') {
 							element['storage'] = {};
 						}
-						if(typeof handlers === 'object') {
-							for(key in handlers) {
-								if(handlers.hasOwnProperty(key) && /^(one|two|delay)$/i.test(key) && typeof handlers[key] === 'function') {
-									element['storage']['EVENT_DOM_TOUCH_' + key.toUpperCase()] = handlers[key];
+						if(typeof handler === 'object') {
+							for(key in handler) {
+								if(handler.hasOwnProperty(key) && /^(one|two|delay)$/i.test(key) && typeof handler[key] === 'function') {
+									element['storage']['EVENT_DOM_TOUCH_' + key.toUpperCase()] = handler[key];
 								}
 							}
 						}else {
-							element['storage']['EVENT_DOM_TOUCH_ONE'] = handlers;
+							element['storage']['EVENT_DOM_TOUCH_ONE'] = handler;
 						}
 						if(!element['storage']['EVENT_DOM_TOUCH']) {
 							DOM(element).on(global.api.env['event']['down'] + '.EVENT_DOM_TOUCH', setTouchHandler);
