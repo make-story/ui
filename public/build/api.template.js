@@ -27,8 +27,10 @@ Dual licensed under the MIT and GPL licenses.
 		{{haha>}}
 	{{deep>}}
 {{people>}}
-<p>ysm</p>
+<p {{=event}}>ysm</p>
 </script>
+
+<script>
 var paint = api.template.paint(document.getElementById('template').innerHTML, {
 	'power': 'aa',
 	'title': 'bb',
@@ -38,6 +40,7 @@ var paint = api.template.paint(document.getElementById('template').innerHTML, {
 	]
 });
 document.getElementById('target').innerHTML = paint;
+</script>
 
 -
 참고
@@ -201,7 +204,7 @@ https://mustache.github.io/mustache.5.html
 		*/
 
 		var tree = parse.tree || []; // 파싱된 트리
-		var contents = contents || {}; // 변수에 할당(파싱된 트리)할 json 데이터
+		var contents = contents || {}; // 변수에 할당(파싱된 트리에 contents값 설정)할 json 데이터
 		var tokens = [];
 		var i, max;
 
@@ -226,7 +229,7 @@ https://mustache.github.io/mustache.5.html
 							for(j=0, max2=value.length; j<max2; j++) {
 								tokens.push({'type': 'code', 'value': value[j]});
 							}
-						}else {
+						}else { // true || 기타값
 							tokens.push({'type': 'code', 'value': contents[tree[i].value]});
 						}
 						break;
@@ -247,6 +250,9 @@ https://mustache.github.io/mustache.5.html
 						}else if(typeof value === 'object') { // json 값이 object type (json 형식)
 							result = render(tree[i].value, value);
 							tokens = tokens.concat(result);
+						}else { // json 값이 boolen type
+							result = render(tree[i].value, value);
+							tokens = tokens.concat(result);
 						}
 						break;
 
@@ -262,7 +268,7 @@ https://mustache.github.io/mustache.5.html
 
 
 
-	// 3. 프린팅
+	// 3. 프린팅 - html 반환
 	var paint = function paint(render) {
 		var i, max;
 		var codes = [];
@@ -279,26 +285,42 @@ https://mustache.github.io/mustache.5.html
 	
 	//
 	var Template = function() {
-		this.cache = {};
+		this.cache = {}; // 메모이제이션
 	};
 	Template.prototype = {
 		'parse': function(template) {
-			if(!this.cache[template]) { // 기존 파싱되었던 템플릿인지 확인
-				this.cache[template] = new Parse(template);
+			var parse = this.cache[template]; // 기존 파싱되었던 템플릿인지 확인
+			if(!parse) { 
+				parse = new Parse(template);
 			}
 			//debug.dir('this.cache[template]', this.cache[template]);
-			return this.cache[template];
+			return parse;
 		},
-		'render': function(template, contents) {
-			var parse = this.cache[template]; // 기존 파싱되었던 템플릿인지 확인
-			if(!parse) {
-				parse = this.parse(template);
-			}
+		'render': function(template, contents) { // 사용성이 별로 없지만, 흐름확인을 위해 public 
+			var parse = this.parse(template);
 			return render(parse, contents);
 		},
 		'paint': function(template, contents) {
 			var render = this.render(template, contents);
 			return paint(render);
+		},
+		'fragment': function(template, contents) { // fragment 에 html 삽입 후 반환
+			var paint = this.paint(template, contents);
+			var fragment = document.createDocumentFragment(); // fragment 가 document에 렌더링(삽입)되기 전에, 셀렉터로 fragment 내부 element 검색이 가능하다.
+			if(paint) {
+				/*
+				var temp = document.createElement('template'); // IE 미지원
+				temp.innerHTML = paint;
+				fragment.appendChild(temp.content);
+				*/
+				var temp = document.createElement('div');
+				var child;
+				temp.innerHTML = paint;
+				while(child = temp.firstChild) { // temp.firstElementChild 는 제약이 있음 (textnode 제외)
+					fragment.appendChild(child);
+				}
+			}
+			return fragment;
 		}
 	};
 	
