@@ -144,7 +144,7 @@ Dual licensed under the MIT and GPL licenses.
 		 > 설명1 : 이벤트가 다른 이벤트로 전파되기 전에 폼 전송과 같은 이벤트를 취소 (기본 동작을 중지한다)
 		 > 설명2 : 처리를 완료하기 전에 이벤트(기본 또는 다른이벤트)를 취고하고 싶을 때
 		
-		버블링 : 발생 대상에서 document까지 전달되는 단계(위로)
+		버블링 : 발생 대상에서 document, window 까지 전달되는 단계(위로)
 		 > 설명1 : 내부에 다른 요소를 포함한 어떤 요소(<div><div></div></div>)가 있습니다. 두요소 모두 클릭 이벤트를 캡쳐합니다. 안쪽요소에서 발생한 클릭 이벤트가 바깥쪽 요소로 전파되는 것을 막음
 		 > 설명2 : 이벤트를 취소하고 싶지는 않지만 전파하는 것을 막을 때
 		
@@ -427,7 +427,7 @@ Dual licensed under the MIT and GPL licenses.
 				});
 			}*/
 
-			var fragment = document.createDocumentFragment();
+			var fragment = document.createDocumentFragment(); // fragment 가 document에 렌더링(삽입)되기 전에, 셀렉터로 fragment 내부 element 검색이 가능하다.
 			/*
 			var temp = document.createElement('template'); // IE 미지원
 			temp.innerHTML = html;
@@ -506,12 +506,13 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// 숫자여부 확인
 		isNumeric: function(value) {
+			// /^[+-]?([\d]+)?[\.]?([\d]+)?$/.test(value); // 음수, 양수, 소수점 가능 (keyup 이벤트로 체크가능)
 			return !isNaN(parseFloat(value)) && isFinite(value);
 		},
 		// 숫자만 추출
 		numberReturn: function(value) { 
-			//return Number(String(value).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')); // 음의 실수 포함
-			return Number(String(value).replace(/\D/g, '') || 0);
+			//return Number(String(value).replace(/,/g, '').replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')); // 음의 실수 포함
+			return String(value).replace(/,/g, '').replace(/[^+-\.\d]/g, '');
 		},
 		// 금액
 		numberFormat: function(value) { 

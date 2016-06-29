@@ -510,20 +510,47 @@ instance = api.modal.search(key);
 WebSocket
 
 ````javascript
-// 방법1
-api.socket({
+var socket = api.socket({
 	'url': 'ws://', // 필수
-	'open': 'open 콜백',
-	'message': '서버로 부터 받은 메시지 콜백',
-	'error': '에러 콜백'
-});
-
-// 방법2
-var socket = api.socket({'url': 'ws://'});
-socket.message(function(data) {
-	// 서버로 부터 받은 메시지
+	'callback': {
+		'open': function() {
+			console.log('open 콜백');
+		},
+		'message': function(data) {
+			console.log('서버로 부터 받은 메시지 콜백');
+		},
+		'close': function(event) {
+			console.log('종료 콜백');
+		},
+		'error': function() {
+			console.log('에러 콜백');
+		}
+	}
 });
 socket.send('서버로 전송 데이터');
+````
+
+
+----
+
+### api.worker.js
+
+Worker
+
+````javascript
+var worker = api.worker({
+	'url': 'js파일위치', // 필수
+	'callback': {
+		'message': function(data) {
+			console.log('워커로 부터 받은 메시지 콜백');
+		},
+		'error': function() {
+			console.log('에러 콜백');
+		}
+	}
+});
+worker.send('워커로 전송 데이터');
+worker.close(); // 워커 종료
 ````
 
 

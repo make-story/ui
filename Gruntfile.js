@@ -69,6 +69,7 @@ module.exports = function(grunt) {
 					'public/build/api.template.min.js': ['public/build/api.template.js'],
 					'public/build/api.util.min.js': ['public/build/api.util.js'],
 					'public/build/api.validate.min.js': ['public/build/api.validate.js'],
+					'public/build/api.worker.min.js': ['public/build/api.worker.js'],
 					'public/build/api.xhr.min.js': ['public/build/api.xhr.js']
 				}
 			}
@@ -76,7 +77,19 @@ module.exports = function(grunt) {
 		// concat 설정 (File을 통합)
 		concat:{
 			basic: {
-				src: ['public/build/api.dom.js', 'public/build/api.flicking.js', 'public/build/api.modal.js', 'public/build/api.socket.js', 'public/build/api.state.js', 'public/build/api.template.js', 'public/build/api.util.js', 'public/build/api.validate.js', 'public/build/api.xhr.js'], //concat 타겟 설정(앞에서부터 순서대로 합쳐진다.)
+				src: [ //concat 타겟 설정(앞에서부터 순서대로 합쳐진다.)
+					'public/build/api.dom.js', 
+					'public/build/api.editor.js', 
+					'public/build/api.flicking.js', 
+					'public/build/api.modal.js', 
+					'public/build/api.socket.js', 
+					'public/build/api.state.js', 
+					'public/build/api.template.js', 
+					'public/build/api.util.js', 
+					'public/build/api.validate.js', 
+					'public/build/api.worker.js',
+					'public/build/api.xhr.js'
+				], 
 				dest: 'public/build/api.js' //concat 결과 파일
 			}
 		},

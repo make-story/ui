@@ -200,6 +200,26 @@ jQuery 또는 api.dom 에 종속적 실행
 					//this.elements.push.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 					this.elements.container.appendChild(this.elements.push);
 
+					// step
+					this.elements.step = document.createElement('div');
+					//this.elements.step.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.step);
+
+					// folder
+					this.elements.folder = document.createElement('div');
+					//this.elements.folder.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.folder);
+
+					// story
+					this.elements.story = document.createElement('div');
+					//this.elements.story.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.story);
+
+					// market
+					this.elements.market = document.createElement('div');
+					//this.elements.market.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.market);
+
 					try {
 						//document.body.insertBefore(fragment, document.body.firstChild);
 						document.body.appendChild(fragment);
@@ -258,6 +278,13 @@ jQuery 또는 api.dom 에 종속적 실행
 				var size = {};
 				var center = {'left': 0, 'top': 0};
 				var tmp_height, tmp_top;
+				var result = {
+					'top': 0,
+					'bottom': 0,
+					'left': 0,
+					'right': 0
+				};
+
 				if(typeof position === 'string') {
 					// element 크기
 					width = Math.round($(element).outerWidth(true));
@@ -304,6 +331,7 @@ jQuery 또는 api.dom 에 종속적 실행
 						$(element).get(0).style.bottom = '0px';
 					}else if(/^center/.test(position)) {
 						$(element).get(0).style.top = center['top'] + 'px';
+						result.top = center['top'];
 					}
 					if(/left$/.test(position)) {
 						$(element).get(0).style.left = '0px';
@@ -311,19 +339,26 @@ jQuery 또는 api.dom 에 종속적 실행
 						$(element).get(0).style.right = '0px';
 					}else if(/center$/.test(position)) {
 						$(element).get(0).style.left = center['left'] + 'px';
+						result.left = center['left'];
 					}
 				}else if(typeof position === 'object') { // 사용자 설정값
 					if('left' in position) {
 						$(element).get(0).style.left = position['left'] + 'px';
+						result.left = position['left'];
 					}else if('right' in position) {
 						$(element).get(0).style.right = position['right'] + 'px';
+						result.right = position['right'];
 					}
 					if('top' in position) {
 						$(element).get(0).style.top = position['top'] + 'px';
+						result.top = position['top'];
 					}else if('bottom' in position) {
 						$(element).get(0).style.bottom = position['bottom'] + 'px';
+						result.bottom = position['bottom'];
 					}
 				}
+
+				return result;
 			},
 			// 지정된 위치 기준점으로 modal 출력
 			setRect: function(position, element, rect) {
@@ -554,12 +589,13 @@ jQuery 또는 api.dom 에 종속적 실행
 			try {
 				// iOS에서는 position: fixed 버그가 있음
 				/*if(that.isIOS === true) {
+					// 방법 1
 					size = module.getWinDocWidthHeight();
 					scroll = module.getScroll();
 					that.elements.container.style.position = 'absolute';
 					that.elements.container.style.left = scroll.left + 'px';
 					that.elements.container.style.top = scroll.top + 'px';
-
+					// 방법 2
 					//that.elements.container.style.width = (Math.max(size.window.width, size.document.width) - env['browser']['scrollbar']) + 'px';
 					//that.elements.container.style.height = (Math.max(size.window.height, size.document.height) - env['browser']['scrollbar']) + 'px';
 					//that.elements.contents.style.left = (Number(String(that.elements.contents.style.left).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) + scroll.left) + 'px';
@@ -601,6 +637,8 @@ jQuery 또는 api.dom 에 종속적 실행
 				that.elements.container.style.zIndex = ++module.zindex;
 				that.elements.container.style.display = 'block';
 				that.position(); // parent element 가 페인팅되어있지 않으면, child element 의 width, height 값을 구할 수 없다. (that.elements.contents 의 정확한 width, height 값을 알려면, 이를 감싸고 있는 that.elements.container 가 diplay block 상태에 있어야 한다.)
+
+				// transition
 				//that.elements.contents.style.transition = 'all .3s';
 
 				// focus (웹접근성)
@@ -634,8 +672,10 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
+				// 스크롤바 관련 (닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.)
+				$('html').css({'margin-right': that.before['margin-right'], 'overflow': that.before['overflow'], 'position': that.before['position']});
+
 				// element
-				$('html').css({'margin-right': that.before['margin-right'], 'overflow': that.before['overflow'], 'position': that.before['position']}); // 닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.
 				that.elements.container.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';
@@ -667,8 +707,10 @@ jQuery 또는 api.dom 에 종속적 실행
 			var parameter = parameter || {};
 
 			try {
+				// 스크롤바 관련 (닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.)
+				$('html').css({'margin-right': that.before['margin-right'], 'overflow': that.before['overflow'], 'position': that.before['position']});
+
 				// element
-				$('html').css({'margin-right': that.before['margin-right'], 'overflow': that.before['overflow'], 'position': that.before['position']}); // 닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.
 				if(that.elements.mask) {
 					that.elements.mask.parentNode.removeChild(that.elements.mask);
 				}
@@ -962,7 +1004,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid rgb(230, 231, 232); background-color: #FFF; border-radius: 7px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid rgb(230, 231, 232); background-color: #FFF; border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
 				that.elements.container.innerHTML = '\
 					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .96);">' + that.settings.message + '</div>\
@@ -1192,7 +1234,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid rgb(230, 231, 232); background-color: #FFF; border-radius: 7px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid rgb(230, 231, 232); background-color: #FFF; border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
 				that.elements.container.innerHTML = '\
 					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .96);">' + that.settings.message + '</div>\
@@ -1409,7 +1451,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid rgb(230, 231, 232); background-color: #FFF; border-radius: 7px; box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, .08); outline: none;';
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid rgb(230, 231, 232); background-color: #FFF; border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
 				that.elements.container.innerHTML = '\
 					<div id="' + key.message + '" style="padding: 12px 12px 6px 12px; min-height: 33px; color: #333; background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0;">' + that.settings.message + '</div>\
 					<div style="padding: 6px 12px 12px 12px; background: rgba(250, 251, 252, .96); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
