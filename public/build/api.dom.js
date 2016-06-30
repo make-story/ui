@@ -118,7 +118,7 @@ http://www.quirksmode.org/js/detect.html
 			"down": "mousedown",
 			"move": "mousemove",
 			"up": "mouseup",
-			"click": window.DocumentTouch && document instanceof DocumentTouch ? 'tap' : 'click',
+			"click": ('ontouchstart' in window) ? 'touchstart' : (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click',
 			// 트랜지션, 애니메이션
 			"transitionend": "transitionend",
 			"animationstart": "animationstart",

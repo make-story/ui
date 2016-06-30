@@ -80,11 +80,14 @@ https://developer.mozilla.org/ko/docs/Web/API/Web_Workers_API/basic_usage
 			};
 		};
 		APIWorker.prototype = {
+			order: function() {
+				return order;
+			},
 			send: function(data) { 
 				var that = this;
 
 				// 메시지 전송
-				worker.postMessage({'order': ++order, 'data': data}); // JSON 혹은 기타 직렬화된 데이터를 전달할 수 있다.
+				worker.postMessage({'order': ++order, 'message': data}); // JSON 혹은 기타 직렬화된 데이터를 전달할 수 있다.
 
 				return that;
 			},
