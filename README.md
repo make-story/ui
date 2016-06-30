@@ -46,9 +46,6 @@ api.env.browser.version
 api.env.browser.scrollbar
 - 브라우저 스크롤바 영역 가로 픽셀
 
-api.env.event.resize
-- resize/orientationchange
-
 api.env.event.down
 - mousedown/touchstart
 
