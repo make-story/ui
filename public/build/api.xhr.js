@@ -39,7 +39,7 @@ api.xhr({
 	'use strict'; // ES5
 
 	var xhr = function(parameter) {
-		var parameter = parameter || {}; // 사용자 설정값
+		var parameter = typeof parameter === 'object' ? parameter : {}; // 사용자 설정값
 		var settings = { // 기본 설정값
 			'contentType': 'application/x-www-form-urlencoded',
 			'type': 'GET', // GET이나 POST 같은 HTTP 메서드 타입
@@ -62,7 +62,7 @@ api.xhr({
 		var key;
 
 		// 사용자 설정값
-		for(key in settings) {
+		for(key in parameter) {
 			if(settings.hasOwnProperty(key)) {
 				settings[key] = parameter[key];
 			}
@@ -70,12 +70,15 @@ api.xhr({
 
 		// 유효성 검사
 		if(/[^get|post|put|delete]/i.test(settings.type)) { // HTTP 타입 (get|post|put|delete|options|head|trace|connect)
+			//console.log(settings.type);
 			return false;
 		}
-		if(typeof settings.url !== 'string' || settings.url.replace(/\s/g, '') === '' /*|| !/^([\w.+-]+:)(?:\/\/([^\/?#:]*)(?::(\d+)|)|)/.test(settings.url)*/) { // url
+		if(typeof settings.url !== 'string' || settings.url.replace(/\s/g, '') === '' /*|| !/^([\w.+-]+:)(?:\/\/([^\/?#:]*)(?::(\d+)|)|)/.test(settings.url)*/) { // url			
+			//console.log(settings.url);
 			return false;
 		}
 		if(typeof settings.async !== 'boolean') { // 동기/비동기 
+			//console.log(settings.async);
 			return false;
 		}
 
