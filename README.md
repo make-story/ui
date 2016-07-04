@@ -426,6 +426,12 @@ var instance = api.modal.setup({
 instance.show(); // 열기
 instance.hide(); // 닫기
 
+* position 값 종류
+topleft, topcenter, topright
+bottomleft, bottomcenter, bottomright
+centerleft, center, centerright
+
+
 // Rect (타겟위치를 기준으로 출력)
 api.modal.setup({
 	'type': 'rect', 
@@ -434,6 +440,13 @@ api.modal.setup({
 	'target': '', // 출력레이어 타겟
 	'rect': '' // 위치기준 타켓
 }).toggle();
+
+* position 값 종류
+topleft, topcenter, topright
+bottomleft, bottomcenter, bottomright
+lefttop, leftmiddle, leftbottom
+righttop, rightmiddle, rightbottom
+
 
 // Confirm
 var instance = api.modal.setup({
@@ -459,6 +472,12 @@ instance.show(); // 열기
 instance.hide(); // 닫기
 instance.remove(); // elememt 제거
 
+* position 값 종류
+topleft, topcenter, topright
+bottomleft, bottomcenter, bottomright
+centerleft, center, centerright
+
+
 // Alert
 var instance = api.modal.setup({
 	'type': 'alert',
@@ -477,6 +496,12 @@ instance.show(); // 열기
 instance.hide(); // 닫기
 instance.remove(); // elememt 제거
 
+* position 값 종류
+topleft, topcenter, topright
+bottomleft, bottomcenter, bottomright
+centerleft, center, centerright
+
+
 // Push
 var instance = api.modal.setup({
 	'type': 'push',
@@ -494,6 +519,12 @@ instance.change({'time': 2000, ...}); // 재설정
 instance.show(); // 열기
 instance.hide(); // 닫기
 instance.remove(); // elememt 제거
+
+* position 값 종류
+topleft, topcenter, topright
+bottomleft, bottomcenter, bottomright
+centerleft, center, centerright
+
 
 // key에 해당하는 팝업 인스턴스값 반환
 instance = api.modal.search(key); 
