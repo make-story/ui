@@ -368,12 +368,13 @@ api.transitionQueue({
 
 ````javascript
 // 해당요소 에디터 설정
-api.editor.on(api.dom('#editor').get(0));
-api.editor.on($('#editor').get(0)); // jQuery 사용
+api.editor.setup({
+	'key': 'editor', // 에디터 작동 고유키 (선택)
+	'target': '#editor' // 에디터 적용 element
+});
 
 // 해당요소 에디터 해제
-api.editor.off(api.dom('#editor').get(0));
-api.editor.off($('#editor').get(0)); // jQuery 사용
+api.editor.search('editor').off();
 ````
 
 
