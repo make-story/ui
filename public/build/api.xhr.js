@@ -11,7 +11,7 @@ Copyright (c) Sung-min Yu.
 Dual licensed under the MIT and GPL licenses.
 
 @browser compatibility
-
+XMLHttpRequest: IE7+
 
 -
 사용예 (파일전송)
@@ -100,7 +100,7 @@ api.xhr({
 			}
 			data = arr.join('&');
 		}
-		if(settings.type.toLowerCase() === 'get') {
+		if(data && settings.type.toLowerCase() === 'get') {
 			settings.url += settings.url.lastIndexOf('?') > -1 ? '&' + data : '?' + data;
 			settings.contentType = null;
 		}
@@ -160,18 +160,28 @@ api.xhr({
 			
 			// XMLHttpRequest 인스턴스
 			// https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
-			/*if(global.XDomainRequest) { // IE8, IE9
-				instance = new XDomainRequest();
-			}else if(global.XMLHttpRequest) { // IE10부터 사용가능
-				instance = new XMLHttpRequest();
-				if(typeof instance.withCredentials === 'undefined') {
-					return false;
-				}
-			}*/
+			// https://developer.mozilla.org/ko/docs/Web/API/XDomainRequest
+			// XMLHttpRequest Level 2 의 send() 는 파일이나 BLOB객체를 매개변수로 가질 수 있습니다.
+			// BLOB(binary large object or basic large)는 DBMS에서 단일 엔티티로 저장된 2진수 데이터 모음입니다.
+			// BLOB는 전형적으로 이미지, 오디오 또는 다른 멀티미디어 객체를 말합니다.
 			instance = new XMLHttpRequest();
 			if(typeof instance.withCredentials === 'undefined') {
 				return false;
 			}
+			/*if(global.XDomainRequest) { 
+				// IE8, IE9
+				// IE의 경우 XDomainRequest 객체를 사용 (cross-origin 기능만 제공)
+				instance = new XDomainRequest();
+			}else if(global.XMLHttpRequest) { 
+				instance = new XMLHttpRequest();
+				if(typeof instance.withCredentials === 'undefined') {
+					// IE10부터 사용가능
+					// XMLHttpRequest Level 2 와 cross-origin 기능을 지원하지 않습니다.
+					return false;
+				}
+			}else {
+				return false;
+			}*/
 
 			// 요청
 			instance.open(settings.type, settings.url, settings.async);
@@ -193,11 +203,9 @@ api.xhr({
 			
 			// dataType
 			// responseType XMLHttpRequest 레벨2 에서 중요함: http://www.html5rocks.com/en/tutorials/file/xhr2/?redirect_from_locale=ko 
-			if(settings.dataType) {
-				//instance.responseType = "arraybuffer";
-				//instance.responseType = 'text'; // 파이어폭스 파이어버그에서 응답이 null 로 출력될 경우, responseType 을 text로 해야 responseText 로 정상 출력된다. (이는 XMLHttpRequest 레벨 2 지원문제)
-				instance.responseType = settings.dataType; // arraybuffer || blob || document(xml) || json || text
-			}
+			//instance.responseType = "arraybuffer";
+			//instance.responseType = 'text'; // 파이어폭스 파이어버그에서 응답이 null 로 출력될 경우, responseType 을 text로 해야 responseText 로 정상 출력된다. (이는 XMLHttpRequest 레벨 2 지원문제)
+			instance.responseType = !settings.dataType || /json|text/i.test(settings.dataType.toLowerCase()) ? 'text' : settings.dataType; // text(default) || arraybuffer || blob || document(xml)
 
 			//instance.onloadstart
 			//instance.onabort
@@ -206,9 +214,10 @@ api.xhr({
 
 			// 업로드와 다운로드 진행율을 계산하는 콜백 함수를 단계적 응답 이벤트에 설정
 			instance.upload.onprogress = function(event) {
+				// event.lengthComputable
 				var total = event.total || 0;
 				var loaded = event.loaded || 0;
-				if(total && loaded && typeof settings.progressUpload === 'function') {
+				if(/*event.lengthComputable && */total && loaded && typeof settings.progressUpload === 'function') {
 					//console.log((loaded / total) + '% uploaded');
 					settings.progressUpload.call(settings.context, Number((100 / total) * loaded).toFixed(2));
 				}
@@ -253,7 +262,7 @@ api.xhr({
 				//this.getResponseHeader("Content-Type")
 				if(instance.status == 200) {
 					var data = instance.response || instance.responseText || instance.responseXML; // XMLHttpRequest Level 2
-					if(!instance.responseType && settings.dataType.toLowerCase() === 'json') {
+					if(typeof data === 'string' && settings.dataType.toLowerCase() === 'json') {
 						data = JSON.parse(data);
 					}
 					if(typeof settings.success === 'function') {
@@ -266,7 +275,7 @@ api.xhr({
 				console.log('error');
 				console.log(event);
 			};
-
+			
 			// 전송
 			instance.send(data || null);
 		}

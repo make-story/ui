@@ -68,12 +68,14 @@ https://developer.mozilla.org/ko/docs/Web/API/Web_Workers_API/basic_usage
 
 			//
 			worker = new Worker(that.settings.url);
-			worker.onmessage = function(event) { // 응답
+			worker.onmessage = function(e) { // 응답
+				var event = (typeof e === 'object' && e) || window.event;
 				if(typeof that.settings.callback.message === 'function') {
 					that.settings.callback.message.call(this, event['data'] || {});
 				}
 			};
-			worker.onerror = function(event) { // 에러
+			worker.onerror = function(e) { // 에러
+				var event = (typeof e === 'object' && e) || window.event;
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(this, event);
 				}

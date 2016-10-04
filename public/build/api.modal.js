@@ -20,6 +20,13 @@ RGBa: Internet Explorer 9
 
 -
 jQuery 또는 api.dom 에 종속적 실행
+
+-
+mask 배경색
+연함: layer, rect
+진함: confirm, alert, puch
+진함: folder,
+아주연함: bunch, market
 */
 
 ;(function(factory, global) {
@@ -36,7 +43,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 	'use strict'; // ES5
 
-	//
+	// 환경정보
 	var env = {};
 	if(global.api && global.api.env) {
 		env = global.api.env;
@@ -65,15 +72,9 @@ jQuery 또는 api.dom 에 종속적 실행
 				"down": "mousedown",
 				"move": "mousemove",
 				"up": "mouseup",
-				"click": 'click'
+				"click": window.DocumentTouch && document instanceof DocumentTouch ? 'tap' : 'click'
 			}
 		};
-		if(env['check']['touch'] === true) {
-			env['event']['down'] = 'touchstart';
-			env['event']['move'] = 'touchmove';
-			env['event']['up'] = 'touchend';
-			env['event']['click'] = (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click';
-		}
 		(function() {
 			var userAgent = (navigator.userAgent || navigator.vendor || window.opera).toLowerCase();
 			var platform = navigator.platform;
@@ -140,6 +141,12 @@ jQuery 또는 api.dom 에 종속적 실행
 				env['browser']['version'] = env['browser']['version'].substring(0, verOffset);
 			}
 		})();
+		// event
+		if(env['check']['touch'] === true) {
+			env['event']['down'] = 'touchstart';
+			env['event']['move'] = 'touchmove';
+			env['event']['up'] = 'touchend';
+		}
 	}
 
 	// key (일반적인 고유값)
@@ -152,18 +159,41 @@ jQuery 또는 api.dom 에 종속적 실행
 		};
 	}
 
-	// 모듈 (공통 사용)
+	// 모듈 (private)
 	var module = (function() {
 		function ModalModule() {
 			var that = this;
+			// IOS여부
+			that.isIOS = /(iphone|ipad|ipod)/i.test((navigator.userAgent || navigator.vendor || window.opera).toLowerCase());
 			// 팝업 z-index 관리
 			that.zindex = 200;
 			// 현재 포커스 위치
 			that.active;
 			// key가 있는 인스턴스
 			that.instance = {}; 
-			//
+			// element
 			that.elements = {};
+			// show 큐 (겹쳐서 보이는 것 방지)
+			that.queue = {
+				'topleft': [],
+				'topcenter': [],
+				'topright': [],
+				'bottomleft': [], 
+				'bottomcenter': [], 
+				'bottomright': [],
+				'centerleft': [],
+				'center': [],
+				'centerright': []
+			};
+			// 현재 설정된 기본 Style
+			that.before = (function() {
+				var html = $('html');
+				return {
+					'margin-right': html.css('margin-right') || 0, // document.documentElement.style.marginRight
+					'overflow': html.css('overflow') || 'visible', // document.documentElement.style.overflow
+					'position': html.css('position') || 'static' // document.documentElement.style.position
+				};
+			})();
 			//
 			that.init();
 		}
@@ -200,11 +230,6 @@ jQuery 또는 api.dom 에 종속적 실행
 					//this.elements.push.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 					this.elements.container.appendChild(this.elements.push);
 
-					// step
-					this.elements.step = document.createElement('div');
-					//this.elements.step.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-					this.elements.container.appendChild(this.elements.step);
-
 					// folder
 					this.elements.folder = document.createElement('div');
 					//this.elements.folder.style.cssText = 'position: fixed; left: 0px; top: 0px;';
@@ -214,6 +239,11 @@ jQuery 또는 api.dom 에 종속적 실행
 					this.elements.story = document.createElement('div');
 					//this.elements.story.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 					this.elements.container.appendChild(this.elements.story);
+
+					// bunch
+					this.elements.bunch = document.createElement('div');
+					//this.elements.bunch.style.cssText = 'position: fixed; left: 0px; top: 0px;';
+					this.elements.container.appendChild(this.elements.bunch);
 
 					// market
 					this.elements.market = document.createElement('div');
@@ -240,7 +270,8 @@ jQuery 또는 api.dom 에 종속적 실행
 				}
 				return settings;
 			},
-			getWinDocWidthHeight: function() {
+			// window, document 사이즈
+			getWindowDocumentSize: function() {
 				return {
 					'window': {
 						"width": window.innerWidth || document.documentElement.clientWidth || 0,
@@ -261,17 +292,19 @@ jQuery 또는 api.dom 에 종속적 실행
 				};
 			},
 			// 스크롤 위치
-			getScroll: function() {
+			getBrowserScroll: function() {
 				if('pageXOffset' in window && 'pageYOffset' in window) {
 					return {'left': window.pageXOffset, 'top': window.pageYOffset};
 				}else if(document.body && ('scrollLeft' in document.body && 'scrollTop' in document.body)) {
 					return {'left': document.body.scrollLeft, 'top': document.body.scrollTop};
 				}else if(document.documentElement && ('scrollLeft' in document.documentElement && 'scrollTop' in document.documentElement)) {
 					return {'left': document.documentElement.scrollLeft, 'top': document.documentElement.scrollTop};
+				}else {
+					return {'left': 0, 'top': 0};
 				}
 			},
 			// 위치설정
-			setPosition: function(position, element) {
+			setPosition: function(position, element, limit) {
 				// 위치 설정
 				var width = 0;
 				var height = 0;
@@ -284,6 +317,17 @@ jQuery 또는 api.dom 에 종속적 실행
 					'left': 0,
 					'right': 0
 				};
+				/*
+				-
+				limit
+				해당 영역은 제외하고 위치할 수 있음
+				{
+					'left': 0,
+					'right': 0,
+					'top': 0,
+					'bottom': 0
+				}
+				*/
 
 				if(typeof position === 'string') {
 					// element 크기
@@ -293,7 +337,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					// center
 					if(/center/ig.test(position)) {
 						// window, document 
-						size = this.getWinDocWidthHeight();
+						size = this.getWindowDocumentSize();
 
 						// 계산
 						if(size.window.width > width) {
@@ -360,12 +404,48 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				return result;
 			},
+			// 서로 겹치지 않도록 제어
+			setQueuePosition: function(position, overlap) {
+				// 해당 영역의 queue 전체 키에 대해 위치, 영역 분석
+				// that.instance[key].elements.target.getBoundingClientRect() // 렌더링된 위치/크기
+				// 재설정 했을 떄 브라우저 영역을 벗어나면, 그때는 겹치는 것을 허용 (overlap 값에 따름)
+				// that.getWindowDocumentSize()
+				var that = this;
+				var i, max;
+				var key, rect;
+				var limit = {
+					'left': 0, 
+					'right': 0, 
+					'top': 0, 
+					'bottom': 0
+				};
+				var size = that.getWindowDocumentSize();
+
+				if(that.queue[position] && that.queue[position].length) {
+					for(i=0, max=that.queue[position].length; i<max; i++) {
+						key = that.queue[position][i];
+						if(that.instance[key] && that.instance[key].elements && that.instance[key].target) {
+							rect = that.instance[key].elements.target.getBoundingClientRect();
+
+
+							// 브라우저 크기를 벗어나면 정지
+							
+						}
+					}
+				}
+
+
+				// 현재 해당 영역에 이미 차지하고 있는 영역을 반환한다.
+				// 이후 이 반환값은 setPosition 의 limit 파라미터로 들어간다.
+				return limit;
+
+			},
 			// 지정된 위치 기준점으로 modal 출력
-			setRect: function(position, element, rect) {
+			setRect: function(position, element, rect, fixed) {
 				var width, height;
 				var target = {};
 				var info = rect.getBoundingClientRect();
-				var scroll = this.getScroll();
+				var scroll = this.getBrowserScroll();
 				var tmp;
 
 				// element 크기
@@ -373,10 +453,10 @@ jQuery 또는 api.dom 에 종속적 실행
 				height = Math.round($(element).outerHeight(true));
 
 				// target 정보
-				target.left = info.left + (scroll.left || 0);
-				target.top = info.top + (scroll.top || 0);
-				target.width = Math.round($(rect).outerWidth(true));
-				target.height = Math.round($(rect).outerHeight(true));
+				target.left = info.left + (fixed === true ? 0 : scroll.left);
+				target.top = info.top + (fixed === true ? 0 : scroll.top);
+				target.width = Math.round($(rect).outerWidth()); // margin 값까지 포함하면 오차발생
+				target.height = Math.round($(rect).outerHeight()); // margin 값까지 포함하면 오차발생
 
 
 				// topleft, topcenter, topright 
@@ -455,6 +535,28 @@ jQuery 또는 api.dom 에 종속적 실행
 						$(element).get(0).style.top = (target.top + tmp) + 'px';
 					}
 				}
+			},
+			// 현재 이벤트의 기본 동작을 중단한다.
+			stopCapture: function(e) {
+				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+				if(event.preventDefault) { 
+					event.preventDefault();
+				}else {
+					event.returnValue = false;
+				}
+			},
+			// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+			stopBubbling: function(e) {
+				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+				if(event.stopPropagation) { 
+					event.stopPropagation();
+				}else {
+					event.cancelBubble = true;
+				}
+			},
+			// 숫자여부 확인
+			isNumeric: function(value) {
+				return !isNaN(parseFloat(value)) && isFinite(value);
 			}
 		};
 		return new ModalModule();
@@ -481,27 +583,23 @@ jQuery 또는 api.dom 에 종속적 실행
 		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {};
 		that.before = { // 값 변경전 기존 설정값 저장
-			'margin-right': '',
-			'overflow': '',
-			'position': '',
-			'width': '',
-			'height': ''
+			'scrollLeft': 0,
+			'scrollTop': 0
 		};
 		that.time = null;
-		that.isIOS = /(iphone|ipad|ipod)/i.test((navigator.userAgent || navigator.vendor || window.opera).toLowerCase());
 
 		// private init
 		module.init();
 		(function() { 
 			try {
-				// target, contents
+				// target
 				that.settings.target = (typeof that.settings.target === 'string' && /^[a-z]+/i.test(that.settings.target) ? '#' + that.settings.target : that.settings.target);
-				that.elements.contents = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $(that.settings.target).get(0));
-				that.elements.contents.style.position = 'absolute';
+				that.elements.target = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $(that.settings.target).get(0));
+				that.elements.target.style.position = 'static';
 
 				// mask
-				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-					that.elements.mask = that.settings.mask;
+				if(that.settings.mask && typeof that.settings.mask === 'object') {
+					that.elements.mask = that.settings.mask.nodeType ? that.settings.mask : $(that.settings.mask).get(0);
 					that.elements.mask.display = 'none';
 				}else {
 					that.elements.mask = document.createElement('div');
@@ -509,64 +607,45 @@ jQuery 또는 api.dom 에 종속적 실행
 					module.elements.layer.appendChild(that.elements.mask);
 				}
 
+				// contents (target 에 margin 등이 설정되었을 경우 position: absolute; overflow: auto; 에 의해 여백이 적용되지 않는 것 방지)
+				that.elements.contents = document.createElement('div');
+				that.elements.contents.style.cssText = 'position: absolute;';
+				that.elements.contents.appendChild(that.elements.target);
+
 				// container
 				that.elements.container = document.createElement('div');
 				that.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none; -webkit-overflow-scrolling: touch;';
 				that.elements.container.appendChild(that.elements.contents);
 				module.elements.layer.appendChild(that.elements.container);
-				if(that.elements.contents.style.display === 'none') {
-					that.elements.contents.style.display = 'block';
+				if(that.elements.target.style.display === 'none') {
+					that.elements.target.style.display = 'block';
 				}
 
-				// iOS에서는 position: fixed 버그가 있음
-				if(that.isIOS === true) {
-					$(that.elements.mask).on(env['event']['down'] + '.EVENT_DOWN_' + that.settings.key, function(e) {
-						var event = e || window.event;
-						if(event.preventDefault) {
-							event.preventDefault();
-						}else {
-							event.returnValue = false;
-						}
-						// 버블링 차단 (document, window 이벤트 전파 차단)
-						if(event.stopPropagation) {
-							event.stopPropagation();
-						}else {
-							event.cancelBubble = true;
-						}
+				// IOS 의 position: fixed 버그 대응
+				/*
+				if(module.isIOS === true) {
+					// 아래 코드를 사용할 경우, 레이어 내부 슬라이드 또는 관련 이벤트가 작동하지 않는다.
+					$(that.elements.container).on(env['event']['down'] + '.EVENT_DOWN_' + that.settings.key, function(e) {
+						var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+						module.stopBubbling(event);
 					});
-					$(that.elements.mask).on(env['event']['move'] + '.EVENT_MOVE_' + that.settings.key, function(e) {
-						var event = e || window.event;
-						if(event.preventDefault) {
-							event.preventDefault();
-						}else {
-							event.returnValue = false;
-						}
-						// 버블링 차단 (document, window 이벤트 전파 차단)
-						if(event.stopPropagation) {
-							event.stopPropagation();
-						}else {
-							event.cancelBubble = true;
-						}
+					$(that.elements.container).on(env['event']['move'] + '.EVENT_MOVE_' + that.settings.key, function(e) {
+						var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+						module.stopBubbling(event);
 					});
-					$(that.elements.mask).on(env['event']['up'] + '.EVENT_UP_' + that.settings.key, function(e) {
-						var event = e || window.event;
-						if(event.preventDefault) {
-							event.preventDefault();
-						}else {
-							event.returnValue = false;
-						}
-						// 버블링 차단 (document, window 이벤트 전파 차단)
-						if(event.stopPropagation) {
-							event.stopPropagation();
-						}else {
-							event.cancelBubble = true;
-						}
+					$(that.elements.container).on(env['event']['up'] + '.EVENT_UP_' + that.settings.key, function(e) {
+						var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+						module.stopBubbling(event);
 					});
 				}
+				*/
 				
 				// 팝업내부 close 버튼 클릭시 닫기
 				if(that.settings.close) {
-					$(that.elements.contents).find('.' + that.settings.close).on(env['event']['click'], function(event) {
+					$(that.elements.target).find('.' + that.settings.close).on(env['event']['click'], function(e) {
+						var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+						module.stopCapture(event);
+						module.stopBubbling(event); 
 						that.hide();
 					});
 				}
@@ -580,18 +659,44 @@ jQuery 또는 api.dom 에 종속적 실행
 	ModalLayer.prototype = {
 		change: function(settings) {
 			var that = this;
+			var key, tmp;
+
+			try {
+				for(key in settings) {
+					switch(key) {
+						case 'callback':
+							for(tmp in settings[key]) {
+								if(settings[key].hasOwnProperty(tmp)) {
+									that.settings.callback[tmp] = settings[key][tmp];
+								}
+							}
+							break;
+						/*
+						default:
+							that.settings[key] = settings[key];
+							break;
+						*/
+					}
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
+
 			return that;
 		},
 		position: function() {
 			var that = this;
 			var size, scroll;
+			var limit = {};
 
 			try {
-				// iOS에서는 position: fixed 버그가 있음
-				/*if(that.isIOS === true) {
+				// IOS 의 position: fixed 버그 대응
+				/*if(module.isIOS === true) {
 					// 방법 1
-					size = module.getWinDocWidthHeight();
-					scroll = module.getScroll();
+					size = module.getWindowDocumentSize();
+					scroll = module.getBrowserScroll();
 					that.elements.container.style.position = 'absolute';
 					that.elements.container.style.left = scroll.left + 'px';
 					that.elements.container.style.top = scroll.top + 'px';
@@ -601,7 +706,8 @@ jQuery 또는 api.dom 에 종속적 실행
 					//that.elements.contents.style.left = (Number(String(that.elements.contents.style.left).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) + scroll.left) + 'px';
 					//that.elements.contents.style.top = (Number(String(that.elements.contents.style.top).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) + scroll.top) + 'px';
 				}*/
-				module.setPosition(that.settings.position, that.elements.contents);
+				//limit = module.setQueuePosition(that.settings.position, true);
+				module.setPosition(that.settings.position, that.elements.contents, limit);
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -613,23 +719,24 @@ jQuery 또는 api.dom 에 종속적 실행
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
-			var size = module.getWinDocWidthHeight();
+			var size = module.getWindowDocumentSize();
+			var scroll = module.getBrowserScroll();
 
 			try {
 				// 스크롤바 사이즈만큼 여백
-				that.before['margin-right'] = $('html').css('margin-right'); // document.documentElement.style.marginRight
-				that.before['overflow'] = $('html').css('overflow'); // document.documentElement.style.overflow
 				if(size.window.height < size.document.height) {
 					$('html').css({'margin-right': env['browser']['scrollbar'] + 'px', 'overflow': 'hidden'});
 				}
 
-				// iOS에서는 position: fixed 버그가 있음
-				that.before['position'] = $('html').css('position'); // document.documentElement.style.position
-				if(that.isIOS === true) {
+				// IOS 의 position: fixed 버그 대응
+				if(module.isIOS === true) {
 					$('html').css({'position': 'fixed'});
+					that.before['scrollLeft'] = scroll.left;
+					that.before['scrollTop'] = scroll.top;
 				}
 
 				// element
+				that.elements.contents.style.webkitTransition = that.elements.contents.style.MozTransition = that.elements.contents.style.msTransition = that.elements.contents.style.OTransition = that.elements.contents.style.transition = 'left 0s, top 0s';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.zIndex = ++module.zindex;
 					that.elements.mask.style.display = 'block';
@@ -637,9 +744,9 @@ jQuery 또는 api.dom 에 종속적 실행
 				that.elements.container.style.zIndex = ++module.zindex;
 				that.elements.container.style.display = 'block';
 				that.position(); // parent element 가 페인팅되어있지 않으면, child element 의 width, height 값을 구할 수 없다. (that.elements.contents 의 정확한 width, height 값을 알려면, 이를 감싸고 있는 that.elements.container 가 diplay block 상태에 있어야 한다.)
-
-				// transition
-				//that.elements.contents.style.transition = 'all .3s';
+				if(env['monitor'] === 'pc') {
+					that.elements.contents.style.webkitTransition = that.elements.contents.style.MozTransition = that.elements.contents.style.msTransition = that.elements.contents.style.OTransition = that.elements.contents.style.transition = 'left .5s, top .5s';
+				}
 
 				// focus (웹접근성)
 				module.active = document.activeElement;
@@ -651,8 +758,13 @@ jQuery 또는 api.dom 에 종속적 실행
 					window.clearTimeout(that.time);
 					that.time = window.setTimeout(function(){ 
 						that.position();
-					}, 200);
+					}, 50);
 				});
+
+				// queue
+				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
+					module.queue[that.settings.position].push(that.settings.key);
+				}
 
 				// callback
 				if(typeof that.settings.callback.show === 'function') {
@@ -673,7 +785,13 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			try {
 				// 스크롤바 관련 (닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.)
-				$('html').css({'margin-right': that.before['margin-right'], 'overflow': that.before['overflow'], 'position': that.before['position']});
+				$('html').css({'margin-right': module.before['margin-right'], 'overflow': module.before['overflow']});
+
+				// IOS
+				if(module.isIOS === true) {
+					$('html').css({'position': module.before['position']});
+					window.scrollTo(that.before['scrollLeft'], that.before['scrollTop']);
+				}
 
 				// element
 				that.elements.container.style.display = 'none';
@@ -688,6 +806,11 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// resize 이벤트 종료
 				$(window).off('resize.EVENT_RESIZE_' + that.settings.key);
+
+				// queue
+				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+				}
 
 				// callback
 				if(typeof that.settings.callback.hide === 'function') {
@@ -708,7 +831,13 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			try {
 				// 스크롤바 관련 (닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.)
-				$('html').css({'margin-right': that.before['margin-right'], 'overflow': that.before['overflow'], 'position': that.before['position']});
+				$('html').css({'margin-right': module.before['margin-right'], 'overflow': module.before['overflow']});
+
+				// IOS
+				if(module.isIOS === true) {
+					$('html').css({'position': module.before['position']});
+					window.scrollTo(that.before['scrollLeft'], that.before['scrollTop']);
+				}
 
 				// element
 				if(that.elements.mask) {
@@ -726,6 +855,11 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// resize 이벤트 종료
 				$(window).off('resize.EVENT_RESIZE_' + that.settings.key);
+
+				// queue
+				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+				}
 
 				// callback
 				if(typeof that.settings.callback.remove === 'function') {
@@ -768,7 +902,9 @@ jQuery 또는 api.dom 에 종속적 실행
 			},
 			'theme:': {}, // 테마 (스타일 변경)
 			'target': '', // #id 또는 element (출력레이어 타겟)
-			'rect': '' // #id 또는 element (위치기준 타켓)
+			'rect': '', // #id 또는 element (위치기준 타켓)
+			'out': true, // 화면(viewport) 영역 안에 표시되도록 자동 위치조절
+			'fixed': false // 화면 고정 여부
 		};
 		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {};
@@ -778,14 +914,13 @@ jQuery 또는 api.dom 에 종속적 실행
 		module.init();
 		(function() { 
 			try {
-				// target, contents
+				// target
 				that.settings.target = (typeof that.settings.target === 'string' && /^[a-z]+/i.test(that.settings.target) ? '#' + that.settings.target : that.settings.target);
-				that.elements.contents = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $(that.settings.target).get(0));
-				//that.elements.contents.style.position = 'relative';
+				that.elements.target = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $(that.settings.target).get(0));
 
 				// mask
-				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-					that.elements.mask = that.settings.mask;
+				if(that.settings.mask && typeof that.settings.mask === 'object') {
+					that.elements.mask = that.settings.mask.nodeType ? that.settings.mask : $(that.settings.mask).get(0);
 					that.elements.mask.display = 'none';
 				}else {
 					that.elements.mask = document.createElement('div');
@@ -795,11 +930,11 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: absolute; display: none; left: 0; top: 0; outline: none; -webkit-overflow-scrolling: touch;';
-				that.elements.container.appendChild(that.elements.contents);
+				that.elements.container.style.cssText = (that.settings.fixed === true ? 'position: fixed;' : 'position: absolute;') + ' display: none; left: 0; top: 0; outline: none; -webkit-overflow-scrolling: touch; transition: left 0s, top 0s, right 0s, bottom 0s;';
+				that.elements.container.appendChild(that.elements.target);
 				document.body.appendChild(that.elements.container);
-				if(that.elements.contents.style.display === 'none') {
-					that.elements.contents.style.display = 'block';
+				if(that.elements.target.style.display === 'none') {
+					that.elements.target.style.display = 'block';
 				}
 
 				// rect (target 의 출력위치 기준점이 될 element)
@@ -814,13 +949,44 @@ jQuery 또는 api.dom 에 종속적 실행
 	};
 	ModalRect.prototype = {
 		change: function(settings) {
+			var that = this;
+			var key, tmp;
 
+			try {
+				for(key in settings) {
+					switch(key) {
+						case 'rect':
+							// rect (target 의 출력위치 기준점이 될 element)
+							that.settings.rect = (typeof settings[key] === 'string' && /^[a-z]+/i.test(settings[key]) ? '#' + settings[key] : settings[key]);
+							that.elements.rect = (typeof that.settings.rect === 'object' && that.settings.rect.nodeType ? that.settings.rect : $(that.settings.rect).get(0));
+							break;
+						case 'callback':
+							for(tmp in settings[key]) {
+								if(settings[key].hasOwnProperty(tmp)) {
+									that.settings.callback[tmp] = settings[key][tmp];
+								}
+							}
+							break;
+						/*
+						default:
+							that.settings[key] = settings[key];
+							break;
+						*/
+					}
+				}
+			}catch(e) {
+				if(typeof that.settings.callback.error === 'function') {
+					that.settings.callback.error.call(that, e);
+				}
+			}
+
+			return that;
 		},
 		position: function() {
 			var that = this;
 
 			try {
-				module.setRect(that.settings.position, that.elements.container, that.elements.rect);
+				module.setRect(that.settings.position, that.elements.container, that.elements.rect, that.settings.fixed);
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -853,7 +1019,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					window.clearTimeout(that.time);
 					that.time = window.setTimeout(function(){ 
 						that.position();
-					}, 200);
+					}, 50);
 				});
 
 				// callback
@@ -993,8 +1159,8 @@ jQuery 또는 api.dom 에 종속적 실행
 				key.ok = getKey();
 
 				// mask
-				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-					that.elements.mask = that.settings.mask;
+				if(that.settings.mask && typeof that.settings.mask === 'object') {
+					that.elements.mask = that.settings.mask.nodeType ? that.settings.mask : $(that.settings.mask).get(0);
 					that.elements.mask.display = 'none';
 				}else {
 					that.elements.mask = document.createElement('div');
@@ -1004,13 +1170,21 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid rgb(230, 231, 232); background-color: #FFF; border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
-				that.elements.container.innerHTML = '\
-					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0;">' + that.settings.title + '</div>\
-					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .96);">' + that.settings.message + '</div>\
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
+				/*that.elements.container.innerHTML = '\
+					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
+					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 10px 18px; background: rgba(250, 251, 252, .96); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
-						<button id="' + key.cancel + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 7px; vertical-align: middle; cursor: pointer;">CANCEL</button>\
-						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 7px; vertical-align: middle; cursor: pointer;">OK</button>\
+						<button id="' + key.cancel + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(140, 141, 142); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: transparent; border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">CANCEL</button>\
+						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: transparent; border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
+					</div>\
+				';*/ 
+				that.elements.container.innerHTML = '\
+					<div id="' + key.title + '" style="padding: 20px 20px 10px 20px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
+					<div id="' + key.message + '" style="padding: 10px 20px; min-height: 45px; color: rgb(44, 45, 46); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
+					<div style="padding: 10px 20px 20px 20px; text-align: right; border-radius: 0 0 7px 7px;">\
+						<button id="' + key.cancel + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(140, 141, 142); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">CANCEL</button>\
+						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
 					</div>\
 				';
 				fragment.appendChild(that.elements.container);
@@ -1023,14 +1197,20 @@ jQuery 또는 api.dom 에 종속적 실행
 				that.elements.ok = that.elements.container.querySelector('#' + key.ok);
 
 				// event
-				$(that.elements.cancel).on(env['event']['click'], function() {
+				$(that.elements.cancel).on(env['event']['click'], function(e) {
+					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+					module.stopCapture(event);
+					module.stopBubbling(event); 
 					that.hide();
 					// callback
 					if(typeof that.settings.callback.cancel === 'function') {
 						return that.settings.callback.cancel.call(that);
 					}
 				});
-				$(that.elements.ok).on(env['event']['click'], function() {
+				$(that.elements.ok).on(env['event']['click'], function(e) {
+					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+					module.stopCapture(event);
+					module.stopBubbling(event);
 					that.hide();
 					// callback
 					if(typeof that.settings.callback.ok === 'function') {
@@ -1064,7 +1244,7 @@ jQuery 또는 api.dom 에 종속적 실행
 							break;
 						case 'callback':
 							for(tmp in settings[key]) {
-								if(settings[key].hasOwnProperty(tmp) && typeof settings[key][tmp] === 'function') {
+								if(settings[key].hasOwnProperty(tmp)) {
 									that.settings.callback[tmp] = settings[key][tmp];
 								}
 							}
@@ -1084,9 +1264,11 @@ jQuery 또는 api.dom 에 종속적 실행
 		},
 		position: function() {
 			var that = this;
+			var limit = {};
 
 			try {
-				module.setPosition(that.settings.position, that.elements.container);
+				//limit = module.setQueuePosition(that.settings.position, true);
+				module.setPosition(that.settings.position, that.elements.container, limit);
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -1113,6 +1295,11 @@ jQuery 또는 api.dom 에 종속적 실행
 				module.active = document.activeElement;
 				that.elements.container.setAttribute('tabindex', -1);
 				that.elements.container.focus();
+
+				// queue
+				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
+					module.queue[that.settings.position].push(that.settings.key);
+				}
 
 				// callback
 				if(typeof that.settings.callback.show === 'function') {
@@ -1141,6 +1328,11 @@ jQuery 또는 api.dom 에 종속적 실행
 				// focus (웹접근성)
 				if(module.active) {
 					module.active.focus();
+				}
+
+				// queue
+				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
 				}
 
 				// callback
@@ -1173,6 +1365,11 @@ jQuery 또는 api.dom 에 종속적 실행
 				// instance
 				if(that.settings['key'] && module.instance[that.settings['key']]) {
 					delete module.instance[that.settings['key']];
+				}
+
+				// queue
+				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
 				}
 
 				// callback
@@ -1223,8 +1420,8 @@ jQuery 또는 api.dom 에 종속적 실행
 				key.ok = getKey();
 
 				// mask
-				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-					that.elements.mask = that.settings.mask;
+				if(that.settings.mask && typeof that.settings.mask === 'object') {
+					that.elements.mask = that.settings.mask.nodeType ? that.settings.mask : $(that.settings.mask).get(0);
 					that.elements.mask.display = 'none';
 				}else {
 					that.elements.mask = document.createElement('div');
@@ -1234,12 +1431,19 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid rgb(230, 231, 232); background-color: #FFF; border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
-				that.elements.container.innerHTML = '\
-					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: #333; background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0;">' + that.settings.title + '</div>\
-					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: #333; background-color: rgba(255, 255, 255, .96);">' + that.settings.message + '</div>\
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
+				/*that.elements.container.innerHTML = '\
+					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
+					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 10px 18px; background: rgba(250, 251, 252, .96); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
-						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; background-color: rgb(248, 249, 250); background: linear-gradient(#FFF, #F0F1F2); border: 1px solid #CCC; color: #AAACAD; font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; border-radius: 7px; vertical-align: middle; cursor: pointer;">OK</button>\
+						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: transparent; border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
+					</div>\
+				';*/ 
+				that.elements.container.innerHTML = '\
+					<div id="' + key.title + '" style="padding: 20px 20px 10px 20px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
+					<div id="' + key.message + '" style="padding: 10px 20px; min-height: 45px; color: rgb(44, 45, 46); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
+					<div style="padding: 10px 20px 20px 20px; text-align: right; border-radius: 0 0 7px 7px;">\
+						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
 					</div>\
 				';
 				fragment.appendChild(that.elements.container);
@@ -1251,7 +1455,10 @@ jQuery 또는 api.dom 에 종속적 실행
 				that.elements.ok = that.elements.container.querySelector('#' + key.ok);
 
 				// event
-				$(that.elements.ok).on(env['event']['click'], function() {
+				$(that.elements.ok).on(env['event']['click'], function(e) {
+					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+					module.stopCapture(event);
+					module.stopBubbling(event);
 					that.hide();
 				});
 			}catch(e) {
@@ -1281,7 +1488,7 @@ jQuery 또는 api.dom 에 종속적 실행
 							break;
 						case 'callback':
 							for(tmp in settings[key]) {
-								if(settings[key].hasOwnProperty(tmp) && typeof settings[key][tmp] === 'function') {
+								if(settings[key].hasOwnProperty(tmp)) {
 									that.settings.callback[tmp] = settings[key][tmp];
 								}
 							}
@@ -1301,9 +1508,11 @@ jQuery 또는 api.dom 에 종속적 실행
 		},
 		position: function() {
 			var that = this;
+			var limit = {};
 
 			try {
-				module.setPosition(that.settings.position, that.elements.container);
+				//limit = module.setQueuePosition(that.settings.position, true);
+				module.setPosition(that.settings.position, that.elements.container, limit);
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -1330,6 +1539,11 @@ jQuery 또는 api.dom 에 종속적 실행
 				module.active = document.activeElement;
 				that.elements.container.setAttribute('tabindex', -1);
 				that.elements.container.focus();
+
+				// queue
+				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
+					module.queue[that.settings.position].push(that.settings.key);
+				}
 
 				// callback
 				if(typeof that.settings.callback.show === 'function') {
@@ -1358,6 +1572,11 @@ jQuery 또는 api.dom 에 종속적 실행
 				// focus (웹접근성)
 				if(module.active) {
 					module.active.focus();
+				}
+
+				// queue
+				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
 				}
 
 				// callback
@@ -1392,6 +1611,11 @@ jQuery 또는 api.dom 에 종속적 실행
 					delete module.instance[that.settings['key']];
 				}
 
+				// queue
+				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+				}
+
 				// callback
 				if(typeof that.settings.callback.remove === 'function') {
 					that.settings.callback.remove.call(that);
@@ -1421,6 +1645,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				'error': null
 			},
 			'theme:': {}, // 테마 (스타일 변경)
+			'title': 'Message',
 			'time': 0, // 0 보다 큰 값은 자동닫기 설정
 			'message': ''
 		};
@@ -1436,12 +1661,13 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			try {
 				// key
+				key.title = getKey();
 				key.message = getKey();
 				key.close = getKey();
 
 				// mask
-				if(that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType) {
-					that.elements.mask = that.settings.mask;
+				if(that.settings.mask && typeof that.settings.mask === 'object') {
+					that.elements.mask = that.settings.mask.nodeType ? that.settings.mask : $(that.settings.mask).get(0);
 					that.elements.mask.display = 'none';
 				}else {
 					that.elements.mask = document.createElement('div');
@@ -1451,22 +1677,33 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// container
 				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: #333; border: 1px solid rgb(230, 231, 232); background-color: #FFF; border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
+				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
+				/*that.elements.container.innerHTML = '\
+					<div id="' + key.message + '" style="padding: 12px 12px 5px 12px; min-height: 33px; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
+					<div style="padding: 5px 12px 12px 12px; background: rgba(250, 251, 252, .96); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
+						<button id="' + key.close + '" style="margin: 0; padding: 0; color: rgb(120, 121, 122); font-size: 12px; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; background: transparent; border: none; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">CLOSE</button>\
+					</div>\
+				';*/
 				that.elements.container.innerHTML = '\
-					<div id="' + key.message + '" style="padding: 12px 12px 6px 12px; min-height: 33px; color: #333; background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0;">' + that.settings.message + '</div>\
-					<div style="padding: 6px 12px 12px 12px; background: rgba(250, 251, 252, .96); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
-						<button id="' + key.close + '" style="margin: 0; padding: 0; color: #5F6061; font-size: 12px; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; cursor: pointer; background: transparent; border: none;">CLOSE</button>\
+					<div id="' + key.title + '" style="padding: 15px 15px 5px 15px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
+					<div id="' + key.message + '" style="padding: 5px 15px 15px 15px; color: rgb(44, 45, 46); border-radius: 7px; word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
+					<div style="position: absolute; top: 10px; right: 15px;">\
+						<button id="' + key.close + '" style="margin: 0; padding: 0; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: transparent; border: 0 none; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">CLOSE</button>\
 					</div>\
 				';
 				fragment.appendChild(that.elements.container);
 				module.elements.push.appendChild(fragment);
 
 				// search element
+				that.elements.title = that.elements.container.querySelector('#' + key.title);
 				that.elements.message = that.elements.container.querySelector('#' + key.message);
 				that.elements.close = that.elements.container.querySelector('#' + key.close);
 
 				// event
-				$(that.elements.close).on(env['event']['click'], function() {
+				$(that.elements.close).on(env['event']['click'], function(e) {
+					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+					module.stopCapture(event);
+					module.stopBubbling(event);
 					that.hide();
 				});
 			}catch(e) {
@@ -1488,7 +1725,7 @@ jQuery 또는 api.dom 에 종속적 실행
 						case 'key':
 							break;
 						case 'time':
-							that.settings.time = !isNaN(parseFloat(settings[key])) && settings[key] || 0;
+							that.settings.time = module.isNumeric(settings[key]) && settings[key] || 0;
 							break;
 						case 'message':
 							//that.elements.message.textContent = settings[key] || '';
@@ -1496,7 +1733,7 @@ jQuery 또는 api.dom 에 종속적 실행
 							break;
 						case 'callback':
 							for(tmp in settings[key]) {
-								if(settings[key].hasOwnProperty(tmp) && typeof settings[key][tmp] === 'function') {
+								if(settings[key].hasOwnProperty(tmp)) {
 									that.settings.callback[tmp] = settings[key][tmp];
 								}
 							}
@@ -1516,9 +1753,11 @@ jQuery 또는 api.dom 에 종속적 실행
 		},
 		position: function() {
 			var that = this;
+			var limit = {};
 
 			try {
-				module.setPosition(that.settings.position, that.elements.container);
+				//limit = module.setQueuePosition(that.settings.position, true);
+				module.setPosition(that.settings.position, that.elements.container, limit);
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -1549,6 +1788,11 @@ jQuery 또는 api.dom 에 종속적 실행
 					}, that.settings.time);
 				}
 
+				// queue
+				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
+					module.queue[that.settings.position].push(that.settings.key);
+				}
+
 				// callback
 				if(typeof that.settings.callback.show === 'function') {
 					that.settings.callback.show.call(that);
@@ -1571,6 +1815,11 @@ jQuery 또는 api.dom 에 종속적 실행
 				that.elements.container.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';
+				}
+
+				// queue
+				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
 				}
 
 				// callback
@@ -1605,6 +1854,11 @@ jQuery 또는 api.dom 에 종속적 실행
 					delete module.instance[that.settings['key']];
 				}
 
+				// queue
+				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+				}
+
 				// callback
 				if(typeof that.settings.callback.remove === 'function') {
 					that.settings.callback.remove.call(that);
@@ -1626,40 +1880,57 @@ jQuery 또는 api.dom 에 종속적 실행
 			return module.instance[key] || false;
 		},
 		setup: function(settings) {
-			// 인스턴스 생성
 			var instance;
+
+			settings['key'] = settings['key'] || settings['type'] || ''; // 중복생성 방지 key 검사
 			if(settings['key'] && this.search(settings['key'])) {
-				//instance = module.instance[settings['key']];
 				instance = this.search(settings['key']);
-				if(instance.change) {
+				if(instance.change/* && JSON.stringify(instance.settings) !== JSON.stringify(settings)*/) {
 					instance.change(settings);
 				}
-			}else {				
+			}else if(settings['type']) {	
 				switch(settings['type']) {
 					case 'layer':
-						if(settings['key']) { // 중복생성 방지 key 검사
-							instance = new ModalLayer(settings);
-						}
+						instance = new ModalLayer(settings);
 						break;
 					case 'rect':
-						if(settings['key']) { // 중복생성 방지 key 검사
-							instance = new ModalRect(settings);
-						}
+						instance = new ModalRect(settings);
 						break;
 					case 'confirm':
-						//settings['key'] = settings['key'] || getKey();
 						instance = new ModalConfirm(settings);
 						break;
 					case 'alert':
-						//settings['key'] = settings['key'] || getKey();
 						instance = new ModalAlert(settings);
 						break;
 					case 'push':
-						//settings['key'] = settings['key'] || getKey();
 						instance = new ModalPush(settings);
 						break;
+					case 'folder':
+						if(settings['all']) {
+							// 전체 폴더 제목 상태 변경
+							(function() {
+								var key;
+								for(key in module.instance) {
+									if(module.instance[key].settings && module.instance[key].settings['type'] === 'folder') {
+										module.instance[key].titleToggle({'mode': settings['all']['mode']});
+									}
+								}
+							})();
+						}else {
+							instance = new ModalFolder(settings);
+						}
+						break;
+					case 'story':
+						instance = new ModalStory(settings);
+						break;
+					case 'bunch':
+						instance = new ModalBunch(settings);
+						break;
+					case 'market':
+						instance = new ModalMarket(settings);
+						break;
 				}
-				if(settings['key']) {
+				if(settings['key'] && instance) {
 					module.instance[settings['key']] = instance;
 				}
 			}

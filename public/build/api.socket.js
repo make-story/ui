@@ -97,19 +97,25 @@ socket.send(데이터);
 			that.settings.url = /^ws:\/\//.test(that.settings.url) ? that.settings.url : 'ws://' + that.settings.url;
 			
 			// private
-			socket = new WebSocket(that.settings.url);
+			try {
+				socket = new WebSocket(that.settings.url);
+			}catch(e) { 
+				throw e; 
+			};
 			socket.onopen = function() { // readyState changes to OPEN
 				that.send();
 				if(typeof that.settings.callback.open === 'function') {
 					that.settings.callback.open.call(that, Array.prototype.slice.call(arguments));
 				}
 			};
-			socket.onmessage = function(event) { // 메시지가 도착할 시점
+			socket.onmessage = function(e) { // 메시지가 도착할 시점
+				var event = (typeof e === 'object' && e) || window.event || {};
 				if(typeof that.settings.callback.message === 'function') {
 					that.settings.callback.message.call(that, event['data']);
 				}
 			};
-			socket.onclose = function(event) { // readyState changes to CLOSED
+			socket.onclose = function(e) { // readyState changes to CLOSED
+				var event = (typeof e === 'object' && e) || window.event || {};
 				var code = event.code; // 연결이 종료되는 이유를 가리키는 숫자 값입니다. 지정되지 않을 경우 기본값은 1000으로 간주됩니다. (일반적인 경우의 "transaction complete" 종료를 나타내는 값).
 				var reason = event.reason; // 연결이 왜 종료되는지를 사람이 읽을 수 있도록 나타내는 문자열입니다. 이 문자열은 UTF-8 포멧이며, 123 바이트를 넘을 수 없습니다.
 				var wasClean = event.wasClean;

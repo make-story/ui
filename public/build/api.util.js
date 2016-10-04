@@ -22,6 +22,7 @@ Dual licensed under the MIT and GPL licenses.
 	}else if(!global.api) {
 		global.api = {};
 	}
+	
 	global.api.util = {
 		// 상속 - Object.create() 효과
 		inherit: function(C, P) { 
@@ -165,27 +166,29 @@ Dual licensed under the MIT and GPL licenses.
 		 	> 일반적인 이벤트(img를 클릭했을 경우): img -> div -> a 순서로 이벤트 발생
 		 	> stopPropagation 사용: img 를 클릭했을 경우 div 이벤트를 막을 수 있다. 그러나 a 이벤트는 중지되지 않으며 href에 따른 페이지 이동이 발생한다.
 		 	> preventDefault 사용: a 기본 이벤트인 href 의 이동을 중지 시킨다.
-		 */
-		stopCapture: function(event) {
-			var event = event || window.event;
-			if(event.preventDefault) { // 현재 이벤트의 기본 동작을 중단한다.
+		*/
+		// 현재 이벤트의 기본 동작을 중단한다.
+		stopCapture: function(e) {
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			if(event.preventDefault) { 
 				event.preventDefault();
 			}else {
 				event.returnValue = false;
 			}
 		},
-		stopBubbling: function(event) {
-			var event = event || window.event;
-			if(event.stopPropagation) { // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+		// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+		stopBubbling: function(e) {
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			if(event.stopPropagation) { 
 				event.stopPropagation();
 			}else {
 				event.cancelBubble = true;
 			}
 		},
 		// 캡쳐단계, 버블링단계 동시 실행
-		stopEventDelivery: function(event) { 
-			this.stopCapture(event || window.event);
-			this.stopBubbling(event || window.event);
+		stopEventDelivery: function(e) { 
+			this.stopCapture(e);
+			this.stopBubbling(e);
 		},
 		// setTimeout (한번 실행)
 		startCall: function(callback, seconds) { 
@@ -253,6 +256,8 @@ Dual licensed under the MIT and GPL licenses.
 					return allowed.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : '';
 				});
 			};
+			// 사용예: i 와 b 태그만 허용하고 그 외의 태그는 모두 제거
+			strip_tags('<p>Aaa</p> <b>Bbb</b> <i>Ccc</i>', '<i><b>');
 			*/
 			if(html && typeof html === 'string') {
 				return html.replace(/(<([^>]+)>)/ig,"");
@@ -261,8 +266,8 @@ Dual licensed under the MIT and GPL licenses.
 			}
 		},
 		// 키보드 이벤트 정보 
-		keyboardCode: function(event) {
-			var event = event || window.event;
+		keyboardCode: function(e) {
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 			var code = event.which || event.keyCode;
 			var key;
 			switch(code) {
@@ -417,11 +422,14 @@ Dual licensed under the MIT and GPL licenses.
 		// fragment 에 html 삽입 후 반환
 		fragmentHtml: function(html) {
 			// Source: https://github.com/Alhadis/Snippets/blob/master/js/polyfills/IE8-child-elements.js
-			/*if(!("firstElementChild" in document.documentElement)){
+			/*if(!("firstElementChild" in document.documentElement)) {
 				Object.defineProperty(Element.prototype, "firstElementChild", {
-					get: function(){
-						for(var nodes = this.children, n, i = 0, l = nodes.length; i < l; ++i)
-							if(n = nodes[i], 1 === n.nodeType) return n;
+					get: function() {
+						for(var nodes = this.children, n, i = 0, l = nodes.length; i < l; ++i) {
+							if(n = nodes[i], 1 === n.nodeType) {
+								return n;
+							}
+						}
 						return null;
 					}
 				});
@@ -441,6 +449,12 @@ Dual licensed under the MIT and GPL licenses.
 			}
 
 			return fragment;
+		},
+		// empty
+		empty: function(element) {
+			while(element.hasChildNodes()) { // textnode 포함
+				element.removeChild(element.lastChild);
+			}
 		},
 		// window popup
 		windowPopup: function(url, name, width, height, features) {
@@ -468,7 +482,7 @@ Dual licensed under the MIT and GPL licenses.
 			if(typeof features === 'undefined') {
 				win = window.open(url, name, 'width=' + width + ', height=' + height + ', menubar=no, status=no, location=no');
 			}else {	
-				win = window.open(url, name, 'width=' + width + ', height=' + height + ',' + features);
+				win = window.open(url, name, 'width=' + width + ', height=' + height + ', ' + features);
 			}
 			if(win !== null) {
 				win.focus();
@@ -512,7 +526,7 @@ Dual licensed under the MIT and GPL licenses.
 		// 숫자만 추출
 		numberReturn: function(value) { 
 			//return Number(String(value).replace(/,/g, '').replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')); // 음의 실수 포함
-			return String(value).replace(/,/g, '').replace(/[^+-\.\d]/g, '');
+			return String(value).replace(/[^+-\.\d]|,/g, '');
 		},
 		// 금액
 		numberFormat: function(value) { 

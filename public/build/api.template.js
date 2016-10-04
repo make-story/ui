@@ -52,19 +52,12 @@ https://mustache.github.io/mustache.5.html
 
 */
 
-;(function(factory, global) {
+;(function(global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global !== window) {
-		return false;	
-	}else if(!global.api) {
+	if(!global.api) {
 		global.api = {};
 	}
-	global.api.template = factory(global);
-
-})(function(global, undefined) {
-
-	'use strict'; // ES5
 
 	// debug
 	if(!global.debug) {
@@ -73,20 +66,20 @@ https://mustache.github.io/mustache.5.html
 				if(typeof value === 'undefined') {
 					console.log('----------【 ' + name + ' 】');
 				}else {
-					console.log('----------【 ' + name);
+					console.log('----------【' + name);
 					console.log(value);
-					console.log('---------- 】');
+					console.log('】----------');
 				}
 			},
 			'dir': function(name, value) {
 				if(typeof value === 'undefined') {
 					console.log('----------【');
 					console.dir(name);
-					console.log('---------- 】');
+					console.log('】----------');
 				}else {
-					console.log('----------【 ' + name);
+					console.log('----------【' + name);
 					console.dir(value);
-					console.log('---------- 】');
+					console.log('】----------');
 				}
 			}
 		};
@@ -325,6 +318,6 @@ https://mustache.github.io/mustache.5.html
 	};
 	
 	// public return
-	return new Template();
+	global.api.template = new Template();
 
-}, this);
+})(this);

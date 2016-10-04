@@ -118,7 +118,36 @@ http://www.quirksmode.org/js/detect.html
 			"down": "mousedown",
 			"move": "mousemove",
 			"up": "mouseup",
-			"click": ('ontouchstart' in window) ? 'touchstart' : (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click',
+			//"click": ('ontouchstart' in window) ? 'touchstart' : (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click', // touchstart 를 사용할 경우 click 리스너를 수동으로 등록한 이벤트보다 먼저 작동하여, 예상과 다른 실행순서가 발생할 수 있다.
+			"click": window.DocumentTouch && document instanceof DocumentTouch ? 'tap' : 'click',
+			"wheel": (function() {
+				if(userAgent.indexOf('webkit') >= 0) { // Chrome / Safari
+					return 'mousewheel';
+				}else if(element.attachEvent) { // IE
+					return 'mousewheel';
+				}else if(element.addEventListener) { // Mozilla
+					return 'DOMMouseScroll';
+				}
+				/*
+				var scroll;
+				if(event.wheelDelta) {
+					scroll = event.wheelDelta / 3600; // Chrome / Safari
+				}else if(event.detail) {
+					scroll = event.detail / -90; // Mozilla
+				}else {
+					return false;
+				}
+				scroll = 1 + scroll; // Zoom factor: 0.9 / 1.1
+				if(scroll > 1) { 
+					// top
+				}else if(scroll < 1) { 
+					// bottom
+				}else {
+					return false;
+				}
+				*/
+				return false;
+			})(),
 			// 트랜지션, 애니메이션
 			"transitionend": "transitionend",
 			"animationstart": "animationstart",
@@ -262,6 +291,17 @@ http://www.quirksmode.org/js/detect.html
 		trim: /(^\s*)|(\s*$)/g // 양쪽 여백
 	};
 
+	// element 의 window	
+	var getWindow = function(element) {
+		return element != null && element == element.window ? element : element.nodeType === 9 ? element.defaultView || element.parentWindow : global;
+	};
+
+	// element 의 docuemnt
+	var getDocument = function(element) {
+		// document.documentElement; // <html> element //표준
+		return element && element.ownerDocument || global.document;
+	};
+
 	// event name 브라우저에 따른 자동 변경
 	var setEventTypeChange = function(events) {
 		if(typeof events === 'string' && /transitionend|animationstart|animationiteration|animationend/i.test(events.toLowerCase())) {
@@ -282,6 +322,11 @@ http://www.quirksmode.org/js/detect.html
 	// 숫자여부 
 	var isNumeric = function(value) {
 		return !isNaN(parseFloat(value)) && isFinite(value);
+	};
+
+	// 숫자 분리
+	var getNumber = function(value) {
+		return isNumeric(value) ? value : String(value).replace(/[^+-\.\d]|,/g, '') || 0;
 	};
 
 	// 숫자/단위 분리 (예: 10px -> [0]=>10px, [1]=>10, [2]=>'px')
@@ -309,6 +354,9 @@ http://www.quirksmode.org/js/detect.html
 		if(!elements || !elements instanceof DOM || !property || !(/^(width|height)$/i.test(property))) {
 			return value;
 		}
+
+		// 소문자 변환
+		property = property.toLowerCase();
 
 		// width, height 에 따라 분기 (paddingLeft, paddingRight, paddingTop, paddingBottom, ...)
 		if(property === 'width') {
@@ -351,7 +399,11 @@ http://www.quirksmode.org/js/detect.html
 			'display': /^(inline|block)$/i
 		};
 		var value = 0;
+		var rect = {};
 		var key, tmp;
+
+		// 소문자 변환
+		property = property.toLowerCase();
 
 		// display가 none 경우 width, height 추출에 오차가 발생한다.
 		if(is_display === true) {
@@ -375,8 +427,18 @@ http://www.quirksmode.org/js/detect.html
 
 		// 해당 property 값
 		value = element.get(0)['offset' + (property.substring(0, 1).toUpperCase() + property.substring(1))]; // offsetWidth, offsetHeight (border + padding + width 값, display: none 의 경우는 0 반환)
+		if(element.get(0).getBoundingClientRect) { // chrome 에서는 정수가 아닌 실수단위로 정확한 값을 요구하므로 getBoundingClientRect 사용
+			rect = element.get(0).getBoundingClientRect(); // width/height: IE9 이상 지원
+			if(property in rect) {
+				value = rect[property];
+			}/*else if(property === 'width') {
+				value = rect.right - rect.left;
+			}else if(property === 'height') {
+				value = rect.bottom - rect.top;
+			}*/
+		}
 		if(value <= 0 || value === null) {
-			// css로 값을 구한다.
+			// 방법1: css로 값을 구한다.
 			tmp = getNumberUnit(element.css(property));
 			value = (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
 			if(extra) {
@@ -391,7 +453,7 @@ http://www.quirksmode.org/js/detect.html
 				}
 			}
 		}else {
-			// offset 값 가공 (margin, border, padding)
+			// 방법2: offset 값 가공 (margin, border, padding)
 			tmp = getAugmentWidthHeight(element, property);
 			if(extra) {
 				if(extra === 'inner') {
@@ -528,6 +590,7 @@ http://www.quirksmode.org/js/detect.html
 
 	// DOM prototype
 	DOM.fn = DOM.prototype = {
+		constructor: DOM, // constructor 를 Object 가 아닌 DOM 으로 변경
 		// document ready
 		ready: (function() {
 			if(document.readyState === "interactive" || document.readyState === "complete") {
@@ -578,7 +641,7 @@ http://www.quirksmode.org/js/detect.html
 			if(this.elements && this.elements.length > 0 && typeof callback === 'function') {
 				for(i=0, max=this.elements.length; i<max; i++) {
 					// i:key, this.elements[i]:element
-					if(callback.apply(this.elements[i], [i, this.elements[i]]) === false) {
+					if(callback.apply(this.elements[i], [i, this.elements[i]]) === false) { // return false 경우 break
 						break;
 					}
 				}
@@ -617,7 +680,7 @@ http://www.quirksmode.org/js/detect.html
 			// x.hasChildNodes(); // 표준
 			// x.childNodes[1]; // IE9이상 사용가능 (IE8이하 부분지원), TextNode 까지 검색
 			// x.children[1]; // IE9이상 사용가능 (IE8이하 부분지원)
-			// getElementsByTagName('*') 
+			// getElementsByTagName('*'); // 폴리필
 			if(this.elements && this.elements.length > 0 && this.elements[0].hasChildNodes()) { // true | false
 				return this.elements[0].children;
 			}
@@ -1013,6 +1076,67 @@ http://www.quirksmode.org/js/detect.html
 
 			return this;
 		},
+		// 절대좌표 (jQuery 와 다르게 값 설정은 하지 않는다. position 을 디자인설계와 다르게 스크립트가 변경하기 때문)
+		offset: function() {
+			var max = (this.elements && this.elements.length) || 0;
+			var win, doc; 
+			var offset = {}, box = {'top': 0, 'left': 0};
+
+			if(!max) {
+				return this;
+			}else {
+				win = getWindow(this.elements[0]);
+				doc = getDocument(this.elements[0]);
+
+				// getBoundingClientRect
+				if(typeof this.elements[0].getBoundingClientRect !== 'undefined') {
+					box = this.elements[0].getBoundingClientRect();
+				}
+
+				// scroll 값 포함
+				offset.top = box.top + (win.pageYOffset || doc.documentElement.scrollTop) - (doc.documentElement.clientTop || 0);
+				offset.left = box.left + (win.pageXOffset || doc.documentElement.scrollLeft) - (doc.documentElement.clientLeft || 0);
+
+				return offset;
+			}
+		},
+		// 상대좌표 (부모 element 기준)
+		position: function() {
+			var position, offset;
+			var offsetParent, parentOffset = {'top': 0, 'left': 0};
+			var getOffsetParent = function(element) {
+				// document.documentElement; //<html> element //표준
+				var offsetParent = element.offsetParent || document.documentElement;
+				while(offsetParent && (!(offsetParent.nodeName && offsetParent.nodeName.toLowerCase() === 'html') && DOM(offsetParent).css('position') === "static")) {
+					offsetParent = offsetParent.offsetParent;
+				}
+				return offsetParent || document.documentElement;
+			};
+
+			if(!this.elements || !this.elements.length) {
+				return this;
+				//return false;
+			}else { // get
+				position = this.css.call(this, 'position');
+				//
+				if(position === 'fixed') {
+					offset = this.elements[0].getBoundingClientRect();
+				}else {
+					offsetParent = DOM(getOffsetParent(this.elements[0]));
+					offset = this.offset();
+					if(!(offsetParent[0].nodeName && offsetParent[0].nodeName.toLowerCase() === 'html')) {
+						parentOffset = offsetParent.offset();
+					}
+					parentOffset.top += getNumber(offsetParent.css('borderTopWidth'));
+					parentOffset.left += getNumber(offsetParent.css('borderLeftWidth'));
+				}
+				//
+				return {
+					'top': offset.top - parentOffset.top - getNumber(this.css('marginTop')),
+					'left': offset.left - parentOffset.left - getNumber(this.css('marginLeft'))
+				};
+			}
+		},
 		//
 		width: function(value) {
 			var i, key, max = (this.elements && this.elements.length) || 0;
@@ -1193,7 +1317,35 @@ http://www.quirksmode.org/js/detect.html
 
 			return this;
 		},
-		// 
+		//
+		empty: function() {
+			// x.hasChildNodes(); // 표준
+			// x.removeChild(y); // 표준
+			// x.parentNode; //표준
+			// x.childNodes[1]; // IE9이상 사용가능 (IE8이하 부분지원), TextNode 까지 검색
+			// x.children[1]; // IE9이상 사용가능 (IE8이하 부분지원)
+			// x.lastChild; // IE9이상 사용가능
+			var i, max = (this.elements && this.elements.length) || 0;
+
+			if(!max) {
+				return this;
+				//return false;
+			}else {
+				for(i=0; i<max; i++) {
+					// element
+					while(this.elements[i].hasChildNodes()) { // TextNode 포함
+						this.elements[i].removeChild(this.elements[i].lastChild);
+					}
+					
+					// select
+					if(this.elements[i].options && this.elements[i].nodeName.toLowerCase() === 'select') {
+						this.elements[i].options.length = 0;
+					}
+				}
+			}
+
+			return this;
+		},
 		remove: function() {
 			// x.removeChild(y); // 표준
 			// x.parentNode; // 표준
@@ -1203,6 +1355,11 @@ http://www.quirksmode.org/js/detect.html
 				return this;
 				//return false;
 			}else {
+				// 이벤트 제거 
+				// (element에 이벤트가 설정되었을 경우 이벤트 리스너도 같이 삭제해야 이벤트 메모리 누적 방지)
+				//this.off(); 
+				
+				// element remove
 				for(i=0; i<max; i++) {
 					if(this.elements[i].parentNode) {
 						this.elements[i].parentNode.removeChild(this.elements[i]);
@@ -1210,6 +1367,7 @@ http://www.quirksmode.org/js/detect.html
 				}
 			}
 		},
+		//
 		clone: function(is) { // jQuery 처럼 이벤트 복사는 api.dom 을 통해 설정된 이벤트 리스트(storage)에 한해 설계가능하다
 			// x = y.cloneNode(true | false); // 표준
 			// is : 자식 노드들도 모두 복제할지 여부(true:복사, false:해당없음)
@@ -1217,12 +1375,14 @@ http://www.quirksmode.org/js/detect.html
 				// id를 가진 node를 복사할 때 주의하자(페이지내 중복 id를 가진 노드가 만들어 지는 가능성이 있다)
 				return this.elements[0].cloneNode(is || true);
 			}
+
+			return this;
 		},
 		//
 		prepend: function(parameter) {
 			// x.insertBefore(y,z); // 표준
-			// x.firstChild; // IE9이상 사용가능 (textnode 포함)
-			// x.firstElementChild // textnode 제외
+			// x.firstChild; // IE9이상 사용가능 (TextNode 포함)
+			// x.firstElementChild // TextNode 제외
 			var i, max = (this.elements && this.elements.length) || 0;
 			var element;
 
@@ -1276,6 +1436,9 @@ http://www.quirksmode.org/js/detect.html
 			// x.insertBefore(y,z); // 표준
 			// x.parentNode; // 표준
 			// x.nextSibling; // IE9이상 사용가능
+
+			// api.dom(기준 요소).before(이동할 요소);
+			// 이동(또는 삽입)시킬 element 가 기준 element 바로 뒤로 이동(또는 삽입)한다.
 			var i, max = (this.elements && this.elements.length) || 0;
 			var element;
 			
@@ -1303,8 +1466,8 @@ http://www.quirksmode.org/js/detect.html
 			// x.insertBefore(y,z); // 표준
 			// x.parentNode; // 표준
 
-			// api.dom(기준이 되는 대상).before(이동할 대상);
-			// 기준이 되는 element 바로 전으로 이동할 element가 이동(또는 삽입)한다.
+			// api.dom(기준 요소).before(이동할 요소);
+			// 이동(또는 삽입)시킬 element 가 기준 element 바로 전으로 이동(또는 삽입)한다.
 			// querySelectorAll 또는 api.dom() length 가 있으나, querySelector 는 length 가 없다.
 			var i, max = (this.elements && this.elements.length) || 0;
 			var element;
@@ -1333,8 +1496,8 @@ http://www.quirksmode.org/js/detect.html
 			// x.insertBefore(y,z); // 표준
 			// x.parentNode; // 표준
 
-			// api.dom(이동할 대상).insertBefore(기준이 되는 대상);
-			// 이동할 element가, 기준이 되는 element 바로 전으로 이동(또는 삽입)한다.
+			// api.dom(이동할 요소).insertBefore(기준 요소);
+			// 이동(또는 삽입)시킬 element 가 기준 element 바로 전으로 이동(또는 삽입)한다.
 			// querySelectorAll 또는 api.dom() length 가 있으나, querySelector 는 length 가 없다.
 			var i, max = (this.elements && this.elements.length) || 0;
 			var element;
@@ -1388,11 +1551,10 @@ http://www.quirksmode.org/js/detect.html
 		},
 		// event
 		on: function(events, handler, capture) {
-			var events = events || undefined; // 띄어쓰기 기준 여러개의 이벤트를 설정할 수 있다.
-			var handler = handler || undefined;
+			var events = events || ''; // 띄어쓰기 기준 여러개의 이벤트를 설정할 수 있다.
+			var handler = handler || function() {};
 			var capture = typeof capture !== 'boolean' ? false : capture; // IE의 경우 캡쳐 미지원 (기본값: false 버블링으로 함)
 			var arr = [], key;
-			var setListener;
 
 			// 이벤트 키
 			arr = events.split('.');
@@ -1401,60 +1563,67 @@ http://www.quirksmode.org/js/detect.html
 				events = arr.shift();
 				key = arr.join('');
 			}
-			events = events.split(/\s+/);
+			if(events) {
+				events = events.split(/\s+/);
 
-			// 이벤트 설정
-			this.each(function(index, element) {
-				var i, max;
-				var callback = handler;
-				var result = {};
+				// 이벤트 설정
+				this.each(function(index, element) {
+					var i, max;
+					var callback = handler;
+					var result = {};
 
-				if(typeof element.storage !== 'object') {
-					element.storage = {};
-				}
-				for(i=0, max=events.length; i<max; i++) {
-					//
-					if(typeof element.addEventListener === 'function') {
-						element.addEventListener(events[i], callback, capture); // IE9이상 사용가능
-					}else if(element.attachEvent) { // IE (typeof 검사시 IE8에서는 function 이 아닌 object 반환)
-						callback = function(e) { // IE this 바인딩 문제
-							handler(e, element);
-						};
-						/*
-						// 아래 같이 선언했을 경우 IE에서 스택풀 발생
-						handler = function(e) { // IE this 바인딩 문제
-							handler(e, element);
-						};
-						*/
-						element.attachEvent('on' + events[i], callback); 
+					if(typeof element.storage !== 'object') {
+						element.storage = {};
 					}
-
-					// 실행 정보 저장
-					result = {
-						"key": key,
-						"event": events[i],
-						"handler": callback,
-						"capture": capture
-					};
-					if(typeof element.storage[events[i]] !== 'object') {
-						element.storage[events[i]] = [];
+					if(typeof element.storage.events !== 'object') {
+						element.storage.events = {};
 					}
-					element.storage[events[i]].push(result);
-					if(key) {
-						if(typeof element.storage[key] !== 'object') {
-							element.storage[key] = {};
+					for(i=0, max=events.length; i<max; i++) {
+						//
+						if(typeof element.addEventListener === 'function') {
+							element.addEventListener(events[i], callback, capture); // IE9이상 사용가능
+						}else if(element.attachEvent) { // IE (typeof 검사시 IE8에서는 function 이 아닌 object 반환)
+							callback = function(e) { // IE this 바인딩 문제
+								handler(e, element);
+							};
+							/*
+							// 아래 같이 선언했을 경우 IE에서 스택풀 발생
+							handler = function(e) { // IE this 바인딩 문제
+								handler(e, element);
+							};
+							*/
+							element.attachEvent('on' + events[i], callback); 
 						}
-						element.storage[key][events[i]] = result;
+
+						// 이벤트 정보 저장
+						result = {
+							"key": key, // 사용자가 지정한 이벤트키
+							"event": events[i],
+							"handler": callback,
+							"capture": capture
+						};
+						// event array
+						if(typeof element.storage.events[events[i]] !== 'object') {
+							element.storage.events[events[i]] = [];
+						}
+						element.storage.events[events[i]].push(result);
+						// event key
+						if(key) {
+							if(typeof element.storage[key] !== 'object') {
+								element.storage[key] = {};
+							}
+							element.storage[key][events[i]] = result;
+						}
 					}
-				}
-			});
+				});
+			}
 
 			return this;
 		},
 		off: function(events) {
-			var events = events || undefined; // 띄어쓰기 기준 여러개의 이벤트를 해제할 수 있다.
+			var events = events || ''; // 띄어쓰기 기준 여러개의 이벤트를 해제할 수 있다.
 			var arr = [], key;
-			var setListener, setRemove;
+			var setListener, setRemove = function() {};
 
 			// 이벤트 키
 			arr = events.split('.');
@@ -1463,8 +1632,10 @@ http://www.quirksmode.org/js/detect.html
 				events = arr.shift();
 				key = arr.join('');
 			}
-			events = events.split(/\s+/);
-
+			if(events) {
+				events = events.split(/\s+/);
+			}
+			
 			// 이벤트 해제
 			setListener = function(element, event, handler, capture) {
 				if(typeof element.removeEventListener === 'function') {
@@ -1474,7 +1645,7 @@ http://www.quirksmode.org/js/detect.html
 				}
 			};
 			if(key) { 
-				if(events[0]) {
+				if(events) {
 					// 헤당키 이벤트 선택 해제
 					setRemove = function(element) {
 						var i, max;
@@ -1483,7 +1654,9 @@ http://www.quirksmode.org/js/detect.html
 						if(element.storage[key]) {
 							for(i=0, max=events.length; i<max; i++) {
 								result = element.storage[key][events[i]];
-								setListener(element, result.event, result.handler, result.capture);
+								if(result) {
+									setListener(element, result.event, result.handler, result.capture);
+								}
 								delete element.storage[key][events[i]];
 							}
 						}
@@ -1498,7 +1671,9 @@ http://www.quirksmode.org/js/detect.html
 							for(event in element.storage[key]) {
 								if(element.storage[key].hasOwnProperty(event)) {
 									result = element.storage[key][event];
-									setListener(element, result.event, result.handler, result.capture);
+									if(result) {
+										setListener(element, result.event, result.handler, result.capture);
+									}
 									delete element.storage[key][event];
 								}
 							}
@@ -1506,21 +1681,44 @@ http://www.quirksmode.org/js/detect.html
 						}
 					};
 				}
-			}else { 
-				// 이벤트명 전체 해제
+			}else if(events) { 
+				// 해당 이벤트 전체 해제
 				setRemove = function(element) {
 					var i, max;
 					var result = {};
 
 					for(i=0, max=events.length; i<max; i++) {
-						while(element.storage[events[i]].length) {
-							result = element.storage[events[i]].shift();
-							setListener(element, result.event, result.handler, result.capture);
-							if(result.key && element.storage[result.key]) {
-								delete element.storage[result.key][events[i]];
+						if(element.storage.events[events[i]]) {
+							while(element.storage.events[events[i]].length) {
+								result = element.storage.events[events[i]].shift();
+								if(result) {
+									setListener(element, result.event, result.handler, result.capture);
+									if(result.key && element.storage.events[result.key]) {
+										delete element.storage.events[result.key][events[i]];
+									}
+								}
+							}
+							delete element.storage.events[events[i]];
+						}
+					}
+				};
+			}else {
+				// 모든 이벤트 해제
+				setRemove = function(element) {
+					var event;
+					var result = {};
+
+					for(event in element.storage.events) {
+						while(element.storage.events[event].length) {
+							result = element.storage.events[event].shift();
+							if(result) {
+								setListener(element, result.event, result.handler, result.capture);
+								if(result.key && element.storage.events[result.key]) {
+									delete element.storage.events[result.key][event];
+								}
 							}
 						}
-						delete element.storage[events[i]];
+						delete element.storage.events[event];
 					}
 				};
 			}
@@ -1596,7 +1794,7 @@ http://www.quirksmode.org/js/detect.html
 					}
 					return this;
 				};
-			}else { // attr			
+			}else { // attr	
 				return function(parameter) {
 					var key, convert = {};
 					var i, max = (this.elements && this.elements.length) || 0;
@@ -1621,20 +1819,22 @@ http://www.quirksmode.org/js/detect.html
 			var key, property;
 			var i, max = (this.elements && this.elements.length) || 0;
 			var scroll;
-			var getScroll = function() {
+			var getBrowserScroll = function() {
 				if('pageXOffset' in window && 'pageYOffset' in window) {
 					return {'left': window.pageXOffset, 'top': window.pageYOffset};
 				}else if(document.body && ('scrollLeft' in document.body && 'scrollTop' in document.body)) {
 					return {'left': document.body.scrollLeft, 'top': document.body.scrollTop};
 				}else if(document.documentElement && ('scrollLeft' in document.documentElement && 'scrollTop' in document.documentElement)) {
 					return {'left': document.documentElement.scrollLeft, 'top': document.documentElement.scrollTop};
+				}else {
+					return {'left': 0, 'top': 0};
 				}
 			};
 			
 			if(max) {
 				if(this.elements[0] === window || this.elements[0].nodeType === 9) { 
 					// window, document
-					scroll = getScroll();
+					scroll = getBrowserScroll();
 					if('left' in parameter || 'top' in parameter) {
 						window.scrollTo((typeof parameter.left !== 'undefined' ? parameter.left : (scroll.left || 0)), (typeof parameter.top !== 'undefined' ? parameter.top : (scroll.top || 0)));
 					}else {
@@ -2123,7 +2323,7 @@ http://www.quirksmode.org/js/detect.html
 						break;
 					case "animationend":
 						element.removeClass(animation);
-						element.off(global.api.env['event']['animationend'] + '.EVENT_ANIMATIONEND_queue');
+						element.off(global.api.env['event']['animationend'] + '.EVENT_ANIMATIONEND_QUEUE');
 						element.removeProp('animationState');
 
 						// complete 실행
@@ -2145,7 +2345,7 @@ http://www.quirksmode.org/js/detect.html
 					//console.log('[정보] 애니메이션 실행');
 					window.clearInterval(time);
 					element.prop({'animationState': 'running'});
-					element.addClass(animation).on(global.api.env['event']['animationend'] + '.EVENT_ANIMATIONEND_queue', handler);
+					element.addClass(animation).on(global.api.env['event']['animationend'] + '.EVENT_ANIMATIONEND_QUEUE', handler);
 				}else {
 					// 현재 실행중인 애니메이션이 존재 (대기 후 이전 애니메이션이 종료되면 실행)
 					//console.log('[정보] 애니메이션 대기');
@@ -2271,7 +2471,7 @@ http://www.quirksmode.org/js/detect.html
 						original[i]['style'][key] = original[i]['storage']['transition'][key];
 					}
 				}
-				element.off(global.api.env['event']['transitionend'] + '.EVENT_TRANSITION_queue');
+				element.off(global.api.env['event']['transitionend'] + '.EVENT_TRANSITION_QUEUE');
 				
 				// complete 실행
 				if(typeof complete === 'function') {
@@ -2285,7 +2485,7 @@ http://www.quirksmode.org/js/detect.html
 			};
 
 			// 이벤트
-			element.style(properties).on(global.api.env['event']['transitionend'] + '.EVENT_TRANSITION_queue', handler, true);
+			element.style(properties).on(global.api.env['event']['transitionend'] + '.EVENT_TRANSITION_QUEUE', handler, true);
 		})(queue);
 	};
 
