@@ -185,7 +185,7 @@ jQuery 또는 api.dom 에 종속적 실행
 	var Flicking = function(settings) {
 		var that = this;
 		that.settings = {
-			'key': '',
+			'key': '', // 플리킹 작동 고유키 (선택)
 			'target': null, // 슬라이드 wrap (셀렉터 또는 element 값)
 			'flow': 'horizontal', // 플리킹 방향 (horizontal, vertical)
 			'width': 'auto', // 슬라이드 width 값 설정 (auto: 슬라이드가 target 가운데 위치하도록 wrap width 값에 따라 자동설정)
@@ -194,7 +194,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			'touch': true, // 클릭 또는 터치 슬라이드 작동여부
 			'auto': 0, // 자동 슬라이드 작동여부 (0 이상의 값이 입력되면 작동합니다.)
 			'wheel': false, // 마우스 휠 이벤트 작동여부
-			'callback': {
+			'callback': { // 플리킹 작동 callback (선택)
 				'init': null,
 				'next': null,
 				'prev': null,
@@ -480,7 +480,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var that = this;
 			var parameter = parameter || {};
 			var index = parameter['index']; // current, last, 숫자
-			var element = parameter['element'];
+			var element;
 			var is = false; // 삭제 후 술라이드 이동 여부 (현재 슬라이드 삭제 등의 경우)
 
 			if(index) {

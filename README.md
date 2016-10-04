@@ -17,16 +17,16 @@ api.env.check.touch
 - 터치 디스플레이 여부 true/false
 
 api.env.check.transform
-- 트랜스폼 지원 브라우저 여부 true/false
+- 트랜스폼 브라우저 지원여부 true/false
 
 api.env.check.transition
-- 트랜지션 지원 브라우저 여부 true/false
+- 트랜지션 브라우저 지원여부 true/false
 
 api.env.check.animation
-- 애니메이션 지원 브라우저 여부 true/false
+- 애니메이션 브라우저 지원여부 true/false
 
 api.env.check.fullscreen
-- 풀스크린 지원 브라우저 여부 true/false
+- 풀스크린 브라우저 지원여부 true/false
 
 api.env.monitor
 - 사용자 해상도 종류(기준 픽셀값에 따라 분기) pc/mobile/tablet
@@ -44,7 +44,7 @@ api.env.browser.version
 - 브라우저 버전
 
 api.env.browser.scrollbar
-- 브라우저 스크롤바 영역 가로 픽셀
+- 브라우저에서 스크롤바가 차지하는 픽셀값
 
 api.env.event.down
 - mousedown/touchstart
@@ -56,7 +56,7 @@ api.env.event.up
 - mouseup/touchend
 
 api.env.event.click
-- click/tap
+- touchstart/tap/click
 
 api.env.event.transitionend
 - transitionend/webkitTransitionEnd/oTransitionEnd/MSTransitionEnd
@@ -124,6 +124,10 @@ api.dom('li.item-a').closest('ul');
 .children()
 - 자식요소 리스트
 
+````javascript
+api.dom("ul").children();
+````
+
 .getClass()
 - 요소 class 리스트 반환
 
@@ -151,6 +155,12 @@ api.dom('li.item-a').closest('ul');
 .css({name: value})
 .css(name)
 - 요소 style property 추가 또는 반환
+
+.offset()
+- 현재요소 위치(좌표)값 반환
+
+.position()
+- 부모요소 기준 현재요소 위치(좌표)값 반환
 
 .width(value)
 - 요소의 width 값 반환
@@ -197,8 +207,16 @@ api.dom('li.item-a').closest('ul');
 .prepend(value)
 - 요소의 앞에 추가하기
 
+````javascript
+api.dom("ul").prepend(api.dom('<li>'));
+````
+
 .append(value)
 - 마지막 자식 요소 추가
+
+````javascript
+api.dom("ul").append(api.dom('<li>'));
+````
 
 .after(value)
 - 뒤에 추가
@@ -369,32 +387,40 @@ api.editor.off($('#editor').get(0)); // jQuery 사용
 // 방법1
 var instance = api.flicking.setup({
 	'key': '', // 플리킹 작동 고유키 (선택)
-	'total': 0, // 전체 슬라이드 수 (필수)
-	'width': 0, // 슬라이드 width 픽셀값 (필수)
-	'element': null, // 플리킹 element (필수)
-	'speed': 300, // 플리킹 속도 (기본값: 300)
-	'touch': true, // 터치 또는 클릭으로 슬라이드 작동여부 (기본값: true)
-	'callback': null // 플리킹 작동 callback (선택)
+	'target': null, // 슬라이드 wrap (셀렉터 또는 element 값)
+	'flow': 'horizontal', // 플리킹 방향 (horizontal, vertical)
+	'width': 'auto', // 슬라이드 width 값 설정 (auto: 슬라이드가 target 가운데 위치하도록 wrap width 값에 따라 자동설정)
+	'height': 'auto', // 슬라이드 height 값 설정
+	'speed': 300, // 슬라이드 속도
+	'touch': true, // 클릭 또는 터치 슬라이드 작동여부
+	'auto': 0, // 자동 슬라이드 작동여부 (0 이상의 값이 입력되면 작동합니다.)
+	'wheel': false, // 마우스 휠 이벤트 작동여부
+	'callback': { // 플리킹 작동 callback (선택)
+		'init': null,
+		'next': null,
+		'prev': null,
+		'slidechange': null,
+		'prepend': null,
+		'append': null,
+		'remove': null
+	}
 });
 instance.on(); // 플리킹 터치(또는 클릭) 이벤트 On
 instance.off(); // 플리킹 터치(또는 클릭) 이벤트 Off
+instance.append({'index': '해당 슬라이드 위치에 추가(last, first, 숫자)', 'html': 'html code'}); // 슬라이드 추가
+instance.remove({'index': '해당 슬라이드 위치 삭제(current, last, 숫자)'}); // 슬라이드 삭제
 instance.slide({
-	'value': '', // 슬라이드 이동(숫자값: 해당슬라이드 index 이동, 문자값: 'next' 다음슬라이드 이동 'prev' 이전슬라이드 이동)
+	'index': '', // 슬라이드 이동(숫자값: 해당슬라이드 index 이동, 문자값: 'next' 다음슬라이드 이동 'prev' 이전슬라이드 이동)
 });
 
-// 방법2
+// 방법2 (key로 제어)
 api.flicking.setup({
 	'key': '키값',
-	'total': 0,
-	'width': 0,
-	'element': null,
-	'speed': 300,
-	'touch': true,
-	'callback': null
+	'target': null // 슬라이드 wrap (셀렉터 또는 element 값)
 });
 api.flicking.search('키값').on();
 api.flicking.search('키값').off();
-api.flicking.search('키값').slide({'value': '', 'duration': '슬라이드 이동 속도'});
+api.flicking.search('키값').slide({'index': '', 'duration': '슬라이드 이동 속도'});
 
 // 기존 설정된 플리킹 인스턴스 검색
 if(api.flicking.search('key값')) {
@@ -612,16 +638,26 @@ worker.close(); // 워커 종료
 
 <!-- json 데이터 //-->
 <script>
-var parse = api.template.parse(document.getElementById('template').innerHTML);
-var paint = api.template.paint(parse, {
+var template = document.getElementById('template').innerHTML;
+var contents = {
 	'power': 'aa',
 	'title': 'bb',
 	'people': [
 		{'test': 'ysm', 'title': 'cc', 'deep': {'ysm': 'aaa', 'haha': {'ysm': '유성민'}}},
 		{'title': 'cc', 'deep': {'ysm': 'bbb', 'haha': false}}
 	]
-});
+};
+
+// 방법1
+var parse = api.template.parse(template);
+var paint = api.template.paint(parse, contents);
 document.getElementById('target').innerHTML = paint;
+
+// 방법2
+document.getElementById('target').innerHTML = api.template.paint(template, contents);
+
+// 방법3
+document.getElementById('target').appendChild(api.template.fragment(template, contents));
 </script>
 ````
 
