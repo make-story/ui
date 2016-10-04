@@ -20,13 +20,6 @@ RGBa: Internet Explorer 9
 
 -
 jQuery 또는 api.dom 에 종속적 실행
-
--
-mask 배경색
-연함: layer, rect
-진함: confirm, alert, puch
-진함: folder,
-아주연함: bunch, market
 */
 
 ;(function(factory, global) {
@@ -229,26 +222,6 @@ mask 배경색
 					this.elements.push = document.createElement('div');
 					//this.elements.push.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 					this.elements.container.appendChild(this.elements.push);
-
-					// folder
-					this.elements.folder = document.createElement('div');
-					//this.elements.folder.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-					this.elements.container.appendChild(this.elements.folder);
-
-					// story
-					this.elements.story = document.createElement('div');
-					//this.elements.story.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-					this.elements.container.appendChild(this.elements.story);
-
-					// bunch
-					this.elements.bunch = document.createElement('div');
-					//this.elements.bunch.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-					this.elements.container.appendChild(this.elements.bunch);
-
-					// market
-					this.elements.market = document.createElement('div');
-					//this.elements.market.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-					this.elements.container.appendChild(this.elements.market);
 
 					try {
 						//document.body.insertBefore(fragment, document.body.firstChild);
@@ -1904,30 +1877,6 @@ mask 배경색
 						break;
 					case 'push':
 						instance = new ModalPush(settings);
-						break;
-					case 'folder':
-						if(settings['all']) {
-							// 전체 폴더 제목 상태 변경
-							(function() {
-								var key;
-								for(key in module.instance) {
-									if(module.instance[key].settings && module.instance[key].settings['type'] === 'folder') {
-										module.instance[key].titleToggle({'mode': settings['all']['mode']});
-									}
-								}
-							})();
-						}else {
-							instance = new ModalFolder(settings);
-						}
-						break;
-					case 'story':
-						instance = new ModalStory(settings);
-						break;
-					case 'bunch':
-						instance = new ModalBunch(settings);
-						break;
-					case 'market':
-						instance = new ModalMarket(settings);
 						break;
 				}
 				if(settings['key'] && instance) {
