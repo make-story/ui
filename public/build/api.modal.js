@@ -14,12 +14,6 @@ Dual licensed under the MIT and GPL licenses.
 IE8 이상
 querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
 RGBa: Internet Explorer 9
-
--
-사용예
-
--
-jQuery 또는 api.dom 에 종속적 실행
 */
 
 ;(function(factory, global) {
@@ -277,7 +271,11 @@ jQuery 또는 api.dom 에 종속적 실행
 				}
 			},
 			// 위치설정
-			setPosition: function(position, element, limit) {
+			setPosition: function(parameter) {
+				var that = this;
+				var parameter = parameter || {};
+				var position = parameter['position'];
+				var element = parameter['element'];
 				// 위치 설정
 				var width = 0;
 				var height = 0;
@@ -290,17 +288,6 @@ jQuery 또는 api.dom 에 종속적 실행
 					'left': 0,
 					'right': 0
 				};
-				/*
-				-
-				limit
-				해당 영역은 제외하고 위치할 수 있음
-				{
-					'left': 0,
-					'right': 0,
-					'top': 0,
-					'bottom': 0
-				}
-				*/
 
 				if(typeof position === 'string') {
 					// element 크기
@@ -378,43 +365,82 @@ jQuery 또는 api.dom 에 종속적 실행
 				return result;
 			},
 			// 서로 겹치지 않도록 제어
-			setQueuePosition: function(position, overlap) {
-				// 해당 영역의 queue 전체 키에 대해 위치, 영역 분석
-				// that.instance[key].elements.target.getBoundingClientRect() // 렌더링된 위치/크기
-				// 재설정 했을 떄 브라우저 영역을 벗어나면, 그때는 겹치는 것을 허용 (overlap 값에 따름)
-				// that.getWindowDocumentSize()
+			setQueuePosition: function(parameter) {
+				/*
+				position: 이동할 위치
+				element: 우선 보이도록 할 modal
+				out: 브라우저 영역 밖으로 이동가능(true), 브라우저 영역 밖으로 이동불가능(false)
+
+				element 값이 없을 경우, 
+				현재 출력되고 있는 layer의 위치를 자동 조절한다.
+				*/
 				var that = this;
-				var i, max;
-				var key, rect;
-				var limit = {
-					'left': 0, 
-					'right': 0, 
-					'top': 0, 
-					'bottom': 0
-				};
+				var parameter = parameter || {};
+				var position = parameter['position'];
+				var element = parameter['element'];
+				var out = parameter['out'];
+				var i, min;
+				var key, rect, tmp;
+				var width = 0, height = 0;
+				var left = 0, right = 0, top = 0, bottom = 0;
 				var size = that.getWindowDocumentSize();
 
-				if(that.queue[position] && that.queue[position].length) {
-					for(i=0, max=that.queue[position].length; i<max; i++) {
+				if(position && that.queue[position] && that.queue[position].length) {
+					// 화면에 출력할 element 크기
+					if(typeof element === 'object') {
+						width = Math.round($(element).outerWidth(true));
+						height = Math.round($(element).outerHeight(true));
+					}
+					left += width;
+					right += width;
+					top += height;
+					bottom += height;
+					// 현재 출력되어 있는 element 위치 조정
+					for(i=(that.queue[position].length-1), min=0; min<=i; i--) {
 						key = that.queue[position][i];
-						if(that.instance[key] && that.instance[key].elements && that.instance[key].target) {
-							rect = that.instance[key].elements.target.getBoundingClientRect();
+						if(that.instance[key] && that.instance[key].elements && that.instance[key].elements.contents) {
+							// center
+							// topleft, topcenter, topright
+							// bottomleft, bottomcenter, bottomright
+							// centerleft, center, centerright
+							if(/^top/.test(position)) {
+								// 브라우저 크기를 벗어나면 이동정지
+								/*if(out === false && size.window.height < top) {
+									break;
+								}*/
+								that.instance[key].elements.contents.style.top = top + 'px';
+							}else if(/^bottom/.test(position)) {
+								/*if(out === false && size.window.height < bottom) {
+									break;
+								}*/
+								that.instance[key].elements.contents.style.bottom = bottom + 'px';
+							}
 
-
-							// 브라우저 크기를 벗어나면 정지
-							
+							// 다음 element 위치
+							// 현재 element 기준 width, height 값만큼 이동
+							/*
+							rect = that.instance[key].elements.contents.getBoundingClientRect();
+							width = 'width' in rect ? rect.width : rect.right - rect.left;
+							height = 'height' in rect ? rect.height : rect.bottom - rect.top;
+							*/
+							width = Math.round($(that.instance[key].elements.contents).outerWidth(true));
+							height = Math.round($(that.instance[key].elements.contents).outerHeight(true));
+							left += width;
+							right += width;
+							top += height;
+							bottom += height;
 						}
 					}
 				}
-
-
-				// 현재 해당 영역에 이미 차지하고 있는 영역을 반환한다.
-				// 이후 이 반환값은 setPosition 의 limit 파라미터로 들어간다.
-				return limit;
-
 			},
 			// 지정된 위치 기준점으로 modal 출력
-			setRect: function(position, element, rect, fixed) {
+			setRect: function(parameter) {
+				var that = this;
+				var parameter = parameter || {};
+				var position = parameter['position'];
+				var element = parameter['element'];
+				var rect = parameter['rect'];
+				var fixed = parameter['fixed'];
 				var width, height;
 				var target = {};
 				var info = rect.getBoundingClientRect();
@@ -425,7 +451,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				width = Math.round($(element).outerWidth(true));
 				height = Math.round($(element).outerHeight(true));
 
-				// target 정보
+				// target 정보 (rect)
 				target.left = info.left + (fixed === true ? 0 : scroll.left);
 				target.top = info.top + (fixed === true ? 0 : scroll.top);
 				target.width = Math.round($(rect).outerWidth()); // margin 값까지 포함하면 오차발생
@@ -460,11 +486,17 @@ jQuery 또는 api.dom 에 종속적 실행
 					}
 				}*/
 
-				
+				// auto
 				// topleft, topcenter, topright
 				// bottomleft, bottomcenter, bottomright
 				// lefttop, leftmiddle, leftbottom
 				// righttop, rightmiddle, rightbottom
+				if(position === 'auto') {
+					// 최적화된 영역을 찾아 position 값을 자동 설정해준다.
+					// 브라우저 영역을 벗어난 것 처리
+
+				}
+
 				if(/^top/.test(position)) {
 					$(element).get(0).style.top = (target.top - height) + 'px';
 				}else if(/^bottom/.test(position)) {
@@ -622,6 +654,13 @@ jQuery 또는 api.dom 에 종속적 실행
 						that.hide();
 					});
 				}
+
+				// 팝업내부 click 시 zindex 값 변경 (해당 layer 가장위에 보이도록함)
+				$(that.settings.target).on(env['event']['down'], function() {
+					if(module.queue[that.settings.position].length > 1) {
+						that.above();
+					}
+				});
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -662,7 +701,6 @@ jQuery 또는 api.dom 에 종속적 실행
 		position: function() {
 			var that = this;
 			var size, scroll;
-			var limit = {};
 
 			try {
 				// IOS 의 position: fixed 버그 대응
@@ -679,8 +717,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					//that.elements.contents.style.left = (Number(String(that.elements.contents.style.left).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) + scroll.left) + 'px';
 					//that.elements.contents.style.top = (Number(String(that.elements.contents.style.top).replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')) + scroll.top) + 'px';
 				}*/
-				//limit = module.setQueuePosition(that.settings.position, true);
-				module.setPosition(that.settings.position, that.elements.contents, limit);
+				module.setPosition({'position': that.settings.position, 'element': that.elements.contents});
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -688,6 +725,24 @@ jQuery 또는 api.dom 에 종속적 실행
 			}
 
 			return that;
+		},
+		above: function(parameter) {
+			var that = this;
+			var parameter = parameter || {};
+			var display = parameter['display'];
+
+			try {
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.zIndex = ++module.zindex;
+					if(display) {
+						that.elements.mask.style.display = display;
+					}
+				}
+				that.elements.container.style.zIndex = ++module.zindex;
+				if(display) {
+					that.elements.container.style.display = display;	
+				}
+			}catch(e) {}
 		},
 		show: function(parameter) {
 			var that = this;
@@ -709,16 +764,16 @@ jQuery 또는 api.dom 에 종속적 실행
 				}
 
 				// element
-				that.elements.contents.style.webkitTransition = that.elements.contents.style.MozTransition = that.elements.contents.style.msTransition = that.elements.contents.style.OTransition = that.elements.contents.style.transition = 'left 0s, top 0s';
-				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-					that.elements.mask.style.zIndex = ++module.zindex;
-					that.elements.mask.style.display = 'block';
-				}
-				that.elements.container.style.zIndex = ++module.zindex;
-				that.elements.container.style.display = 'block';
+				that.above({'display': 'block'});
 				that.position(); // parent element 가 페인팅되어있지 않으면, child element 의 width, height 값을 구할 수 없다. (that.elements.contents 의 정확한 width, height 값을 알려면, 이를 감싸고 있는 that.elements.container 가 diplay block 상태에 있어야 한다.)
 				if(env['monitor'] === 'pc') {
 					that.elements.contents.style.webkitTransition = that.elements.contents.style.MozTransition = that.elements.contents.style.msTransition = that.elements.contents.style.OTransition = that.elements.contents.style.transition = 'left .5s, top .5s';
+				}
+
+				// queue
+				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
+					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
+					module.queue[that.settings.position].push(that.settings.key);
 				}
 
 				// focus (웹접근성)
@@ -733,11 +788,6 @@ jQuery 또는 api.dom 에 종속적 실행
 						that.position();
 					}, 50);
 				});
-
-				// queue
-				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
-					module.queue[that.settings.position].push(that.settings.key);
-				}
 
 				// callback
 				if(typeof that.settings.callback.show === 'function') {
@@ -772,6 +822,12 @@ jQuery 또는 api.dom 에 종속적 실행
 					that.elements.mask.style.display = 'none';
 				}
 
+				// queue
+				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				}
+
 				// focus (웹접근성)
 				if(module.active) {
 					module.active.focus();
@@ -779,11 +835,6 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// resize 이벤트 종료
 				$(window).off('resize.EVENT_RESIZE_' + that.settings.key);
-
-				// queue
-				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
-				}
 
 				// callback
 				if(typeof that.settings.callback.hide === 'function') {
@@ -821,6 +872,12 @@ jQuery 또는 api.dom 에 종속적 실행
 				}
 				that.elements = {};
 
+				// queue
+				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				}
+
 				// instance
 				if(that.settings['key'] && module.instance[that.settings['key']]) {
 					delete module.instance[that.settings['key']];
@@ -828,11 +885,6 @@ jQuery 또는 api.dom 에 종속적 실행
 
 				// resize 이벤트 종료
 				$(window).off('resize.EVENT_RESIZE_' + that.settings.key);
-
-				// queue
-				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
-				}
 
 				// callback
 				if(typeof that.settings.callback.remove === 'function') {
@@ -865,7 +917,7 @@ jQuery 또는 api.dom 에 종속적 실행
 		var that = this;
 		that.settings = {
 			'key': '',
-			'position': 'bottomcenter',
+			'position': 'bottomcenter', // auto: 자동으로 최적화된 영역에 출력한다.
 			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
 			'callback': {
 				'show': null,
@@ -901,11 +953,11 @@ jQuery 또는 api.dom 에 종속적 실행
 					document.body.appendChild(that.elements.mask);
 				}
 
-				// container
-				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = (that.settings.fixed === true ? 'position: fixed;' : 'position: absolute;') + ' display: none; left: 0; top: 0; outline: none; -webkit-overflow-scrolling: touch; transition: left 0s, top 0s, right 0s, bottom 0s;';
-				that.elements.container.appendChild(that.elements.target);
-				document.body.appendChild(that.elements.container);
+				// contents
+				that.elements.contents = document.createElement('div');
+				that.elements.contents.style.cssText = (that.settings.fixed === true ? 'position: fixed;' : 'position: absolute;') + ' display: none; left: 0; top: 0; outline: none; -webkit-overflow-scrolling: touch; transition: left 0s, top 0s, right 0s, bottom 0s;';
+				that.elements.contents.appendChild(that.elements.target);
+				document.body.appendChild(that.elements.contents);
 				if(that.elements.target.style.display === 'none') {
 					that.elements.target.style.display = 'block';
 				}
@@ -959,7 +1011,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var that = this;
 
 			try {
-				module.setRect(that.settings.position, that.elements.container, that.elements.rect, that.settings.fixed);
+				module.setRect({'position': that.settings.position, 'element': that.elements.contents, 'rect': that.elements.rect, 'fixed': that.settings.fixed});
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -968,24 +1020,37 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			return that;
 		},
+		above: function(parameter) {
+			var that = this;
+			var parameter = parameter || {};
+			var display = parameter['display'];
+
+			try {
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.zIndex = ++module.zindex;
+					if(display) {
+						that.elements.mask.style.display = display;
+					}
+				}
+				that.elements.contents.style.zIndex = ++module.zindex;
+				if(display) {
+					that.elements.contents.style.display = display;	
+				}
+			}catch(e) {}
+		},
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
 			try {
 				// element
-				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-					that.elements.mask.style.zIndex = ++module.zindex;
-					that.elements.mask.style.display = 'block';
-				}
-				that.elements.container.style.zIndex = ++module.zindex;
-				that.elements.container.style.display = 'block';
+				that.above({'display': 'block'});
 				that.position();
 
 				// focus (웹접근성)
 				module.active = document.activeElement;
-				that.elements.container.setAttribute('tabindex', -1);
-				that.elements.container.focus();
+				that.elements.contents.setAttribute('tabindex', -1);
+				that.elements.contents.focus();
 
 				// resize 이벤트 실행 (이벤트 키는 that.settings.key 를 활용한다.)
 				$(window).on('resize.EVENT_RESIZE_' + that.settings.key, function(e) {
@@ -1014,7 +1079,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			try {
 				// element
-				that.elements.container.style.display = 'none';
+				that.elements.contents.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';
 				}
@@ -1049,8 +1114,8 @@ jQuery 또는 api.dom 에 종속적 실행
 				if(that.elements.mask) {
 					that.elements.mask.parentNode.removeChild(that.elements.mask);
 				}
-				if(that.elements.container) {
-					that.elements.container.parentNode.removeChild(that.elements.container);
+				if(that.elements.contents) {
+					that.elements.contents.parentNode.removeChild(that.elements.contents);
 				}
 				that.elements = {};
 
@@ -1079,7 +1144,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var that = this;
 
 			try {
-				if(that.elements.container.style.display === 'none') {
+				if(that.elements.contents.style.display === 'none') {
 					that.show();
 				}else {
 					that.hide();
@@ -1141,10 +1206,10 @@ jQuery 또는 api.dom 에 종속적 실행
 					module.elements.confirm.appendChild(that.elements.mask);
 				}
 
-				// container
-				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
-				/*that.elements.container.innerHTML = '\
+				// contents
+				that.elements.contents = document.createElement('div');
+				that.elements.contents.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
+				/*that.elements.contents.innerHTML = '\
 					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 10px 18px; background: rgba(250, 251, 252, .96); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
@@ -1152,7 +1217,7 @@ jQuery 또는 api.dom 에 종속적 실행
 						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: transparent; border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
 					</div>\
 				';*/ 
-				that.elements.container.innerHTML = '\
+				that.elements.contents.innerHTML = '\
 					<div id="' + key.title + '" style="padding: 20px 20px 10px 20px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 20px; min-height: 45px; color: rgb(44, 45, 46); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 10px 20px 20px 20px; text-align: right; border-radius: 0 0 7px 7px;">\
@@ -1160,14 +1225,14 @@ jQuery 또는 api.dom 에 종속적 실행
 						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
 					</div>\
 				';
-				fragment.appendChild(that.elements.container);
+				fragment.appendChild(that.elements.contents);
 				module.elements.confirm.appendChild(fragment);
 
 				// search element
-				that.elements.title = that.elements.container.querySelector('#' + key.title);
-				that.elements.message = that.elements.container.querySelector('#' + key.message);
-				that.elements.cancel = that.elements.container.querySelector('#' + key.cancel);
-				that.elements.ok = that.elements.container.querySelector('#' + key.ok);
+				that.elements.title = that.elements.contents.querySelector('#' + key.title);
+				that.elements.message = that.elements.contents.querySelector('#' + key.message);
+				that.elements.cancel = that.elements.contents.querySelector('#' + key.cancel);
+				that.elements.ok = that.elements.contents.querySelector('#' + key.ok);
 
 				// event
 				$(that.elements.cancel).on(env['event']['click'], function(e) {
@@ -1237,11 +1302,9 @@ jQuery 또는 api.dom 에 종속적 실행
 		},
 		position: function() {
 			var that = this;
-			var limit = {};
 
 			try {
-				//limit = module.setQueuePosition(that.settings.position, true);
-				module.setPosition(that.settings.position, that.elements.container, limit);
+				module.setPosition({'position': that.settings.position, 'element': that.elements.contents});
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -1250,29 +1313,43 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			return that;
 		},
+		above: function(parameter) {
+			var that = this;
+			var parameter = parameter || {};
+			var display = parameter['display'];
+
+			try {
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.zIndex = ++module.zindex;
+					if(display) {
+						that.elements.mask.style.display = display;
+					}
+				}
+				that.elements.contents.style.zIndex = ++module.zindex;
+				if(display) {
+					that.elements.contents.style.display = display;	
+				}
+			}catch(e) {}
+		},
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
 			try {
 				// element
-				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-					that.elements.mask.style.zIndex = ++module.zindex;
-					that.elements.mask.style.display = 'block';
-				}
-				that.elements.container.style.zIndex = ++module.zindex;
-				that.elements.container.style.display = 'block';
+				that.above({'display': 'block'});
 				that.position();
+
+				// queue
+				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
+					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
+					module.queue[that.settings.position].push(that.settings.key);
+				}
 
 				// focus (웹접근성)
 				module.active = document.activeElement;
-				that.elements.container.setAttribute('tabindex', -1);
-				that.elements.container.focus();
-
-				// queue
-				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
-					module.queue[that.settings.position].push(that.settings.key);
-				}
+				that.elements.contents.setAttribute('tabindex', -1);
+				that.elements.contents.focus();
 
 				// callback
 				if(typeof that.settings.callback.show === 'function') {
@@ -1293,19 +1370,20 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			try {
 				// element
-				that.elements.container.style.display = 'none';
+				that.elements.contents.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';
+				}
+
+				// queue
+				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
 				}
 
 				// focus (웹접근성)
 				if(module.active) {
 					module.active.focus();
-				}
-
-				// queue
-				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
 				}
 
 				// callback
@@ -1330,19 +1408,20 @@ jQuery 또는 api.dom 에 종속적 실행
 				if(that.elements.mask) {
 					that.elements.mask.parentNode.removeChild(that.elements.mask);
 				}
-				if(that.elements.container) {
-					that.elements.container.parentNode.removeChild(that.elements.container);
+				if(that.elements.contents) {
+					that.elements.contents.parentNode.removeChild(that.elements.contents);
 				}
 				that.elements = {};
+
+				// queue
+				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				}
 
 				// instance
 				if(that.settings['key'] && module.instance[that.settings['key']]) {
 					delete module.instance[that.settings['key']];
-				}
-
-				// queue
-				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
 				}
 
 				// callback
@@ -1402,30 +1481,30 @@ jQuery 또는 api.dom 에 종속적 실행
 					module.elements.alert.appendChild(that.elements.mask);
 				}
 
-				// container
-				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
-				/*that.elements.container.innerHTML = '\
+				// contents
+				that.elements.contents = document.createElement('div');
+				that.elements.contents.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
+				/*that.elements.contents.innerHTML = '\
 					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 10px 18px; background: rgba(250, 251, 252, .96); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
 						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: transparent; border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
 					</div>\
 				';*/ 
-				that.elements.container.innerHTML = '\
+				that.elements.contents.innerHTML = '\
 					<div id="' + key.title + '" style="padding: 20px 20px 10px 20px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 20px; min-height: 45px; color: rgb(44, 45, 46); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 10px 20px 20px 20px; text-align: right; border-radius: 0 0 7px 7px;">\
 						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
 					</div>\
 				';
-				fragment.appendChild(that.elements.container);
+				fragment.appendChild(that.elements.contents);
 				module.elements.alert.appendChild(fragment);
 
 				// search element
-				that.elements.title = that.elements.container.querySelector('#' + key.title);
-				that.elements.message = that.elements.container.querySelector('#' + key.message);
-				that.elements.ok = that.elements.container.querySelector('#' + key.ok);
+				that.elements.title = that.elements.contents.querySelector('#' + key.title);
+				that.elements.message = that.elements.contents.querySelector('#' + key.message);
+				that.elements.ok = that.elements.contents.querySelector('#' + key.ok);
 
 				// event
 				$(that.elements.ok).on(env['event']['click'], function(e) {
@@ -1481,11 +1560,9 @@ jQuery 또는 api.dom 에 종속적 실행
 		},
 		position: function() {
 			var that = this;
-			var limit = {};
 
 			try {
-				//limit = module.setQueuePosition(that.settings.position, true);
-				module.setPosition(that.settings.position, that.elements.container, limit);
+				module.setPosition({'position': that.settings.position, 'element': that.elements.contents});
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -1494,29 +1571,43 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			return that;
 		},
+		above: function(parameter) {
+			var that = this;
+			var parameter = parameter || {};
+			var display = parameter['display'];
+
+			try {
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.zIndex = ++module.zindex;
+					if(display) {
+						that.elements.mask.style.display = display;
+					}
+				}
+				that.elements.contents.style.zIndex = ++module.zindex;
+				if(display) {
+					that.elements.contents.style.display = display;	
+				}
+			}catch(e) {}
+		},
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
 			try {
 				// element
-				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-					that.elements.mask.style.zIndex = ++module.zindex;
-					that.elements.mask.style.display = 'block';
-				}
-				that.elements.container.style.zIndex = ++module.zindex;
-				that.elements.container.style.display = 'block';
+				that.above({'display': 'block'});
 				that.position();
+
+				// queue
+				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
+					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
+					module.queue[that.settings.position].push(that.settings.key);
+				}
 
 				// focus (웹접근성)
 				module.active = document.activeElement;
-				that.elements.container.setAttribute('tabindex', -1);
-				that.elements.container.focus();
-
-				// queue
-				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
-					module.queue[that.settings.position].push(that.settings.key);
-				}
+				that.elements.contents.setAttribute('tabindex', -1);
+				that.elements.contents.focus();
 
 				// callback
 				if(typeof that.settings.callback.show === 'function') {
@@ -1537,19 +1628,20 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			try {
 				// element
-				that.elements.container.style.display = 'none';
+				that.elements.contents.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';
+				}
+
+				// queue
+				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
 				}
 
 				// focus (웹접근성)
 				if(module.active) {
 					module.active.focus();
-				}
-
-				// queue
-				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
 				}
 
 				// callback
@@ -1574,19 +1666,20 @@ jQuery 또는 api.dom 에 종속적 실행
 				if(that.elements.mask) {
 					that.elements.mask.parentNode.removeChild(that.elements.mask);
 				}
-				if(that.elements.container) {
-					that.elements.container.parentNode.removeChild(that.elements.container);
+				if(that.elements.contents) {
+					that.elements.contents.parentNode.removeChild(that.elements.contents);
 				}
 				that.elements = {};
+
+				// queue
+				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				}
 
 				// instance
 				if(that.settings['key'] && module.instance[that.settings['key']]) {
 					delete module.instance[that.settings['key']];
-				}
-
-				// queue
-				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
 				}
 
 				// callback
@@ -1648,29 +1741,29 @@ jQuery 또는 api.dom 에 종속적 실행
 					module.elements.push.appendChild(that.elements.mask);
 				}
 
-				// container
-				that.elements.container = document.createElement('div');
-				that.elements.container.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
-				/*that.elements.container.innerHTML = '\
+				// contents
+				that.elements.contents = document.createElement('div');
+				that.elements.contents.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
+				/*that.elements.contents.innerHTML = '\
 					<div id="' + key.message + '" style="padding: 12px 12px 5px 12px; min-height: 33px; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 5px 12px 12px 12px; background: rgba(250, 251, 252, .96); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
 						<button id="' + key.close + '" style="margin: 0; padding: 0; color: rgb(120, 121, 122); font-size: 12px; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; background: transparent; border: none; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">CLOSE</button>\
 					</div>\
 				';*/
-				that.elements.container.innerHTML = '\
+				that.elements.contents.innerHTML = '\
 					<div id="' + key.title + '" style="padding: 15px 15px 5px 15px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 5px 15px 15px 15px; color: rgb(44, 45, 46); border-radius: 7px; word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="position: absolute; top: 10px; right: 15px;">\
 						<button id="' + key.close + '" style="margin: 0; padding: 0; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: transparent; border: 0 none; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">CLOSE</button>\
 					</div>\
 				';
-				fragment.appendChild(that.elements.container);
+				fragment.appendChild(that.elements.contents);
 				module.elements.push.appendChild(fragment);
 
 				// search element
-				that.elements.title = that.elements.container.querySelector('#' + key.title);
-				that.elements.message = that.elements.container.querySelector('#' + key.message);
-				that.elements.close = that.elements.container.querySelector('#' + key.close);
+				that.elements.title = that.elements.contents.querySelector('#' + key.title);
+				that.elements.message = that.elements.contents.querySelector('#' + key.message);
+				that.elements.close = that.elements.contents.querySelector('#' + key.close);
 
 				// event
 				$(that.elements.close).on(env['event']['click'], function(e) {
@@ -1726,11 +1819,9 @@ jQuery 또는 api.dom 에 종속적 실행
 		},
 		position: function() {
 			var that = this;
-			var limit = {};
 
 			try {
-				//limit = module.setQueuePosition(that.settings.position, true);
-				module.setPosition(that.settings.position, that.elements.container, limit);
+				module.setPosition({'position': that.settings.position, 'element': that.elements.contents});
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
 					that.settings.callback.error.call(that, e);
@@ -1739,19 +1830,38 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			return that;
 		},
+		above: function(parameter) {
+			var that = this;
+			var parameter = parameter || {};
+			var display = parameter['display'];
+
+			try {
+				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
+					that.elements.mask.style.zIndex = ++module.zindex;
+					if(display) {
+						that.elements.mask.style.display = display;
+					}
+				}
+				that.elements.contents.style.zIndex = ++module.zindex;
+				if(display) {
+					that.elements.contents.style.display = display;	
+				}
+			}catch(e) {}
+		},
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
 			try {
 				// element
-				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
-					that.elements.mask.style.zIndex = ++module.zindex;
-					that.elements.mask.style.display = 'block';
-				}
-				that.elements.container.style.zIndex = ++module.zindex;
-				that.elements.container.style.display = 'block';
+				that.above({'display': 'block'});
 				that.position();
+
+				// queue
+				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
+					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
+					module.queue[that.settings.position].push(that.settings.key);
+				}
 
 				// auto hide
 				global.clearTimeout(that.time);
@@ -1759,11 +1869,6 @@ jQuery 또는 api.dom 에 종속적 실행
 					that.time = global.setTimeout(function() {
 						that.hide();
 					}, that.settings.time);
-				}
-
-				// queue
-				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
-					module.queue[that.settings.position].push(that.settings.key);
 				}
 
 				// callback
@@ -1785,14 +1890,15 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			try {
 				// element
-				that.elements.container.style.display = 'none';
+				that.elements.contents.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';
 				}
 
 				// queue
-				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
 					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
 				}
 
 				// callback
@@ -1817,19 +1923,20 @@ jQuery 또는 api.dom 에 종속적 실행
 				if(that.elements.mask) {
 					that.elements.mask.parentNode.removeChild(that.elements.mask);
 				}
-				if(that.elements.container) {
-					that.elements.container.parentNode.removeChild(that.elements.container);
+				if(that.elements.contents) {
+					that.elements.contents.parentNode.removeChild(that.elements.contents);
 				}
 				that.elements = {};
+
+				// queue
+				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				}
 
 				// instance
 				if(that.settings['key'] && module.instance[that.settings['key']]) {
 					delete module.instance[that.settings['key']];
-				}
-
-				// queue
-				if(module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
 				}
 
 				// callback

@@ -503,9 +503,11 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// requestAnimationFrame for Smart Animating http://goo.gl/sx5sts
 		requestAnimationFrame: (function() { 
+			// https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame
 			return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback) { return window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
 		})(),
 		cancelAnimationFrame: (function() {
+			// https://developer.mozilla.org/en-US/docs/Web/API/Window/cancelAnimationFrame
 			return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function(time) { return window.clearTimeout(time); };
 		})(),
 
