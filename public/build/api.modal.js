@@ -399,6 +399,11 @@ RGBa: Internet Explorer 9
 					for(i=(that.queue[position].length-1), min=0; min<=i; i--) {
 						key = that.queue[position][i];
 						if(that.instance[key] && that.instance[key].elements && that.instance[key].elements.contents) {
+							// mask 는 제외한다.
+							if(that.instance[key].settings && that.instance[key].settings.mask) {
+								continue;
+							}
+
 							// center
 							// topleft, topcenter, topright
 							// bottomleft, bottomcenter, bottomright
