@@ -143,7 +143,7 @@ Dual licensed under the MIT and GPL licenses.
 		-
 		캡쳐 : 이벤트가 발생 대상까지 전달되는 단계(아래로)
 		 > 설명1 : 이벤트가 다른 이벤트로 전파되기 전에 폼 전송과 같은 이벤트를 취소 (기본 동작을 중지한다)
-		 > 설명2 : 처리를 완료하기 전에 이벤트(기본 또는 다른이벤트)를 취고하고 싶을 때
+		 > 설명2 : 처리를 완료하기 전에 이벤트(기본 또는 다른이벤트)를 취소하고 싶을 때
 		
 		버블링 : 발생 대상에서 document, window 까지 전달되는 단계(위로)
 		 > 설명1 : 내부에 다른 요소를 포함한 어떤 요소(<div><div></div></div>)가 있습니다. 두요소 모두 클릭 이벤트를 캡쳐합니다. 안쪽요소에서 발생한 클릭 이벤트가 바깥쪽 요소로 전파되는 것을 막음
@@ -251,8 +251,7 @@ Dual licensed under the MIT and GPL licenses.
 			var strip_tags = function(input, allowed) {
 				allowed = (((allowed || "") + "").toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join(''); // making sure the allowed arg is a string containing only tags in lowercase (<a><b><c>)
 				var tags = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi;
-				var commentsAndPhpTags = /<!--[\s\S]*?-->|<\?(?:php)?[\s\S]*?\?>/gi;
-				return input.replace(commentsAndPhpTags, '').replace(tags, function ($0, $1) {
+				return input.replace(tags, function ($0, $1) {
 					return allowed.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : '';
 				});
 			};

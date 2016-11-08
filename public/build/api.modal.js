@@ -14,6 +14,12 @@ Dual licensed under the MIT and GPL licenses.
 IE8 이상
 querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
 RGBa: Internet Explorer 9
+
+-
+사용예
+
+-
+jQuery 또는 api.dom 에 종속적 실행
 */
 
 ;(function(factory, global) {
@@ -160,17 +166,22 @@ RGBa: Internet Explorer 9
 			that.instance = {}; 
 			// element
 			that.elements = {};
-			// show 큐 (겹쳐서 보이는 것 방지)
+			// 실행 큐
 			that.queue = {
-				'topleft': [],
-				'topcenter': [],
-				'topright': [],
-				'bottomleft': [], 
-				'bottomcenter': [], 
-				'bottomright': [],
-				'centerleft': [],
-				'center': [],
-				'centerright': []
+				// 최우선 실행 (confirm, alert)
+				'priority': [],
+				// 위치 (겹쳐서 보이는 것 방지)
+				'position': {
+					'topleft': [],
+					'topcenter': [],
+					'topright': [],
+					'bottomleft': [], 
+					'bottomcenter': [], 
+					'bottomright': [],
+					'centerleft': [],
+					'center': [],
+					'centerright': []	
+				}
 			};
 			// 현재 설정된 기본 Style
 			that.before = (function() {
@@ -385,7 +396,7 @@ RGBa: Internet Explorer 9
 				var left = 0, right = 0, top = 0, bottom = 0;
 				var size = that.getWindowDocumentSize();
 
-				if(position && that.queue[position] && that.queue[position].length) {
+				if(position && that.queue['position'][position] && that.queue['position'][position].length) {
 					// 화면에 출력할 element 크기
 					if(typeof element === 'object') {
 						width = Math.round($(element).outerWidth(true));
@@ -396,8 +407,8 @@ RGBa: Internet Explorer 9
 					top += height;
 					bottom += height;
 					// 현재 출력되어 있는 element 위치 조정
-					for(i=(that.queue[position].length-1), min=0; min<=i; i--) {
-						key = that.queue[position][i];
+					for(i=(that.queue['position'][position].length-1), min=0; min<=i; i--) {
+						key = that.queue['position'][position][i];
 						if(that.instance[key] && that.instance[key].elements && that.instance[key].elements.contents) {
 							// mask 는 제외한다.
 							if(that.instance[key].settings && that.instance[key].settings.mask) {
@@ -662,9 +673,7 @@ RGBa: Internet Explorer 9
 
 				// 팝업내부 click 시 zindex 값 변경 (해당 layer 가장위에 보이도록함)
 				$(that.settings.target).on(env['event']['down'], function() {
-					if(module.queue[that.settings.position].length > 1) {
-						that.above();
-					}
+					that.above();
 				});
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
@@ -752,10 +761,12 @@ RGBa: Internet Explorer 9
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
-			var size = module.getWindowDocumentSize();
-			var scroll = module.getBrowserScroll();
+			var size, scroll;
 
 			try {
+				size = module.getWindowDocumentSize();
+				scroll = module.getBrowserScroll();
+
 				// 스크롤바 사이즈만큼 여백
 				if(size.window.height < size.document.height) {
 					$('html').css({'margin-right': env['browser']['scrollbar'] + 'px', 'overflow': 'hidden'});
@@ -773,12 +784,6 @@ RGBa: Internet Explorer 9
 				that.position(); // parent element 가 페인팅되어있지 않으면, child element 의 width, height 값을 구할 수 없다. (that.elements.contents 의 정확한 width, height 값을 알려면, 이를 감싸고 있는 that.elements.container 가 diplay block 상태에 있어야 한다.)
 				if(env['monitor'] === 'pc') {
 					that.elements.contents.style.webkitTransition = that.elements.contents.style.MozTransition = that.elements.contents.style.msTransition = that.elements.contents.style.OTransition = that.elements.contents.style.transition = 'left .5s, top .5s';
-				}
-
-				// queue
-				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
-					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
-					module.queue[that.settings.position].push(that.settings.key);
 				}
 
 				// focus (웹접근성)
@@ -827,12 +832,6 @@ RGBa: Internet Explorer 9
 					that.elements.mask.style.display = 'none';
 				}
 
-				// queue
-				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
-					module.setQueuePosition({'position': that.settings.position, 'out': false});
-				}
-
 				// focus (웹접근성)
 				if(module.active) {
 					module.active.focus();
@@ -876,12 +875,6 @@ RGBa: Internet Explorer 9
 					that.elements.container.parentNode.removeChild(that.elements.container);
 				}
 				that.elements = {};
-
-				// queue
-				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
-					module.setQueuePosition({'position': that.settings.position, 'out': false});
-				}
 
 				// instance
 				if(that.settings['key'] && module.instance[that.settings['key']]) {
@@ -1191,10 +1184,10 @@ RGBa: Internet Explorer 9
 		// private init
 		module.init();
 		(function() { 
-			var fragment = document.createDocumentFragment();
-			var key = {};
-
 			try {
+				//var fragment = document.createDocumentFragment();
+				var key = {};
+
 				// key
 				key.title = getKey();
 				key.message = getKey();
@@ -1213,15 +1206,7 @@ RGBa: Internet Explorer 9
 
 				// contents
 				that.elements.contents = document.createElement('div');
-				that.elements.contents.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
-				/*that.elements.contents.innerHTML = '\
-					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
-					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
-					<div style="padding: 10px 18px; background: rgba(250, 251, 252, .96); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
-						<button id="' + key.cancel + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(140, 141, 142); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: transparent; border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">CANCEL</button>\
-						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: transparent; border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
-					</div>\
-				';*/ 
+				that.elements.contents.style.cssText = 'position: fixed; margin: 5px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
 				that.elements.contents.innerHTML = '\
 					<div id="' + key.title + '" style="padding: 20px 20px 10px 20px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 20px; min-height: 45px; color: rgb(44, 45, 46); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
@@ -1230,8 +1215,12 @@ RGBa: Internet Explorer 9
 						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
 					</div>\
 				';
-				fragment.appendChild(that.elements.contents);
-				module.elements.confirm.appendChild(fragment);
+
+				// container
+				that.elements.container = document.createElement('div');
+				that.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none; -webkit-overflow-scrolling: touch;';
+				that.elements.container.appendChild(that.elements.contents);
+				module.elements.confirm.appendChild(that.elements.container);
 
 				// search element
 				that.elements.title = that.elements.contents.querySelector('#' + key.title);
@@ -1330,31 +1319,61 @@ RGBa: Internet Explorer 9
 						that.elements.mask.style.display = display;
 					}
 				}
-				that.elements.contents.style.zIndex = ++module.zindex;
+				that.elements.container.style.zIndex = ++module.zindex;
 				if(display) {
-					that.elements.contents.style.display = display;	
+					that.elements.container.style.display = display;	
 				}
 			}catch(e) {}
 		},
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
+			var size, scroll;
+
+			// 실행되고 있는 최우선 modal 확인
+			if(module.queue['priority'].length > 0 && module.queue['priority'][0] !== that.settings.key /* 순차 실행의 첫번째 요소 여부 */) {
+				module.queue['priority'].push(that.settings.key);
+				return;
+			}
 
 			try {
+				size = module.getWindowDocumentSize();
+				scroll = module.getBrowserScroll();
+				
+				// 스크롤바 사이즈만큼 여백
+				if(size.window.height < size.document.height) {
+					$('html').css({'margin-right': env['browser']['scrollbar'] + 'px', 'overflow': 'hidden'});
+				}
+
 				// element
 				that.above({'display': 'block'});
 				that.position();
 
 				// queue
-				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
-					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
-					module.queue[that.settings.position].push(that.settings.key);
+				if(module.queue['priority'].indexOf(that.settings.key) === -1) {
+					module.queue['priority'].push(that.settings.key);
 				}
+				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) === -1) {
+					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
+					module.queue['position'][that.settings.position].push(that.settings.key);
+				}*/
 
 				// focus (웹접근성)
 				module.active = document.activeElement;
-				that.elements.contents.setAttribute('tabindex', -1);
-				that.elements.contents.focus();
+				that.elements.container.setAttribute('tabindex', -1);
+				that.elements.container.focus();
+
+				// mousedown
+				$(that.elements.container).on(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key, function(e) {
+					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+					//if(event.target && (that.elements.container.isEqualNode(event.target) || !that.elements.contents.contains(event.target)) {
+					if(event.target && that.elements.container.isEqualNode(event.target) && (typeof event.target.storage === 'object' && event.target.storage.api === 'modal')) {
+						event.preventDefault(); // 기본이벤트 정지
+						event.stopPropagation(); // 상위 전파 방지
+						event.stopImmediatePropagation(); // 상위 전파 + 같은 레벨 이벤트 전파 방지 (하나의 element에 여러개의 이벤트)
+						return false; // jQuery stop
+					}
+				});
 
 				// callback
 				if(typeof that.settings.callback.show === 'function') {
@@ -1374,22 +1393,31 @@ RGBa: Internet Explorer 9
 			var parameter = parameter || {};
 
 			try {
+				// 스크롤바 관련 (닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.)
+				$('html').css({'margin-right': module.before['margin-right'], 'overflow': module.before['overflow']});
+
 				// element
-				that.elements.contents.style.display = 'none';
+				that.elements.container.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';
 				}
 
 				// queue
-				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
-					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				if(module.queue['priority'].indexOf(that.settings.key) !== -1) {
+					module.queue['priority'].splice(module.queue['priority'].indexOf(that.settings.key), 1);
 				}
+				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				}*/
 
 				// focus (웹접근성)
 				if(module.active) {
 					module.active.focus();
 				}
+
+				// mousedown
+				$(that.elements.container).off(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key);
 
 				// callback
 				if(typeof that.settings.callback.hide === 'function') {
@@ -1403,31 +1431,53 @@ RGBa: Internet Explorer 9
 					that.settings.callback.error.call(that, e);
 				}
 			}
+
+			// 다음 실행할 최우선 modal 확인
+			(function loop() {
+				if(module.queue['priority'].length > 0) {
+					if(!module.instance[module.queue['priority'][0]]) {
+						// priority 에는 존재하나 instance 에는 존재하지 않는 것
+						module.queue['priority'].shift();
+						loop(); // 재귀
+					}else if(typeof module.instance[module.queue['priority'][0]].show === 'function') {
+						module.instance[module.queue['priority'][0]].show();
+					}
+				}
+			})();
 		},
 		remove: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
 			try {
+				// 스크롤바 관련 (닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.)
+				$('html').css({'margin-right': module.before['margin-right'], 'overflow': module.before['overflow']});
+
 				// element
 				if(that.elements.mask) {
 					that.elements.mask.parentNode.removeChild(that.elements.mask);
 				}
-				if(that.elements.contents) {
-					that.elements.contents.parentNode.removeChild(that.elements.contents);
+				if(that.elements.container) {
+					that.elements.container.parentNode.removeChild(that.elements.container);
 				}
 				that.elements = {};
 
 				// queue
-				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
-					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				if(module.queue['priority'].indexOf(that.settings.key) !== -1) {
+					module.queue['priority'].splice(module.queue['priority'].indexOf(that.settings.key), 1);
 				}
+				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				}*/
 
 				// instance
 				if(that.settings['key'] && module.instance[that.settings['key']]) {
 					delete module.instance[that.settings['key']];
 				}
+
+				// mousedown
+				$(that.elements.container).off(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key);
 
 				// callback
 				if(typeof that.settings.callback.remove === 'function') {
@@ -1441,6 +1491,19 @@ RGBa: Internet Explorer 9
 					that.settings.callback.error.call(that, e);
 				}
 			}
+
+			// 다음 실행할 최우선 modal 확인
+			(function loop() {
+				if(module.queue['priority'].length > 0) {
+					if(!module.instance[module.queue['priority'][0]]) {
+						// priority 에는 존재하나 instance 에는 존재하지 않는 것
+						module.queue['priority'].shift();
+						loop(); // 재귀
+					}else if(typeof module.instance[module.queue['priority'][0]].show === 'function') {
+						module.instance[module.queue['priority'][0]].show();
+					}
+				}
+			})();
 		}
 	};
 
@@ -1467,10 +1530,10 @@ RGBa: Internet Explorer 9
 		// private init
 		module.init();
 		(function() { 
-			var fragment = document.createDocumentFragment();
-			var key = {};
-
 			try {
+				//var fragment = document.createDocumentFragment();
+				var key = {};
+
 				// key
 				key.title = getKey();
 				key.message = getKey();
@@ -1488,14 +1551,7 @@ RGBa: Internet Explorer 9
 
 				// contents
 				that.elements.contents = document.createElement('div');
-				that.elements.contents.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
-				/*that.elements.contents.innerHTML = '\
-					<div id="' + key.title + '" style="padding: 18px 18px 10px 18px; font-weight: bold; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
-					<div id="' + key.message + '" style="padding: 10px 18px 18px 18px; min-height: 67px; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
-					<div style="padding: 10px 18px; background: rgba(250, 251, 252, .96); text-align: right; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
-						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: transparent; border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
-					</div>\
-				';*/ 
+				that.elements.contents.style.cssText = 'position: fixed; margin: 5px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
 				that.elements.contents.innerHTML = '\
 					<div id="' + key.title + '" style="padding: 20px 20px 10px 20px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 20px; min-height: 45px; color: rgb(44, 45, 46); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
@@ -1503,8 +1559,12 @@ RGBa: Internet Explorer 9
 						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
 					</div>\
 				';
-				fragment.appendChild(that.elements.contents);
-				module.elements.alert.appendChild(fragment);
+
+				// container
+				that.elements.container = document.createElement('div');
+				that.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none; -webkit-overflow-scrolling: touch;';
+				that.elements.container.appendChild(that.elements.contents);
+				module.elements.alert.appendChild(that.elements.container);
 
 				// search element
 				that.elements.title = that.elements.contents.querySelector('#' + key.title);
@@ -1588,31 +1648,60 @@ RGBa: Internet Explorer 9
 						that.elements.mask.style.display = display;
 					}
 				}
-				that.elements.contents.style.zIndex = ++module.zindex;
+				that.elements.container.style.zIndex = ++module.zindex;
 				if(display) {
-					that.elements.contents.style.display = display;	
+					that.elements.container.style.display = display;	
 				}
 			}catch(e) {}
 		},
 		show: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
+			var size, scroll;
+
+			// 실행되고 있는 최우선 modal 확인
+			if(module.queue['priority'].length > 0 && module.queue['priority'][0] !== that.settings.key /* 순차 실행의 첫번째 요소 여부 */) {
+				module.queue['priority'].push(that.settings.key);
+				return;
+			}
 
 			try {
+				size = module.getWindowDocumentSize();
+				scroll = module.getBrowserScroll();
+
+				// 스크롤바 사이즈만큼 여백
+				if(size.window.height < size.document.height) {
+					$('html').css({'margin-right': env['browser']['scrollbar'] + 'px', 'overflow': 'hidden'});
+				}
+
 				// element
 				that.above({'display': 'block'});
 				that.position();
 
 				// queue
-				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
-					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
-					module.queue[that.settings.position].push(that.settings.key);
+				if(module.queue['priority'].indexOf(that.settings.key) === -1) {
+					module.queue['priority'].push(that.settings.key);
 				}
+				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) === -1) {
+					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
+					module.queue['position'][that.settings.position].push(that.settings.key);
+				}*/
 
 				// focus (웹접근성)
 				module.active = document.activeElement;
-				that.elements.contents.setAttribute('tabindex', -1);
-				that.elements.contents.focus();
+				that.elements.container.setAttribute('tabindex', -1);
+				that.elements.container.focus();
+
+				// mousedown
+				$(that.elements.container).on(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key, function(e) {
+					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+					if(event.target && !that.elements.contents.contains(event.target)) {
+						event.preventDefault(); // 기본이벤트 정지
+						event.stopPropagation(); // 상위 전파 방지
+						event.stopImmediatePropagation(); // 상위 전파 + 같은 레벨 이벤트 전파 방지 (하나의 element에 여러개의 이벤트)
+						return false; // jQuery stop
+					}
+				});
 
 				// callback
 				if(typeof that.settings.callback.show === 'function') {
@@ -1632,22 +1721,31 @@ RGBa: Internet Explorer 9
 			var parameter = parameter || {};
 
 			try {
+				// 스크롤바 관련 (닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.)
+				$('html').css({'margin-right': module.before['margin-right'], 'overflow': module.before['overflow']});
+
 				// element
-				that.elements.contents.style.display = 'none';
+				that.elements.container.style.display = 'none';
 				if(that.settings.mask === true || (that.settings.mask && typeof that.settings.mask === 'object' && that.settings.mask.nodeType)) {
 					that.elements.mask.style.display = 'none';
 				}
 
 				// queue
-				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
-					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				if(module.queue['priority'].indexOf(that.settings.key) !== -1) {
+					module.queue['priority'].splice(module.queue['priority'].indexOf(that.settings.key), 1);
 				}
+				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				}*/
 
 				// focus (웹접근성)
 				if(module.active) {
 					module.active.focus();
 				}
+
+				// mousedown
+				$(that.elements.container).off(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key);
 
 				// callback
 				if(typeof that.settings.callback.hide === 'function') {
@@ -1661,31 +1759,53 @@ RGBa: Internet Explorer 9
 					that.settings.callback.error.call(that, e);
 				}
 			}
+
+			// 다음 실행할 최우선 modal 확인
+			(function loop() {
+				if(module.queue['priority'].length > 0) {
+					if(!module.instance[module.queue['priority'][0]]) {
+						// priority 에는 존재하나 instance 에는 존재하지 않는 것
+						module.queue['priority'].shift();
+						loop(); // 재귀
+					}else if(typeof module.instance[module.queue['priority'][0]].show === 'function') {
+						module.instance[module.queue['priority'][0]].show();
+					}
+				}
+			})();
 		},
 		remove: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
 
 			try {
+				// 스크롤바 관련 (닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.)
+				$('html').css({'margin-right': module.before['margin-right'], 'overflow': module.before['overflow']});
+
 				// element
 				if(that.elements.mask) {
 					that.elements.mask.parentNode.removeChild(that.elements.mask);
 				}
-				if(that.elements.contents) {
-					that.elements.contents.parentNode.removeChild(that.elements.contents);
+				if(that.elements.container) {
+					that.elements.container.parentNode.removeChild(that.elements.container);
 				}
 				that.elements = {};
 
 				// queue
-				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
-					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				if(module.queue['priority'].indexOf(that.settings.key) !== -1) {
+					module.queue['priority'].splice(module.queue['priority'].indexOf(that.settings.key), 1);
 				}
+				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				}*/
 
 				// instance
 				if(that.settings['key'] && module.instance[that.settings['key']]) {
 					delete module.instance[that.settings['key']];
 				}
+
+				// mousedown
+				$(that.elements.container).off(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key);
 
 				// callback
 				if(typeof that.settings.callback.remove === 'function') {
@@ -1699,6 +1819,19 @@ RGBa: Internet Explorer 9
 					that.settings.callback.error.call(that, e);
 				}
 			}
+
+			// 다음 실행할 최우선 modal 확인
+			(function loop() {
+				if(module.queue['priority'].length > 0) {
+					if(!module.instance[module.queue['priority'][0]]) {
+						// priority 에는 존재하나 instance 에는 존재하지 않는 것
+						module.queue['priority'].shift();
+						loop(); // 재귀
+					}else if(typeof module.instance[module.queue['priority'][0]].show === 'function') {
+						module.instance[module.queue['priority'][0]].show();
+					}
+				}
+			})();
 		}
 	};
 
@@ -1748,7 +1881,7 @@ RGBa: Internet Explorer 9
 
 				// contents
 				that.elements.contents = document.createElement('div');
-				that.elements.contents.style.cssText = 'position: fixed; display: none; margin: 10px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
+				that.elements.contents.style.cssText = 'position: fixed; display: none; margin: 5px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
 				/*that.elements.contents.innerHTML = '\
 					<div id="' + key.message + '" style="padding: 12px 12px 5px 12px; min-height: 33px; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 5px 12px 12px 12px; background: rgba(250, 251, 252, .96); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
@@ -1863,9 +1996,9 @@ RGBa: Internet Explorer 9
 				that.position();
 
 				// queue
-				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) === -1) {
+				if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) === -1) {
 					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
-					module.queue[that.settings.position].push(that.settings.key);
+					module.queue['position'][that.settings.position].push(that.settings.key);
 				}
 
 				// auto hide
@@ -1901,8 +2034,8 @@ RGBa: Internet Explorer 9
 				}
 
 				// queue
-				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+				if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
 					module.setQueuePosition({'position': that.settings.position, 'out': false});
 				}
 
@@ -1934,8 +2067,8 @@ RGBa: Internet Explorer 9
 				that.elements = {};
 
 				// queue
-				if(!that.settings.mask && module.queue[that.settings.position] && module.queue[that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue[that.settings.position].splice(module.queue[that.settings.position].indexOf(that.settings.key), 1);
+				if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) {
+					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
 					module.setQueuePosition({'position': that.settings.position, 'out': false});
 				}
 
@@ -1997,25 +2130,39 @@ RGBa: Internet Explorer 9
 			}
 			return instance;
 		},
-		show: function(key) { // 전체 또는 해당 key
+		show: function(parameter) { // 전체 또는 해당 key
+			var parameter = parameter || {};
+			var key = parameter['key'];
+			var type = parameter['type'];
+			var setShow = function(instance, type) {
+				if(typeof instance.hide === 'function') {
+					instance.hide();
+				}
+			};
+
 			if(key) {
 				this.search(key) && this.search(key).show();
 			}else {
 				for(key in module.instance) {
-					if(module.instance.hasOwnProperty(key)) {
-						module.instance[key].show();
-					}
+					module.instance.hasOwnProperty(key) && setShow(module.instance[key], type);
 				}
 			}
 		},
-		hide: function(key) { // 전체 또는 해당 key
+		hide: function(parameter) { // 전체 또는 해당 key
+			var parameter = parameter || {};
+			var key = parameter['key'];
+			var type = parameter['type'];
+			var setHide = function(instance, type) {
+				if(typeof instance.hide === 'function') {
+					instance.hide();
+				}
+			};
+
 			if(key) {
 				this.search(key) && this.search(key).hide();
 			}else {
 				for(key in module.instance) {
-					if(module.instance.hasOwnProperty(key)) {
-						module.instance[key].hide();
-					}
+					module.instance.hasOwnProperty(key) && setHide(module.instance[key], type);
 				}
 			}	
 		}

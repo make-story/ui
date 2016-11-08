@@ -198,7 +198,7 @@ Dual licensed under the MIT and GPL licenses.
 	var Editor = function(settings) {
 		var that = this;
 		that.settings = {
-			'key': '',
+			'key': '', 
 			'target': null, // 에디터 적용 영역
 			// 기능 사용여부
 			'edit': {
@@ -232,7 +232,7 @@ Dual licensed under the MIT and GPL licenses.
 			'target': null,
 			'text': {
 				'tooltip': undefined,
-				'edit': { // button
+				'command': { // button
 					'wrap': undefined // button element 들을 감싸고 있는 wrap
 				},
 				'other': {
@@ -242,7 +242,7 @@ Dual licensed under the MIT and GPL licenses.
 			},
 			'multi': {
 				'tooltip': undefined,
-				'edit': { // button
+				'command': { // button
 					'wrap': undefined // button element 들을 감싸고 있는 wrap	
 				},
 				'other': {
@@ -261,7 +261,6 @@ Dual licensed under the MIT and GPL licenses.
 
 		// private init
 		(function init() {
-			var fragment = document.createDocumentFragment();
 			// 이미지 파일 선택
 			var setImageInputChange = (function() {
 				if('FileReader' in window) { // IE10 이상
@@ -415,14 +414,14 @@ Dual licensed under the MIT and GPL licenses.
 				// down 했을 때 해당 버튼의 기능 적용
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 				var target = event && (event.target || event.srcElement);
-				var edit = target['storage']['edit']; // 버튼의 기능 종류
+				var command = target['storage']['command']; // 버튼의 기능 종류
 
 				event.preventDefault(); // 현재 이벤트의 기본 동작을 중단한다.
 				event.stopPropagation(); // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
 
 				if(typeof that.selection === 'object' && 'rangeCount' in that.selection && that.selection.rangeCount > 0) {
 					//console.log('에디터 기능 적용');
-					switch(edit) {
+					switch(command) {
 						case 'bold':
 							if(that.selection.anchorNode && !module.getParent(
 								that.selection.anchorNode,
@@ -461,15 +460,15 @@ Dual licensed under the MIT and GPL licenses.
 									return true;
 								}
 							)) {
-								that.setFormatBlock(edit);
+								that.setFormatBlock(command);
 							}
 							break;
 						case "blockquote": // 인용문 (들여쓰기)
-							that.setFormatBlock(edit);
+							that.setFormatBlock(command);
 							break;
 						case 'createLink':
 							// url 입력박스 보이기
-							//that.elements['text']['edit']['wrap'].style.display = 'none';
+							//that.elements['text']['command']['wrap'].style.display = 'none';
 							that.elements['text']['other']['link']['wrap'].style.display = 'block';
 
 							// 
@@ -547,8 +546,8 @@ Dual licensed under the MIT and GPL licenses.
 			// 에디터 button, input 등 생성 및 이벤트 설정
 			var setCreateTooltipElement = function(parameter) { 
 				var parameter = parameter || {};
-				var type = parameter['type'];
-				var edit = parameter['edit']; // 툴팁종류
+				var edit = parameter['edit'];
+				var command = parameter['command']; 
 
 				var setButton = function() {
 
@@ -566,18 +565,18 @@ Dual licensed under the MIT and GPL licenses.
 
 				
 
-				// edit
-				switch(edit) {
+				// command
+				switch(command) {
 					case 'bold':
 						// button
 						element = document.createElement('button');
 						element.style.cssText = style.button;
 						element['storage'] = {
-							'edit': edit
+							'command': command
 						};
 						element.onmousedown = setTextTooltipMousedown; 
 						element.onmouseup = setTextTooltipMouseup;
-						that.elements[type]['edit'][edit] = element;
+						that.elements[edit]['command'][command] = element;
 						//
 						element.textContent = 'B';
 						element.style.fontWeight = 'bold';
@@ -587,11 +586,11 @@ Dual licensed under the MIT and GPL licenses.
 						element = document.createElement('button');
 						element.style.cssText = style.button;
 						element['storage'] = {
-							'edit': edit
+							'command': command
 						};
 						element.onmousedown = setTextTooltipMousedown; 
 						element.onmouseup = setTextTooltipMouseup;
-						that.elements[type]['edit'][edit] = element;
+						that.elements[edit]['command'][command] = element;
 						//
 						element.textContent = 'I';
 						element.style.fontStyle = 'italic';
@@ -601,11 +600,11 @@ Dual licensed under the MIT and GPL licenses.
 						element = document.createElement('button');
 						element.style.cssText = style.button;
 						element['storage'] = {
-							'edit': edit
+							'command': command
 						};
 						element.onmousedown = setTextTooltipMousedown; 
 						element.onmouseup = setTextTooltipMouseup;
-						that.elements[type]['edit'][edit] = element;
+						that.elements[edit]['command'][command] = element;
 						//
 						element.textContent = 'S';
 						element.style.textDecoration = 'line-through';
@@ -615,11 +614,11 @@ Dual licensed under the MIT and GPL licenses.
 						element = document.createElement('button');
 						element.style.cssText = style.button;
 						element['storage'] = {
-							'edit': edit
+							'command': command
 						};
 						element.onmousedown = setTextTooltipMousedown; 
 						element.onmouseup = setTextTooltipMouseup;
-						that.elements[type]['edit'][edit] = element;
+						that.elements[edit]['command'][command] = element;
 						//
 						element.textContent = 'U';
 						element.style.textDecoration = 'underline';
@@ -629,11 +628,11 @@ Dual licensed under the MIT and GPL licenses.
 						element = document.createElement('button');
 						element.style.cssText = style.button;
 						element['storage'] = {
-							'edit': edit
+							'command': command
 						};
 						element.onmousedown = setTextTooltipMousedown; 
 						element.onmouseup = setTextTooltipMouseup;
-						that.elements[type]['edit'][edit] = element;
+						that.elements[edit]['command'][command] = element;
 						//
 						element.textContent = 'H1';
 						break;
@@ -642,11 +641,11 @@ Dual licensed under the MIT and GPL licenses.
 						element = document.createElement('button');
 						element.style.cssText = style.button;
 						element['storage'] = {
-							'edit': edit
+							'command': command
 						};
 						element.onmousedown = setTextTooltipMousedown; 
 						element.onmouseup = setTextTooltipMouseup;
-						that.elements[type]['edit'][edit] = element;
+						that.elements[edit]['command'][command] = element;
 						//
 						element.textContent = 'H2';
 						break;
@@ -655,11 +654,11 @@ Dual licensed under the MIT and GPL licenses.
 						element = document.createElement('button');
 						element.style.cssText = style.button;
 						element['storage'] = {
-							'edit': edit
+							'command': command
 						};
 						element.onmousedown = setTextTooltipMousedown; 
 						element.onmouseup = setTextTooltipMouseup;
-						that.elements[type]['edit'][edit] = element;
+						that.elements[edit]['command'][command] = element;
 						//
 						element.textContent = 'H3';
 						break;
@@ -668,11 +667,11 @@ Dual licensed under the MIT and GPL licenses.
 						element = document.createElement('button');
 						element.style.cssText = style.button;
 						element['storage'] = {
-							'edit': edit
+							'command': command
 						};
 						element.onmousedown = setTextTooltipMousedown; 
 						element.onmouseup = setTextTooltipMouseup;
-						that.elements[type]['edit'][edit] = element;
+						that.elements[edit]['command'][command] = element;
 						//
 						element.textContent = '"';
 						break;
@@ -681,12 +680,12 @@ Dual licensed under the MIT and GPL licenses.
 						element = document.createElement('button');
 						element.style.cssText = style.button;
 						element['storage'] = {
-							'edit': edit
+							'command': command
 						};
 						//
 						element.onmousedown = setTextTooltipMousedown; 
 						element.onmouseup = setTextTooltipMouseup;
-						that.elements[type]['edit'][edit] = element;
+						that.elements[edit]['command'][command] = element;
 						//
 						element.textContent = '#';
 
@@ -706,7 +705,7 @@ Dual licensed under the MIT and GPL licenses.
 						element = document.createElement('label');
 						element.style.cssText = style.button;
 						element['storage'] = {
-							'edit': edit
+							'command': command
 						};
 						//
 						element.onmousedown = setImageTooltipMousedown;
@@ -714,40 +713,40 @@ Dual licensed under the MIT and GPL licenses.
 						element.textContent = '+';
 						break;
 				}
-				that.elements[type]['edit'][edit] = element;
+				that.elements[edit]['command'][command] = element;
 
 				return element;
 			};
-
+			var fragment = document.createDocumentFragment();
 			// document 에 에디터 툴바존재여부 확인 후 생성
 
 
 			// 텍스트 툴바
 			that.elements['text']['tooltip'] = document.createElement("div");
 			that.elements['text']['tooltip'].style.cssText = 'transition: all .3s ease-out; position: absolute; top: ' + EDGE + 'px; left: ' + EDGE + 'px; color: rgb(20, 29, 37); background-color: rgba(255, 255, 255, .86);';
-			that.elements['text']['tooltip'].appendChild(that.elements['text']['edit']['wrap'] = document.createElement("div"));
+			that.elements['text']['tooltip'].appendChild(that.elements['text']['command']['wrap'] = document.createElement("div"));
 			that.elements['text']['tooltip'].appendChild(that.elements['text']['other']['wrap'] = document.createElement("div"));
 			fragment.appendChild(that.elements['text']['tooltip']);
 
 			// 텍스트 에디터 버튼
-			that.elements['text']['edit']['wrap'].appendChild(setCreateTooltipElement({'type': 'text', 'edit': 'h1'}));
-			that.elements['text']['edit']['wrap'].appendChild(setCreateTooltipElement({'type': 'text', 'edit': 'h2'}));
-			that.elements['text']['edit']['wrap'].appendChild(setCreateTooltipElement({'type': 'text', 'edit': 'h3'}));
-			that.elements['text']['edit']['wrap'].appendChild(setCreateTooltipElement({'type': 'text', 'edit': 'bold'}));
-			that.elements['text']['edit']['wrap'].appendChild(setCreateTooltipElement({'type': 'text', 'edit': 'italic'}));
-			that.elements['text']['edit']['wrap'].appendChild(setCreateTooltipElement({'type': 'text', 'edit': 'strikethrough'}));
-			that.elements['text']['edit']['wrap'].appendChild(setCreateTooltipElement({'type': 'text', 'edit': 'underline'}));
-			that.elements['text']['edit']['wrap'].appendChild(setCreateTooltipElement({'type': 'text', 'edit': 'blockquote'}));
-			that.elements['text']['edit']['wrap'].appendChild(setCreateTooltipElement({'type': 'text', 'edit': 'createLink'}));
+			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'h1'}));
+			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'h2'}));
+			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'h3'}));
+			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'bold'}));
+			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'italic'}));
+			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'strikethrough'}));
+			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'underline'}));
+			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'blockquote'}));
+			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'createLink'}));
 
 			// 멀티미디어 툴바
 			that.elements['multi']['tooltip'] = document.createElement("div");
 			that.elements['multi']['tooltip'].style.cssText = 'transition: all .3s ease-out; position: absolute; top: ' + EDGE + 'px; left: ' + EDGE + 'px; color: rgb(20, 29, 37); background-color: rgba(255, 255, 255, .86);';
-			that.elements['multi']['tooltip'].appendChild(that.elements['multi']['edit']['wrap'] = document.createElement("div"));
+			that.elements['multi']['tooltip'].appendChild(that.elements['multi']['command']['wrap'] = document.createElement("div"));
 			fragment.appendChild(that.elements['multi']['tooltip']);
 
 			// 멀티미디어 에디터 버튼
-			that.elements['multi']['edit']['wrap'].appendChild(setCreateTooltipElement({'type': 'multi', 'edit': 'insertImage'}));
+			that.elements['multi']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'multi', 'command': 'insertImage'}));
 			
 
 			/*
@@ -784,8 +783,6 @@ Dual licensed under the MIT and GPL licenses.
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 			var target = event && (event.target || event.srcElement);
 
-			event.stopPropagation(); // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
-
 			//console.log(target.isContentEditable);
 			//console.log(document.activeElement.isContentEditable);
 			that.selection = undefined;
@@ -795,12 +792,22 @@ Dual licensed under the MIT and GPL licenses.
 				//console.dir(that.selection);
 			}
 		},
+		isSelection: function() {
+			var that;
+			if(typeof that.selection === 'object' && that.selection.anchorNode && that.selection.focusNode) {
+				return true;
+			}else {
+				return false;
+			}
+		},
 		// 툴팁 보이기
-		setTooltipToggle: function() {
+		setTooltipToggle: function(e) {
 			var that = this;
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			var target = event && (event.target || event.srcElement);
 
 			// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
-			if(that.selection && that.selection.anchorNode && that.selection.focusNode) {
+			if(that.isSelection()) {
 				console.log('----------');
 				console.dir(that.selection);
 				// 시작노드
@@ -838,21 +845,23 @@ Dual licensed under the MIT and GPL licenses.
 		setFormatBlock: function(tag) {
 			var that = this;
 
-			if(typeof that.selection === 'object' && 'rangeCount' in that.selection && that.selection.rangeCount > 0 && module.getParent( // 추가하려는 tag 상위 존재여부 확인
-				that.selection.focusNode,
-				// 조건
-				function(node) {
-					return node.nodeName.toLowerCase() === tag;
-				},
-				// 조건에 따른 실행
-				function(node) {
-					return node;
+			if(typeof tag === 'string') {
+				if(that.isSelection() && 'rangeCount' in that.selection && that.selection.rangeCount > 0 && module.getParent( // 추가하려는 tag가 상위에 존재하는지 확인
+					that.selection.focusNode,
+					// 조건
+					function(node) {
+						return node.nodeName.toLowerCase() === tag.toLowerCase();
+					},
+					// 조건에 따른 실행
+					function(node) {
+						return node;
+					}
+				)) {
+					document.execCommand("formatBlock", false, "p");
+					document.execCommand("outdent"); // 문자 선택(text selection)의 현위치에서 들어쓰기 한 증가분 만큼 왼쪽으로 내어쓰기 한다.
+				}else {
+					document.execCommand("formatBlock", false, tag);
 				}
-			)) {
-				document.execCommand("formatBlock", false, "p");
-				document.execCommand("outdent"); // 문자 선택(text selection)의 현위치에서 들어쓰기 한 증가분 만큼 왼쪽으로 내어쓰기 한다.
-			}else {
-				document.execCommand("formatBlock", false, tag);
 			}
 		},
 		/*
@@ -936,7 +945,7 @@ Dual licensed under the MIT and GPL licenses.
 			}
 		},
 		// 텍스트 에디터 툴바 메뉴(각 기능) 현재 selection 에 따라 최신화
-		setTextTooltipMenuState: function(parameter) {
+		setTextTooltipMenuState: function() {
 			//console.log('setTextTooltipMenuState');
 			/*
 			현재 포커스 위치의 element 에서 부모(parentNode)노드를 검색하면서,
@@ -945,14 +954,14 @@ Dual licensed under the MIT and GPL licenses.
 			*/
 			var that = this;
 			var key;
-			if(typeof that.selection === 'object' && 'rangeCount' in that.selection && that.selection.rangeCount > 0) {
-				for(key in that.elements['text']['edit']) { // 버튼 선택 효과 초기화
+			if(that.isSelection() && 'rangeCount' in that.selection && that.selection.rangeCount > 0) {
+				for(key in that.elements['text']['command']) { // 버튼 선택 효과 초기화
 					if(key === 'wrap') {
 						continue;
 					}
-					//that.elements['text']['edit'][key].classList.remove('active');
-					that.elements['text']['edit'][key].style.color = 'rgb(20, 29, 37)';
-					that.elements['text']['edit'][key].style.background = 'none';
+					//that.elements['text']['command'][key].classList.remove('active');
+					that.elements['text']['command'][key].style.color = 'rgb(20, 29, 37)';
+					that.elements['text']['command'][key].style.background = 'none';
 				}
 				module.getParent(
 					that.selection.focusNode,
@@ -981,42 +990,42 @@ Dual licensed under the MIT and GPL licenses.
 						switch(node.nodeName.toLowerCase()) {
 							case 'b':
 							case 'strong': // IE
-								//that.elements['text']['edit']['bold'].classList.add('active');
-								that.elements['text']['edit']['bold'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['edit']['bold'].style.backgroundColor = 'rgb(226, 69, 69)';
+								//that.elements['text']['command']['bold'].classList.add('active');
+								that.elements['text']['command']['bold'].style.color = 'rgb(255, 255, 255)';
+								that.elements['text']['command']['bold'].style.backgroundColor = 'rgb(226, 69, 69)';
 								break;
 							case 'i':
 							case 'em': // IE
-								that.elements['text']['edit']['italic'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['edit']['italic'].style.backgroundColor = 'rgb(226, 69, 69)';
+								that.elements['text']['command']['italic'].style.color = 'rgb(255, 255, 255)';
+								that.elements['text']['command']['italic'].style.backgroundColor = 'rgb(226, 69, 69)';
 								break;
 							case 'strike':
-								that.elements['text']['edit']['strikethrough'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['edit']['strikethrough'].style.backgroundColor = 'rgb(226, 69, 69)';
+								that.elements['text']['command']['strikethrough'].style.color = 'rgb(255, 255, 255)';
+								that.elements['text']['command']['strikethrough'].style.backgroundColor = 'rgb(226, 69, 69)';
 								break;
 							case 'u':
-								that.elements['text']['edit']['underline'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['edit']['underline'].style.backgroundColor = 'rgb(226, 69, 69)';
+								that.elements['text']['command']['underline'].style.color = 'rgb(255, 255, 255)';
+								that.elements['text']['command']['underline'].style.backgroundColor = 'rgb(226, 69, 69)';
 								break;
 							case "h1":
-								that.elements['text']['edit']['h1'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['edit']['h1'].style.backgroundColor = 'rgb(226, 69, 69)';
+								that.elements['text']['command']['h1'].style.color = 'rgb(255, 255, 255)';
+								that.elements['text']['command']['h1'].style.backgroundColor = 'rgb(226, 69, 69)';
 								break;
 							case "h2":
-								that.elements['text']['edit']['h2'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['edit']['h2'].style.backgroundColor = 'rgb(226, 69, 69)';
+								that.elements['text']['command']['h2'].style.color = 'rgb(255, 255, 255)';
+								that.elements['text']['command']['h2'].style.backgroundColor = 'rgb(226, 69, 69)';
 								break;
 							case "h3":
-								that.elements['text']['edit']['h3'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['edit']['h3'].style.backgroundColor = 'rgb(226, 69, 69)';
+								that.elements['text']['command']['h3'].style.color = 'rgb(255, 255, 255)';
+								that.elements['text']['command']['h3'].style.backgroundColor = 'rgb(226, 69, 69)';
 								break;
 							case "blockquote":
-								that.elements['text']['edit']['blockquote'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['edit']['blockquote'].style.backgroundColor = 'rgb(226, 69, 69)';
+								that.elements['text']['command']['blockquote'].style.color = 'rgb(255, 255, 255)';
+								that.elements['text']['command']['blockquote'].style.backgroundColor = 'rgb(226, 69, 69)';
 								break;
 							case 'a':
-								that.elements['text']['edit']['createLink'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['edit']['createLink'].style.backgroundColor = 'rgb(226, 69, 69)';
+								that.elements['text']['command']['createLink'].style.color = 'rgb(255, 255, 255)';
+								that.elements['text']['command']['createLink'].style.backgroundColor = 'rgb(226, 69, 69)';
 								break;
 						}
 					}
@@ -1039,7 +1048,7 @@ Dual licensed under the MIT and GPL licenses.
 				// 툴바숨기기
 				that.elements['text']['tooltip'].style.top = EDGE + "px";
 				that.elements['text']['tooltip'].style.left = EDGE + "px";
-			}else if(typeof that.selection === 'object') {
+			}else if(that.isSelection()) {
 				// 툴팁 크기
 				tooltip_width = that.elements['text']['tooltip'].offsetWidth;
 				tooltip_height = that.elements['text']['tooltip'].offsetHeight;
@@ -1054,7 +1063,7 @@ Dual licensed under the MIT and GPL licenses.
 					that.elements['text']['tooltip'].style.borderBottom = '1px solid rgba(231, 68, 78, .86)';
 					that.elements['text']['tooltip'].style.borderTop = 'none';
 				}
-				top += window.pageYOffset;
+				top += window.pageYOffset; // scroll
 				left = Math.round((clientRectBounds.left + clientRectBounds.right) / 2);
 				left -= Math.floor(tooltip_width / 2);
 				if(left < 0) {
@@ -1062,6 +1071,7 @@ Dual licensed under the MIT and GPL licenses.
 				}else if((left + tooltip_width) > Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth)) {
 					left = left - ((left + tooltip_width) - Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth));
 				}
+				left += window.pageXOffset; // scroll
 				//
 				that.elements['text']['tooltip'].style.top = top + "px";
 				that.elements['text']['tooltip'].style.left = left + "px";
@@ -1084,7 +1094,7 @@ Dual licensed under the MIT and GPL licenses.
 				// 숨기기
 				that.elements['multi']['tooltip'].style.top = EDGE + "px";
 				that.elements['multi']['tooltip'].style.left = EDGE + "px";
-			}else if(typeof that.selection === 'object') {
+			}else if(that.isSelection()) {
 				// 툴팁 크기
 				tooltip_width = that.elements['multi']['tooltip'].offsetWidth;
 				tooltip_height = that.elements['multi']['tooltip'].offsetHeight;
@@ -1097,6 +1107,7 @@ Dual licensed under the MIT and GPL licenses.
 				}else {
 					that.elements['multi']['tooltip'].style.borderRight = '1px solid rgba(231, 68, 78, .86)';
 				}
+				left += window.pageXOffset; // scroll
 				// top
 				// #text node 는 getBoundingClientRect 없음
 				if(that.selection.anchorNode && 'getBoundingClientRect' in that.selection.anchorNode) {
@@ -1114,6 +1125,7 @@ Dual licensed under the MIT and GPL licenses.
 						top = clientRectBounds.top + (height - tooltip_height);
 					}
 				}
+				top += window.pageYOffset; // scroll
 				//
 				that.elements['multi']['tooltip'].style.top = top + "px";
 				that.elements['multi']['tooltip'].style.left = left + "px";
@@ -1125,22 +1137,52 @@ Dual licensed under the MIT and GPL licenses.
 
 
 		},
+		// 에디터가 작동할 영역의 이벤트
 		on: function() {
 			var that = this;
-			// 에디터가 작동할 영역의 이벤트
-			var setContenteditableKeydown = function(e) { // 에디터가 실행될 영역 이벤트
+
+			// storage
+			if(typeof that.elements.target.storage !== 'object') {
+				that.elements.target.storage = {};
+			}else if(that.elements.target.storage['EVENT_MOUSEUP_EDITOR'] || that.elements.target.storage['EVENT_KEYDOWN_EDITOR'] || that.elements.target.storage['EVENT_KEYUP_EDITOR']) {
+				// 이벤트가 중복되지 않도록 이미 적용되어 있는지 확인한다.				
+				return true;
+			}
+
+			// contentEditable
+			//console.log(that.elements.target);
+			//console.log(that.elements.target.contentEditable);
+			//console.log(that.elements.target.isContentEditable);
+			if(!that.elements.target.isContentEditable) {
+				//continue;
+				that.elements.target.contentEditable = true; // 해당 element 내부 수정가능하도록 설정
+			}
+
+			// 마우스 이벤트
+			$(that.elements.target).on(env.event.up + '.EVENT_MOUSEUP_EDITOR', function(e) {
+				that.setSelection(e);
+				that.setTooltipToggle(e);
+			});
+			/*that.elements.target.addEventListener('mouseup', that.setSelection, false);
+			that.elements.target.storage['EVENT_MOUSEUP_EDITOR'] = {
+				"events": 'mouseup',
+				"handlers": that.setSelection,
+				"capture": false
+			};*/
+			
+			// 키보드 이벤트
+			$(that.elements.target).on('keydown.EVENT_KEYDOWN_EDITOR', function(e) {
 				//console.log('setContenteditableKeydown');
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				//var selection = window.getSelection();
 				var parentParagraph;
 				var prevSibling;
 
 				// 방향키, 엔터키 등
-				that.setSelection(event);
-				that.setTooltipToggle();
+				that.setSelection(e);
+				that.setTooltipToggle(e);
 
 				// getSelection 선택된 node
-				if(typeof that.selection === 'object' && that.selection.anchorNode) {
+				if(that.isSelection()) {
 					if(event.keyCode === 13) { // keyCode 13: enter
 						parentParagraph = module.getParent( // 현재노드 상위 검색
 							that.selection.anchorNode,
@@ -1176,19 +1218,19 @@ Dual licensed under the MIT and GPL licenses.
 						}
 					}
 				}
-			};
-			var setContenteditableKeyup = function(e) { // 에디터가 실행될 영역 이벤트
+			});
+			$(that.elements.target).on('keyup.EVENT_KEYUP_EDITOR', function(e) {
 				//console.log('setContenteditableKeyup');
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 				var parentParagraph, prevSibling, prevPrevSibling, hr;
 				var insertedNode, unwrap, node, parent, range;
 
 				// 방향키, 엔터키 등
-				that.setSelection(event);
-				that.setTooltipToggle();
+				that.setSelection(e);
+				that.setTooltipToggle(e);
 
 				// getSelection 선택된 node
-				if(typeof that.selection === 'object' && that.selection.anchorNode) {
+				if(that.isSelection()) {
 					if(event.keyCode === 13) { // keyCode 13: enter
 						// DIV 내부에서 엔터를 눌렀을 경우 div 내부에서 br로 처리되므로 p 태그로 변경되도록 처리한다.
 						if(that.selection.anchorNode.nodeName.toLowerCase() === 'div') {
@@ -1318,58 +1360,13 @@ Dual licensed under the MIT and GPL licenses.
 						}
 					}*/
 				}
-			};
-
-			// storage
-			if(typeof that.elements.target.storage !== 'object') {
-				that.elements.target.storage = {};
-			}else if(that.elements.target.storage['EVENT_MOUSEUP_EDITOR'] || that.elements.target.storage['EVENT_KEYDOWN_EDITOR'] || that.elements.target.storage['EVENT_KEYUP_EDITOR']) {
-				// 이벤트가 중복되지 않도록 이미 적용되어 있는지 확인한다.				
-				return true;
-			}
-
-			// contentEditable
-			//console.log(that.elements.target);
-			//console.log(that.elements.target.contentEditable);
-			//console.log(that.elements.target.isContentEditable);
-			if(!that.elements.target.isContentEditable) {
-				//continue;
-				that.elements.target.contentEditable = true; // 해당 element 내부 수정가능하도록 설정
-			}
-
-			// 마우스 이벤트
-			$(that.elements.target).on(env.event.up + '.EVENT_MOUSEUP_EDITOR', function(e) {
-				that.setSelection.call(this, e);
-				that.setTooltipToggle();
 			});
-			/*that.elements.target.addEventListener('mouseup', that.setSelection, false);
-			that.elements.target.storage['EVENT_MOUSEUP_EDITOR'] = {
-				"events": 'mouseup',
-				"handlers": that.setSelection,
-				"capture": false
-			};*/
-			
-			// 키보드 이벤트
-			$(that.elements.target).on('keydown.EVENT_KEYDOWN_EDITOR', setContenteditableKeydown);
-			/*that.elements.target.addEventListener('keydown', setContenteditableKeydown, false);
-			that.elements.target.storage['EVENT_KEYDOWN_EDITOR'] = {
-				"events": 'keydown',
-				"handlers": setContenteditableKeydown,
-				"capture": false
-			};*/
-			$(that.elements.target).on('keyup.EVENT_KEYUP_EDITOR', setContenteditableKeyup);
-			/*that.elements.target.addEventListener('keyup', setContenteditableKeyup, false);
-			that.elements.target.storage['EVENT_KEYUP_EDITOR'] = {
-				"events": 'keyup',
-				"handlers": setContenteditableKeyup,
-				"capture": false
-			};*/
 
 			// 커서 (focus)
 			//$(that.elements.target).on('focus.EVENT_FOCUS_EDITOR', that.setSelection); // keydown, mouseup 이벤트와 중복 실행됨
 			$(that.elements.target).on('blur.EVENT_BLUR_EDITOR', function(e) {
-				that.setSelection.call(this, e);
-				that.setTooltipToggle();
+				that.setSelection(e);
+				that.setTooltipToggle(e);
 			});
 
 			/*
@@ -1396,11 +1393,9 @@ Dual licensed under the MIT and GPL licenses.
 			$(document).on('compositionstart.EVENT_COMPOSITIONSTART_EDITOR', function() {
 				that.composition = true;
 			});
-			//document.addEventListener('compositionstart', onCompositionStart);
 			$(document).on('compositionend.EVENT_COMPOSITIONEND_EDITOR', function() {
 				that.composition = false;
 			});
-			//document.addEventListener('compositionend', onCompositionEnd);
 		},
 		off: function() {
 			var that = this;

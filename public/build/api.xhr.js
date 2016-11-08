@@ -44,7 +44,8 @@ api.xhr({
 			'contentType': 'application/x-www-form-urlencoded',
 			'type': 'GET', // GET이나 POST 같은 HTTP 메서드 타입
 			'url': '', // 요청할 URL 주소
-			'async': true, // 동기/비동기 방식
+			'async': true, // 동기(false)/비동기(ture) 방식
+			'timeout': 0, // timeout
 
 			//'file': {}, // xhr 전송할 파일 리스트
 			'data': {}, // 서버에 보낼 문자열 값이나 자바스크립트 데이터 객체
@@ -81,17 +82,21 @@ api.xhr({
 			//console.log(settings.async);
 			return false;
 		}
+		if(isNaN(parseFloat(settings.timeout)) || !isFinite(settings.timeout)) { // timeout
+			//console.log(settings.timeout);
+			return false;
+		}
 
 		// data 처리
 		if(global.FormData && typeof settings.data === 'object' && settings.data instanceof FormData) { // FormData
 			data = settings.data;
 			settings.contentType = null;
 		}else {
-			if(typeof settings.data === 'string' && settings.data !== '') {
+			if(typeof settings.data === 'string' && settings.data !== '') { // string
 				settings.data.replace(/([^=&]+)=([^&]*)/g, function(m, name, value) {
 					arr.push(name + '=' + value);
 				});
-			}else if(typeof settings.data === 'object' && Object.keys(settings.data).length > 0) {
+			}else if(typeof settings.data === 'object' && Object.keys(settings.data).length > 0) { // object
 				for(name in settings.data) {
 					if(settings.data.hasOwnProperty(name)) {
 						arr.push(name + '=' + settings.data[name]);
@@ -100,7 +105,7 @@ api.xhr({
 			}
 			data = arr.join('&');
 		}
-		if(data && settings.type.toLowerCase() === 'get') {
+		if(data && settings.type.toLowerCase() === 'get') { // GET
 			settings.url += settings.url.lastIndexOf('?') > -1 ? '&' + data : '?' + data;
 			settings.contentType = null;
 		}
@@ -199,6 +204,11 @@ api.xhr({
 				instance.overrideMimeType('text/plain; charset=x-user-defined'); // IE작동안함
 				*/
 				instance.setRequestHeader('Content-Type', settings.contentType);
+			}
+
+			// timeout
+			if(settings.timeout > 0) {
+				instance.timeout = settings.timeout; // time in milliseconds
 			}
 			
 			// dataType

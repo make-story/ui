@@ -199,7 +199,6 @@ jQuery 또는 api.dom 에 종속적 실행
 				'next': null,
 				'prev': null,
 				'slidechange': null,
-				'prepend': null,
 				'append': null,
 				'remove': null
 			},
@@ -445,7 +444,7 @@ jQuery 또는 api.dom 에 종속적 실행
 		append: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
-			var index = parameter['index']; // 지정된 위치에 삽입 (last, first, 숫자)
+			var index = parameter['index'] || 'last'; // 지정된 위치에 삽입 (last, first, 숫자)
 			var html = parameter['html'];
 			var element = parameter['element'];
 
@@ -461,7 +460,26 @@ jQuery 또는 api.dom 에 종속적 실행
 				element = $(element).get(0);
 			}
 
-			if(typeof element === 'object' && element.nodeType && that.elements.target.appendChild(element)) {
+			if(typeof element === 'object' && element.nodeType) {
+				// index 값에 따라 해당 위치에 삽입
+				if(module.isNumeric(index)) { // 숫자
+					if(!that.elements.target.insertBefore(element, that.elements.children[index-1])) {
+						return false;
+					}
+				}else if(typeof index === 'string') { // 문자
+					switch(index.toLowerCase()) {
+						case 'first':
+							if(!that.elements.target.insertBefore(element, that.elements.target.firstChild)) {
+								return false;
+							}
+							break;
+						case 'last':
+							if(!that.elements.target.appendChild(element)) {
+								return false;
+							}
+							break;
+					}
+				}
 				that.elements.children = that.elements.target.children; // 슬라이드 elements (IE8 이하 사용 불가능)
 				that.total = that.elements.children.length || 0; 
 				$(that.elements.target).css({'width': (that.settings.flow === 'vertical' ? that.width.value : (that.width.value * that.total)) + 'px'}); 
@@ -479,7 +497,7 @@ jQuery 또는 api.dom 에 종속적 실행
 		remove: function(parameter) {
 			var that = this;
 			var parameter = parameter || {};
-			var index = parameter['index']; // current, last, 숫자
+			var index = parameter['index'] || 'last'; // current, last, 숫자
 			var element;
 			var is = false; // 삭제 후 술라이드 이동 여부 (현재 슬라이드 삭제 등의 경우)
 

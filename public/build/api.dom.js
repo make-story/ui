@@ -2165,10 +2165,12 @@ http://www.quirksmode.org/js/detect.html
 	// ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 
 	// requestAnimationFrame, cancelAnimationFrame
-	var setRequestAnimFrame = (function() { 
+	var setRequestAnimationFrame = (function() { 
+		// https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame
 		return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback) { return window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
 	})();
-	var setCancelAnimFrame = (function() {
+	var setCancelAnimationFrame = (function() {
+		// https://developer.mozilla.org/en-US/docs/Web/API/Window/cancelAnimationFrame
 		return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function(time) { return window.clearTimeout(time); };
 	})();
 	var animationFrameQueue = function(queue) {
@@ -2268,9 +2270,9 @@ http://www.quirksmode.org/js/detect.html
 				//
 				if(current < duration) {
 					// frame
-					request = setRequestAnimFrame(frame);
+					request = setRequestAnimationFrame(frame);
 				}else {
-					setCancelAnimFrame(request);
+					setCancelAnimationFrame(request);
 					// complete 실행
 					if(typeof complete === 'function') {
 						complete.call(original, val);
@@ -2283,7 +2285,7 @@ http://www.quirksmode.org/js/detect.html
 				}
 			};
 			if(original) {
-				setCancelAnimFrame(request);
+				setCancelAnimationFrame(request);
 				setFrame();
 			}
 		})(queue);
