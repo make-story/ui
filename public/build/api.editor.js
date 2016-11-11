@@ -37,9 +37,14 @@ Dual licensed under the MIT and GPL licenses.
 	모바일의 경우 툴바의 위치를 상단 오른쪽에 출력되도록 하는것은 어떨까?
 	*/
 
-	var EDGE = -200;
+	var EDGE = -200; // 임시
 
-	//
+	// 정규식
+	var regexp = {
+		url: /^(https?|ftp):\/\/(((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?(((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?)(:\d*)?)(\/((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)?(\?((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(\#((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/i
+	};
+
+	// 환경정보
 	var env = {};
 	if(global.api && global.api.env) {
 		env = global.api.env;
@@ -60,16 +65,6 @@ Dual licensed under the MIT and GPL licenses.
 			env['event']['move'] = 'touchmove';
 			env['event']['up'] = 'touchend';
 		}
-	}
-
-	// key (일반적인 고유값)
-	var getKey;
-	if(global.api && global.api.key) {
-		getKey = global.api.key;
-	}else {
-		getKey = function() {
-			return ['api', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
-		};
 	}
 
 	// 모듈 (private)
@@ -94,6 +89,16 @@ Dual licensed under the MIT and GPL licenses.
 				}
 				return settings;
 			},
+			// key (일반적인 고유값)
+			getKey: (function(){
+				if(global.api && global.api.key) {
+					return global.api.key;
+				}else {
+					return function() {
+						return ['api', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
+					};
+				}
+			})(),
 			// 현재 node 상위(parentNode)를 검색하며, condition 결과에 따른 callback 실행
 			getParent: function(node, condition, callback) {
 				var result;
@@ -317,7 +322,7 @@ Dual licensed under the MIT and GPL licenses.
 					// Server Submit
 					return function(e, form, input) {
 						var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-						var name = getKey();
+						var name = module.getKey();
 						var iframe = document.createElement('iframe');
 
 						// iframe 생성
@@ -793,7 +798,7 @@ Dual licensed under the MIT and GPL licenses.
 			}
 		},
 		isSelection: function() {
-			var that;
+			var that = this;
 			if(typeof that.selection === 'object' && that.selection.anchorNode && that.selection.focusNode) {
 				return true;
 			}else {
@@ -1137,6 +1142,92 @@ Dual licensed under the MIT and GPL licenses.
 
 
 		},
+		// 오픈그래프
+		setOpengraph: function(parameter) {
+			var that = this;
+
+			var parameter = parameter || {};
+			var node = parameter['node'];
+			var url = parameter['url'] || '';
+			var fragment;
+			var a, div, p, comment;
+
+			if(typeof node === 'object' && (url && regexp.url.test(url) || regexp.url.test(node.nodeValue)) && node.parentNode.nodeName.toLowerCase() !== 'a') {
+				url = url || node.nodeValue;
+				//console.log('url: ' + url);
+
+				(function(node, url) {
+					var fragment;
+					var a, div, p, comment;
+
+					//
+					if(!url.match("^(http|https)://")) {
+						url = "http://" + url;
+					}
+
+					fragment = document.createDocumentFragment();
+					a = document.createElement("a");
+					div = document.createElement("div");
+					p = document.createElement("p");
+					//comment = document.createComment('{"url":"'.url.'"}');
+					fragment.appendChild(a);
+					fragment.appendChild(div);
+					fragment.appendChild(p);
+					
+					// 링크 구성 (새창 등 속성 설정)
+					a.href = url;
+					a.target = '_blank';
+					a.textContent = a.innerText = url;
+
+					// 빈공간, 하단영역 태그 내부 기본값 (크롬 등 일부 브라우저)
+					div.innerHTML = '<br />';
+					p.innerHTML = '<br />';
+
+					// 사용자가 입력한 url 변경
+					// insertAdjacentHTML
+					//node.parentNode.replaceChild(fragment, node);
+					if(node.parentNode.insertBefore(fragment, node)) {
+						node.parentNode.removeChild(node);
+					}
+
+					// 오픈그래프 정보 불러오기
+					api.xhr({
+						'url': '//makestory.net/opengraph',
+						'timeout': 10000,
+						'data': {'url': encodeURIComponent(url)},
+						'dataType': 'json',
+						'success': function(json) {
+							var result = {}
+							var image = '';
+							if(typeof json === 'object' && json.msg === 'success') {
+								//console.dir(json);
+								//console.log(div);
+								result = json.result;
+								if(result.image) {
+									image = '<div class="opengraph-image" style="background-image: url(' + result.image + ');">&nbsp;</div>';
+								}else {
+									image = '<div class="opengraph-image"></div>';
+								}
+								div.innerHTML = '\
+									<a href="' + url + '" target="_blank" class="opengraph-wrap clear-after" style="display: block;">\
+										' + image + '\
+										<div class="opengraph-text">\
+											<strong class="opengraph-title">' + result.title + '</strong>\
+											<p class="opengraph-description">' + result.description + '</p>\
+											<p class="opengraph-url">' + (result.author || url) + '</p>\
+										</div>\
+									</a>\
+								';
+							}else {
+								// 제거
+								div.parentNode.removeChild(div);
+								p.parentNode.removeChild(p);
+							}
+						}
+					});
+				})(node, url);
+			}
+		},
 		// 에디터가 작동할 영역의 이벤트
 		on: function() {
 			var that = this;
@@ -1162,6 +1253,12 @@ Dual licensed under the MIT and GPL licenses.
 			$(that.elements.target).on(env.event.up + '.EVENT_MOUSEUP_EDITOR', function(e) {
 				that.setSelection(e);
 				that.setTooltipToggle(e);
+
+				// 상위 태그에 p, div 등 블록 태그가 없을 때
+				// p 태그를 삽입한다.
+
+
+				
 			});
 			/*that.elements.target.addEventListener('mouseup', that.setSelection, false);
 			that.elements.target.storage['EVENT_MOUSEUP_EDITOR'] = {
@@ -1215,6 +1312,10 @@ Dual licensed under the MIT and GPL licenses.
 									event.preventDefault();
 									break;
 							}
+						}
+						// opengraph
+						if(that.selection.isCollapsed) {
+							that.setOpengraph({'node': that.selection.anchorNode});
 						}
 					}
 				}
@@ -1359,6 +1460,25 @@ Dual licensed under the MIT and GPL licenses.
 							that.selection.addRange(range);
 						}
 					}*/
+				}
+			});
+
+			// contenteditable paste text only
+			// http://stackoverflow.com/questions/12027137/javascript-trick-for-paste-as-plain-text-in-execcommand
+			$(that.elements.target).on('paste', function(e) {
+				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+				var text = '';
+
+				event.preventDefault();
+				if(event.clipboardData) {
+					text = event.clipboardData.getData('text/plain');
+				}else if(window.clipboardData) {
+					text = window.clipboardData.getData('Text');
+				}
+				if(document.queryCommandSupported('insertText')) {
+					document.execCommand('insertText', false, text);
+				}else {
+					document.execCommand('paste', false, text);
 				}
 			});
 

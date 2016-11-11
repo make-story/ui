@@ -36,7 +36,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 	'use strict'; // ES5
 
-	//
+	// 환경정보
 	var env = {};
 	if(global.api && global.api.env) {
 		env = global.api.env;

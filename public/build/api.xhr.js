@@ -56,7 +56,8 @@ api.xhr({
 			'progressDownload': undefined, // 다운로드 진행률 콜백 함수
 			'beforeSend': undefined, // 요청하기 전 실행할 콜백 함수
 			'complete': undefined, // 요청이 끝난 후 실행할 콜백 함수
-			'success': undefined // 요청이 성공했을 때 실행할 콜백 함수
+			'success': undefined, // 요청이 성공했을 때 실행할 콜백 함수
+			'error': undefined // 에러 콜백 함수 (timeout 포함)
 		};
 		var match, callback, pattern, script;
 		var instance, arr = [], name, data;
@@ -281,9 +282,15 @@ api.xhr({
 				}
 			};
 			// 에러
+			instance.ontimeout = function(event) {
+				console.log('error');
+				console.log(event);
+				settings.error.call(settings.context, event);
+			};
 			instance.onerror = function(event) {
 				console.log('error');
 				console.log(event);
+				settings.error.call(settings.context, event);
 			};
 			
 			// 전송

@@ -142,16 +142,6 @@ jQuery 또는 api.dom 에 종속적 실행
 		}
 	}
 
-	// key (일반적인 고유값)
-	var getKey;
-	if(global.api && global.api.key) {
-		getKey = global.api.key;
-	}else {
-		getKey = function() {
-			return ['api', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
-		};
-	}
-
 	// 모듈 (private)
 	var module = (function() {
 		function ModalModule() {
@@ -248,6 +238,16 @@ jQuery 또는 api.dom 에 종속적 실행
 				}
 				return settings;
 			},
+			// key (일반적인 고유값)
+			getKey: (function(){
+				if(global.api && global.api.key) {
+					return global.api.key;
+				}else {
+					return function() {
+						return ['api', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
+					};
+				}
+			})(),
 			// window, document 사이즈
 			getWindowDocumentSize: function() {
 				return {
@@ -1189,10 +1189,10 @@ jQuery 또는 api.dom 에 종속적 실행
 				var key = {};
 
 				// key
-				key.title = getKey();
-				key.message = getKey();
-				key.cancel = getKey();
-				key.ok = getKey();
+				key.title = module.getKey();
+				key.message = module.getKey();
+				key.cancel = module.getKey();
+				key.ok = module.getKey();
 
 				// mask
 				if(that.settings.mask && typeof that.settings.mask === 'object') {
@@ -1535,9 +1535,9 @@ jQuery 또는 api.dom 에 종속적 실행
 				var key = {};
 
 				// key
-				key.title = getKey();
-				key.message = getKey();
-				key.ok = getKey();
+				key.title = module.getKey();
+				key.message = module.getKey();
+				key.ok = module.getKey();
 
 				// mask
 				if(that.settings.mask && typeof that.settings.mask === 'object') {
@@ -1865,9 +1865,9 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			try {
 				// key
-				key.title = getKey();
-				key.message = getKey();
-				key.close = getKey();
+				key.title = module.getKey();
+				key.message = module.getKey();
+				key.close = module.getKey();
 
 				// mask
 				if(that.settings.mask && typeof that.settings.mask === 'object') {
