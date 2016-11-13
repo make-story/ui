@@ -216,7 +216,8 @@ Dual licensed under the MIT and GPL licenses.
 			},
 			// 파일 등을 전송할 서버 url
 			'submit': {
-				'image': '//makestory.net/files/editor' // 이미지 파일 전송 url
+				'image': '//makestory.net/files/editor', // 이미지 파일 전송 url
+				'opengraph': '//makestory.net/opengraph'
 			},
 			// 스타일 
 			'style': {
@@ -1192,7 +1193,7 @@ Dual licensed under the MIT and GPL licenses.
 
 					// 오픈그래프 정보 불러오기
 					api.xhr({
-						'url': '//makestory.net/opengraph',
+						'url': that.settings.submit.opengraph,
 						'timeout': 10000,
 						'data': {'url': encodeURIComponent(url)},
 						'dataType': 'json',
@@ -1223,6 +1224,11 @@ Dual licensed under the MIT and GPL licenses.
 								div.parentNode.removeChild(div);
 								p.parentNode.removeChild(p);
 							}
+						},
+						'error': function() {
+							// 제거
+							div.parentNode.removeChild(div);
+							p.parentNode.removeChild(p);
 						}
 					});
 				})(node, url);
@@ -1314,7 +1320,7 @@ Dual licensed under the MIT and GPL licenses.
 							}
 						}
 						// opengraph
-						if(that.selection.isCollapsed) {
+						if(that.settings.submit.opengraph && that.selection.isCollapsed) {
 							that.setOpengraph({'node': that.selection.anchorNode});
 						}
 					}
