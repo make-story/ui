@@ -32,11 +32,6 @@ Dual licensed under the MIT and GPL licenses.
 
 	'use strict'; // ES5
 
-	/*
-	모바일등에서는 복사하기등의 툴팁이 나오기 때문에 중복될수 있다.
-	모바일의 경우 툴바의 위치를 상단 오른쪽에 출력되도록 하는것은 어떨까?
-	*/
-
 	var EDGE = -200; // 임시
 
 	// 정규식
@@ -314,7 +309,6 @@ Dual licensed under the MIT and GPL licenses.
 										//<a id="download" download="thumbnail.jpg"></a> download 속성은 다운로드할 대상의 파일명을 미리 지정할 수 있다.
 									};*/
 
-									
 								};
 							})(files[i]);
 						}
@@ -1205,18 +1199,19 @@ Dual licensed under the MIT and GPL licenses.
 								//console.log(div);
 								result = json.result;
 								if(result.image) {
-									image = '<div class="opengraph-image" style="background-image: url(' + result.image + ');">&nbsp;</div>';
+									image = '<div class="opengraph-image" style="background-image: url(' + result.image + ');"><br /></div>';
 								}else {
 									image = '<div class="opengraph-image"></div>';
 								}
 								div.innerHTML = '\
-									<a href="' + url + '" target="_blank" class="opengraph-wrap clear-after" style="display: block;">\
+									<a href="' + url + '" target="_blank" class="opengraph-wrap" style="display: block;">\
 										' + image + '\
 										<div class="opengraph-text">\
 											<strong class="opengraph-title">' + result.title + '</strong>\
 											<p class="opengraph-description">' + result.description + '</p>\
 											<p class="opengraph-url">' + (result.author || url) + '</p>\
 										</div>\
+										<div style="clear: both;"></div>\
 									</a>\
 								';
 							}else {
