@@ -644,15 +644,15 @@ worker.close(); // 워커 종료
 <script id="template" type="text/template">
 <p>Use the <strong>{{=power}}</strong>, {{=title}}!</p>
 
-{{<people}}
+{{<people>}}
 	<p class="{{=test}}">{{=title}}</p>
-	{{<deep}}
+	{{<deep>}}
 		<div>{{=ysm}}</div>
-		{{<haha}}
+		{{<haha>}}
 			{{=ysm}}
-		{{haha>}}
-	{{deep>}}
-{{people>}}
+		{{</haha>}}
+	{{</deep>}}
+{{</people>}}
 <p>ysm</p>
 </script>
 

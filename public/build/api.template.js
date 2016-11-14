@@ -18,15 +18,15 @@ Dual licensed under the MIT and GPL licenses.
 <script id="template" type="text/template">
 <p>Use the <strong>{{=power}}</strong>, {{=title}}!</p>
 
-{{<people}}
+{{<people>}}
 	<p class="{{=test}}">{{=title}}</p>
-	{{<deep}}
+	{{<deep>}}
 		<div>{{=ysm}}</div>
-		{{<haha}}
+		{{<haha>}}
 			{{=ysm}}
-		{{haha>}}
-	{{deep>}}
-{{people>}}
+		{{</haha>}}
+	{{</deep>}}
+{{</people>}}
 <p {{=event}}>ysm</p>
 </script>
 
@@ -93,13 +93,16 @@ https://mustache.github.io/mustache.5.html
 	// 정규식
 	var regexp = {
 		'tag': {
+			//'variable': new RegExp(escapeRegExp('${') + "\\s*" + escapeRegExp('}')), // ECMA6 template ${}
 			'open': new RegExp(escapeRegExp('{{') + "\\s*"), // {{
 			'close': new RegExp("\\s*" + escapeRegExp('}}')) // }}
 		},
 		'type': {
-			'variable': new RegExp('^[=|\\s*=|=\\s*](\\S+)'), // =tag
-			'context_open': new RegExp('^[<|\\s*<|<\\s*](\\S+)'), // <tag
-			'context_close': new RegExp('(\\S+)[>|\\s*>|>\\s*]$') // tag>
+			'variable': new RegExp('^[=|\\s*=|=\\s*](\\w+)'), // =tag
+			//'context_open': new RegExp('^[<|\\s*<|<\\s*](\\S+)'), // <tag
+			//'context_close': new RegExp('(\\S+)[>|\\s*>|>\\s*]$') // tag>
+			'context_open': new RegExp('<(\\w+)>'), // <tag>
+			'context_close': new RegExp('<\/(\\w+)>') // </tag>
 		}
 	};
 
@@ -175,7 +178,8 @@ https://mustache.github.io/mustache.5.html
 				match_tag_name = tag.match(regexp.type.context_open); 
 				if(match_tag_name) {
 					// tag> 찾기 (<tag와 같은 name, 컨텍스트가 끝나는 부분)
-					match_close = this.template.match(new RegExp(escapeRegExp('{{') + match_tag_name[1] + '[>|\\s*>|>\\s*]' + escapeRegExp('}}')));
+					//match_close = this.template.match(new RegExp(escapeRegExp('{{') + match_tag_name[1] + '[>|\\s*>|>\\s*]' + escapeRegExp('}}')));
+					match_close = this.template.match(new RegExp(escapeRegExp('{{') + '<\/(' + match_tag_name[1] + ')>' + escapeRegExp('}}')));
 					if(match_close) {
 						// {{<tag}} ... {{tag>}}  사이의 텍스트로 새로운 컨텍스트(파싱)생성
 						this.tree.push({'type': 'context', 'value': new Parse(this.template.substring(0, match_close.index), match_tag_name[1], this)}); // 컨텍스트 (해당 컨텍스트 파싱)
