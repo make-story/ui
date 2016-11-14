@@ -370,11 +370,30 @@ api.transitionQueue({
 // 해당요소 에디터 설정
 api.editor.setup({
 	'key': 'editor', // 에디터 작동 고유키 (선택)
-	'target': '#editor' // 에디터 적용 element
+	'target': '#editor', // 에디터 적용 element
+	'submit': {
+		'image': '', // 이미지 파일 전송 서버 url
+		'opengraph': '' // 오픈그래프 반환 서버 url
+	},
+	'callback': { 
+		'init': null
+	}
 });
 
 // 해당요소 에디터 해제
 api.editor.search('editor').off();
+
+// 오픈그래프 반환 json 구조
+{
+	'msg': 'success', 
+	'result': {
+		'title': '페이지 제목',
+		'description': '페이지 요약',
+		'image': '이미지',
+		'author': '원작자',
+		'keywords': '키워드'
+	}
+}
 ````
 
 
