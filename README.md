@@ -743,6 +743,7 @@ api.xhr({
 	'type': 'GET', // GET, POST, DELETE, PUT 같은 HTTP 메서드 타입
 	'url': '', // 요청할 URL 주소
 	'async': true, // 동기/비동기 방식
+	'timeout': 0, // timeout
 
 	'data': {}, // 서버에 보낼 문자열 값이나 자바스크립트 데이터 객체
 	'context': global, // 콜백함수 내부에서 this 키워드로 사용할 객체
@@ -752,7 +753,8 @@ api.xhr({
 	'progressDownload': undefined, // 다운로드 진행률 콜백 함수
 	'beforeSend': undefined, // 요청하기 전 실행할 콜백 함수
 	'complete': undefined, // 요청이 끝난 후 실행할 콜백 함수
-	'success': undefined // 요청이 성공했을 때 실행할 콜백 함수
+	'success': undefined, // 요청이 성공했을 때 실행할 콜백 함수
+	'error': undefined // 에러 콜백 함수 (timeout 포함)
 });
 
 // 파일전송
