@@ -11,7 +11,8 @@ Copyright (c) Sung-min Yu.
 Dual licensed under the MIT and GPL licenses.
 
 @browser compatibility
-
+서버환경, 브라우저환경 지원
+CommonJS, AMD
 
 -
 사용예
@@ -52,38 +53,52 @@ https://mustache.github.io/mustache.5.html
 
 */
 
-;(function(global) {
+
+
+;(function(factory, global) {
 
 	'use strict'; // ES5
-	if(!global.api) {
-		global.api = {};
+	if(typeof exports === 'object' && exports && typeof exports.nodeName !== 'string') { // CommonJS
+		factory(exports);
+	}else if(typeof define === 'function' && define.amd) { // AMD
+		define(['exports'], factory);
+	}else {
+		// debug
+		/*if(!global.debug) {
+			global.debug = {
+				'log': function(name, value) {
+					if(typeof value === 'undefined') {
+						console.log('----------【 ' + name + ' 】');
+					}else {
+						console.log('----------【' + name);
+						console.log(value);
+						console.log('】----------');
+					}
+				},
+				'dir': function(name, value) {
+					if(typeof value === 'undefined') {
+						console.log('----------【');
+						console.dir(name);
+						console.log('】----------');
+					}else {
+						console.log('----------【' + name);
+						console.dir(value);
+						console.log('】----------');
+					}
+				}
+			};
+		}*/
+		// api
+		if(!global.api) {
+			global.api = {};
+		}
+		global.api.template = {};
+		factory(global.api.template);
 	}
 
-	// debug
-	if(!global.debug) {
-		global.debug = {
-			'log': function(name, value) {
-				if(typeof value === 'undefined') {
-					console.log('----------【 ' + name + ' 】');
-				}else {
-					console.log('----------【' + name);
-					console.log(value);
-					console.log('】----------');
-				}
-			},
-			'dir': function(name, value) {
-				if(typeof value === 'undefined') {
-					console.log('----------【');
-					console.dir(name);
-					console.log('】----------');
-				}else {
-					console.log('----------【' + name);
-					console.dir(value);
-					console.log('】----------');
-				}
-			}
-		};
-	}
+})(function(template, undefined) {
+
+	'use strict'; // ES5
 
 	// 특수문자 앞에 '\' 삽입 (정규식에 대응하기 위함)
 	var escapeRegExp = function(string) {
@@ -105,7 +120,6 @@ https://mustache.github.io/mustache.5.html
 			'context_close': new RegExp('<\/(\\w+)>') // </tag>
 		}
 	};
-
 
 	// 1. 파싱 - template 에서 html code와 {{tag}} code 분리
 	var Parse = function Parse(template, context, parent) {
@@ -190,8 +204,6 @@ https://mustache.github.io/mustache.5.html
 		}
 	};
 
-
-
 	// 2. 렌더 - 파서단계에서 분리된 {{tag}}에 값 적용
 	var render = function render(parse, contents) {
 		/*
@@ -263,8 +275,6 @@ https://mustache.github.io/mustache.5.html
 		return tokens;
 	};
 
-
-
 	// 3. 프린팅 - html 반환
 	var paint = function paint(render) {
 		var i, max;
@@ -278,30 +288,28 @@ https://mustache.github.io/mustache.5.html
 		return codes.join('');
 	};
 
+	// 메모이제이션
+	var cache = {}; 
 
-	
-	//
-	var Template = function() {
-		this.cache = {}; // 메모이제이션
+	// public return
+	template.parse = function(template) {
+		var parse = cache[template]; // 기존 파싱되었던 템플릿인지 확인
+		if(!parse) { 
+			parse = new Parse(template);
+		}
+		//debug.dir('cache[template]', cache[template]);
+		return parse;
 	};
-	Template.prototype = {
-		'parse': function(template) {
-			var parse = this.cache[template]; // 기존 파싱되었던 템플릿인지 확인
-			if(!parse) { 
-				parse = new Parse(template);
-			}
-			//debug.dir('this.cache[template]', this.cache[template]);
-			return parse;
-		},
-		'render': function(template, contents) { // 사용성이 별로 없지만, 흐름확인을 위해 public 
-			var parse = this.parse(template);
-			return render(parse, contents);
-		},
-		'paint': function(template, contents) {
-			var render = this.render(template, contents);
-			return paint(render);
-		},
-		'fragment': function(template, contents) { // fragment 에 html 삽입 후 반환
+	template.render = function(template, contents) { // 사용성이 별로 없지만, 흐름확인을 위해 public 
+		var parse = this.parse(template);
+		return render(parse, contents);
+	};
+	template.paint = function(template, contents) {
+		var render = this.render(template, contents);
+		return paint(render);
+	};
+	if(typeof window === 'object' && window.document && window.document && window.document.createDocumentFragment) {
+		template.fragment = function(template, contents) { // fragment 에 html 삽입 후 반환
 			var paint = this.paint(template, contents);
 			var fragment = document.createDocumentFragment(); // fragment 가 document에 렌더링(삽입)되기 전에, 셀렉터로 fragment 내부 element 검색이 가능하다.
 			if(paint) {
@@ -318,10 +326,8 @@ https://mustache.github.io/mustache.5.html
 				}
 			}
 			return fragment;
-		}
-	};
-	
-	// public return
-	global.api.template = new Template();
+		};
+	}
+	return template;
 
-})(this);
+}, this);
