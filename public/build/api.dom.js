@@ -1425,16 +1425,22 @@ http://www.quirksmode.org/js/detect.html
 			if(!max || !parameter) {
 				return this;
 				//return false;
-			}else if(parameter.elements && typeof parameter.elements === 'object') {
-				element = parameter.elements[0];
-			}else if(typeof parameter === 'object' && parameter.nodeType) {
-				element = parameter;
+			}else if(typeof parameter === 'object') {
+				if(parameter.elements) {
+					element = parameter.elements[0];	
+				}else if(parameter.nodeType) {
+					element = parameter;	
+				}
 			}
 						
 			if(element) {
 				for(i=0; i<max; i++) {
 					if(this.elements[i].nodeType === 1 || this.elements[i].nodeType === 9 || this.elements[i].nodeType === 11) {
-						this.elements[i].insertBefore(element, this.elements[i].firstChild);
+						if(element.nodeType === 11) { // FRAGMENT NODE
+							this.elements[i].insertBefore(element.cloneNode(true), this.elements[i].firstChild);
+						}else {
+							this.elements[i].insertBefore(element, this.elements[i].firstChild);
+						}
 					}
 				}
 			}
@@ -1450,16 +1456,22 @@ http://www.quirksmode.org/js/detect.html
 			if(!max || !parameter) {
 				return this;
 				//return false;
-			}else if(parameter.elements && typeof parameter.elements === 'object') {
-				element = parameter.elements[0];
-			}else if(typeof parameter === 'object' && parameter.nodeType) {
-				element = parameter;
+			}else if(typeof parameter === 'object') {
+				if(parameter.elements) {
+					element = parameter.elements[0];	
+				}else if(parameter.nodeType) {
+					element = parameter;	
+				}
 			}
 
 			if(element) {
 				for(i=0; i<max; i++) {
 					if(this.elements[i].nodeType === 1 || this.elements[i].nodeType === 9 || this.elements[i].nodeType === 11) {
-						this.elements[i].appendChild(element);
+						if(element.nodeType === 11) { // FRAGMENT NODE
+							this.elements[i].appendChild(element.cloneNode(true));
+						}else {
+							this.elements[i].appendChild(element);
+						}
 					}
 				}
 			}
@@ -1481,10 +1493,12 @@ http://www.quirksmode.org/js/detect.html
 			if(!max || !parameter) {
 				return this;
 				//return false;
-			}else if(parameter.elements && typeof parameter.elements === 'object') {
-				element = parameter.elements[0];
-			}else if(typeof parameter === 'object' && parameter.nodeType) {
-				element = parameter;
+			}else if(typeof parameter === 'object') {
+				if(parameter.elements) {
+					element = parameter.elements[0];	
+				}else if(parameter.nodeType) {
+					element = parameter;	
+				}
 			}
 
 			if(element) {
@@ -1511,10 +1525,12 @@ http://www.quirksmode.org/js/detect.html
 			if(!max || !parameter) {
 				return this;
 				//return false;
-			}else if(parameter.elements && typeof parameter.elements === 'object') {
-				element = parameter.elements[0];
-			}else if(typeof parameter === 'object' && parameter.nodeType) {
-				element = parameter;
+			}else if(typeof parameter === 'object') {
+				if(parameter.elements) {
+					element = parameter.elements[0];	
+				}else if(parameter.nodeType) {
+					element = parameter;	
+				}
 			}
 
 			if(element) {
@@ -1541,10 +1557,12 @@ http://www.quirksmode.org/js/detect.html
 			if(!max || !parameter) {
 				return this;
 				//return false;
-			}else if(parameter.elements && typeof parameter.elements === 'object') {
-				element = parameter.elements[0];
-			}else if(typeof parameter === 'object' && parameter.nodeType) {
-				element = parameter;
+			}else if(typeof parameter === 'object') {
+				if(parameter.elements) {
+					element = parameter.elements[0];	
+				}else if(parameter.nodeType) {
+					element = parameter;	
+				}
 			}
 
 			if(element) {
@@ -1568,10 +1586,12 @@ http://www.quirksmode.org/js/detect.html
 			if(!max || !parameter) {
 				return this;
 				//return false;
-			}else if(parameter.elements && typeof parameter.elements === 'object') {
-				element = parameter.elements[0];
-			}else if(typeof parameter === 'object' && parameter.nodeType) {
-				element = parameter;
+			}else if(typeof parameter === 'object') {
+				if(parameter.elements) {
+					element = parameter.elements[0];	
+				}else if(parameter.nodeType) {
+					element = parameter;	
+				}
 			}
 
 			if(element) {
@@ -1902,10 +1922,12 @@ http://www.quirksmode.org/js/detect.html
 			// parameter 검사
 			if(!max || !parameter) {
 				return is;
-			}else if(parameter.elements && typeof parameter.elements === 'object') {
-				element = parameter.elements[0];
-			}else if(typeof parameter === 'object' && parameter.nodeType) {
-				element = parameter;
+			}else if(typeof parameter === 'object') {
+				if(parameter.elements) {
+					element = parameter.elements[0];	
+				}else if(parameter.nodeType) {
+					element = parameter;	
+				}
 			}
 
 			if(element) {
