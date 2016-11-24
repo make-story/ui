@@ -256,6 +256,65 @@ api.extend({name: value})
 api.fn.extend({name: value})
 - api.dom 객체 또는 prototype 에 기능추가
 
+
+
+api.storage.clear(type)
+- 브라우저 저장소 데이터 전체삭제
+
+````javascript
+// 세션 스토리지 전체 삭제
+api.storage.clear('session');
+
+// 로컬 스토리지 전체 삭제
+api.storage.clear('local');
+````
+
+api.storage.length(type)
+- 브라우저 저장소 데이터 총 개수
+
+````javascript
+// 세션 스토리지에 저장된 전체 개수
+api.storage.length('session');
+
+// 로컬 스토리지 저장된 전체 개수
+api.storage.length('local');
+````
+
+api.storage.get(type, key)
+- 브라우저 저장소 데이터 출력
+
+````javascript
+// 세션 스토리지에 저장된 mykey 로 입력된 데이터 출력
+api.storage.get('session', 'mykey');
+
+// 로컬 스토리지에 저장된 mykey 로 입력된 데이터 출력
+api.storage.get('local', 'mykey');
+````
+
+api.storage.set(type, key, item)
+- 브라우저 저장소 데이터 입력
+
+````javascript
+// 세션 스토리지에 mykey 라는 키로 데이터 입력
+api.storage.set('session', 'mykey', '유성민');
+
+// 로컬 스토리지에 mykey 라는 키로 데이터 입력
+api.storage.set('local', 'mykey', '유성민');
+````
+
+api.storage.del(type, key)
+- 브라우저 저장소 해당 type에 해당하는 데이터 삭제
+
+````javascript
+// 세션 스토리지의 mykey 에 해당하는 데이터 삭제
+api.storage.del('session', 'mykey');
+
+// 로컬 스토리지의 mykey 에 해당하는 데이터 삭제
+api.storage.del('local', 'mykey');
+````
+
+
+
 api.touch.on(selector, handlers)
 - 더블터치, 딜레이터치, 원터치 이벤트 설정
 
@@ -281,6 +340,8 @@ api.touch.off(selector, eventkey);
 ````javascript
 api.touch.off('#ysm', 'one'); // eventkey: one, two, delay, all
 ````
+
+
 
 api.animationFrameQueue({})
 - requestAnimationFrame 애니메이션 리스트 실행

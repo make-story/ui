@@ -2126,7 +2126,7 @@ http://www.quirksmode.org/js/detect.html
 				}
 				return count;
 			},
-			select: function(type, key) {
+			get: function(type, key) {
 				var item = '';
 				if(this.length(type) > 0) {
 					switch(type) {
@@ -2141,7 +2141,7 @@ http://www.quirksmode.org/js/detect.html
 				}
 				return item;
 			},
-			update: function(type, key, item) {
+			set: function(type, key, item) {
 				item = (item && typeof item === 'object' && Object.keys(item).length > 0) ? JSON.stringify(item) : (item || '');
 				switch(type) {
 					case 'local':
@@ -2152,7 +2152,7 @@ http://www.quirksmode.org/js/detect.html
 						break;
 				}
 			},
-			delete: function(type, key) {
+			del: function(type, key) {
 				switch(type) {
 					case 'local':
 						window.localStorage.removeItem(key);
