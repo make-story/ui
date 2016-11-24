@@ -52,13 +52,16 @@ Dual licensed under the MIT and GPL licenses.
 				"down": "mousedown",
 				"move": "mousemove",
 				"up": "mouseup",
-				"click": window.DocumentTouch && document instanceof DocumentTouch ? 'tap' : 'click'
+				"click": "click"
 			}
 		};
 		if(env['check']['touch'] === true) {
 			env['event']['down'] = 'touchstart';
 			env['event']['move'] = 'touchmove';
 			env['event']['up'] = 'touchend';
+			if(/(iphone|ipad|ipod)/i.test((navigator.userAgent || navigator.vendor || window.opera || ''))) {
+				env['event']['click'] = 'touchend';
+			}
 		}
 	}
 

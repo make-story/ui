@@ -63,9 +63,9 @@ http://www.quirksmode.org/js/detect.html
 	};
 
 	// 클라이언트 브라우저 환경
-	var userAgent = (navigator.userAgent || navigator.vendor || window.opera).toLowerCase();
+	var agent = (navigator.userAgent || navigator.vendor || window.opera).toLowerCase();
 	var platform = navigator.platform;
-	var nameOffset, verOffset;
+	var offset_name, offset_version;
 	var key;
 	var element = document.createElement('div');
 	var transforms = ["transform", "WebkitTransform", "MozTransform", "OTransform", "msTransform"]; // css check (IE9 벤더프리픽스로 사용가능, IE10이상 공식지원)
@@ -118,10 +118,10 @@ http://www.quirksmode.org/js/detect.html
 			"down": "mousedown",
 			"move": "mousemove",
 			"up": "mouseup",
-			//"click": ('ontouchstart' in window) ? 'touchstart' : (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click', // touchstart 를 사용할 경우 click 리스너를 수동으로 등록한 이벤트보다 먼저 작동하여, 예상과 다른 실행순서가 발생할 수 있다.
-			"click": window.DocumentTouch && document instanceof DocumentTouch ? 'tap' : 'click',
+			//"click": ('ontouchstart' in window) ? 'touchstart' : (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click', // touchstart 를 사용할 경우 click 이벤트보다 먼저 작동하여, 예상과 다른 실행순서가 발생할 수 있다.
+			"click": "click",
 			"wheel": (function() {
-				if(userAgent.indexOf('webkit') >= 0) { // Chrome / Safari
+				if(agent.indexOf('webkit') >= 0) { // Chrome / Safari
 					return 'mousewheel';
 				}else if(element.attachEvent) { // IE
 					return 'mousewheel';
@@ -187,15 +187,15 @@ http://www.quirksmode.org/js/detect.html
 	}
 
 	// monitor
-	if(/android/i.test(userAgent)) { // 안드로이드
+	if(/android/i.test(agent)) { // 안드로이드
 		// mobile 없으면 태블릿임
-		if(/mobile/i.test(userAgent)) {
+		if(/mobile/i.test(agent)) {
 			environment['monitor'] = 'mobile';
 		}else {
 			environment['monitor'] = 'tablet';
 		}
-	}else if(/(iphone|ipad|ipod)/i.test(userAgent)) { // 애플
-		if(/ipad/i.test(userAgent)) {
+	}else if(/(iphone|ipad|ipod)/i.test(agent)) { // 애플
+		if(/ipad/i.test(agent)) {
 			environment['monitor'] = 'tablet';
 		}else {
 			environment['monitor'] = 'mobile';
@@ -221,42 +221,42 @@ http://www.quirksmode.org/js/detect.html
 	// browser (if문 순서 중요함)
 	environment['browser']['name'] = navigator.appName;
 	environment['browser']['version'] = String(parseFloat(navigator.appVersion));
-	if((verOffset = userAgent.indexOf("opr/")) !== -1) {
+	if((offset_version = agent.indexOf("opr/")) !== -1) {
 		environment['browser']['name'] = "opera";
-		environment['browser']['version'] = userAgent.substring(verOffset + 4);
-	}else if((verOffset = userAgent.indexOf("opera")) !== -1) {
+		environment['browser']['version'] = agent.substring(offset_version + 4);
+	}else if((offset_version = agent.indexOf("opera")) !== -1) {
 		environment['browser']['name'] = "opera";
-		environment['browser']['version'] = userAgent.substring(verOffset + 6);
-		if((verOffset = userAgent.indexOf("version")) !== -1) {
-			environment['browser']['version'] = userAgent.substring(verOffset + 8);
+		environment['browser']['version'] = agent.substring(offset_version + 6);
+		if((offset_version = agent.indexOf("version")) !== -1) {
+			environment['browser']['version'] = agent.substring(offset_version + 8);
 		}
-	}else if((verOffset = userAgent.indexOf("msie")) !== -1) {
+	}else if((offset_version = agent.indexOf("msie")) !== -1) {
 		environment['browser']['name'] = "explorer";
-		environment['browser']['version'] = userAgent.substring(verOffset + 5);
-	}else if((verOffset = userAgent.indexOf("chrome")) !== -1) {
+		environment['browser']['version'] = agent.substring(offset_version + 5);
+	}else if((offset_version = agent.indexOf("chrome")) !== -1) {
 		environment['browser']['name'] = "chrome";
-		environment['browser']['version'] = userAgent.substring(verOffset + 7);
-	}else if((verOffset = userAgent.indexOf("safari")) !== -1) {
+		environment['browser']['version'] = agent.substring(offset_version + 7);
+	}else if((offset_version = agent.indexOf("safari")) !== -1) {
 		environment['browser']['name'] = "safari";
-		environment['browser']['version'] = userAgent.substring(verOffset + 7);
-		if((verOffset = userAgent.indexOf("version")) !== -1) {
-			environment['browser']['version'] = userAgent.substring(verOffset + 8);
+		environment['browser']['version'] = agent.substring(offset_version + 7);
+		if((offset_version = agent.indexOf("version")) !== -1) {
+			environment['browser']['version'] = agent.substring(offset_version + 8);
 		}
-	}else if((verOffset = userAgent.indexOf("firefox")) !== -1) {
+	}else if((offset_version = agent.indexOf("firefox")) !== -1) {
 		environment['browser']['name'] = "firefox";
-		environment['browser']['version'] = userAgent.substring(verOffset + 8);
-	}else if((nameOffset = userAgent.lastIndexOf(' ') + 1) < (verOffset = userAgent.lastIndexOf('/'))) { 
-		environment['browser']['name'] = userAgent.substring(nameOffset, verOffset);
-		environment['browser']['version'] = userAgent.substring(verOffset + 1);
+		environment['browser']['version'] = agent.substring(offset_version + 8);
+	}else if((offset_name = agent.lastIndexOf(' ') + 1) < (offset_version = agent.lastIndexOf('/'))) { 
+		environment['browser']['name'] = agent.substring(offset_name, offset_version);
+		environment['browser']['version'] = agent.substring(offset_version + 1);
 		if(environment['browser']['name'].toLowerCase() === environment['browser']['name'].toUpperCase()) {
 			environment['browser']['name'] = navigator.appName;
 		}
 	}
-	if((verOffset = environment['browser']['version'].indexOf(';')) !== -1) {
-		environment['browser']['version'] = environment['browser']['version'].substring(0, verOffset);
+	if((offset_version = environment['browser']['version'].indexOf(';')) !== -1) {
+		environment['browser']['version'] = environment['browser']['version'].substring(0, offset_version);
 	}
-	if((verOffset = environment['browser']['version'].indexOf(' ')) !== -1) {
-		environment['browser']['version'] = environment['browser']['version'].substring(0, verOffset);
+	if((offset_version = environment['browser']['version'].indexOf(' ')) !== -1) {
+		environment['browser']['version'] = environment['browser']['version'].substring(0, offset_version);
 	}
 
 	// event
@@ -264,6 +264,9 @@ http://www.quirksmode.org/js/detect.html
 		environment['event']['down'] = 'touchstart';
 		environment['event']['move'] = 'touchmove';
 		environment['event']['up'] = 'touchend';
+		if(/(iphone|ipad|ipod)/i.test(agent)) {
+			environment['event']['click'] = 'touchend';
+		}
 	}
 
 	// public return

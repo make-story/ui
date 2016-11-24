@@ -65,23 +65,23 @@ jQuery 또는 api.dom 에 종속적 실행
 				"down": "mousedown",
 				"move": "mousemove",
 				"up": "mouseup",
-				"click": window.DocumentTouch && document instanceof DocumentTouch ? 'tap' : 'click'
+				"click": "click"
 			}
 		};
 		(function() {
-			var userAgent = (navigator.userAgent || navigator.vendor || window.opera).toLowerCase();
+			var agent = (navigator.userAgent || navigator.vendor || window.opera).toLowerCase();
 			var platform = navigator.platform;
-			var nameOffset, verOffset;
+			var offset_name, offset_version;
 			// monitor
-			if(/android/i.test(userAgent)) { // 안드로이드
+			if(/android/i.test(agent)) { // 안드로이드
 				// mobile 없으면 태블릿임
-				if(/mobile/i.test(userAgent)) {
+				if(/mobile/i.test(agent)) {
 					env['monitor'] = 'mobile';
 				}else {
 					env['monitor'] = 'tablet';
 				}
-			}else if(/(iphone|ipad|ipod)/i.test(userAgent)) { // 애플
-				if(/ipad/i.test(userAgent)) {
+			}else if(/(iphone|ipad|ipod)/i.test(agent)) { // 애플
+				if(/ipad/i.test(agent)) {
 					env['monitor'] = 'tablet';
 				}else {
 					env['monitor'] = 'mobile';
@@ -96,42 +96,42 @@ jQuery 또는 api.dom 에 종속적 실행
 			// browser (if문 순서 중요함)
 			env['browser']['name'] = navigator.appName;
 			env['browser']['version'] = String(parseFloat(navigator.appVersion));
-			if((verOffset = userAgent.indexOf("opr/")) !== -1) {
+			if((offset_version = agent.indexOf("opr/")) !== -1) {
 				env['browser']['name'] = "opera";
-				env['browser']['version'] = userAgent.substring(verOffset + 4);
-			}else if((verOffset = userAgent.indexOf("opera")) !== -1) {
+				env['browser']['version'] = agent.substring(offset_version + 4);
+			}else if((offset_version = agent.indexOf("opera")) !== -1) {
 				env['browser']['name'] = "opera";
-				env['browser']['version'] = userAgent.substring(verOffset + 6);
-				if((verOffset = userAgent.indexOf("version")) !== -1) {
-					env['browser']['version'] = userAgent.substring(verOffset + 8);
+				env['browser']['version'] = agent.substring(offset_version + 6);
+				if((offset_version = agent.indexOf("version")) !== -1) {
+					env['browser']['version'] = agent.substring(offset_version + 8);
 				}
-			}else if((verOffset = userAgent.indexOf("msie")) !== -1) {
+			}else if((offset_version = agent.indexOf("msie")) !== -1) {
 				env['browser']['name'] = "explorer";
-				env['browser']['version'] = userAgent.substring(verOffset + 5);
-			}else if((verOffset = userAgent.indexOf("chrome")) !== -1) {
+				env['browser']['version'] = agent.substring(offset_version + 5);
+			}else if((offset_version = agent.indexOf("chrome")) !== -1) {
 				env['browser']['name'] = "chrome";
-				env['browser']['version'] = userAgent.substring(verOffset + 7);
-			}else if((verOffset = userAgent.indexOf("safari")) !== -1) {
+				env['browser']['version'] = agent.substring(offset_version + 7);
+			}else if((offset_version = agent.indexOf("safari")) !== -1) {
 				env['browser']['name'] = "safari";
-				env['browser']['version'] = userAgent.substring(verOffset + 7);
-				if((verOffset = userAgent.indexOf("version")) !== -1) {
-					env['browser']['version'] = userAgent.substring(verOffset + 8);
+				env['browser']['version'] = agent.substring(offset_version + 7);
+				if((offset_version = agent.indexOf("version")) !== -1) {
+					env['browser']['version'] = agent.substring(offset_version + 8);
 				}
-			}else if((verOffset = userAgent.indexOf("firefox")) !== -1) {
+			}else if((offset_version = agent.indexOf("firefox")) !== -1) {
 				env['browser']['name'] = "firefox";
-				env['browser']['version'] = userAgent.substring(verOffset + 8);
-			}else if((nameOffset = userAgent.lastIndexOf(' ') + 1) < (verOffset = userAgent.lastIndexOf('/'))) { 
-				env['browser']['name'] = userAgent.substring(nameOffset, verOffset);
-				env['browser']['version'] = userAgent.substring(verOffset + 1);
+				env['browser']['version'] = agent.substring(offset_version + 8);
+			}else if((offset_name = agent.lastIndexOf(' ') + 1) < (offset_version = agent.lastIndexOf('/'))) { 
+				env['browser']['name'] = agent.substring(offset_name, offset_version);
+				env['browser']['version'] = agent.substring(offset_version + 1);
 				if(env['browser']['name'].toLowerCase() === env['browser']['name'].toUpperCase()) {
 					env['browser']['name'] = navigator.appName;
 				}
 			}
-			if((verOffset = env['browser']['version'].indexOf(';')) !== -1) {
-				env['browser']['version'] = env['browser']['version'].substring(0, verOffset);
+			if((offset_version = env['browser']['version'].indexOf(';')) !== -1) {
+				env['browser']['version'] = env['browser']['version'].substring(0, offset_version);
 			}
-			if((verOffset = env['browser']['version'].indexOf(' ')) !== -1) {
-				env['browser']['version'] = env['browser']['version'].substring(0, verOffset);
+			if((offset_version = env['browser']['version'].indexOf(' ')) !== -1) {
+				env['browser']['version'] = env['browser']['version'].substring(0, offset_version);
 			}
 		})();
 		// event
@@ -139,6 +139,9 @@ jQuery 또는 api.dom 에 종속적 실행
 			env['event']['down'] = 'touchstart';
 			env['event']['move'] = 'touchmove';
 			env['event']['up'] = 'touchend';
+			if(/(iphone|ipad|ipod)/i.test(agent)) {
+				env['event']['click'] = 'touchend';
+			}
 		}
 	}
 
@@ -1363,7 +1366,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				that.elements.container.setAttribute('tabindex', -1);
 				that.elements.container.focus();
 
-				// mousedown
+				// mousedown (사용자 터치영역 감시)
 				$(that.elements.container).on(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key, function(e) {
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					//if(event.target && (that.elements.container.isEqualNode(event.target) || !that.elements.contents.contains(event.target)) {
@@ -1692,7 +1695,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				that.elements.container.setAttribute('tabindex', -1);
 				that.elements.container.focus();
 
-				// mousedown
+				// mousedown (사용자 터치영역 감시)
 				$(that.elements.container).on(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key, function(e) {
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					if(event.target && !that.elements.contents.contains(event.target)) {

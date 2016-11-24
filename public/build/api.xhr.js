@@ -285,12 +285,16 @@ api.xhr({
 			instance.ontimeout = function(event) {
 				console.log('error');
 				console.log(event);
-				settings.error.call(settings.context, event);
+				if(typeof settings.error === 'function') {
+					settings.error.call(settings.context, event);
+				}
 			};
 			instance.onerror = function(event) {
 				console.log('error');
 				console.log(event);
-				settings.error.call(settings.context, event);
+				if(typeof settings.error === 'function') {
+					settings.error.call(settings.context, event);
+				}
 			};
 			
 			// 전송
