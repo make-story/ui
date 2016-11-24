@@ -956,10 +956,10 @@ http://www.quirksmode.org/js/detect.html
 			element.style.webkitTransitionDuration = element.style.MozTransitionDuration = element.style.msTransitionDuration = element.style.OTransitionDuration = element.style.transitionDuration = '1s';
 			element.style.webkitAnimationDelay = element.style.MozAnimationDelay = element.style.msAnimationDelay = element.style.OAnimationDelay = element.style.animationDelay = '1s';
 			*/
-			if(!max || this.elements[0].nodeType === 3 || this.elements[0].nodeType === 8) {
+			if(!max) {
 				return this;
 				//return false;
-			}else if(typeof parameter === 'string') { // get
+			}else if(typeof parameter === 'string' && this.elements[0].nodeType && this.elements[0].nodeType !== 3 && this.elements[0].nodeType !== 8) { // get
 				// return this[0].style[property]; // CSS 속성과 JS 에서의 CSS 속성형식이 다르므로 사용불가능
 				// return this[0].style.getPropertyValue(property); // CSS 속성명을 사용하여 정상적 출력가능
 				if(this.elements[0].style[getStyleProperty('js', parameter)]) { // style로 값을 구할 수 있는 경우
@@ -978,9 +978,12 @@ http://www.quirksmode.org/js/detect.html
 				for(i=0; i<max; i++) {
 					for(property in parameter) {
 						// 속성, 값 검사 
-						if(!parameter.hasOwnProperty(property) || this.elements[i].nodeType === 3 || this.elements[i].nodeType === 8) {
+						if(!parameter.hasOwnProperty(property) || !this.elements[i].nodeType || this.elements[i].nodeType === 3 || this.elements[i].nodeType === 8) {
 							continue;
-						}else if(tmp1 = new RegExp("^([+-])=(" + regexp.source_num + ")", "i").exec(parameter[property])) { // +=, -= 연산자 분리
+						}
+
+						// +=, -= 연산자 분리
+						if(tmp1 = new RegExp("^([+-])=(" + regexp.source_num + ")", "i").exec(parameter[property])) { 
 							// tmp1[1]: 연산자
 							// tmp1[2]: 값
 							current = DOM(this.elements[i]).css(property);
@@ -1012,6 +1015,12 @@ http://www.quirksmode.org/js/detect.html
 							}
 						}
 
+						// window, document
+						if(this.elements[i].nodeType === 9 || this.elements[i] === window) {
+							this.elements[i] = window.document.documentElement; // html
+							//this.elements[i] = window.document.body;
+						}
+
 						// css 값 설정
 						if(parameter[property] === '' || parameter[property] === null) { // 해당 css 프로퍼티 초기화여부 확인
 							// 초기화시 css default value 를 설정해 주는 것이 가장 정확함
@@ -1036,44 +1045,67 @@ http://www.quirksmode.org/js/detect.html
 
 			return this;
 		},
-		style: function(parameter) { // javascript 의 css 프로퍼티로 직접 접근
-			// x.style.cssText; // 표준
-			// x.currentStyle[styleProp];
-			// document.defaultView.getComputedStyle(x, null).getPropertyValue(styleProp);
+		show: function() {
 			var i, key, max = (this.elements && this.elements.length) || 0;
+			var dummy;
+			var display;
+			var iframe, doc;
 
-			/*
-			// transition, animation 처리 방법
-			element.style.webkitTransitionDuration = element.style.MozTransitionDuration = element.style.msTransitionDuration = element.style.OTransitionDuration = element.style.transitionDuration = '1s';
-			element.style.webkitAnimationDelay = element.style.MozAnimationDelay = element.style.msAnimationDelay = element.style.OAnimationDelay = element.style.animationDelay = '1s';
-			*/
-			if(!max || this.elements[0].nodeType === 3 || this.elements[0].nodeType === 8 || !this.elements[0].style) {
+			if(!max) {
 				return this;
 				//return false;
-			}else if(typeof parameter === 'string' && parameter in this.elements[0].style) { // get
-				return this.elements[0].style[parameter];
-			}else if(typeof parameter === 'object') { // set
+			}else {
 				for(i=0; i<max; i++) {
-					for(key in parameter) {
-						if(key in this.elements[i].style) {
-							if((typeof parameter[key] === 'string' && parameter[key].replace(/(^\s*)|(\s*$)/g, "") === '') || parameter[key] === null) { // 해당 css 프로퍼티 초기화여부 확인
-								// 초기화시 css default value 를 설정해 주는 것이 가장 정확함
-								if(this.elements[i].style.removeProperty) {
-									this.elements[i].style.removeProperty(key);
-								}else if(this.elements[i].style.removeAttribute) { // IE9 이상
-									this.elements[i].style.removeAttribute(key);
-								}else {
-									this.elements[i].style[key] = null;
-								}
-							}else {
-								// 단위(예:px)까지 명확하게 입력해줘야 한다.
-								if(typeof parameter[key] === 'number' && regexp.pixel_unit_list.test(key)) {
-									parameter[key] += 'px';
-								}
-								this.elements[i].style[key] = parameter[key];
-							}
-						}
+					if(!this.elements[i].tagName || !this.elements[i].nodeType || this.elements[i].nodeType === 3 || this.elements[i].nodeType === 8) {
+						continue;
 					}
+
+					// default value
+					dummy = document.createElement(this.elements[i].tagName);
+					document.body.appendChild(dummy);
+					display = DOM(dummy).css('display');
+					if(!display || display === 'none') {
+						dummy.parentNode.removeChild(dummy);
+
+						iframe = document.createElement('iframe');
+						iframe.setAttribute('frameborder', 0);
+						iframe.setAttribute('width', 0);
+						iframe.setAttribute('height', 0);
+						iframe.style.cssText = 'display:block !important';
+						document.body.appendChild(iframe);
+
+						doc = (iframe.contentWindow || iframe.contentDocument).document;
+						doc.write("<!doctype html><html><body>");
+						doc.close();
+
+						dummy = doc.createElement(this.elements[i].tagName);
+						doc.body.appendChild(dummy);
+						display = DOM(dummy).css('display');
+						
+						iframe.parentNode.removeChild(iframe);
+					}
+
+					// css 값 설정
+					this.elements[i].style.display = display;
+				}
+			}
+
+			return this;
+		},
+		hide: function() {
+			var i, key, max = (this.elements && this.elements.length) || 0;
+
+			if(!max || !this.elements[0].nodeType || this.elements[0].nodeType === 3 || this.elements[0].nodeType === 8) {
+				return this;
+				//return false;
+			}else {
+				for(i=0; i<max; i++) {
+					if(!this.elements[i].tagName || !this.elements[i].nodeType || this.elements[i].nodeType === 3 || this.elements[i].nodeType === 8) {
+						continue;
+					}
+
+					// css 값 설정
+					this.elements[i].style.display = 'none';
 				}
 			}
 
@@ -1163,10 +1195,10 @@ http://www.quirksmode.org/js/detect.html
 				for(i=0; i<max; i++) {
 					if(!this.elements[i].nodeType || !this.elements[i].style) {
 						continue;
-					}else {
-						// 단위(예:px)까지 명확하게 입력해줘야 한다.
-						this.elements[i].style.width = value;
 					}
+					
+					// 단위(예:px)까지 명확하게 입력해줘야 한다.
+					this.elements[i].style.width = value;
 				}
 			}
 
@@ -1214,10 +1246,10 @@ http://www.quirksmode.org/js/detect.html
 				for(i=0; i<max; i++) {
 					if(!this.elements[i].nodeType || !this.elements[i].style) {
 						continue;
-					}else {
-						// 단위(예:px)까지 명확하게 입력해줘야 한다.
-						this.elements[i].style.height = value;
 					}
+					
+					// 단위(예:px)까지 명확하게 입력해줘야 한다.
+					this.elements[i].style.height = value;
 				}
 			}
 

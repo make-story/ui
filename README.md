@@ -156,6 +156,12 @@ api.dom("ul").children();
 .css(name)
 - 요소 style property 추가 또는 반환
 
+.show()
+- 요소 display 기본값 설정
+
+.hide()
+- 요소 display none 설정
+
 .offset()
 - 현재요소 위치(좌표)값 반환
 
