@@ -284,10 +284,10 @@ api.storage.get(type, key)
 - 브라우저 저장소 데이터 출력
 
 ````javascript
-// 세션 스토리지에 저장된 mykey 로 입력된 데이터 출력
+// 세션 스토리지에 mykey 라는 키로 저장된 데이터 출력
 api.storage.get('session', 'mykey');
 
-// 로컬 스토리지에 저장된 mykey 로 입력된 데이터 출력
+// 로컬 스토리지에 mykey 라는 키로 저장된 데이터 출력
 api.storage.get('local', 'mykey');
 ````
 
