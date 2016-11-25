@@ -72,6 +72,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var agent = (navigator.userAgent || navigator.vendor || window.opera).toLowerCase();
 			var platform = navigator.platform;
 			var offset_name, offset_version;
+			
 			// monitor
 			if(/android/i.test(agent)) { // 안드로이드
 				// mobile 없으면 태블릿임
@@ -93,6 +94,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			}else if(/(win32|win64)/i.test(platform)) {
 				env['monitor'] = 'pc';
 			}
+
 			// browser (if문 순서 중요함)
 			env['browser']['name'] = navigator.appName;
 			env['browser']['version'] = String(parseFloat(navigator.appVersion));
@@ -133,16 +135,17 @@ jQuery 또는 api.dom 에 종속적 실행
 			if((offset_version = env['browser']['version'].indexOf(' ')) !== -1) {
 				env['browser']['version'] = env['browser']['version'].substring(0, offset_version);
 			}
-		})();
-		// event
-		if(env['check']['touch'] === true) {
-			env['event']['down'] = 'touchstart';
-			env['event']['move'] = 'touchmove';
-			env['event']['up'] = 'touchend';
-			if(/(iphone|ipad|ipod)/i.test(agent)) {
-				env['event']['click'] = 'touchend';
+
+			// event
+			if(env['check']['touch'] === true) {
+				env['event']['down'] = 'touchstart';
+				env['event']['move'] = 'touchmove';
+				env['event']['up'] = 'touchend';
+				if(/(iphone|ipad|ipod)/i.test(agent)) {
+					env['event']['click'] = 'touchend';
+				}
 			}
-		}
+		})();
 	}
 
 	// 모듈 (private)

@@ -75,6 +75,12 @@ jQuery 또는 api.dom 에 종속적 실행
 				"transitionend": "transitionend"
 			}
 		};
+		// event
+		if(env['check']['touch'] === true) {
+			env['event']['down'] = 'touchstart';
+			env['event']['move'] = 'touchmove';
+			env['event']['up'] = 'touchend';
+		}
 		// 트랜지션
 		(function() {
 			var transitions = { // event check (IE10이상 공식지원)
@@ -94,12 +100,6 @@ jQuery 또는 api.dom 에 종속적 실행
 				}
 			}
 		})();
-		// event
-		if(env['check']['touch'] === true) {
-			env['event']['down'] = 'touchstart';
-			env['event']['move'] = 'touchmove';
-			env['event']['up'] = 'touchend';
-		}
 	}
 
 	// 모듈 (private)
@@ -248,6 +248,32 @@ jQuery 또는 api.dom 에 종속적 실행
 				"top": 0,
 				"time": 0
 			};
+
+			return that;
+		},
+		// 설정값 변경
+		change: function(settings) {
+			var that = this;
+			var key, tmp;
+
+			try {
+				for(key in settings) {
+					switch(key) {
+						case 'callback':
+							for(tmp in settings[key]) {
+								if(settings[key].hasOwnProperty(tmp)) {
+									that.settings.callback[tmp] = settings[key][tmp];
+								}
+							}
+							break;
+						/*
+						default:
+							that.settings[key] = settings[key];
+							break;
+						*/
+					}
+				}
+			}catch(e) {}
 
 			return that;
 		},
@@ -534,32 +560,6 @@ jQuery 또는 api.dom 에 종속적 실행
 					that.settings.callback.remove.call(that, that.elements.target);
 				}
 			}
-
-			return that;
-		},
-		// 설정값 변경
-		change: function(settings) {
-			var that = this;
-			var key, tmp;
-
-			try {
-				for(key in settings) {
-					switch(key) {
-						case 'callback':
-							for(tmp in settings[key]) {
-								if(settings[key].hasOwnProperty(tmp)) {
-									that.settings.callback[tmp] = settings[key][tmp];
-								}
-							}
-							break;
-						/*
-						default:
-							that.settings[key] = settings[key];
-							break;
-						*/
-					}
-				}
-			}catch(e) {}
 
 			return that;
 		},
