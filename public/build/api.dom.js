@@ -480,7 +480,7 @@ http://www.quirksmode.org/js/detect.html
 	};
 
 	// DOM (event, style, attr, data, scroll 등)
-	// var element = api.dom('<div>').style({'': '', '': ''}).attr({'': ''}).data({'': ''}).on('', function() { ... }).get();
+	// var element = api.dom('<div>').css({'': '', '': ''}).attr({'': ''}).data({'': ''}).on('', function() { ... }).get();
 	function DOM(selector, context) {
 		// return instance
 		if(!(this instanceof DOM)) {
@@ -2245,13 +2245,13 @@ http://www.quirksmode.org/js/detect.html
 		var request = null;
 
 		(function call(queue) {
-			var parameter = queue.shift();
-			var element = DOM(parameter['element']); // 대상 element
+			var target = queue.shift(); // 현재 순서에 해당하는 정보
+			var element = DOM(target['element']); // 대상 element
 			var original = element.get();
-			var style = parameter['style']; // 애니메이션을 적용할 CSS값 - {CSS 속성: 값}
-			var duration = parameter['duration'] || 800; // 애니메이션 진행시간
+			var style = target['style']; // 애니메이션을 적용할 CSS값 - {CSS 속성: 값}
+			var duration = target['duration'] || 800; // 애니메이션 진행시간
 			//var easing = 'swing';
-			var complete = parameter['complete'];
+			var complete = target['complete'];
 
 			//
 			var current = 0;
@@ -2365,10 +2365,10 @@ http://www.quirksmode.org/js/detect.html
 		}
 
 		(function call(queue) {
-			var parameter = queue.shift();
-			var element = DOM(parameter['element']); // 대상 element
-			var animation = parameter['animation']; // animation 적용 class name
-			var complete = parameter['complete']; // 애니메이션 종료 후 콜백 (complete)
+			var target = queue.shift(); // 현재 순서에 해당하는 정보
+			var element = DOM(target['element']); // 대상 element
+			var animation = target['animation']; // animation 적용 class name
+			var complete = target['complete']; // 애니메이션 종료 후 콜백 (complete)
 			var handler;
 			var time;
 
@@ -2415,7 +2415,6 @@ http://www.quirksmode.org/js/detect.html
 	};
 
 	// 트랜지션 순차실행 
-	// 트랜지션을 지원하지 않는 브라우저에서는 requestAnimationFrame, cancelAnimationFrame 으로 실행한다.
 	var transitionQueue = function(queue) {
 		/*
 		-
@@ -2428,7 +2427,7 @@ http://www.quirksmode.org/js/detect.html
 		}else if(!Array.isArray(queue)) {
 			queue = [queue];
 		}
-		var state = { // 애니메니션 종료 후 적용할 style
+		var state = { // 트랜지션 종료 후 적용할 초기 style
 			/*
 			// 기본값 http://www.w3schools.com/cssref/css3_pr_transform.asp
 			transition: 
@@ -2469,19 +2468,17 @@ http://www.quirksmode.org/js/detect.html
 		};
 
 		(function call(queue) {
-			var parameter = queue.shift();
-			var element = DOM(parameter['element']); // 대상 element
+			var target = queue.shift(); // 현재 순서에 해당하는 정보
+			var element = DOM(target['element']); // 대상 element
 			var original = element.get();
-			var transition = parameter['transition']; // 트랜지션을 적용할 CSS값 - {CSS 속성: 값}
-			var duration = parameter['duration'] || 600; 
-			var easing = parameter['easing'] || 'ease'; 
-			var delay = parameter['delay'] || 0; // 효과가 시작할 때까지의 딜레이
-			var complete = parameter['complete']; // 애니메이션 종료 후 콜백 (complete)
+			var transition = target['transition']; // 트랜지션을 적용할 CSS값 - {CSS 속성: 값}
+			var duration = target['duration'] || 600; 
+			var easing = target['easing'] || 'ease'; 
+			var delay = target['delay'] || 0; // 효과가 시작할 때까지의 딜레이
+			var complete = target['complete']; // 애니메이션 종료 후 콜백 (complete)
 
-			//
-			var i, key, tmp;
+			var i, max, key, tmp;
 			var properties = {};
-			var handler;
 
 			// transition 값 확인
 			for(key in transition) {
@@ -2490,11 +2487,12 @@ http://www.quirksmode.org/js/detect.html
 				}
 			}
 
-			// 
-			for(i in original) {
+			// 초기값 저장 / transition 설정
+			for(i=0, max=original.length; i<max; i++) {
 				if(typeof original[i]['storage'] !== 'object') {
 					original[i]['storage'] = {};
 				}
+
 				// 현재 상태값 저장
 				if(typeof original[i]['storage']['transition'] !== 'object') {
 					original[i]['storage']['transition'] = {};
@@ -2511,6 +2509,7 @@ http://www.quirksmode.org/js/detect.html
 						}
 					}
 				}
+
 				// transition 설정
 				original[i]['style'].msTransitionProperty = original[i]['style'].OTransitionProperty = original[i]['style'].MozTransitionProperty = original[i]['style'].WebkitTransitionProperty = original[i]['style'].transitionProperty = Object.keys(properties).join(',');
 				original[i]['style'].msTransitionDuration = original[i]['style'].OTransitionDuration = original[i]['style'].MozTransitionDuration = original[i]['style'].WebkitTransitionDuration = original[i]['style'].transitionDuration = Number(duration) / 1000 + 's';
@@ -2518,33 +2517,35 @@ http://www.quirksmode.org/js/detect.html
 				//original[i]['style'].msTransitionDelay = original[i]['style'].OTransitionDelay = original[i]['style'].MozTransitionDelay = original[i]['style'].WebkitTransitionDelay = original[i]['style'].transitionDelay = Number(delay) / 1000 + 's';
 			}
 
-			//
-			handler = function(event) {
-				var event = event || window.event;
-				var original = this;
-				var i, key;
-				//console.log('[정보] 트랜지션 종료');
-				//
-				for(i in original) {
-					for(key in original[i]['storage']['transition']) {
-						original[i]['style'][key] = original[i]['storage']['transition'][key];
-					}
-				}
-				element.off(global.api.env['event']['transitionend'] + '.EVENT_TRANSITION_QUEUE');
-				
-				// complete 실행
-				if(typeof complete === 'function') {
-					complete.call(this, event);
-				}
-				// 다음 실행할 queue 가 존재할 경우
-				if(queue.length) {
-					//console.log('[정보] next queue 실행');
-					call(queue);
-				}
-			};
-
 			// 이벤트
-			element.style(properties).on(global.api.env['event']['transitionend'] + '.EVENT_TRANSITION_QUEUE', handler, true);
+			window.setTimeout(function() {
+				element.css(properties).on(global.api.env['event']['transitionend'] + '.EVENT_TRANSITION_QUEUE', function(event) {
+					var event = event || window.event;
+					var i, key;
+					//console.log('[정보] 트랜지션 종료');
+
+					// transition 설정 초기화
+					for(i=0, max=original.length; i<max; i++) {
+						if(original[i]['storage']) {
+							for(key in original[i]['storage']['transition']) {
+								original[i]['style'][key] = original[i]['storage']['transition'][key];
+							}
+						}
+					}
+					element.off(global.api.env['event']['transitionend'] + '.EVENT_TRANSITION_QUEUE');
+					
+					// complete 실행
+					if(typeof complete === 'function') {
+						complete.call(this, event);
+					}
+
+					// 다음 실행할 queue 가 존재할 경우 (재귀호출)
+					if(queue.length) {
+						//console.log('[정보] next queue 실행');
+						call(queue);
+					}
+				}, true);
+			}, 1);
 		})(queue);
 	};
 
