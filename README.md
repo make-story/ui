@@ -239,8 +239,29 @@ api.dom("ul").append(api.dom('<li>'));
 .on(events, handlers, [capture])
 - 이벤트 바인딩
 
+````javascript
+// 이벤트 여러개를 한번에 설정
+api.dom("#target").on('click.EVENT_CLICK_TEST mousedown.EVENT_MOUSEDOWN_TEST mouseup');
+// 이벤트 키와 함께 하나의 이벤트 설정
+api.dom("#target").on('click.EVENT_CLICK_TEST');
+// 이벤트 키없이 일반적인 설정
+api.dom("#target").on('click');
+````
+
 .off(events)
 - 이벤트 해제
+
+````javascript
+// 이벤트 여러개를 한번에 해제
+api.dom("#target").off('click.EVENT_CLICK_TEST mousedown.EVENT_MOUSEDOWN_TEST');
+// 이벤트 키에 해당하는 것만 해제
+api.dom("#target").off('click.EVENT_CLICK_TEST');
+api.dom("#target").off('.EVENT_CLICK_TEST');
+// 이벤트 type 에 해당하는 전체 해제
+api.dom("#target").off('click');
+// 이벤트 전체 해제
+api.dom("#target").off();
+````
 
 .one(events, handlers, [capture])
 - 이벤트 발생하면 바인딩 자동해제
