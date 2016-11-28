@@ -1066,9 +1066,8 @@ http://www.quirksmode.org/js/detect.html
 					dummy = document.createElement(this.elements[i].tagName);
 					document.body.appendChild(dummy);
 					display = DOM(dummy).css('display');
+					dummy.parentNode.removeChild(dummy);
 					if(!display || display === 'none') {
-						dummy.parentNode.removeChild(dummy);
-
 						iframe = document.createElement('iframe');
 						iframe.setAttribute('frameborder', 0);
 						iframe.setAttribute('width', 0);
