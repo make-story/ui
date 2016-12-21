@@ -691,7 +691,7 @@ http://www.quirksmode.org/js/detect.html
 			}
 		},
 		//
-		getClass: (function() {
+		/*getClass: (function() {
 			// x.classList; // IE10이상 사용가능
 			// x.className; // 표준
 			if('classList' in document.createElement('div')) {
@@ -707,7 +707,18 @@ http://www.quirksmode.org/js/detect.html
 					}
 				};
 			}
-		})(),
+		})(),*/
+		getClass: function() {
+			// x.classList; // IE10이상 사용가능
+			// x.className; // 표준
+			if(this.elements && this.elements.length > 0) {
+				if('classList' in this.elements[0]) {
+					return this.elements[0].classList;
+				}else if('className' in this.elements[0]) {
+					return this.elements[0].className.split(/\s+/);
+				}
+			}
+		},
 		hasClass: function(name) { 
 			// x.className; // 표준
 			var regexp;
@@ -719,7 +730,7 @@ http://www.quirksmode.org/js/detect.html
 
 			return false;
 		},
-		addClass: (function() {
+		/*addClass: (function() {
 			// x.classList; // IE10이상 사용가능
 			// x.className; // 표준
 			if('classList' in document.createElement('div')) {
@@ -750,7 +761,7 @@ http://www.quirksmode.org/js/detect.html
 						return this;
 						//return false;
 					}else if(typeof name === 'string') {
-						arr = name.split(/\s+/);
+						arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 						for(i=0; i<max; i++) {
 							for(key in arr) {
 								if(!(!!this.elements[i].className.match(new RegExp('(\\s|^)' + arr[key] + '(\\s|$)')))) { // new로 만들때에는 이스케이프문자 \는 \\로 해주어야 한다.
@@ -763,8 +774,32 @@ http://www.quirksmode.org/js/detect.html
 					return this;
 				};
 			}
-		})(),
-		removeClass: (function() {
+		})(),*/
+		addClass: function(name) {
+			// x.classList; // IE10이상 사용가능
+			// x.className; // 표준
+			var i, key, max = (this.elements && this.elements.length) || 0;
+			var arr;
+			
+			if(!max) {
+				return this;
+				//return false;
+			}else if(typeof name === 'string') {
+				arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
+				for(i=0; i<max; i++) {
+					for(key in arr) {
+						if('classList' in this.elements[i]) {
+							this.elements[i].classList.add(arr[key]); // add(): 한번에 하나의 클래스만 입력 가능하다. 즉, 띄어쓰기로 여러 클래스 입력 불가능
+						}else if('className' in this.elements[i] && !(!!this.elements[i].className.match(new RegExp('(\\s|^)' + arr[key] + '(\\s|$)')))) { // new로 만들때에는 이스케이프문자 \는 \\로 해주어야 한다.
+							this.elements[i].className += " " + arr[key];
+						}
+					}
+				}
+			}
+
+			return this;
+		},
+		/*removeClass: (function() {
 			// x.classList; // IE10이상 사용가능
 			// x.className; // 표준
 			if('classList' in document.createElement('div')) {
@@ -808,8 +843,34 @@ http://www.quirksmode.org/js/detect.html
 					return this;
 				};
 			}
-		})(),
-		toggleClass: (function() {
+		})(),*/
+		removeClass: function(name) {
+			// x.classList; // IE10이상 사용가능
+			// x.className; // 표준
+			var regexp;
+			var i, key, max = (this.elements && this.elements.length) || 0;
+			var arr;
+
+			if(!max) {
+				return this;
+				//return false;
+			}else if(typeof name === 'string') {
+				arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
+				for(i=0; i<max; i++) {
+					for(key in arr) {
+						if('classList' in this.elements[i]) {
+							this.elements[i].classList.remove(arr[key]); // remove(): 한번에 하나의 클래스만 삭제 가능하다. 즉, 띄어쓰기로 여러 클래스 삭제 불가능
+						}else if('className' in this.elements[i]) {
+							regexp = new RegExp('(\\s|^)' + arr[key] + '(\\s|$)'); // new로 만들때에는 이스케이프문자 \는 \\로 해주어야 한다.
+							this.elements[i].className = this.elements[i].className.replace(regexp, ' ');
+						}
+					}
+				}
+			}
+
+			return this;
+		},
+		/*toggleClass: (function() {
 			// x.classList; // IE10이상 사용가능
 			if('classList' in document.createElement('div')) {
 				return function(name) {
@@ -850,7 +911,30 @@ http://www.quirksmode.org/js/detect.html
 					return this;
 				};
 			}
-		})(),
+		})(),*/
+		toggleClass: function(name) {
+			// x.classList; // IE10이상 사용가능
+			var i, key, max = (this.elements && this.elements.length) || 0;
+			var arr;
+
+			if(!max) {
+				return this;
+				//return false;
+			}else if(typeof name === 'string') { 
+				arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
+				for(i=0; i<max; i++) {
+					for(key in arr) {
+						if('classList' in this.elements[i]) {
+							this.elements[i].classList.toggle(arr[key]);
+						}else {
+							this.hasClass.call(this, arr[key]) ? this.removeClass.call(this, arr[key]) : this.addClass.call(this, arr[key]);
+						}
+					}
+				}
+			}
+
+			return this;
+		},
 		// 
 		html: function(value) {
 			// x.outerHTML; // IE4이상 사용가능, IE외 다른 브라우저 사용가능여부 체크필요
@@ -1048,6 +1132,7 @@ http://www.quirksmode.org/js/detect.html
 			return this;
 		},
 		show: function() {
+			// x.setAttribute(y, z); // IE8이상 사용가능
 			var i, key, max = (this.elements && this.elements.length) || 0;
 			var dummy;
 			var display;
@@ -1181,9 +1266,9 @@ http://www.quirksmode.org/js/detect.html
 				return this;
 				//return false;
 			}else if(typeof value === 'undefined') { // get
-				if(this.elements[0] === window) { // window
+				if(this.elements[0] === window) { // window (브라우저)
 					return window.innerWidth || document.documentElement.clientWidth;
-				}else if(this.elements[0].nodeType === 9) {
+				}else if(this.elements[0].nodeType === 9) { // document
 					return Math.max(
 						document.body.scrollWidth, document.documentElement.scrollWidth,
 						document.body.offsetWidth, document.documentElement.offsetWidth,
@@ -1232,9 +1317,9 @@ http://www.quirksmode.org/js/detect.html
 				return this;
 				//return false;
 			}else if(typeof value === 'undefined') { // get
-				if(this.elements[0] === window) { // window
+				if(this.elements[0] === window) { // window (브라우저)
 					return window.innerHeight || document.documentElement.clientHeight;
-				}else if(this.elements[0].nodeType === 9) {
+				}else if(this.elements[0].nodeType === 9) { // document
 					return Math.max(
 						document.body.scrollHeight, document.documentElement.scrollHeight,
 						document.body.offsetHeight, document.documentElement.offsetHeight,
@@ -1373,7 +1458,7 @@ http://www.quirksmode.org/js/detect.html
 						this.elements[i].removeChild(this.elements[i].lastChild);
 					}
 					
-					// select
+					// select box
 					if(this.elements[i].options && this.elements[i].nodeName.toLowerCase() === 'select') {
 						this.elements[i].options.length = 0;
 					}
@@ -1851,6 +1936,7 @@ http://www.quirksmode.org/js/detect.html
 					});
 				}
 			};
+			/*
 			if('dataset' in document.createElement('div')) { // IE11 이상
 				return function(parameter) {
 					var key;
@@ -1887,6 +1973,34 @@ http://www.quirksmode.org/js/detect.html
 					return this;
 				};
 			}
+			*/
+			// svg 대응
+			return function(parameter) {
+				// x.setAttribute(y, z); // IE8이상 사용가능
+				var key;
+				var i, max = (this.elements && this.elements.length) || 0;
+				if(!max) {
+					return this;
+					//return false;
+				}else if(typeof parameter === 'string') { // get
+					if('dataset' in this.elements[0]) {
+						return this.elements[0].dataset[setTheFirstLetter(parameter)];
+					}else {
+						return this.attr('data-' + parameter);
+					}
+				}else if(typeof parameter === 'object') { // set
+					for(i=0; i<max; i++) {
+						for(key in parameter) {
+							if('dataset' in this.elements[i]) {
+								this.elements[i].dataset[setTheFirstLetter(key)] = parameter[key];
+							}else if('setAttribute' in this.elements[i]) {
+								this.elements[i].setAttribute('data-' + key, parameter[key]);
+							}
+						}
+					}
+				}
+				return this;
+			};
 		})(),
 		// scroll 정보 / 설정
 		scroll: function(parameter) {
@@ -2011,6 +2125,11 @@ http://www.quirksmode.org/js/detect.html
 		var touch = event.touches; // touchstart
 		var that = element || this;
 		var radius = 0; // 유효한 터치영역
+		var checkout = {
+			'delay': 1000, // 길게누르고 있는지 여부 검사시작 시간
+			'count': 250, // 몇번을 클릭했는지 검사시작 시간
+			'interval': 180 // 터지 down, up 이 발생한 간격 검사에 사용되는 시간
+		};
 
 		// 기본 이벤트를 중단시키면 스크롤이 작동을 안한다.
 		// 버블링(stopPropagation) 중지시키면, 상위 이벤트(예: document 에 적용된 이벤트)이 작동을 안한다.
@@ -2064,7 +2183,7 @@ http://www.quirksmode.org/js/detect.html
 			if(that['storage']['EVENT_DOM_TOUCH_DELAY'] && typeof that['storage']['EVENT_DOM_TOUCH_DELAY'] === 'function') {
 				that['storage']['EVENT_DOM_TOUCH_DELAY'].call(that, e);
 			}
-		}, 1000);
+		}, checkout.delay);
 
 		DOM(document).on(global.api.env['event']['move'] + '.EVENT_MOUSEMOVE_DOM_TOUCH', function(e) {
 			var event = e || window.event;
@@ -2112,7 +2231,7 @@ http://www.quirksmode.org/js/detect.html
 					var time = Number(that.touchCheck['time']['end']) - Number(that.touchCheck['time']['start']);
 
 					// handler(callback) 실행
-					if(time <= 180/* 클릭된 상태가 지속될 수 있으므로 시간검사 */ && Math.abs(start['top'] - end['top']) <= radius && Math.abs(start['left'] - end['left']) <= radius) {
+					if(time <= checkout.interval/* 클릭된 상태가 지속될 수 있으므로 시간검사 */ && Math.abs(start['top'] - end['top']) <= radius && Math.abs(start['left'] - end['left']) <= radius) {
 						if(that.touchCount === 1 && that['storage']['EVENT_DOM_TOUCH_ONE'] && typeof that['storage']['EVENT_DOM_TOUCH_ONE'] === 'function') {
 							that['storage']['EVENT_DOM_TOUCH_ONE'].call(that, e);
 						}else if(that.touchCount === 2 && that['storage']['EVENT_DOM_TOUCH_TWO'] && typeof that['storage']['EVENT_DOM_TOUCH_TWO'] === 'function') {
@@ -2121,7 +2240,7 @@ http://www.quirksmode.org/js/detect.html
 					}
 					that.touchCount = 0;
 					that.touchCheck = {};
-				}, 300); // 검사 시작시간
+				}, checkout.count); // 검사 시작시간
 			}
 		});
 	};
@@ -2267,7 +2386,7 @@ http://www.quirksmode.org/js/detect.html
 		(function call(queue) {
 			var target = queue.shift(); // 현재 순서에 해당하는 정보
 			var element = DOM(target['element']); // 대상 element
-			var original = element.get();
+			var original = element.get(); // 대상 element 리스트 반환
 			var style = target['style']; // 애니메이션을 적용할 CSS값 - {CSS 속성: 값}
 			var duration = target['duration'] || 800; // 애니메이션 진행시간
 			//var easing = 'swing';
@@ -2288,7 +2407,8 @@ http://www.quirksmode.org/js/detect.html
 			// start, end 값 추출
 			for(key in style) {
 				for(i in original) {
-					start = original[i]['style'][key]; // 기존 설정값
+					//start = original[i]['style'][key]; // 기존 설정값
+					start = DOM(original[i]).css(key); // 기존 설정값
 					end = style[key]; // 사용자 설정값
 					if(start) {
 						// 설정할 스타일 생성
@@ -2320,7 +2440,6 @@ http://www.quirksmode.org/js/detect.html
 				var key, i, val, unit;
 				// increment the time
 				current += increment;
-				//
 				for(key in properties) {
 					if(regexp.num.test(properties[key]['start']) && regexp.num.test(properties[key]['change'])) {
 						val = easeOutQuad(current, Number(properties[key]['start']), Number(properties[key]['change']), duration); 
@@ -2518,6 +2637,7 @@ http://www.quirksmode.org/js/detect.html
 					original[i]['storage']['transition'] = {};
 					for(key in state) {
 						tmp = original[i]['style'][key];
+						//tmp = DOM(original[i]).css(key);
 						if(tmp && !state[key].test(tmp)) { 
 							// 현재 element에 설정된 style의 값이 state 목록에 지정된 기본값(style property default value)이 아니므로 
 							// 현재 설정된 값을 저장(종료 후 현재값으로 재설정)

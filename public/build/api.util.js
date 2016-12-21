@@ -500,15 +500,6 @@ Dual licensed under the MIT and GPL licenses.
 			}
 			return is;
 		},
-		// requestAnimationFrame for Smart Animating http://goo.gl/sx5sts
-		requestAnimationFrame: (function() { 
-			// https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame
-			return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback) { return window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
-		})(),
-		cancelAnimationFrame: (function() {
-			// https://developer.mozilla.org/en-US/docs/Web/API/Window/cancelAnimationFrame
-			return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function(time) { return window.clearTimeout(time); };
-		})(),
 
 		// ---------- ---------- ---------- ---------- ---------- ---------- 
 		// 숫자
@@ -536,6 +527,11 @@ Dual licensed under the MIT and GPL licenses.
 			while(reg.test(value)) {
 				value = value.replace(reg, '$1' + ',' + '$2');  
 			}
+			/*
+			var parts = value.toString().split(".");
+			parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+			return parts.join(".");
+			*/
 			return value;
 		},
 		// 소수점 단위 금액

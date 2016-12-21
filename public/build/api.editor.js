@@ -11,7 +11,8 @@ Copyright (c) Sung-min Yu.
 Dual licensed under the MIT and GPL licenses.
 
 @browser compatibility
-
+IE9 이상
+FileReader: IE10 이상
 
 -
 사용예
@@ -32,7 +33,10 @@ Dual licensed under the MIT and GPL licenses.
 
 	'use strict'; // ES5
 
-	var EDGE = -200; // 임시
+	// ajax
+	if(!global.jQuery && global.api && global.api.xhr) {
+		$.ajax = global.api.xhr;
+	}
 
 	// 정규식
 	var regexp = {
@@ -67,12 +71,25 @@ Dual licensed under the MIT and GPL licenses.
 
 	// 모듈 (private)
 	var module = (function() {
-		function EditorModule() {
+		function EditModule() {
 			var that = this;
+
 			// key가 있는 인스턴스
 			that.instance = {};
+
+			// 선택된 텍스트 (window.getSelection())
+			that.selection; 
+
+			// 한글입력관련
+			that.composition = false;
+			$(document).off('.EVENT_COMPOSITIONSTART_TEXTEDIT').on('compositionstart.EVENT_COMPOSITIONSTART_TEXTEDIT', function() {
+				that.composition = true;
+			});
+			$(document).off('.EVENT_COMPOSITIONEND_TEXTEDIT').on('compositionend.EVENT_COMPOSITIONEND_TEXTEDIT', function() {
+				that.composition = false;
+			});
 		}
-		EditorModule.prototype = {
+		EditModule.prototype = {
 			setSettings: function(settings, options) {
 				var key;
 				for(key in options) {
@@ -97,6 +114,40 @@ Dual licensed under the MIT and GPL licenses.
 					};
 				}
 			})(),
+			// selection
+			setSelection: function() {
+				this.selection = window.getSelection();
+			},
+			// anchorNode, focusNode 선택여부
+			isSelection: function() {
+				var is = false;
+				if(typeof this.selection === 'object' && this.selection !== null && this.selection.anchorNode && this.selection.focusNode) {
+					is = true;
+				}
+				return is;
+			},
+			// 셀렉션의 시작지점과 끝지점이 동일한지의 여부 (드래그로 선택된 것이 없을 경우 false 반환)
+			isCollapsed: function() {
+				var is = false;
+				if(typeof this.selection === 'object' && this.selection !== null) {
+					is = this.selection.isCollapsed;
+				}
+				return is;
+			},
+			// 선택된 range 영역 
+			/*
+			드래그로 선택된 영역 조각
+			Range 인터페이스는 노드와 텍스트 노드를 포함한 문서의 일부(fragment)이다.
+			'문서의 특정 부분’을 정의하는 것이라 생각하면 쉽다.
+			*/
+			getRange: function(index) {
+				var range = '';
+				if(typeof this.selection === 'object' && this.selection !== null && this.selection.rangeCount > 0) { // rangeCount 는 커서 자체도 하나의 range 로 본다.
+					// this.selection.rangeCount
+					range = this.selection.getRangeAt(index || 0);
+				}
+				return range;
+			},
 			// 현재 node 상위(parentNode)를 검색하며, condition 결과에 따른 callback 실행
 			getParent: function(node, condition, callback) {
 				var result;
@@ -107,8 +158,9 @@ Dual licensed under the MIT and GPL licenses.
 					// condition 함수를 실행하여 리턴값이 true 의 경우, callback 함수 실행
 					// 1. condition 실행
 					// 2. callback 실행 (condition 함수의 실행 결과에 따름)
-					if(condition(node)) {
-						result = callback(node);
+					result = condition(node);
+					if(result) {
+						result = callback(node, result);
 						if(typeof result !== 'undefined') {
 							return result; // break
 						}
@@ -117,49 +169,43 @@ Dual licensed under the MIT and GPL licenses.
 					node = node.parentNode;
 				}
 			},
-			// 이미지삽입 시점의 위치값 저장
-			getHorizontalBounds: function(nodes, target, event) {
-				var bounds = [],
-					bound,
-					i,
-					max,
-					preNode,
-					postNode,
-					bottomBound,
-					topBound,
-					coordY;
-
-				// Compute top and bottom bounds for each child element
-				for(i=0, max=nodes.length-1; i<max; i++) {
-					preNode = nodes[i];
-					postNode = nodes[i+1] || null;
-
-					bottomBound = preNode.getBoundingClientRect().bottom - 5;
-					topBound = postNode.getBoundingClientRect().top;
-
-					bounds.push({
-						top: topBound,
-						bottom: bottomBound,
-						topElement: preNode,
-						bottomElement: postNode,
-						index: i+1
-					});
-				}
-				
-				//console.log('bounds');
-				//console.dir(bounds);
-
-				coordY = event.pageY - window.scrollY;
-
-				// Find if there is a range to insert the image tooltip between two elements
-				for(i=0, max=bounds.length; i<max; i++) {
-					bound = bounds[i];
-					if(coordY < bound.top && coordY > bound.bottom) {
-						return bound;
+			// 현재 선택된 글자에 블록태그(파라미터의 tag)를 설정한다.
+			setFormatBlock: function(tag) {
+				var that = this;
+				if(typeof tag === 'string') {
+					if(that.isSelection() && that.getRange() && that.getParent( // 추가하려는 tag가 상위에 존재하는지 확인
+						that.selection.focusNode,
+						// 조건
+						function(node) {
+							return node.nodeName.toLowerCase() === tag.toLowerCase();
+						},
+						// 조건에 따른 실행
+						function(node) {
+							return node;
+						}
+					)) {
+						document.execCommand("formatBlock", false, "p");
+						document.execCommand("outdent"); // 문자 선택(text selection)의 현위치에서 들어쓰기 한 증가분 만큼 왼쪽으로 내어쓰기 한다.
+					}else {
+						document.execCommand("formatBlock", false, tag);
 					}
 				}
-
-				return null;
+			},
+			// css display
+			getDisplay: function(element) {
+				var display = '';
+				if(typeof element === 'object' && element.nodeType) {
+					if(element.style.display) { // style로 값을 구할 수 있는 경우
+						display = element.style.display;
+					}else if(element.currentStyle && element.currentStyle.display) { // IE의 경우
+						display = element.currentStyle.display;
+					}else if(document.defaultView && document.defaultView.getComputedStyle) {
+						if(document.defaultView.getComputedStyle(element, null).getPropertyValue) {
+							display = document.defaultView.getComputedStyle(element, null).getPropertyValue('display');
+						}
+					}
+				}
+				return display;
 			},
 			// 현재 이벤트의 기본 동작을 중단한다.
 			stopCapture: function(e) {
@@ -194,124 +240,723 @@ Dual licensed under the MIT and GPL licenses.
 				return String(value).replace(/[^+-\.\d]|,/g, '');
 			}
 		};
-		return new EditorModule();
+		return new EditModule();
 	})();
 
-	// 에디터
-	var Editor = function(settings) {
+	// 텍스트 에디터
+	var EditText = function(settings) {
 		var that = this;
 		that.settings = {
-			'key': '', 
-			'target': null, // 에디터 적용 영역
-			// 기능 사용여부
-			'edit': {
-				'text': true,
-				'multi': true
-			},
-			// 파일 등을 불러올 서버 url
-			'url': {
-				'image': '//makestory.net/files/temp'
-			},
-			// 파일 등을 전송할 서버 url
-			'submit': {
-				'image': '//makestory.net/files/editor', // 이미지 파일 전송 url
-				'opengraph': '//makestory.net/opengraph'
-			},
-			// 스타일 
-			'style': {
-				'image': {
-					'left': '',
-					'leftout': '',
-					'right': '',
-					'rightout': '',
-					'center': ''
-				}
-			},
+			'key': 'editor', 
+			'target': null,
 			'callback': {
 				'init': null
 			}
 		};
-		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {
 			'target': null,
-			'text': {
-				'tooltip': undefined,
-				'command': { // button
-					'wrap': undefined // button element 들을 감싸고 있는 wrap
-				},
-				'other': {
-					'wrap': undefined, // option element 들을 감싸고 있는 wrap
-					'link': {} // url 입력창
-				}
+			'tooltip': null,
+			'command': {
+				'wrap': null
 			},
-			'multi': {
-				'tooltip': undefined,
-				'command': { // button
-					'wrap': undefined // button element 들을 감싸고 있는 wrap	
-				},
-				'other': {
-					'image': undefined
-				}
+			'other': {
+				'wrap': null
 			}
 		};
-		that.selection; // 선택된 텍스트 (window.getSelection())
 		that.range; // selection 된 range(범위)
-		that.composition = false; // 한글입력관련
-		that.imageBound; // 이미지를 출력할 위치 (이미지 업로드 사이에 커서 위치가 변경될 수 있으므로 주의해야 한다.)
+		that.time = null;
+
+		// settings
+		that.change(settings);
+
+		// private init 
+		(function() {
+			// 에디터 버튼 mousedown 이벤트 (에디터 기능을 선택영역에 적용)
+			var setTextTooltipMousedown = function(e) {
+				//console.log('setTextTooltipMousedown');
+				// down 했을 때 해당 버튼의 기능 적용
+				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+				var target = event && (event.target || event.srcElement);
+				var command = target['storage']['command']; // 버튼의 기능 종류
+
+				event.preventDefault(); // 현재 이벤트의 기본 동작을 중단한다.
+				event.stopPropagation(); // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+
+				if(module.getRange()) {
+					//console.log('에디터 기능 적용');
+					switch(command) {
+						case 'bold':
+							if(module.selection.anchorNode && !module.getParent(
+								module.selection.anchorNode,
+								// 조건
+								function(node) { // condition (검사)
+									return /^(h1|h2|h3)$/i.test(node.nodeName.toLowerCase()); // h1, h2, h3 태그는 진한색의 글자이므로 제외
+								}, 
+								// 조건에 따른 실행
+								function(node) { // callback (검사결과가 true의 경우)
+									return true;
+								}
+							)) {
+								document.execCommand('bold', false);
+							}
+							break;
+						case 'italic':
+							document.execCommand('italic', false);
+							break;
+						case 'strikethrough':
+							document.execCommand('strikethrough', false);
+							break;
+						case 'underline':
+							document.execCommand('underline', false);
+							break;
+						case "h1":
+						case "h2":
+						case "h3":
+							if(module.selection.focusNode && !module.getParent(
+								module.selection.focusNode,
+								// 조건
+								function(node) { // condition (검사)
+									return /^(b|strong)$/i.test(node.nodeName.toLowerCase()); 
+								}, 
+								// 조건에 따른 실행
+								function(node) { // callback (검사결과가 true의 경우)
+									return true;
+								}
+							)) {
+								module.setFormatBlock(command);
+							}
+							break;
+						case "blockquote": // 인용문 (들여쓰기)
+							module.setFormatBlock(command);
+							break;
+						case 'createLink':
+							// url 입력박스 보이기
+							that.elements.other.link.wrap.style.display = 'block';
+							setTimeout(function() {
+								var url = module.getParent(
+									module.selection.focusNode,
+									// 조건
+									function(node) {
+										return typeof node.href !== 'undefined';
+									},
+									// 조건에 따른 실행
+									function(node) {
+										return node.href;
+									}
+								);
+								// 선택된(셀렉) 곳에 a 태그 존재 확인
+								if(typeof url !== "undefined") { // 이미 a 태그 생성되어 있음
+									that.elements.other.link.input.value = url;
+								}else { // 신규 a 태그 생성
+									document.execCommand("createLink", false, '#none');
+								}
+								// 위 a 태그의 위치를 기억한다.
+								// execCommand 로 createLink 생성된 위치를 기억한다.
+								that.range = module.selection.getRangeAt(0); 
+								that.elements.other.link.input.focus();
+							}, 100);
+							break;
+					}
+				}
+			};
+			// 에디터 버튼 mouseup 이벤트
+			var setTextTooltipMouseup = function(e) {
+				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+				var target = event && (event.target || event.srcElement);
+				event.preventDefault(); // 현재 이벤트의 기본 동작을 중단한다.
+				event.stopPropagation(); // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+				setTimeout(function() {
+					// setSelection 함수는 isContentEditable 검수하므로 호출하지 않는다
+					that.setTextTooltipMenuState();
+					that.setTextTooltipMenuPostion(); // h1, h2, h3 등 적용에 따라 툴바위치가 변경되어야 할 경우가 있다.
+				}, 1);
+			};
+			// 에디터 링크 input blur 이벤트
+			var setTextTooltipLinkBlur = function(e) {
+				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+				var url = that.elements.other.link.input.value;
+
+				// 기억해둔 a 태그의 위치를 기능적용 위치로 설정한다.
+				window.getSelection().removeAllRanges();
+				window.getSelection().addRange(that.range);
+				if(url) {
+					if(!url.match("^(http://|https://|mailto:)")) {
+						url = "http://" + url;
+					}
+					document.execCommand('createLink', false, url);
+				}else {
+					// a 태그 초기화(삭제)
+					document.execCommand('unlink', false);
+				}
+				
+				// url 입력박스 숨기기
+				that.elements.other.link.wrap.style.display = 'none';
+
+				//
+				that.setTextTooltipMenuState();
+				that.setTextTooltipMenuPostion();
+			};
+			// 에디터 링크 input keydown 이벤트
+			var setTextTooltipLinkKeydown = function(e) {
+				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+				if(e.keyCode === 13) {
+					e.preventDefault();
+					that.elements.other.link.input.blur(); // trigger blur
+				}
+			};
+			var fragment = document.createDocumentFragment();
+			var button;
+
+			// 텍스트 툴바
+			that.elements.tooltip = document.createElement("div");
+			that.elements.tooltip.setAttribute('id', that.settings.key);
+			that.elements.tooltip.style.cssText = 'transition: all .05s ease-out; position: absolute; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); display: none;';
+			that.elements.tooltip.appendChild(that.elements.command.wrap = document.createElement("div"));
+			that.elements.tooltip.appendChild(that.elements.other.wrap = document.createElement("div"));
+			fragment.appendChild(that.elements.tooltip);
+
+			// 텍스트 에디터 버튼
+			button = document.createElement('button');
+			button.style.cssText = 'padding: 0px; width: 30px; height: 30px; font-size: 14px; color: rgb(44, 45, 46); background: none; border: 0px; outline: none; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;';
+			that.elements.command.wrap.appendChild(that.elements.command.h1 = (function(button) {
+				button['storage'] = {
+					'command': 'h1'
+				};
+				button.onmousedown = setTextTooltipMousedown; 
+				button.onmouseup = setTextTooltipMouseup;
+				button.textContent = 'H1';
+				return button;
+			})(button.cloneNode()));
+			that.elements.command.wrap.appendChild(that.elements.command.h2 = (function(button) {
+				button['storage'] = {
+					'command': 'h2'
+				};
+				button.onmousedown = setTextTooltipMousedown; 
+				button.onmouseup = setTextTooltipMouseup;
+				button.textContent = 'H2';
+				return button;
+			})(button.cloneNode()));
+			that.elements.command.wrap.appendChild(that.elements.command.h3 = (function(button) {
+				button['storage'] = {
+					'command': 'h3'
+				};
+				button.onmousedown = setTextTooltipMousedown; 
+				button.onmouseup = setTextTooltipMouseup;
+				button.textContent = 'H3';
+				return button;
+			})(button.cloneNode()));
+			that.elements.command.wrap.appendChild(that.elements.command.bold = (function(button) {
+				button['storage'] = {
+					'command': 'bold'
+				};
+				button.onmousedown = setTextTooltipMousedown; 
+				button.onmouseup = setTextTooltipMouseup;
+				button.textContent = 'B';
+				button.style.fontWeight = 'bold';
+				return button;
+			})(button.cloneNode()));
+			that.elements.command.wrap.appendChild(that.elements.command.italic = (function(button) {
+				button['storage'] = {
+					'command': 'italic'
+				};
+				button.onmousedown = setTextTooltipMousedown; 
+				button.onmouseup = setTextTooltipMouseup;
+				button.textContent = 'I';
+				button.style.fontStyle = 'italic';
+				return button;
+			})(button.cloneNode()));
+			that.elements.command.wrap.appendChild(that.elements.command.strikethrough = (function(button) {
+				button['storage'] = {
+					'command': 'strikethrough'
+				};
+				button.onmousedown = setTextTooltipMousedown; 
+				button.onmouseup = setTextTooltipMouseup;
+				button.textContent = 'S';
+				button.style.textDecoration = 'line-through';
+				return button;
+			})(button.cloneNode()));
+			that.elements.command.wrap.appendChild(that.elements.command.underline = (function(button) {
+				button['storage'] = {
+					'command': 'underline'
+				};
+				button.onmousedown = setTextTooltipMousedown;
+				button.onmouseup = setTextTooltipMouseup;
+				button.textContent = 'U';
+				button.style.textDecoration = 'underline';
+				return button;
+			})(button.cloneNode()));
+			that.elements.command.wrap.appendChild(that.elements.command.blockquote = (function(button) {
+				button['storage'] = {
+					'command': 'blockquote'
+				};
+				button.onmousedown = setTextTooltipMousedown; 
+				button.onmouseup = setTextTooltipMouseup;
+				button.textContent = '"';
+				return button;
+			})(button.cloneNode()));
+			that.elements.command.wrap.appendChild(that.elements.command.createLink = (function(button) {
+				button['storage'] = {
+					'command': 'createLink'
+				};
+				button.onmousedown = setTextTooltipMousedown; 
+				button.onmouseup = setTextTooltipMouseup;
+				button.textContent = '#';
+				
+				// option
+				that.elements.other.link = {};
+				that.elements.other.link.wrap = document.createElement("div"); // link option box
+				that.elements.other.link.input = document.createElement("input");
+				that.elements.other.link.wrap.appendChild(that.elements.other.link.input);
+				that.elements.other.wrap.appendChild(that.elements.other.link.wrap);
+				// style
+				that.elements.other.link.wrap.style.cssText = 'display: none;';
+				// event
+				that.elements.other.link.input.onblur = setTextTooltipLinkBlur;
+				that.elements.other.link.input.onkeydown = setTextTooltipLinkKeydown;
+				return button;
+			})(button.cloneNode()));
+
+			// body 삽입
+			document.body.appendChild(fragment);
+		})();
+	};
+	EditText.prototype.change = function(settings) {
+		var that = this;
+		
+		// settings
+		that.settings = module.setSettings(that.settings, settings);
 
 		// target
 		that.settings.target = (typeof that.settings.target === 'string' && /^[a-z]+/i.test(that.settings.target) ? '#' + that.settings.target : that.settings.target);
 		that.elements.target = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $(that.settings.target).get(0));
 
+		return that;
+	};
+	// 텍스트 에디터 툴바 메뉴(각 기능) 현재 selection 에 따라 최신화
+	EditText.prototype.setTextTooltipMenuState = function() {
+		//console.log('setTextTooltipMenuState');
+		/*
+		현재 포커스 위치의 element 에서 부모(parentNode)노드를 검색하면서,
+		텍스트 에디터메뉴에 해당하는 태그가 있는지 여부에 따라
+		해당 버튼에 on/off 효과를 준다.
+		*/
+		var that = this;
+		var key;
+		if(module.isSelection() && module.getRange()) {
+			for(key in that.elements.command) { // 버튼 선택 효과 초기화
+				if(key === 'wrap') {
+					continue;
+				}
+				//that.elements.command[key].classList.remove('active');
+				that.elements.command[key].style.color = 'rgb(44, 45, 46)';
+				that.elements.command[key].style.background = 'none';
+			}
+			module.getParent(
+				module.selection.focusNode,
+				// 조건
+				function(node) {
+					return typeof node.nodeName !== 'undefined' && typeof node.style !== 'undefined';
+				},
+				// 조건에 따른 실행
+				function(node) {
+					//console.log(node.nodeName.toLowerCase());
+					// style 확인
+					/*
+					var key;
+					for(key in node.style) {
+						console.log('node style: ' + key);
+						switch(node.style) {
+
+						}	
+					}
+					*/
+					
+					// tag 확인
+					switch(node.nodeName.toLowerCase()) {
+						case 'b':
+						case 'strong': // IE
+							that.elements.command.bold.style.color = 'rgb(255, 255, 255)';
+							that.elements.command.bold.style.backgroundColor = 'rgb(226, 69, 69)';
+							break;
+						case 'i':
+						case 'em': // IE
+							that.elements.command.italic.style.color = 'rgb(255, 255, 255)';
+							that.elements.command.italic.style.backgroundColor = 'rgb(226, 69, 69)';
+							break;
+						case 'strike':
+							that.elements.command.strikethrough.style.color = 'rgb(255, 255, 255)';
+							that.elements.command.strikethrough.style.backgroundColor = 'rgb(226, 69, 69)';
+							break;
+						case 'u':
+							that.elements.command.underline.style.color = 'rgb(255, 255, 255)';
+							that.elements.command.underline.style.backgroundColor = 'rgb(226, 69, 69)';
+							break;
+						case "h1":
+							that.elements.command.h1.style.color = 'rgb(255, 255, 255)';
+							that.elements.command.h1.style.backgroundColor = 'rgb(226, 69, 69)';
+							break;
+						case "h2":
+							that.elements.command.h2.style.color = 'rgb(255, 255, 255)';
+							that.elements.command.h2.style.backgroundColor = 'rgb(226, 69, 69)';
+							break;
+						case "h3":
+							that.elements.command.h3.style.color = 'rgb(255, 255, 255)';
+							that.elements.command.h3.style.backgroundColor = 'rgb(226, 69, 69)';
+							break;
+						case "blockquote":
+							that.elements.command.blockquote.style.color = 'rgb(255, 255, 255)';
+							that.elements.command.blockquote.style.backgroundColor = 'rgb(226, 69, 69)';
+							break;
+						case 'a':
+							that.elements.command.createLink.style.color = 'rgb(255, 255, 255)';
+							that.elements.command.createLink.style.backgroundColor = 'rgb(226, 69, 69)';
+							break;
+					}
+				}
+			);
+		}
+	};
+	// 텍스트 에디터 툴바 위치 설정 (보이기/숨기기)
+	EditText.prototype.setTextTooltipMenuPostion = function(parameter) {
+		//console.log('setTextTooltipMenuPostion');
+		var that = this;
+
+		var parameter = parameter || {};
+		var toggle = parameter['toggle'];
+
+		var clientRectBounds;
+		var tooltip_width, tooltip_height;
+		var top = 0, left = 0;
+
+		if(module.isCollapsed() || typeof module.selection !== 'object' || toggle === 'hide') {
+			// 툴바숨기기
+			that.elements.tooltip.style.display = "none";
+		}else if(module.getRange()) {
+			that.elements.tooltip.style.display = "block"; // 렌더링 상태에서 offsetWidth, offsetHeight 측정
+			// 툴팁 크기
+			tooltip_width = that.elements.tooltip.offsetWidth;
+			tooltip_height = that.elements.tooltip.offsetHeight;
+			// top / left
+			clientRectBounds = module.selection.getRangeAt(0).getBoundingClientRect();
+			top = (clientRectBounds.top - tooltip_height) - 5;
+			if(top < 0) {
+				top = clientRectBounds.bottom + 5; // 툴팁 하단에 출력되도록 변경
+				that.elements.tooltip.style.borderTop = '1px solid rgba(231, 68, 78, .86)';
+				that.elements.tooltip.style.borderBottom = 'none';
+			}else {
+				that.elements.tooltip.style.borderBottom = '1px solid rgba(231, 68, 78, .86)';
+				that.elements.tooltip.style.borderTop = 'none';
+			}
+			top += window.pageYOffset; // scroll
+			left = Math.round((clientRectBounds.left + clientRectBounds.right) / 2);
+			left -= Math.floor(tooltip_width / 2);
+			if(left < 0) {
+				left = 0;
+			}else if((left + tooltip_width) > Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth)) {
+				left = left - ((left + tooltip_width) - Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth));
+			}
+			left += window.pageXOffset; // scroll
+			//
+			that.elements.tooltip.style.top = top + "px";
+			that.elements.tooltip.style.left = left + "px";
+		}
+	};
+	// 툴팁 보이기
+	EditText.prototype.setTooltipToggle = function() {
+		var that = this;
+
+		// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
+		module.setSelection();
+		if(module.isSelection() && module.selection.focusNode.nodeType === 1 && /figure|img/.test(module.selection.focusNode.nodeName.toLowerCase())) {
+			/*
+			console.log('----------');
+			console.dir(module.selection);
+			// 시작노드
+			console.log('anchorNode.nodeName: ' + module.selection.anchorNode.nodeName);
+			console.log('anchorNode.nodeValue: ' + module.selection.anchorNode.nodeValue);
+			console.log('anchorNode.nodeType: ' + module.selection.anchorNode.nodeType);
+			// 끝노드
+			console.log('focusNode.nodeName: ' + module.selection.focusNode.nodeName);
+			console.log('focusNode.nodeValue: ' + module.selection.focusNode.nodeValue);
+			console.log('focusNode.nodeType: ' + module.selection.focusNode.nodeType);
+			*/
+			that.setTextTooltipMenuPostion({'toggle': 'hide'});
+		}else {
+			that.setTextTooltipMenuPostion();
+		}
+		that.setTextTooltipMenuState();
+	};
+	EditText.prototype.on = function() {
+		var that = this;
+
+		// reset
+		that.off();
+
+		// contentEditable
+		//console.log(that.elements.target);
+		//console.log(that.elements.target.contentEditable);
+		//console.log(that.elements.target.isContentEditable);
+		if(!that.elements.target.isContentEditable) {
+			that.elements.target.contentEditable = true; // 해당 element 내부 수정가능하도록 설정
+		}
+
+		// 마우스 이벤트
+		$(that.elements.target).on(env.event.down + '.EVENT_MOUSEDOWN_TEXTEDIT', function(e) {
+			that.setTooltipToggle();
+		});
+		$(that.elements.target).on(env.event.up + '.EVENT_MOUSEUP_TEXTEDIT', function(e) {
+			that.setTooltipToggle();
+		});
+		
+		// 키보드 이벤트
+		$(that.elements.target).on('keydown.EVENT_KEYDOWN_TEXTEDIT', function(e) {
+			//console.log('setContenteditableKeydown');
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+
+			//console.log('keydown');
+
+			// 방향키, 엔터키 등
+			module.setSelection();
+
+			// getSelection 선택된 node
+			if(module.isSelection()) {
+				if(event.keyCode === 13) { // keyCode 13: enter
+					// 현재노드 상위 검색
+					module.getParent( 
+						module.selection.anchorNode,
+						// 조건
+						function(node) {
+							switch(node.nodeName.toLowerCase()) {
+								case 'p':
+
+									break;
+								case 'figure':
+									// enter 기본 이벤트 중지
+									event.preventDefault();
+									break;
+								default:
+									return that.elements.target.isEqualNode(node);
+									break;
+							}
+						},
+						// 조건에 따른 실행
+						function(node) {
+							return node;
+						}
+					);
+				}
+			}
+		});
+		$(that.elements.target).on('keyup.EVENT_KEYUP_TEXTEDIT', function(e) {
+			//console.log('setContenteditableKeyup');
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			var insertedNode, unwrap, node, parent, range;
+
+			//console.log('keyup');
+
+			// 방향키, 엔터키 등
+			module.setSelection();
+
+			// getSelection 선택된 node
+			if(module.isSelection()) {
+				if(event.keyCode === 13) { // keyCode 13: enter
+					// DIV 내부에서 엔터를 눌렀을 경우 div 내부에서 br로 처리되므로 p 태그로 변경되도록 처리한다.
+					if(module.selection.anchorNode.nodeName.toLowerCase() === 'div') {
+						module.setFormatBlock("p");
+					}
+
+					// 현재노드 상위 검색
+					module.getParent( 
+						module.selection.anchorNode,
+						// 조건
+						function(node) {
+							switch(node.nodeName.toLowerCase()) {
+								case 'p':
+
+									break;
+								case 'figure':
+
+									break;
+								default:
+									return that.elements.target.isEqualNode(node);
+									break;
+							}
+						},
+						// 조건에 따른 실행
+						function(node) {
+							return node;
+						}
+					);
+				}
+
+				// -, *, 1. 입력에 따른 목록태그 변환
+				// isCollapsed: 셀렉션의 시작지점과 끝지점이 동일한지의 여부
+				// nodeValue: Text와 Comment 노드에서 실제 텍스트 문자열 추출
+				/*if(module.selection.isCollapsed && module.selection.anchorNode.nodeValue && module.selection.anchorNode.parentNode.nodeName !== "LI") { 
+					//console.log('module.selection.isCollapsed: ' + module.selection.isCollapsed);
+					
+					if(module.selection.anchorNode.nodeValue.match(/^[-*]\s/)) { 
+						// "- 텍스트작성" 또는 "* 텍스트작성" 행태로 글을 작성했을 경우 목록태그로 변경
+						document.execCommand('insertUnorderedList'); // ul 태그 생성
+						module.selection.anchorNode.nodeValue = module.selection.anchorNode.nodeValue.substring(2);
+						insertedNode = module.getParent( // 현재노드 상위로 존재하는 ul 태그 반환
+							module.selection.anchorNode,
+							// 조건
+							function(node) {
+								return node.nodeName.toLowerCase() === 'ul';
+							},
+							// 조건에 따른 실행
+							function(node) {
+								return node;
+							}
+						);
+					}else if(module.selection.anchorNode.nodeValue.match(/^1\.\s/)) { 
+						// "1. 텍스트작성" 형태로 글을 작성했을 경우 목록태그로 변경
+						document.execCommand('insertOrderedList'); // ol 태그 생성
+						module.selection.anchorNode.nodeValue = module.selection.anchorNode.nodeValue.substring(3);
+						insertedNode = module.getParent( // 현재노드 상위로 존재하는 ol 태그 반환
+							module.selection.anchorNode,
+							// 조건
+							function(node) {
+								return node.nodeName.toLowerCase() === 'ol';
+							},
+							// 조건에 따른 실행
+							function(node) {
+								return node;
+							}
+						);
+					}
+
+					// ul 또는 ol 로 변경되었고, 현재 부모 태그가 p 또는 div 의 경우
+					// p 또는 div 내부에 목록태그가 존재하지 않도록, 해당위치를 목록태그로 대체한다.
+					unwrap = insertedNode && ["ul", "ol"].indexOf(insertedNode.nodeName.toLocaleLowerCase()) >= 0 && ["p", "div"].indexOf(insertedNode.parentNode.nodeName.toLocaleLowerCase()) >= 0;
+					if(unwrap) {
+						node = module.selection.anchorNode;
+						parent = insertedNode.parentNode;
+						parent.parentNode.insertBefore(insertedNode, parent);
+						parent.parentNode.removeChild(parent);
+
+						range = document.createRange();
+						range.setStart(node, 0);
+						range.setEnd(node, 0);
+						module.selection.removeAllRanges();
+						module.selection.addRange(range);
+					}
+				}*/
+
+				that.setTooltipToggle();
+			}
+		});
+
+		// 커서 (focus)
+		$(that.elements.target).on('blur.EVENT_BLUR_TEXTEDIT', function(e) {
+			that.setTooltipToggle();
+		});
+
+		// contenteditable paste text only
+		// http://stackoverflow.com/questions/12027137/javascript-trick-for-paste-as-plain-text-in-execcommand
+		$(that.elements.target).on('paste.EVENT_PASTE_TEXTEDIT', function(e) {
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			var text = '';
+
+			event.preventDefault();
+			if(event.clipboardData) {
+				text = event.clipboardData.getData('text/plain');
+			}else if(window.clipboardData) {
+				text = window.clipboardData.getData('Text');
+			}
+			if(document.queryCommandSupported('insertText')) {
+				document.execCommand('insertText', false, text);
+			}else {
+				document.execCommand('paste', false, text);
+			}
+		});
+
+		// document event
+		$(document).on('resize.EVENT_RESIZE_TEXTEDIT_DOCUMENT', function(e) {
+			that.setTooltipToggle();
+		});
+		/*$(document).on(env.event.up + '.EVENT_MOUSEUP_TEXTEDIT_DOCUMENT', function(e) {
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			//var target = event && (event.target || event.srcElement);
+			// 툴팁내부 클릭된 것인지 확인
+			if(!that.elements.tooltip.contains(event.target)) {
+				console.log('document mouseup');
+				setTimeout(function() {
+					module.setSelection();
+					that.setTooltipToggle();
+				}, 1);
+			}
+		});*/
+	};
+	EditText.prototype.off = function() {
+		var that = this;
+
+		// tooltip
+		that.setTextTooltipMenuPostion({'toggle': 'hide'});
+
+		// 마우스 이벤트
+		$(that.elements.target).off('.EVENT_MOUSEDOWN_TEXTEDIT')
+		$(that.elements.target).off('.EVENT_MOUSEUP_TEXTEDIT');
+
+		// 키보드 이벤트
+		$(that.elements.target).off('.EVENT_KEYDOWN_TEXTEDIT');
+		$(that.elements.target).off('.EVENT_KEYUP_TEXTEDIT');
+		$(that.elements.target).off('.EVENT_BLUR_TEXTEDIT');
+		$(that.elements.target).off('.EVENT_PASTE_TEXTEDIT');
+
+		// document event
+		$(document).off('.EVENT_RESIZE_TEXTEDIT_DOCUMENT');
+		//$(document).off('.EVENT_MOUSEUP_TEXTEDIT_DOCUMENT');
+	};
+
+	// 멀티미디어 에디터
+	var EditMulti = function(settings) {
+		var that = this;
+		that.settings = {
+			'key': 'editor', 
+			'target': null,
+			'submit': {
+				'image': '//makestory.net/files/editor', // 이미지 파일 전송 url
+			},
+			'class': {
+				'image': ''
+			},
+			'callback': {
+				'init': null
+			}
+		};
+		that.elements = {
+			'target': null,
+			'tooltip': null,
+			'command': {
+				'wrap': null
+			}
+		};
+
+		// settings
+		that.change(settings);
+
 		// private init
-		(function init() {
-			// 이미지 파일 선택
+		(function() {
+			// 이미지 파일 선택 - input file 이벤트
 			var setImageInputChange = (function() {
 				if('FileReader' in window) { // IE10 이상
 					// html5 FileReader
-					return function(e, form, input) {
+					return function(e, form, input, id, wrap) {
 						var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 						var files = this.files;
 						var i, max;
+
 						for(i=0, max=files.length; i<max; i++) {
 							(function(file) {
 								var reader = new FileReader();
-								// Data URI Scheme
-								//
 								reader.readAsDataURL(file); // base64
 								reader.onload = function(e) {
 									// 이미지 삽입
-									that.setPut({'type': 'image', 'data': e.target.result});
+									that.put({'type': 'image', 'id': id, 'data': e.target.result});
 									// 생성된 tag 삭제
 									form.parentNode.removeChild(form);
-
-									//썸네일 이미지 생성
-									/*tempImage = new Image(); //drawImage 메서드에 넣기 위해 이미지 객체화
-									tempImage.src = e.target.result; //data-uri를 이미지 객체에 주입
-									tempImage.onload = function () {
-										//리사이즈를 위해 캔버스 객체 생성
-										var canvas = document.createElement('canvas');
-										var canvasContext = canvas.getContext("2d");
-
-										//캔버스 크기 설정
-										canvas.width = 100; //가로 100px
-										canvas.height = 100; //세로 100px
-
-										//이미지를 캔버스에 그리기
-										canvasContext.drawImage(this, 0, 0, 100, 100);
-
-										//캔버스에 그린 이미지를 다시 data-uri 형태로 변환
-										var dataURI = canvas.toDataURL("image/jpeg");
-
-										//썸네일 이미지 보여주기
-										document.querySelector('#thumbnail').src = dataURI;
-
-										//썸네일 이미지를 다운로드할 수 있도록 링크 설정
-										document.querySelector('#download').href = dataURI;
-
-										//<a id="download" download="thumbnail.jpg"></a> download 속성은 다운로드할 대상의 파일명을 미리 지정할 수 있다.
-									};*/
-
 								};
 							})(files[i]);
 						}
@@ -347,47 +992,90 @@ Dual licensed under the MIT and GPL licenses.
 			var setImageTooltipMousedown = function(e) { 
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 				var fragment = document.createDocumentFragment();
+				var wrap, id; // 이미지를 감싸는 div
 				var form = document.createElement('form');
-				var input1 = document.createElement('input'); // file
-				var input2 = document.createElement('input'); // key
+				var input = document.createElement('input'); // file input
+				var hidden1 = document.createElement('input'); // 에디터 key (key에 해당하는 에디터)
+				var hidden2 = document.createElement('input'); // file 넣을 위치 id
+				var setInsertBeforeWrap = function(position) { // position 기준 이전에 삽입
+					var div = document.createElement("div");
+					position.parentNode.insertBefore(div, position);
+					return div;
+				};
+				var setInsertAfterWrap = function(position) { // position 기준 다음에 삽입
+					var div = document.createElement("div");
+					position.parentNode.insertBefore(div, position.nextSibling);
+					return div;
+				};
+				var setAppendWrap = function(position) { // position 기준 마지막에 삽입
+					var div = document.createElement("div");
+					position.appendChild(div);
+					// div 다음 라인에 p 태그 삽입
+					// document.execCommand("formatBlock", false, "p") 방식으로 넣어야 하지만, 포커스를 옮겨서 넣는 방식을 몰라, 우선 아래와 같이 작업
+					(function() {
+						var p = document.createElement("p");
+						p.innerHTML = '<br />';
+						div.parentNode.insertBefore(p, div.nextSibling);
+					})();
+					return div;
+				};
 
-				// Cache the bound that was originally clicked on before the image upload
-				var childrenNodes = that.elements.target.children;
-				var editBounds = that.elements.target.getBoundingClientRect();
-
-				that.imageBound = module.getHorizontalBounds(childrenNodes, editBounds, event);
+				// 이미지를 넣을 위치 설정
+				if(module.isSelection()) {
+					wrap = module.getParent(
+						module.selection.anchorNode,
+						// 조건
+						function(node) { // condition (검사)
+							/*
+							console.log('node');
+							console.log(node);
+							console.log(node.parentNode);
+							*/
+							if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
+								//console.log('setAppendWrap(that.elements.target)');
+								return setAppendWrap(that.elements.target);
+							}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && /block|inline-block/i.test(module.getDisplay(node.parentNode))))) {
+								//console.log('setInsertBeforeWrap(node)');
+								return setInsertBeforeWrap(node);
+							}/*else if(node.nodeType === 1 && (node.getAttribute('data-type') || (node.storage && node.storage.type))) {
+								//console.log('setInsertAfterWrap(node)');
+								return setInsertAfterWrap(node);
+							}*/
+						}, 
+						// 조건에 따른 실행
+						function(node, result) { // callback (검사결과가 true의 경우)
+							if(node) {
+								return result;
+							}
+						}
+					);
+				}else {
+					wrap = setAppendWrap(that.elements.target);
+				}
+				if(!wrap || typeof wrap !== 'object' || !wrap.nodeName) {
+					return false;
+				}
 				/*
-				console.log('childrenNodes');
-				console.log(childrenNodes);
-				console.log('editBounds');
-				console.log(editBounds);
-				console.log('imageBound');
-				console.log(that.imageBound);
+				console.log('wrap');
+				console.log(wrap);
+				console.log(module.selection.anchorNode);
+				console.log(module.selection.focusNode);
+				return;
 				*/
+				// 이미지를 넣을 위치를 위해 id 속성 설정
+				id = module.getKey();
+				wrap.setAttribute("id", id);
+				wrap.setAttribute("data-type", "image");
+				if(!wrap.storage) {
+					wrap.storage = {
+						'type': 'image'
+					};
+				}
 
-				// 1. input file 생성하고 실행(.click()); name="apiEditorImages[]"
-				// position: absolute; left: -9999px; top: -9999px;
-
-				// 2. 생성한 element 에 onchange(setImageInputChange) 이벤트 적용
-
-				// 3. 글쓰기를 했을 때 해당 input file 부분 name 속성을 이용해서 서버에서 받는다.
-
-				// 4. 서버에서 받은 후 img 의 src 주소를 변경해 줘야한다.
-
-
-				// 문제는!!! 해당이미지를 지우게 된다면??
-
-				// 업로드를 하면 생성한 input 태그를 삭제한다. (미디엄은 삭제를 하는데 왜 삭제할까????)
-				// 아! 혹시 iframe 로 해당 파일을 전송하기 위한 것일까??? (XMLHttpRequest 레벨2 전에는 iframe 방식 뿐이였으니 사용가능성 높다)
-
-				// temp 로 업로드 -> 글쓰기가 되면 이미지 파일을 public/files/images 로 이동
-
-				// 이미지 파일명을 변경했는데... 변경된 파일명을 에디터가 어떻게 알수 있을까????????????????????????????
-				// iframe 이라면 window.top.xxxx(); 로 현재 위치의 자스를 호출할 수 있지 않을까???
-				// ajax 라면 반환값에 변경된 파일명이 있지 않을까???????
-
-				form.appendChild(input2);
-				form.appendChild(input1);
+				// FileReader 를 지원하지 않는 브라우저를 위해 iframe 기반 파일 전송
+				form.appendChild(hidden2);
+				form.appendChild(hidden1);
+				form.appendChild(input);
 				fragment.appendChild(form);
 
 				form.style.cssText = 'position: absolute; left: -9999px; top: -9999px;';
@@ -395,986 +1083,334 @@ Dual licensed under the MIT and GPL licenses.
 				form.setAttribute('method', 'post');
 				form.setAttribute('enctype', 'multipart/form-data');
 
-				input2.style.cssText = '';
-				input2.setAttribute('type', 'hidden');
-				input2.setAttribute('name', 'key');
-				input2.setAttribute('value', that.settings.key);
+				hidden2.style.cssText = '';
+				hidden2.setAttribute('type', 'hidden');
+				hidden2.setAttribute('name', 'id');
+				hidden2.setAttribute('value', id);
 
-				input1.style.cssText = '';
-				input1.setAttribute('type', 'file');
-				input1.setAttribute('name', 'apiEditorImages[]');
-				input1.setAttribute('accept', 'image/*');
-				input1.setAttribute('multiple', 'multiple');
-				input1.onchange = function(e) {
-					setImageInputChange.call(this, e, form, input1, input2);
+				hidden1.style.cssText = '';
+				hidden1.setAttribute('type', 'hidden');
+				hidden1.setAttribute('name', 'key');
+				hidden1.setAttribute('value', that.settings.key);
+
+				input.style.cssText = '';
+				input.setAttribute('type', 'file');
+				input.setAttribute('name', 'apiEditorImages[]');
+				input.setAttribute('accept', 'image/*');
+				input.setAttribute('multiple', 'multiple');
+
+				input.onchange = function(e) {
+					setImageInputChange.call(this, e, form, input, id, wrap);
 				};
-				input1.click(); // 실행
+				input.click(); // 실행
+
 				document.body.appendChild(fragment);
 			};
-			// 에디터 버튼 mousedown 이벤트 (에디터 기능을 선택영역에 적용)
-			var setTextTooltipMousedown = function(e) {
-				//console.log('setTextTooltipMousedown');
-				// down 했을 때 해당 버튼의 기능 적용
-				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				var target = event && (event.target || event.srcElement);
-				var command = target['storage']['command']; // 버튼의 기능 종류
-
-				event.preventDefault(); // 현재 이벤트의 기본 동작을 중단한다.
-				event.stopPropagation(); // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
-
-				if(typeof that.selection === 'object' && 'rangeCount' in that.selection && that.selection.rangeCount > 0) {
-					//console.log('에디터 기능 적용');
-					switch(command) {
-						case 'bold':
-							if(that.selection.anchorNode && !module.getParent(
-								that.selection.anchorNode,
-								// 조건
-								function(node) { // condition (검사)
-									return /^(h1|h2|h3)$/i.test(node.nodeName.toLowerCase()); // h1, h2, h3 태그는 진한색의 글자이므로 제외
-								}, 
-								// 조건에 따른 실행
-								function(node) { // callback (검사결과가 true의 경우)
-									return true;
-								}
-							)) {
-								document.execCommand('bold', false);
-							}
-							break;
-						case 'italic':
-							document.execCommand('italic', false);
-							break;
-						case 'strikethrough':
-							document.execCommand('strikethrough', false);
-							break;
-						case 'underline':
-							document.execCommand('underline', false);
-							break;
-						case "h1":
-						case "h2":
-						case "h3":
-							if(that.selection.focusNode && !module.getParent(
-								that.selection.focusNode,
-								// 조건
-								function(node) { // condition (검사)
-									return /^(b|strong)$/i.test(node.nodeName.toLowerCase()); 
-								}, 
-								// 조건에 따른 실행
-								function(node) { // callback (검사결과가 true의 경우)
-									return true;
-								}
-							)) {
-								that.setFormatBlock(command);
-							}
-							break;
-						case "blockquote": // 인용문 (들여쓰기)
-							that.setFormatBlock(command);
-							break;
-						case 'createLink':
-							// url 입력박스 보이기
-							//that.elements['text']['command']['wrap'].style.display = 'none';
-							that.elements['text']['other']['link']['wrap'].style.display = 'block';
-
-							// 
-							setTimeout(function() {
-								//
-								var url = module.getParent(
-									that.selection.focusNode,
-									// 조건
-									function(node) {
-										return typeof node.href !== 'undefined';
-									},
-									// 조건에 따른 실행
-									function(node) {
-										return node.href;
-									}
-								);
-								// 선택된(셀렉) 곳에 a 태그 존재 확인
-								if(typeof url !== "undefined") { // 이미 a 태그 생성되어 있음
-									that.elements['text']['other']['link']['input'].value = url;
-								}else { // 신규 a 태그 생성
-									document.execCommand("createLink", false, "#none");
-								}
-								// 위 a 태그의 위치를 기억한다.
-								that.range = that.selection.getRangeAt(0); // range는 이 위치에서 실행되어야 정상 작동한다!
-								//
-								that.elements['text']['other']['link']['input'].focus();
-							}, 100);
-							break;
-					}
-				}
-			};
-			// 에디터 버튼 mouseup 이벤트
-			var setTextTooltipMouseup = function(e) {
-				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				var target = event && (event.target || event.srcElement);
-				event.preventDefault(); // 현재 이벤트의 기본 동작을 중단한다.
-				event.stopPropagation(); // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
-				setTimeout(function() {
-					// setSelection 함수는 isContentEditable 검수하므로 호출하지 않는다
-					that.setTextTooltipMenuState();
-					that.setTextTooltipMenuPostion(); // h1, h2, h3 등 적용에 따라 툴바위치가 변경되어야 할 경우가 있다.
-				}, 1);
-			};
-			// 에디터 링크 input blur 이벤트
-			var setTextTooltipLinkBlur = function(e) {
-				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				var url = that.elements['text']['other']['link']['input'].value;
-				// 기억해둔 a 태그의 위치를 기능적용 위치로 설정한다.
-				window.getSelection().addRange(that.range);
-				// a 태그 초기화(삭제)
-				document.execCommand('unlink', false);
-				if(url !== "") {
-					if(!url.match("^(http|https)://")) {
-						url = "http://" + url;
-					}
-					// 사용자가 입력한 url이 있을 경우 a 태그의 href 최신화 (a 태그 재생성)
-					document.execCommand('createLink', false, url);
-				}
-				that.elements['text']['other']['link']['input'].value = '';
-
-				// url 입력박스 숨기기
-				that.elements['text']['other']['link']['wrap'].style.display = 'none';
-
-				//
-				that.setTextTooltipMenuState();
-			};
-			// 에디터 링크 input keydown 이벤트
-			var setTextTooltipLinkKeydown = function(e) {
-				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				if(e.keyCode === 13) {
-					e.preventDefault();
-					that.elements['text']['other']['link']['input'].blur(); // trigger blur
-				}
-			};
-			// 에디터 button, input 등 생성 및 이벤트 설정
-			var setCreateTooltipElement = function(parameter) { 
-				var parameter = parameter || {};
-				var edit = parameter['edit'];
-				var command = parameter['command']; 
-
-				var setButton = function() {
-
-				};
-				var setLabel = function() {
-
-				};
-				var style = {
-					'button': 'padding: 0px; width: 30px; height: 30px; font-size: 14px; color: rgb(20, 29, 37); background: none; border: 0px; outline: none; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;',
-					'label': 'display: block; padding: 0px; width: 30px; height: 30px; font-size: 14px; color: rgb(20, 29, 37); background: none; border: 0px; outline: none; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;'
-				};
-				var element;
-
-				// 중복생성 방지
-
-				
-
-				// command
-				switch(command) {
-					case 'bold':
-						// button
-						element = document.createElement('button');
-						element.style.cssText = style.button;
-						element['storage'] = {
-							'command': command
-						};
-						element.onmousedown = setTextTooltipMousedown; 
-						element.onmouseup = setTextTooltipMouseup;
-						that.elements[edit]['command'][command] = element;
-						//
-						element.textContent = 'B';
-						element.style.fontWeight = 'bold';
-						break;
-					case 'italic':
-						// button
-						element = document.createElement('button');
-						element.style.cssText = style.button;
-						element['storage'] = {
-							'command': command
-						};
-						element.onmousedown = setTextTooltipMousedown; 
-						element.onmouseup = setTextTooltipMouseup;
-						that.elements[edit]['command'][command] = element;
-						//
-						element.textContent = 'I';
-						element.style.fontStyle = 'italic';
-						break;
-					case 'strikethrough':
-						// button
-						element = document.createElement('button');
-						element.style.cssText = style.button;
-						element['storage'] = {
-							'command': command
-						};
-						element.onmousedown = setTextTooltipMousedown; 
-						element.onmouseup = setTextTooltipMouseup;
-						that.elements[edit]['command'][command] = element;
-						//
-						element.textContent = 'S';
-						element.style.textDecoration = 'line-through';
-						break;
-					case 'underline':
-						// button
-						element = document.createElement('button');
-						element.style.cssText = style.button;
-						element['storage'] = {
-							'command': command
-						};
-						element.onmousedown = setTextTooltipMousedown; 
-						element.onmouseup = setTextTooltipMouseup;
-						that.elements[edit]['command'][command] = element;
-						//
-						element.textContent = 'U';
-						element.style.textDecoration = 'underline';
-						break;
-					case "h1":
-						// button
-						element = document.createElement('button');
-						element.style.cssText = style.button;
-						element['storage'] = {
-							'command': command
-						};
-						element.onmousedown = setTextTooltipMousedown; 
-						element.onmouseup = setTextTooltipMouseup;
-						that.elements[edit]['command'][command] = element;
-						//
-						element.textContent = 'H1';
-						break;
-					case "h2":
-						// button
-						element = document.createElement('button');
-						element.style.cssText = style.button;
-						element['storage'] = {
-							'command': command
-						};
-						element.onmousedown = setTextTooltipMousedown; 
-						element.onmouseup = setTextTooltipMouseup;
-						that.elements[edit]['command'][command] = element;
-						//
-						element.textContent = 'H2';
-						break;
-					case "h3":
-						// button
-						element = document.createElement('button');
-						element.style.cssText = style.button;
-						element['storage'] = {
-							'command': command
-						};
-						element.onmousedown = setTextTooltipMousedown; 
-						element.onmouseup = setTextTooltipMouseup;
-						that.elements[edit]['command'][command] = element;
-						//
-						element.textContent = 'H3';
-						break;
-					case "blockquote":
-						// button
-						element = document.createElement('button');
-						element.style.cssText = style.button;
-						element['storage'] = {
-							'command': command
-						};
-						element.onmousedown = setTextTooltipMousedown; 
-						element.onmouseup = setTextTooltipMouseup;
-						that.elements[edit]['command'][command] = element;
-						//
-						element.textContent = '"';
-						break;
-					case 'createLink': // link
-						// button
-						element = document.createElement('button');
-						element.style.cssText = style.button;
-						element['storage'] = {
-							'command': command
-						};
-						//
-						element.onmousedown = setTextTooltipMousedown; 
-						element.onmouseup = setTextTooltipMouseup;
-						that.elements[edit]['command'][command] = element;
-						//
-						element.textContent = '#';
-
-						// option
-						that.elements['text']['other']['link']['wrap'] = document.createElement("div"); // link option box
-						that.elements['text']['other']['link']['input'] = document.createElement("input");
-						that.elements['text']['other']['link']['wrap'].appendChild(that.elements['text']['other']['link']['input']);
-						that.elements['text']['other']['wrap'].appendChild(that.elements['text']['other']['link']['wrap']);
-						// style
-						that.elements['text']['other']['link']['wrap'].style.cssText = 'display: none;';
-						// event
-						that.elements['text']['other']['link']['input'].onblur = setTextTooltipLinkBlur;
-						that.elements['text']['other']['link']['input'].onkeydown = setTextTooltipLinkKeydown;
-						break;
-					case 'insertImage':
-						// input file 을 실행하기 위해 label tag 사용
-						element = document.createElement('label');
-						element.style.cssText = style.button;
-						element['storage'] = {
-							'command': command
-						};
-						//
-						element.onmousedown = setImageTooltipMousedown;
-						//
-						element.textContent = '+';
-						break;
-				}
-				that.elements[edit]['command'][command] = element;
-
-				return element;
-			};
 			var fragment = document.createDocumentFragment();
-			// document 에 에디터 툴바존재여부 확인 후 생성
-
-
-			// 텍스트 툴바
-			that.elements['text']['tooltip'] = document.createElement("div");
-			that.elements['text']['tooltip'].style.cssText = 'transition: all .3s ease-out; position: absolute; top: ' + EDGE + 'px; left: ' + EDGE + 'px; color: rgb(20, 29, 37); background-color: rgba(255, 255, 255, .86);';
-			that.elements['text']['tooltip'].appendChild(that.elements['text']['command']['wrap'] = document.createElement("div"));
-			that.elements['text']['tooltip'].appendChild(that.elements['text']['other']['wrap'] = document.createElement("div"));
-			fragment.appendChild(that.elements['text']['tooltip']);
-
-			// 텍스트 에디터 버튼
-			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'h1'}));
-			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'h2'}));
-			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'h3'}));
-			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'bold'}));
-			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'italic'}));
-			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'strikethrough'}));
-			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'underline'}));
-			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'blockquote'}));
-			that.elements['text']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'text', 'command': 'createLink'}));
+			var label;
 
 			// 멀티미디어 툴바
-			that.elements['multi']['tooltip'] = document.createElement("div");
-			that.elements['multi']['tooltip'].style.cssText = 'transition: all .3s ease-out; position: absolute; top: ' + EDGE + 'px; left: ' + EDGE + 'px; color: rgb(20, 29, 37); background-color: rgba(255, 255, 255, .86);';
-			that.elements['multi']['tooltip'].appendChild(that.elements['multi']['command']['wrap'] = document.createElement("div"));
-			fragment.appendChild(that.elements['multi']['tooltip']);
+			that.elements.tooltip = document.createElement("div");
+			that.elements.tooltip.style.cssText = 'transition: all .05s ease-out; position: absolute; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); display: none;';
+			that.elements.tooltip.appendChild(that.elements.command.wrap = document.createElement("div"));
+			fragment.appendChild(that.elements.tooltip);
 
 			// 멀티미디어 에디터 버튼
-			that.elements['multi']['command']['wrap'].appendChild(setCreateTooltipElement({'edit': 'multi', 'command': 'insertImage'}));
-			
-
-			/*
-			// Set cursor position
-			var range = document.createRange();
-			var selection = window.getSelection();
-			range.setStart(headerField, 1);
-			selection.removeAllRanges();
-			selection.addRange(range);
-			*/
+			label = document.createElement('label'); // input file 을 실행하기 위해 label tag 사용
+			label.style.cssText = 'display: block; margin: 2px 4px; background: none; border: 0px; outline: none; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;';
+			that.elements.command.wrap.appendChild(that.elements.command.insertImage = (function(label) {
+				label['storage'] = {
+					'command': 'insertImage'
+				};
+				label.onmousedown = setImageTooltipMousedown;
+				label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 368 368" style="fill: rgb(44, 45, 46);"><path d="M328,32H40C18,32,0,50,0,72v224c0,22,18,40,40,40h288c22,0,40-18,40-40V72C368,50,350,32,328,32z M352,185.6l-38-38 c-6.4-6.4-16-6.4-22.4,0L200,238.8l-0.4-0.4L153.2,192c-6-6-16.4-6-22.4,0l-39.2,39.2c-3.2,3.2-3.2,8,0,11.2 c3.2,3.2,8,3.2,11.2,0l39.2-39.2l46.4,46.4l0.4,0.4l-32.4,32.4c-3.2,3.2-3.2,8,0,11.2c1.6,1.6,3.6,2.4,5.6,2.4s4-0.8,5.6-2.4 l135.2-134.8l47.6,47.6c0.4,0.4,1.2,0.8,1.6,1.2V296c0,13.2-10.8,24-24,24H40c-13.2,0-24-10.8-24-24V72c0-13.2,10.8-24,24-24h288 c13.2,0,24,10.8,24,24V185.6z" fill="#000"/><path d="M72.4,250.4l-8,8c-3.2,3.2-3.2,8,0,11.2C66,271.2,68,272,70,272s4-0.8,5.6-2.4l8-8c3.2-3.2,3.2-8,0-11.2 C80.4,247.2,75.6,247.2,72.4,250.4z" fill="#000"/><path d="M88,80c-22,0-40,18-40,40s18,40,40,40s40-18,40-40S110,80,88,80z M88,144c-13.2,0-24-10.8-24-24s10.8-24,24-24 s24,10.8,24,24S101.2,144,88,144z" fill="#000"/></svg>';
+				//label.textContent = '+';
+				return label;
+			})(label.cloneNode()));
+			that.elements.command.wrap.appendChild(that.elements.command.insertVideo = (function(label) {
+				label['storage'] = {
+					'command': 'insertVideo'
+				};
+				//label.onmousedown = setImageTooltipMousedown;
+				label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 64 64" style="fill: rgb(44, 45, 46);"><path d="M42.4472008,36.1054993l-16-8c-0.3105011-0.1542988-0.6787014-0.1396999-0.9726009,0.0439014 C25.1795998,28.3320007,25,28.6532993,25,29v16c0,0.3466988,0.1795998,0.6679993,0.4745998,0.8506012 C25.6347008,45.9501991,25.8173008,46,26,46c0.1532993,0,0.3055992-0.0351982,0.4472008-0.1054993l16-8 C42.7860985,37.7246017,43,37.3788986,43,37S42.7860985,36.2753983,42.4472008,36.1054993z M27,43.3818016V30.6182003 L39.7635994,37L27,43.3818016z" fill="#000"/><path d="M60,5h-56C1.7909007,5,0.0000008,6.7908001,0.0000008,9v46c0,2.2092018,1.7908999,4,3.9999998,4h56 c2.2090988,0,4-1.7907982,4-4V9C64,6.7908001,62.2090988,5,60,5z M62,9v8h-8.3283005l2.6790009-10H60 C61.1026993,7,62,7.8972001,62,9z M21.2804241,7l-2.6790009,10H9.6508007l2.6788998-10H21.2804241z M23.3507004,7h8.9297218 l-2.6789989,10h-8.9297237L23.3507004,7z M34.3507004,7h8.9297218l-2.678997,10h-8.9297256L34.3507004,7z M45.3507004,7h8.9297218 l-2.678997,10h-8.9297256L45.3507004,7z M4.0000005,7h6.2594237L7.5805006,17H2.0000007V9 C2.0000007,7.8972001,2.8972008,7,4.0000005,7z M60,57h-56c-1.1027997,0-1.9999998-0.8972015-1.9999998-2V19h60v36 C62,56.1027985,61.1026993,57,60,57z" fill="#000"/></svg>';
+				return label;
+			})(label.cloneNode()));
 
 			// body 삽입
 			document.body.appendChild(fragment);
 		})();
-		that.on();
+	};
+	EditMulti.prototype.change = function(settings) {
+		var that = this;
+		
+		// settings
+		that.settings = module.setSettings(that.settings, settings);
 
-		// callback
-		if(typeof that.settings.callback.init === 'function') {
-			that.settings.callback.init.call(that, that.elements.target);
+		// target
+		that.settings.target = (typeof that.settings.target === 'string' && /^[a-z]+/i.test(that.settings.target) ? '#' + that.settings.target : that.settings.target);
+		that.elements.target = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $(that.settings.target).get(0));
+
+		return that;
+	};
+	// 멀티미디어 에디터 툴바 위치 설정 (보이기/숨기기)
+	EditMulti.prototype.setMultiTooltipMenuPostion = function(parameter) {
+		var that = this;
+
+		var parameter = parameter || {};
+		var toggle = parameter['toggle'];
+
+		var clientRectBounds;
+		var clientRectBounds_editor;
+		var tooltip_width, tooltip_height;
+		var top = 0, left = 0;
+		var height = 0;
+		var gap = 10; // 커서가 위치한 라인과의 거리
+
+		if(!module.isCollapsed() || typeof module.selection !== 'object' || toggle === 'hide') {
+			// 숨기기
+			that.elements.tooltip.style.display = "none";
+		}else if(module.isSelection()) {
+			that.elements.tooltip.style.display = "block"; // 렌더링 상태에서 offsetWidth, offsetHeight 측정
+			// 툴팁 크기
+			tooltip_width = that.elements.tooltip.offsetWidth;
+			tooltip_height = that.elements.tooltip.offsetHeight;
+			// left
+			clientRectBounds_editor = that.elements.target.getBoundingClientRect();
+			left = (clientRectBounds_editor.left - tooltip_width) - gap;
+			if(left < 0) {
+				left = clientRectBounds_editor.left + gap; // 툴팁 에디터 안쪽에 출력되도록 변경
+			}
+			left += window.pageXOffset; // scroll
+			// top
+			// #text node 는 getBoundingClientRect 없음
+			if(module.selection.anchorNode && 'getBoundingClientRect' in module.selection.anchorNode) {
+				clientRectBounds = module.selection.anchorNode.getBoundingClientRect();
+			}else if(module.selection.focusNode && 'getBoundingClientRect' in module.selection.focusNode) {
+				clientRectBounds = module.selection.focusNode.getBoundingClientRect();
+			}else {
+				clientRectBounds = module.selection.getRangeAt(0).getBoundingClientRect();
+			}
+			if(clientRectBounds.top > 0) {
+				height = clientRectBounds.height || clientRectBounds.bottom - clientRectBounds.top;
+				if(tooltip_height > height) {
+					top = clientRectBounds.top - (tooltip_height - height);
+				}else {
+					top = clientRectBounds.top + (height - tooltip_height);
+				}
+			}
+			top += window.pageYOffset; // scroll
+			//
+			that.elements.tooltip.style.top = top + "px";
+			that.elements.tooltip.style.left = left + "px";
 		}
 	};
-	Editor.prototype = {
-		/*
-		-
-		아래는 텍스트 에디터의 동작 순서
-		1. setSelection 선택된 텍스트
-		2. setTextTooltipMousedown 툴바 기능 적용
-		3. setTextTooltipMouseup 적용된 기능에 대해 툴바 상태 최신화
-		*/
-		// 텍스트 선택(selection)
-		setSelection: function(e) {
-			//console.log('setSelection');
-			var that = this;
-			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-			var target = event && (event.target || event.srcElement);
+	// 이미지 에디터 툴바 위치 설정
+	EditMulti.prototype.setImageTooltipMenuPostion = function(parameter) {
+		var that = this;
 
-			//console.log(target.isContentEditable);
-			//console.log(document.activeElement.isContentEditable);
-			that.selection = undefined;
-			if(typeof target === 'object' && 'isContentEditable' in target && target.isContentEditable && that.composition === false) {
-				that.selection = window.getSelection();
-				//console.log('selection');
-				//console.dir(that.selection);
-			}
-		},
-		isSelection: function() {
-			var that = this;
-			if(typeof that.selection === 'object' && that.selection.anchorNode && that.selection.focusNode) {
-				return true;
+	};
+	// 툴팁 보이기
+	EditMulti.prototype.setTooltipToggle = function() {
+		var that = this;
+
+		// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
+		module.setSelection();
+		if(module.isSelection() && module.selection.focusNode.nodeType === 1 && /img/.test(module.selection.focusNode.nodeName.toLowerCase())) {
+			/*
+			console.log('----------');
+			console.dir(module.selection);
+			// 시작노드
+			console.log('anchorNode.nodeName: ' + module.selection.anchorNode.nodeName);
+			console.log('anchorNode.nodeValue: ' + module.selection.anchorNode.nodeValue);
+			console.log('anchorNode.nodeType: ' + module.selection.anchorNode.nodeType);
+			// 끝노드
+			console.log('focusNode.nodeName: ' + module.selection.focusNode.nodeName);
+			console.log('focusNode.nodeValue: ' + module.selection.focusNode.nodeValue);
+			console.log('focusNode.nodeType: ' + module.selection.focusNode.nodeType);
+			*/
+			that.setImageTooltipMenuPostion({'toggle': 'show'});
+			that.setMultiTooltipMenuPostion({'toggle': 'hide'});
+		}else {
+			that.setImageTooltipMenuPostion({'toggle': 'hide'});
+			that.setMultiTooltipMenuPostion();
+		}
+	};
+	// 에디터에 데이터 넣기
+	EditMulti.prototype.put = function(parameter) {
+		var that = this;
+
+		var parameter = parameter || {};
+		var type = parameter['type'];
+		var id = parameter['id'] && document.getElementById(parameter['id']); // 데이터를 넣을 위치 등에 사용
+		var data = parameter['data'];
+
+		// element 의 id 기준으로 데이터를 넣는다.
+		if(!id) {
+			if(module.isSelection()) {
+				id = module.selection.anchorNode;
 			}else {
-				return false;
+				id = that.elements.target;
 			}
-		},
-		// 툴팁 보이기
-		setTooltipToggle: function(e) {
-			var that = this;
-			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-			var target = event && (event.target || event.srcElement);
+		}
 
-			// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
-			if(that.isSelection()) {
-				console.log('----------');
-				console.dir(that.selection);
-				// 시작노드
-				console.log('anchorNode.nodeName: ' + that.selection.anchorNode.nodeName);
-				console.log('anchorNode.nodeValue: ' + that.selection.anchorNode.nodeValue);
-				console.log('anchorNode.nodeType: ' + that.selection.anchorNode.nodeType);
-				// 끝노드
-				console.log('focusNode.nodeName: ' + that.selection.focusNode.nodeName);
-				console.log('focusNode.nodeValue: ' + that.selection.focusNode.nodeValue);
-				console.log('focusNode.nodeType: ' + that.selection.focusNode.nodeType);
-				
-				
-				switch(that.selection.focusNode.nodeName.toLowerCase()) {
-					case 'figure':
-					case 'img':
-						if(that.selection.anchorNode.nodeName === that.selection.focusNode.nodeName) {
-							that.setTextTooltipMenuPostion({'toggle': 'hide'});
-							that.setMultiTooltipMenuPostion({'toggle': 'hide'});
-							that.setImageTooltipMenuPostion();
-						}
-						break;
-					default:
-						that.setTextTooltipMenuState();
-						that.setTextTooltipMenuPostion();
-						that.setMultiTooltipMenuPostion();
-						break;
-				}
-			}else {
-				that.setTextTooltipMenuState();
-				that.setTextTooltipMenuPostion();
-				that.setMultiTooltipMenuPostion();
-			}
-		},
-		// 현재 선택된 글자에 블록태그(파라미터의 tag)를 설정한다.
-		setFormatBlock: function(tag) {
-			var that = this;
+		switch(type) {
+			// 이미지 삽입
+			case 'image': 
+				// data 의 종류 구분 
+				// url, base64, element node
+				(function() {
+					var setSize = function() {
+						//썸네일 이미지 생성
+						/*var tempImage = new Image(); //drawImage 메서드에 넣기 위해 이미지 객체화
+						tempImage.src = result; //data-uri를 이미지 객체에 주입
+						tempImage.onload = function() {
+							//리사이즈를 위해 캔버스 객체 생성
+							var canvas = document.createElement('canvas');
+							var canvasContext = canvas.getContext("2d");
 
-			if(typeof tag === 'string') {
-				if(that.isSelection() && 'rangeCount' in that.selection && that.selection.rangeCount > 0 && module.getParent( // 추가하려는 tag가 상위에 존재하는지 확인
-					that.selection.focusNode,
-					// 조건
-					function(node) {
-						return node.nodeName.toLowerCase() === tag.toLowerCase();
-					},
-					// 조건에 따른 실행
-					function(node) {
-						return node;
-					}
-				)) {
-					document.execCommand("formatBlock", false, "p");
-					document.execCommand("outdent"); // 문자 선택(text selection)의 현위치에서 들어쓰기 한 증가분 만큼 왼쪽으로 내어쓰기 한다.
-				}else {
-					document.execCommand("formatBlock", false, tag);
-				}
-			}
-		},
-		/*
-		-
-		이미지 관련
+							//캔버스 크기 설정
+							canvas.width = 100; //가로 100px
+							canvas.height = 100; //세로 100px
 
-		현재는 마우스 위치에 따라서 이미지 툴바가 나오지만,
-		커서위치에 따라 해당 라인의 첫 부분에 에디터가 나오도록 변경해야 한다!!
+							//이미지를 캔버스에 그리기
+							canvasContext.drawImage(this, 0, 0, 100, 100);
 
-		브라우저 밖으로 에디터 툴팁이 나갔는지 검사할 필요 있음
-		*/
-		// 에디터에 데이터 넣기
-		setPut: function(parameter) {
-			var that = this;
+							//캔버스에 그린 이미지를 다시 data-uri 형태로 변환
+							var dataURI = canvas.toDataURL("image/jpeg");
 
-			var parameter = parameter || {};
-			var type = parameter['type'];
-			var data = parameter['data'];
+							//썸네일 이미지 보여주기
+							document.querySelector('#thumbnail').src = dataURI;
 
-			switch(type) {
-				case 'image':
-					// data 의 종류 구분 
-					// url, base64, element node
+							//썸네일 이미지를 다운로드할 수 있도록 링크 설정
+							document.querySelector('#download').href = dataURI;
 
-
-					//
-					(function() {
-						var setImage = function(result) {
+							//<a id="download" download="thumbnail.jpg"></a> download 속성은 다운로드할 대상의 파일명을 미리 지정할 수 있다.
+						};*/
+					};
+					var setImage = function(result) {
+						var img = new Image();
+						img.src = result;
+						img.setAttribute("class", that.settings.class.image);
+						img.onload = function() {
 							var figure, figcaption;
-							var img, p;
-							var tempImage;
+							//var rect = that.elements.target.getBoundingClientRect();
+							var rect = id.getBoundingClientRect();
+
+							// 이미지 크기 변경
+							if(rect.width && this.width && rect.width < this.width) {
+								//img.setAttribute('width', '100%');
+								img.style.width = '100%';
+								img.style.maxWidth = this.width + 'px';
+								img.style.maxHeight = this.height + 'px';
+
+								//console.log(rect.width);
+								//console.log(this.width);
+								//console.log(img);
+							}
 
 							// figure, figcaption
-							// http://html5doctor.com/the-figure-figcaption-elements/
-							img = document.createElement("img");
-							img.setAttribute('src', result);
-							if(that.imageBound && that.imageBound.bottomElement) {
-
-								console.log('imageBound.bottomElement');
-								console.log(that.imageBound.bottomElement);
-
-								// 추가하려는 tag 상위 존재여부 확인 (figure)
-								if(module.getParent( 
-									that.imageBound.bottomElement,
-									// 조건
-									function(node) {
-										return node.nodeName.toLowerCase() === 'figure';
-									},
-									// 조건에 따른 실행
-									function(node) {
-										return node;
-									}
-								)) {
-									that.elements.target.insertBefore(img, that.imageBound.bottomElement);
-								}else {
-									figure = document.createElement("figure");
-									figcaption = document.createElement("figcaption");
-									figure.appendChild(img);
-									figure.appendChild(figcaption);
-									that.elements.target.insertBefore(figure, that.imageBound.bottomElement);
-								}
-							}else {
-								figure = document.createElement("figure");
-								figcaption = document.createElement("figcaption");
-								figure.appendChild(img);
-								figure.appendChild(figcaption);
-								that.elements.target.appendChild(figure);
-							}
+							// http://html5doctor.com/the-figure-figcaption-that.elements/
+							figcaption = document.createElement("figcaption");
+							//figcaption.innerHTML = '<br />';
+							figure = document.createElement("figure");
+							figure.appendChild(img);
+							figure.appendChild(figcaption);
+							id.appendChild(figure);
 						};
-						var i, max;
+					};
 
-						if(Array.isArray(data)) {
-							for(i=0, max=data.length; i<max; i++) {
-								setImage(data[i]);
-							}
-						}else {
-							setImage(data);
+					var i, max;
+					if(Array.isArray(data)) { // 이미지 여러개
+						for(i=0, max=data.length; i<max; i++) {
+							setImage(data[i]);
 						}
-					})();
-					break;
-			}
-		},
-		// 텍스트 에디터 툴바 메뉴(각 기능) 현재 selection 에 따라 최신화
-		setTextTooltipMenuState: function() {
-			//console.log('setTextTooltipMenuState');
-			/*
-			현재 포커스 위치의 element 에서 부모(parentNode)노드를 검색하면서,
-			텍스트 에디터메뉴에 해당하는 태그가 있는지 여부에 따라
-			해당 버튼에 on/off 효과를 준다.
-			*/
-			var that = this;
-			var key;
-			if(that.isSelection() && 'rangeCount' in that.selection && that.selection.rangeCount > 0) {
-				for(key in that.elements['text']['command']) { // 버튼 선택 효과 초기화
-					if(key === 'wrap') {
-						continue;
-					}
-					//that.elements['text']['command'][key].classList.remove('active');
-					that.elements['text']['command'][key].style.color = 'rgb(20, 29, 37)';
-					that.elements['text']['command'][key].style.background = 'none';
-				}
-				module.getParent(
-					that.selection.focusNode,
-					// 조건
-					function(node) {
-						return typeof node.nodeName !== 'undefined' && typeof node.style !== 'undefined';
-					},
-					// 조건에 따른 실행
-					function(node) {
-						//console.log(node.nodeName.toLowerCase());
-						// style 확인
-						/*
-						var key;
-						for(key in node.style) {
-							console.log('node style: ' + key);
-							switch(node.style) {
-
-							}	
-						}
-						*/
-						if(node.style.color === '') {
-
-						}
-						
-						// tag 확인
-						switch(node.nodeName.toLowerCase()) {
-							case 'b':
-							case 'strong': // IE
-								//that.elements['text']['command']['bold'].classList.add('active');
-								that.elements['text']['command']['bold'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['command']['bold'].style.backgroundColor = 'rgb(226, 69, 69)';
-								break;
-							case 'i':
-							case 'em': // IE
-								that.elements['text']['command']['italic'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['command']['italic'].style.backgroundColor = 'rgb(226, 69, 69)';
-								break;
-							case 'strike':
-								that.elements['text']['command']['strikethrough'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['command']['strikethrough'].style.backgroundColor = 'rgb(226, 69, 69)';
-								break;
-							case 'u':
-								that.elements['text']['command']['underline'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['command']['underline'].style.backgroundColor = 'rgb(226, 69, 69)';
-								break;
-							case "h1":
-								that.elements['text']['command']['h1'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['command']['h1'].style.backgroundColor = 'rgb(226, 69, 69)';
-								break;
-							case "h2":
-								that.elements['text']['command']['h2'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['command']['h2'].style.backgroundColor = 'rgb(226, 69, 69)';
-								break;
-							case "h3":
-								that.elements['text']['command']['h3'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['command']['h3'].style.backgroundColor = 'rgb(226, 69, 69)';
-								break;
-							case "blockquote":
-								that.elements['text']['command']['blockquote'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['command']['blockquote'].style.backgroundColor = 'rgb(226, 69, 69)';
-								break;
-							case 'a':
-								that.elements['text']['command']['createLink'].style.color = 'rgb(255, 255, 255)';
-								that.elements['text']['command']['createLink'].style.backgroundColor = 'rgb(226, 69, 69)';
-								break;
-						}
-					}
-				);
-			}
-		},
-		// 텍스트 에디터 툴바 위치 설정 (보이기/숨기기)
-		setTextTooltipMenuPostion: function(parameter) {
-			//console.log('setTextTooltipMenuPostion');
-			var that = this;
-
-			var parameter = parameter || {};
-			var toggle = parameter['toggle'];
-
-			var clientRectBounds;
-			var tooltip_width, tooltip_height;
-			var top = 0, left = 0;
-
-			if((typeof that.selection === 'object' && that.selection.isCollapsed === true) || typeof that.selection !== 'object' || toggle === 'hide') {
-				// 툴바숨기기
-				that.elements['text']['tooltip'].style.top = EDGE + "px";
-				that.elements['text']['tooltip'].style.left = EDGE + "px";
-			}else if(that.isSelection()) {
-				// 툴팁 크기
-				tooltip_width = that.elements['text']['tooltip'].offsetWidth;
-				tooltip_height = that.elements['text']['tooltip'].offsetHeight;
-				// top / left
-				clientRectBounds = that.selection.getRangeAt(0).getBoundingClientRect();
-				top = (clientRectBounds.top - tooltip_height) - 5;
-				if(top < 0) {
-					top = clientRectBounds.bottom + 5; // 툴팁 하단에 출력되도록 변경
-					that.elements['text']['tooltip'].style.borderTop = '1px solid rgba(231, 68, 78, .86)';
-					that.elements['text']['tooltip'].style.borderBottom = 'none';
-				}else {
-					that.elements['text']['tooltip'].style.borderBottom = '1px solid rgba(231, 68, 78, .86)';
-					that.elements['text']['tooltip'].style.borderTop = 'none';
-				}
-				top += window.pageYOffset; // scroll
-				left = Math.round((clientRectBounds.left + clientRectBounds.right) / 2);
-				left -= Math.floor(tooltip_width / 2);
-				if(left < 0) {
-					left = 0;
-				}else if((left + tooltip_width) > Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth)) {
-					left = left - ((left + tooltip_width) - Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth));
-				}
-				left += window.pageXOffset; // scroll
-				//
-				that.elements['text']['tooltip'].style.top = top + "px";
-				that.elements['text']['tooltip'].style.left = left + "px";
-			}
-		},
-		// 멀티미디어 에디터 툴바 위치 설정 (보이기/숨기기)
-		setMultiTooltipMenuPostion: function(parameter) {
-			var that = this;
-
-			var parameter = parameter || {};
-			var toggle = parameter['toggle'];
-
-			var clientRectBounds;
-			var clientRectBounds_Editor;
-			var tooltip_width, tooltip_height;
-			var top = 0, left = 0;
-			var height = 0;
-
-			if((typeof that.selection === 'object' && that.selection.isCollapsed === false) || typeof that.selection !== 'object' || toggle === 'hide') {
-				// 숨기기
-				that.elements['multi']['tooltip'].style.top = EDGE + "px";
-				that.elements['multi']['tooltip'].style.left = EDGE + "px";
-			}else if(that.isSelection()) {
-				// 툴팁 크기
-				tooltip_width = that.elements['multi']['tooltip'].offsetWidth;
-				tooltip_height = that.elements['multi']['tooltip'].offsetHeight;
-				// left
-				clientRectBounds_Editor = that.elements.target.getBoundingClientRect();
-				left = (clientRectBounds_Editor.left - tooltip_width) - 5;
-				if(left < 0) {
-					left = clientRectBounds_Editor.left + 5; // 툴팁 에디터 안쪽에 출력되도록 변경
-					that.elements['multi']['tooltip'].style.border = 'none';
-				}else {
-					that.elements['multi']['tooltip'].style.borderRight = '1px solid rgba(231, 68, 78, .86)';
-				}
-				left += window.pageXOffset; // scroll
-				// top
-				// #text node 는 getBoundingClientRect 없음
-				if(that.selection.anchorNode && 'getBoundingClientRect' in that.selection.anchorNode) {
-					clientRectBounds = that.selection.anchorNode.getBoundingClientRect();
-				}else if(that.selection.focusNode && 'getBoundingClientRect' in that.selection.focusNode) {
-					clientRectBounds = that.selection.focusNode.getBoundingClientRect();
-				}else {
-					clientRectBounds = that.selection.getRangeAt(0).getBoundingClientRect();
-				}
-				if(clientRectBounds.top > 0) {
-					height = clientRectBounds.height || clientRectBounds.bottom - clientRectBounds.top;
-					if(tooltip_height > height) {
-						top = clientRectBounds.top - (tooltip_height - height);
 					}else {
-						top = clientRectBounds.top + (height - tooltip_height);
+						setImage(data);
 					}
-				}
-				top += window.pageYOffset; // scroll
-				//
-				that.elements['multi']['tooltip'].style.top = top + "px";
-				that.elements['multi']['tooltip'].style.left = left + "px";
-			}
-		},
-		// 이미지 에디터 툴바 위치 설정
-		setImageTooltipMenuPostion: function(parameter) {
-			var that = this;
+				})();
+				break;
+		}
+	};
+	EditMulti.prototype.on = function() {
+		var that = this;
 
+		// reset
+		that.off();
+		
+		// contentEditable
+		//console.log(that.elements.target);
+		//console.log(that.elements.target.contentEditable);
+		//console.log(that.elements.target.isContentEditable);
+		if(!that.elements.target.isContentEditable) {
+			that.elements.target.contentEditable = true; // 해당 element 내부 수정가능하도록 설정
+		}
 
-		},
-		// 오픈그래프
-		setOpengraph: function(parameter) {
-			var that = this;
+		// 마우스 이벤트
+		$(that.elements.target).on(env.event.down + '.EVENT_MOUSEDOWN_MULTIEDIT', function(e) {
+			that.setTooltipToggle();
+		});
+		$(that.elements.target).on(env.event.up + '.EVENT_MOUSEUP_MULTIEDIT', function(e) {
+			that.setTooltipToggle();
+		});
+		
+		// 키보드 이벤트
+		$(that.elements.target).on('keydown.EVENT_KEYDOWN_MULTIEDIT', function(e) {
+			//console.log('setContenteditableKeydown');
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
-			var parameter = parameter || {};
-			var node = parameter['node'];
-			var url = parameter['url'] || '';
-			var fragment;
-			var a, div, p, comment;
+			//console.log('keydown');
 
-			if(typeof node === 'object' && (url && regexp.url.test(url) || regexp.url.test(node.nodeValue)) && node.parentNode.nodeName.toLowerCase() !== 'a') {
-				url = url || node.nodeValue;
-				//console.log('url: ' + url);
+			// 방향키, 엔터키 등
+			module.setSelection();
 
-				(function(node, url) {
-					var fragment;
-					var a, div, p, comment;
+			// getSelection 선택된 node
+			if(module.isSelection()) {
+				if(event.keyCode === 13) { // keyCode 13: enter
+					//console.log(module.selection.anchorNode.nodeName.toLowerCase());
 
-					//
-					if(!url.match("^(http|https)://")) {
-						url = "http://" + url;
-					}
-
-					fragment = document.createDocumentFragment();
-					a = document.createElement("a");
-					div = document.createElement("div");
-					p = document.createElement("p");
-					//comment = document.createComment('{"url":"'.url.'"}');
-					fragment.appendChild(a);
-					fragment.appendChild(div);
-					fragment.appendChild(p);
-					
-					// 링크 구성 (새창 등 속성 설정)
-					a.href = url;
-					a.target = '_blank';
-					a.textContent = a.innerText = url;
-
-					// 빈공간, 하단영역 태그 내부 기본값 (크롬 등 일부 브라우저)
-					div.innerHTML = '<br />';
-					p.innerHTML = '<br />';
-
-					// 사용자가 입력한 url 변경
-					// insertAdjacentHTML
-					//node.parentNode.replaceChild(fragment, node);
-					if(node.parentNode.insertBefore(fragment, node)) {
-						node.parentNode.removeChild(node);
-					}
-
-					// 오픈그래프 정보 불러오기
-					api.xhr({
-						'url': that.settings.submit.opengraph,
-						'timeout': 10000,
-						'data': {'url': encodeURIComponent(url)},
-						'dataType': 'json',
-						'success': function(json) {
-							var result = {}
-							var image = '';
-							if(typeof json === 'object' && json.msg === 'success') {
-								//console.dir(json);
-								//console.log(div);
-								result = json.result;
-								if(result.image) {
-									image = '<div class="opengraph-image" style="background-image: url(' + result.image + ');"><br /></div>';
-								}else {
-									image = '<div class="opengraph-image"></div>';
-								}
-								div.innerHTML = '\
-									<a href="' + url + '" target="_blank" class="opengraph-wrap" style="display: block;">\
-										' + image + '\
-										<div class="opengraph-text">\
-											<strong class="opengraph-title">' + result.title + '</strong>\
-											<p class="opengraph-description">' + result.description + '</p>\
-											<p class="opengraph-url">' + (result.author || url) + '</p>\
-										</div>\
-										<div style="clear: both;"></div>\
-									</a>\
-								';
-							}else {
-								// 제거
-								div.parentNode.removeChild(div);
-								p.parentNode.removeChild(p);
-							}
-						},
-						'error': function() {
-							// 제거
-							div.parentNode.removeChild(div);
-							p.parentNode.removeChild(p);
-						}
-					});
-				})(node, url);
-			}
-		},
-		// 에디터가 작동할 영역의 이벤트
-		on: function() {
-			var that = this;
-
-			// storage
-			if(typeof that.elements.target.storage !== 'object') {
-				that.elements.target.storage = {};
-			}else if(that.elements.target.storage['EVENT_MOUSEUP_EDITOR'] || that.elements.target.storage['EVENT_KEYDOWN_EDITOR'] || that.elements.target.storage['EVENT_KEYUP_EDITOR']) {
-				// 이벤트가 중복되지 않도록 이미 적용되어 있는지 확인한다.				
-				return true;
-			}
-
-			// contentEditable
-			//console.log(that.elements.target);
-			//console.log(that.elements.target.contentEditable);
-			//console.log(that.elements.target.isContentEditable);
-			if(!that.elements.target.isContentEditable) {
-				//continue;
-				that.elements.target.contentEditable = true; // 해당 element 내부 수정가능하도록 설정
-			}
-
-			// 마우스 이벤트
-			$(that.elements.target).on(env.event.up + '.EVENT_MOUSEUP_EDITOR', function(e) {
-				that.setSelection(e);
-				that.setTooltipToggle(e);
-
-				// 상위 태그에 p, div 등 블록 태그가 없을 때
-				// p 태그를 삽입한다.
-
-
-				
-			});
-			/*that.elements.target.addEventListener('mouseup', that.setSelection, false);
-			that.elements.target.storage['EVENT_MOUSEUP_EDITOR'] = {
-				"events": 'mouseup',
-				"handlers": that.setSelection,
-				"capture": false
-			};*/
-			
-			// 키보드 이벤트
-			$(that.elements.target).on('keydown.EVENT_KEYDOWN_EDITOR', function(e) {
-				//console.log('setContenteditableKeydown');
-				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				var parentParagraph;
-				var prevSibling;
-
-				// 방향키, 엔터키 등
-				that.setSelection(e);
-				that.setTooltipToggle(e);
-
-				// getSelection 선택된 node
-				if(that.isSelection()) {
-					if(event.keyCode === 13) { // keyCode 13: enter
-						parentParagraph = module.getParent( // 현재노드 상위 검색
-							that.selection.anchorNode,
-							// 조건
-							function(node) {
-								node = node.nodeName.toLowerCase();
-								return node === 'p' || node === 'figure';
-							},
-							// 조건에 따른 실행
-							function(node) {
-								return node;
-							}
-						);
-						if(typeof parentParagraph === 'object' && parentParagraph.nodeType) {
-							switch(parentParagraph.nodeName.toLowerCase()) {
-								case 'p':
-									// 현재 p태그 내부에 커서가 있으며
-									// p태그 내부 텍스트가 입력되지 않은 빈상태이며
-									// p태그 바로전 태그가 hr 태그의 경우
-									// 사용자가 엔터키를 눌렀을 경우 작동하지 않도록 한다.
-									prevSibling = parentParagraph.previousSibling; // 하나 전의 노드
-									if(prevSibling && prevSibling.nodeName === "HR" && !prevSibling.textContent.length/*!parentParagraph.nodeValue.length*/) {
-										// p 태그안에 위치하면서 상단 tag 가 hr 인 경우, 엔터키가 작동하지 않도록 한다.
-										// enter 기본 이벤트 중지
-										event.preventDefault();
-									}
-									break;
+					// 현재노드 상위 검색
+					module.getParent( 
+						module.selection.anchorNode,
+						// 조건
+						function(node) {
+							switch(node.nodeName.toLowerCase()) {
 								case 'figure':
 									// enter 기본 이벤트 중지
 									event.preventDefault();
 									break;
-							}
-						}
-						// opengraph
-						if(that.settings.submit.opengraph && that.selection.isCollapsed) {
-							that.setOpengraph({'node': that.selection.anchorNode});
-						}
-					}
-				}
-			});
-			$(that.elements.target).on('keyup.EVENT_KEYUP_EDITOR', function(e) {
-				//console.log('setContenteditableKeyup');
-				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				var parentParagraph, prevSibling, prevPrevSibling, hr;
-				var insertedNode, unwrap, node, parent, range;
-
-				// 방향키, 엔터키 등
-				that.setSelection(e);
-				that.setTooltipToggle(e);
-
-				// getSelection 선택된 node
-				if(that.isSelection()) {
-					if(event.keyCode === 13) { // keyCode 13: enter
-						// DIV 내부에서 엔터를 눌렀을 경우 div 내부에서 br로 처리되므로 p 태그로 변경되도록 처리한다.
-						if(that.selection.anchorNode.nodeName.toLowerCase() === 'div') {
-							that.setFormatBlock("p");
-						}
-
-						parentParagraph = module.getParent( // 현재노드 상위 검색
-							that.selection.anchorNode,
-							// 조건
-							function(node) {
-								node = node.nodeName.toLowerCase();
-								return node === 'p' || node === 'figure';
-							},
-							// 조건에 따른 실행
-							function(node) {
-								return node;
-							}
-						);
-						if(typeof parentParagraph === 'object' && parentParagraph.nodeType) {
-							switch(parentParagraph.nodeName.toLowerCase()) {
-								case 'p':
-									/*
-									// 현재 포커스가 비어있는 p태그 내부에서 엔터를 눌렀을 경우 hr 태그로 변경되도록 처리한다.
-									prevSibling = parentParagraph.previousSibling; // 하나 전의 노드
-									prevPrevSibling = prevSibling;
-									while(prevPrevSibling) {
-										if(prevPrevSibling.nodeType !== Node.TEXT_NODE) { // Node는 전역변수 window.Node (TEXT_NODE: 3)
-											break;
-										}
-										prevPrevSibling = prevPrevSibling.previousSibling; // 하나 전의 노드
-									}
-									// hr 태그 삽입
-									if(prevSibling.nodeName === "P" && prevPrevSibling.nodeName !== "HR" && !prevSibling.textContent.length*//*!prevSibling.nodeValue.length*//*) {
-										hr = document.createElement("hr");
-										hr.contentEditable = false;
-										parentParagraph.parentNode.replaceChild(hr, prevSibling);
-									}
-									*/
+								default:
+									return that.elements.target.isEqualNode(node);
 									break;
+							}
+						},
+						// 조건에 따른 실행
+						function(node) {
+							return node;
+						}
+					);
+
+					
+				}
+			}
+		});
+		$(that.elements.target).on('keyup.EVENT_KEYUP_MULTIEDIT', function(e) {
+			//console.log('setContenteditableKeyup');
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+
+			//console.log('keyup');
+
+			// 방향키, 엔터키 등
+			module.setSelection();
+
+			// getSelection 선택된 node
+			if(module.isSelection()) {
+				if(event.keyCode === 13) { // keyCode 13: enter
+					// 현재노드 상위 검색
+					module.getParent( 
+						module.selection.anchorNode,
+						// 조건
+						function(node) {
+							switch(node.nodeName.toLowerCase()) {
 								case 'figure':
 									/*
 									figure 내부에 figcaption 태그가 없으면 figcaption 생성
@@ -1383,173 +1419,217 @@ Dual licensed under the MIT and GPL licenses.
 
 									근데 불편할것 같다.
 									*/
-
-									console.log('enter 정지!');
-									console.log(parentParagraph);
-									console.log(parentParagraph.nextSibling);
+									//event.preventDefault();
 
 									/*
 									https://www.google.co.kr/webhp?sourceid=chrome-instant&ion=1&espv=2&ie=UTF-8#newwindow=1&q=chrome+contenteditable+p+tag+append
 									http://stackoverflow.com/questions/35705291/cross-browser-way-to-insert-br-or-p-tag-when-hitting-enter-on-a-contenteditable
 									http://stackoverflow.com/questions/3771824/select-range-in-contenteditable-div
 									*/
-									var p = document.createElement('p');
+									/*var p = document.createElement('p');
 									var br = document.createElement("br"); // 크롬은 p 태그 내부 br 이 존재해야 한다.
 									range = document.createRange();
-									parentParagraph.parentNode.insertBefore(p, parentParagraph.nextSibling);
+									node.parentNode.insertBefore(p, node.nextSibling);
 									range.setStart(p, 0);
 									range.setEnd(p, 0);
 									//range.selectNode(p);
 									range.insertNode(br);
 									range.setStartAfter(br);
 									range.setEndAfter(br);
-									that.selection.removeAllRanges();
-									that.selection.addRange(range);
+									module.selection.removeAllRanges();
+									module.selection.addRange(range);*/
+									break;
+								default:
+									return that.elements.target.isEqualNode(node);
 									break;
 							}
+						},
+						// 조건에 따른 실행
+						function(node) {
+							return node;
 						}
-					}
-
-					// -, *, 1. 입력에 따른 목록태그 변환
-					// isCollapsed: 셀렉션의 시작지점과 끝지점이 동일한지의 여부
-					// nodeValue: Text와 Comment 노드에서 실제 텍스트 문자열 추출
-					/*if(that.selection.isCollapsed && that.selection.anchorNode.nodeValue && that.selection.anchorNode.parentNode.nodeName !== "LI") { 
-						//console.log('that.selection.isCollapsed: ' + that.selection.isCollapsed);
-						
-						if(that.selection.anchorNode.nodeValue.match(/^[-*]\s/)) { 
-							// "- 텍스트작성" 또는 "* 텍스트작성" 행태로 글을 작성했을 경우 목록태그로 변경
-							document.execCommand('insertUnorderedList'); // ul 태그 생성
-							that.selection.anchorNode.nodeValue = that.selection.anchorNode.nodeValue.substring(2);
-							insertedNode = module.getParent( // 현재노드 상위로 존재하는 ul 태그 반환
-								that.selection.anchorNode,
-								// 조건
-								function(node) {
-									return node.nodeName.toLowerCase() === 'ul';
-								},
-								// 조건에 따른 실행
-								function(node) {
-									return node;
-								}
-							);
-						}else if(that.selection.anchorNode.nodeValue.match(/^1\.\s/)) { 
-							// "1. 텍스트작성" 형태로 글을 작성했을 경우 목록태그로 변경
-							document.execCommand('insertOrderedList'); // ol 태그 생성
-							that.selection.anchorNode.nodeValue = that.selection.anchorNode.nodeValue.substring(3);
-							insertedNode = module.getParent( // 현재노드 상위로 존재하는 ol 태그 반환
-								that.selection.anchorNode,
-								// 조건
-								function(node) {
-									return node.nodeName.toLowerCase() === 'ol';
-								},
-								// 조건에 따른 실행
-								function(node) {
-									return node;
-								}
-							);
-						}
-
-						// ul 또는 ol 로 변경되었고, 현재 부모 태그가 p 또는 div 의 경우
-						// p 또는 div 내부에 목록태그가 존재하지 않도록, 해당위치를 목록태그로 대체한다.
-						unwrap = insertedNode && ["ul", "ol"].indexOf(insertedNode.nodeName.toLocaleLowerCase()) >= 0 && ["p", "div"].indexOf(insertedNode.parentNode.nodeName.toLocaleLowerCase()) >= 0;
-						if(unwrap) {
-							node = that.selection.anchorNode;
-							parent = insertedNode.parentNode;
-							parent.parentNode.insertBefore(insertedNode, parent);
-							parent.parentNode.removeChild(parent);
-
-							range = document.createRange();
-							range.setStart(node, 0);
-							range.setEnd(node, 0);
-							that.selection.removeAllRanges();
-							that.selection.addRange(range);
-						}
-					}*/
+					);
 				}
-			});
 
-			// contenteditable paste text only
-			// http://stackoverflow.com/questions/12027137/javascript-trick-for-paste-as-plain-text-in-execcommand
-			$(that.elements.target).on('paste', function(e) {
-				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				var text = '';
-
-				event.preventDefault();
-				if(event.clipboardData) {
-					text = event.clipboardData.getData('text/plain');
-				}else if(window.clipboardData) {
-					text = window.clipboardData.getData('Text');
-				}
-				if(document.queryCommandSupported('insertText')) {
-					document.execCommand('insertText', false, text);
-				}else {
-					document.execCommand('paste', false, text);
-				}
-			});
-
-			// 커서 (focus)
-			//$(that.elements.target).on('focus.EVENT_FOCUS_EDITOR', that.setSelection); // keydown, mouseup 이벤트와 중복 실행됨
-			$(that.elements.target).on('blur.EVENT_BLUR_EDITOR', function(e) {
-				that.setSelection(e);
-				that.setTooltipToggle(e);
-			});
-
-			/*
-			-
-			커서 위치에 따라 이미지 삽입 툴바 보이기/숨기기/위치 설정
-			
-			*/
-			
-			// document event
-			/*$(document).on(env.event.up + '.EVENT_MOUSEUP_EDITOR_DOCUMENT', function(e) {
-				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				//var target = event && (event.target || event.srcElement);
-				// 툴팁내부 클릭된 것인지 확인
-				if(!that.elements['text']['tooltip'].contains(event.target)) {
-					console.log('document mouseup');
-					setTimeout(function() {
-						that.setSelection(event);
-						that.setTooltipToggle();
-					}, 1);
-				}
-			});*/
-			
-			// 한글입력관련
-			$(document).on('compositionstart.EVENT_COMPOSITIONSTART_EDITOR', function() {
-				that.composition = true;
-			});
-			$(document).on('compositionend.EVENT_COMPOSITIONEND_EDITOR', function() {
-				that.composition = false;
-			});
-		},
-		off: function() {
-			var that = this;
-
-			// 에디터가 사용된 대상의 이벤트 해제
-			if(typeof that.elements.target.storage !== 'object') {
-				return false;
+				that.setTooltipToggle();
 			}
+		});
 
-			// 마우스 이벤트
-			$(that.elements.target).off('.EVENT_MOUSEUP_EDITOR');
-			/*that.elements.target.removeEventListener(that.elements.target['storage']['EVENT_MOUSEUP_EDITOR']['events'], that.elements.target['storage']['EVENT_MOUSEUP_EDITOR']['handlers'], that.elements.target['storage']['EVENT_MOUSEUP_EDITOR']['capture']);
-			delete that.elements.target['storage']['EVENT_MOUSEUP_EDITOR'];*/
+		// 커서 (focus)
+		$(that.elements.target).on('blur.EVENT_BLUR_MULTIEDIT', function(e) {
+			that.setTooltipToggle();
+		});
+	};
+	EditMulti.prototype.off = function() {
+		var that = this;
 
-			// 키보드 이벤트
-			$(that.elements.target).off('.EVENT_KEYDOWN_EDITOR');
-			/*that.elements.target.removeEventListener(that.elements.target['storage']['EVENT_KEYDOWN_EDITOR']['events'], that.elements.target['storage']['EVENT_KEYDOWN_EDITOR']['handlers'], that.elements.target['storage']['EVENT_KEYDOWN_EDITOR']['capture']);
-			delete that.elements.target['storage']['EVENT_KEYDOWN_EDITOR'];*/
-			$(that.elements.target).off('.EVENT_KEYUP_EDITOR');
-			/*that.elements.target.removeEventListener(that.elements.target['storage']['EVENT_KEYUP_EDITOR']['events'], that.elements.target['storage']['EVENT_KEYUP_EDITOR']['handlers'], that.elements.target['storage']['EVENT_KEYUP_EDITOR']['capture']);
-			delete that.elements.target['storage']['EVENT_KEYUP_EDITOR'];*/
-			$(that.elements.target).off('.EVENT_BLUR_EDITOR');
+		// tooltip
+		that.setImageTooltipMenuPostion({'toggle': 'hide'});
+		that.setMultiTooltipMenuPostion({'toggle': 'hide'});
 
-			// document event
-			//$(document).off('.EVENT_MOUSEUP_EDITOR_DOCUMENT');
+		// 마우스 이벤트
+		$(that.elements.target).off('.EVENT_MOUSEDOWN_MULTIEDIT');
+		$(that.elements.target).off('.EVENT_MOUSEUP_MULTIEDIT');
 
-			// 한글입력관련
-			$(document).off('.EVENT_COMPOSITIONSTART_EDITOR');
-			$(document).off('.EVENT_COMPOSITIONEND_EDITOR');
+		// 키보드 이벤트
+		$(that.elements.target).off('.EVENT_KEYDOWN_MULTIEDIT');
+		$(that.elements.target).off('.EVENT_KEYUP_MULTIEDIT');
+		$(that.elements.target).off('.EVENT_BLUR_MULTIEDIT');
+	};
+
+	// 오픈그래프
+	var OpenGraph = function(settings) {
+		var that = this;
+		that.settings = {
+			'key': 'editor', 
+			'target': null,
+			'submit': '//makestory.net/opengraph',
+			'callback': {
+				'init': null
+			}
+		};
+		that.elements = {};
+
+		// settings
+		that.change(settings);
+	};
+	OpenGraph.prototype.change = function(settings) {
+		var that = this;
+
+		// settings
+		that.settings = module.setSettings(that.settings, settings);
+
+		// target
+		that.settings.target = (typeof that.settings.target === 'string' && /^[a-z]+/i.test(that.settings.target) ? '#' + that.settings.target : that.settings.target);
+		that.elements.target = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $(that.settings.target).get(0));
+
+		return that;
+	};
+	OpenGraph.prototype.put = function(parameter) {
+		var that = this;
+
+		var parameter = parameter || {};
+		var node = parameter['node'];
+		var url = parameter['url'] || '';
+		var fragment;
+		var a, div, p, comment;
+
+		if(typeof node === 'object' && (url && regexp.url.test(url) || regexp.url.test(node.nodeValue)) && node.parentNode.nodeName.toLowerCase() !== 'a') {
+			url = url || node.nodeValue;
+			//console.log('url: ' + url);
+
+			(function(node, url) {
+				var fragment;
+				var a, div, p, comment;
+
+				//
+				if(!url.match("^(http|https)://")) {
+					url = "http://" + url;
+				}
+
+				fragment = document.createDocumentFragment();
+				a = document.createElement("a");
+				div = document.createElement("div");
+				p = document.createElement("p");
+				//comment = document.createComment('{"url":"'.url.'"}');
+				fragment.appendChild(a);
+				fragment.appendChild(div);
+				fragment.appendChild(p);
+				
+				// 링크 구성 (새창 등 속성 설정)
+				a.href = url;
+				a.target = '_blank';
+				a.textContent = a.innerText = url;
+				div.setAttribute("data-type", "opengraph");
+				div.storage = {
+					'type': 'opengraph'
+				};
+
+				// 빈공간, 하단영역 태그 내부 기본값 (크롬 등 일부 브라우저)
+				div.innerHTML = '<br />';
+				//div.innerHTML = '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 24 30" style="enable-background:new 0 0 50 50;" xml:space="preserve"><rect x="0" y="10" width="4" height="10"><animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0s" dur="0.6s" repeatCount="indefinite" /></rect><rect x="8" y="10" width="4" height="10"><animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.15s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.15s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.15s" dur="0.6s" repeatCount="indefinite" /></rect><rect x="16" y="10" width="4" height="10"><animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.3s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.3s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.3s" dur="0.6s" repeatCount="indefinite" /></rect></svg>';
+				p.innerHTML = '<br />';
+
+				// 사용자가 입력한 url 변경
+				// insertAdjacentHTML
+				//node.parentNode.replaceChild(fragment, node);
+				if(node.parentNode.insertBefore(fragment, node)) {
+					node.parentNode.removeChild(node);
+				}
+
+				// 오픈그래프 정보 불러오기
+				$.ajax({
+					'url': that.settings.submit,
+					'timeout': 10000,
+					'data': {'url': encodeURIComponent(url)},
+					'dataType': 'json',
+					'success': function(json) {
+						var result = {}
+						var image = '';
+						if(typeof json === 'object' && json.msg === 'success') {
+							//console.dir(json);
+							//console.log(div);
+							result = json.result;
+							if(result.image) {
+								image = '<div class="opengraph-image" style="background-image: url(' + result.image + ');"><br /></div>';
+							}else {
+								image = '<div class="opengraph-image"></div>';
+							}
+							div.innerHTML = '\
+								<a href="' + url + '" target="_blank" class="opengraph-wrap" style="display: block;">\
+									' + image + '\
+									<div class="opengraph-text">\
+										<strong class="opengraph-title">' + result.title + '</strong>\
+										<p class="opengraph-description">' + result.description + '</p>\
+										<p class="opengraph-url">' + (result.author || url) + '</p>\
+									</div>\
+									<div style="clear: both;"></div>\
+								</a>\
+							';
+						}else {
+							// 제거
+							div.parentNode.removeChild(div);
+							p.parentNode.removeChild(p);
+						}
+					},
+					'error': function() {
+						// 제거
+						div.parentNode.removeChild(div);
+						p.parentNode.removeChild(p);
+					}
+				});
+			})(node, url);
 		}
+	};
+	OpenGraph.prototype.on = function() {
+		var that = this;
+
+		// reset
+		that.off();
+
+		// contentEditable
+		//console.log(that.elements.target);
+		//console.log(that.elements.target.contentEditable);
+		//console.log(that.elements.target.isContentEditable);
+		if(!that.elements.target.isContentEditable) {
+			that.elements.target.contentEditable = true; // 해당 element 내부 수정가능하도록 설정
+		}
+
+		// 키보드 이벤트
+		$(that.elements.target).on('keydown.EVENT_KEYDOWN_OPENGRAPH', function(e) {
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+
+			module.setSelection();
+			if(event.keyCode === 13 && module.isCollapsed()) { // keyCode 13: enter
+				that.put({'node': module.selection.anchorNode});
+			}
+		});
+	};
+	OpenGraph.prototype.off = function() {
+		var that = this;
+
+		// event
+		$(that.elements.target).off('.EVENT_KEYDOWN_OPENGRAPH');
 	};
 
 	// public return
@@ -1560,45 +1640,42 @@ Dual licensed under the MIT and GPL licenses.
 		setup: function(settings) {
 			var instance;
 
-			settings['key'] = settings['key'] || 'flicking'; // 중복생성 방지 key 검사
+			settings['key'] = settings['key'] || settings['type'] || ''; // 중복생성 방지 key 검사
 			if(settings['key'] && this.search(settings['key'])) {
 				instance = this.search(settings['key']);
 				if(instance.change/* && JSON.stringify(instance.settings) !== JSON.stringify(settings)*/) {
 					instance.change(settings);
 				}
-			}else {
-				instance = new Editor(settings);
+			}else if(settings['type']) {	
+				switch(settings['type']) {
+					case 'text':
+						instance = new EditText(settings);
+						break;
+					case 'multi':
+						instance = new EditMulti(settings);
+						break;
+					case 'opengraph':
+						instance = new OpenGraph(settings);
+						break;
+				}
 				if(settings['key'] && instance) {
 					module.instance[settings['key']] = instance;
 				}
-			}
+			};
 			return instance;
 		},
 		on: function(key) { // 전체 또는 해당 key
-			if(key) {
-				this.search(key) && this.search(key).on();
-			}else {
-				for(key in module.instance) {
-					if(module.instance.hasOwnProperty(key)) {
-						module.instance[key].on();
-					}
-				}
-			}
+			
 		},
 		off: function(key) { // 전체 또는 해당 key
-			if(key) {
-				this.search(key) && this.search(key).off();
-			}else {
-				for(key in module.instance) {
-					if(module.instance.hasOwnProperty(key)) {
-						module.instance[key].off();
-					}
-				}
-			}
+			
 		},
-		put: function(key, parameter) {
-			if(key) {
-				this.search(key) && this.search(key).setPut(parameter);
+		remove: function() { // 인스턴스까지 모두 제거 (event off 포함)
+			
+		},
+		put: function(key, data) {
+			if(this.search(key)) {
+				this.search(key).put(data);
 			}
 		}
 	};

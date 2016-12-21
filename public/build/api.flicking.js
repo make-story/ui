@@ -26,7 +26,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 	'use strict'; // ES5
 	if(typeof global === 'undefined' || global !== window || ((!global.api || !global.api.dom) && !global.jQuery)) {
-		return false;	
+		return false;
 	}else if(!global.api) {
 		global.api = {};
 	}
@@ -124,26 +124,23 @@ jQuery 또는 api.dom 에 종속적 실행
 				}
 				return settings;
 			},
-			setTranslate: function(parameter) {
+			setTranslate: function(parameter) { // transform
 				var that = this;
 				var parameter = parameter || {};
 				var target = parameter['target'];
-				var duration = parameter['duration'];
-				var translateX = parameter['translateX'] || 0;
-				var translateY = parameter['translateY'] || 0;
+				var duration = parameter['duration'] || 0;
+				var left = parameter['left'] || 0; // translateX
+				var top = parameter['top'] || 0; // translateY
 
 				try {
 					target.style.webkitTransitionDuration = target.style.MozTransitionDuration = target.style.msTransitionDuration = target.style.OTransitionDuration = target.style.transitionDuration = duration + 's';
-					target.style.webkitTransform = 'translate(' + translateX + 'px, ' + translateY + 'px)' + 'translateZ(0)';
-					target.style.msTransform = target.style.MozTransform = target.style.OTransform = 'translate(' + translateX + 'px, ' + translateY + 'px)';
+					target.style.webkitTransform = 'translate(' + left + 'px, ' + top + 'px)' + 'translateZ(0)';
+					target.style.msTransform = target.style.MozTransform = target.style.OTransform = 'translate(' + left + 'px, ' + top + 'px)';
 					return true;
 				}catch(e) {
 					console.log(e);
 					return false;	
 				}
-			},
-			setAnimate: function(parameter) {
-
 			},
 			// 현재 이벤트의 기본 동작을 중단한다.
 			stopCapture: function(e) {
@@ -210,7 +207,7 @@ jQuery 또는 api.dom 에 종속적 실행
 		that.index = 1; // 현재 출력되고 있는 슬라이드 (1부터 시작)
 		that.width = {}; // 플리킹 wrap width value, unit 값
 		that.height = {}; // 플리킹 wrap height value, unit 값
-		that.translate = 0; // container 의 현재 translateX 값
+		that.translate = 0; // container 의 현재 translateX 또는 translateY 값
 		that.time = null; // 자동슬라이드 time key
 		
 		// target
@@ -383,12 +380,12 @@ jQuery 또는 api.dom 에 종속적 실행
 				//style['parent']['overflow-x'] = 'visible';
 				//style['parent']['overflow-y'] = 'hidden';
 				style['target']['width'] = that.width.value + 'px';
-				translate['translateY'] = that.translate = (that.height.value * (that.index - 1)) * -1;
+				translate['top'] = that.translate = (that.height.value * (that.index - 1)) * -1;
 			}else {
 				//style['parent']['overflow-x'] = 'hidden';
 				//style['parent']['overflow-y'] = 'visible';
 				style['target']['width'] = (that.width.value * that.total) + 'px';
-				translate['translateX'] = that.translate = (that.width.value * (that.index - 1)) * -1;
+				translate['left'] = that.translate = (that.width.value * (that.index - 1)) * -1;
 			}
 			$(parent).css(style['parent']);
 			$(target).css(style['target']);
@@ -610,9 +607,9 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			// slide 이동
 			if(that.settings.flow === 'horizontal') {
-				translate['translateX'] = that.translate = (that.width.value * ((is ? after : before) - 1)) * -1;
+				translate['left'] = that.translate = (that.width.value * ((is ? after : before) - 1)) * -1;
 			}else if(that.settings.flow === 'vertical') {
-				translate['translateY'] = that.translate = (that.height.value * ((is ? after : before) - 1)) * -1;
+				translate['top'] = that.translate = (that.height.value * ((is ? after : before) - 1)) * -1;
 			}
 			module.setTranslate(translate);
 
@@ -723,10 +720,10 @@ jQuery 또는 api.dom 에 종속적 실행
 						// 사용자 터치가 스크롤인지 슬라이드인지 확인하여 안정화함
 						if(that.settings.flow === 'horizontal' && Math.abs(left - that['start']['left']) > Math.abs(top - that['start']['top'])) {
 							is = true;
-							translate['translateX'] = (left - that['start']['left']) + that.translate;
+							translate['left'] = (left - that['start']['left']) + that.translate;
 						}else if(that.settings.flow === 'vertical' && Math.abs(top - that['start']['top']) > Math.abs(left - that['start']['left'])) {
 							is = true;
-							translate['translateY'] = (top - that['start']['top']) + that.translate;
+							translate['top'] = (top - that['start']['top']) + that.translate;
 						}
 						if(is) {
 							// 현재 이벤트의 기본 동작을 중단한다. (슬라이드가 작동중일 때 모바일의 기본이벤트인 스크롤 작동을 중단시킨다.)
