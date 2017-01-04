@@ -240,7 +240,7 @@ api.dom("ul").append(api.dom('<li>'));
 - 이벤트 바인딩
 
 ````javascript
-// 이벤트 여러개를 한번에 설정
+// 이벤트 여러개를 키와 함께 한번에 설정
 api.dom("#target").on('click.EVENT_CLICK_TEST mousedown.EVENT_MOUSEDOWN_TEST mouseup');
 // 이벤트 키와 함께 하나의 이벤트 설정
 api.dom("#target").on('click.EVENT_CLICK_TEST');
@@ -252,7 +252,7 @@ api.dom("#target").on('click');
 - 이벤트 해제
 
 ````javascript
-// 이벤트 여러개를 한번에 해제
+// 이벤트 키에 해당하는 여러개를 한번에 해제
 api.dom("#target").off('click.EVENT_CLICK_TEST mousedown.EVENT_MOUSEDOWN_TEST');
 // 이벤트 키에 해당하는 것만 해제
 api.dom("#target").off('click.EVENT_CLICK_TEST');
@@ -452,24 +452,56 @@ api.transitionQueue({
 
 ### api.editor.js
 
-텍스트에디터
+에디터
 
 ````javascript
-// 해당요소 에디터 설정
+// 텍스트 에디터
 api.editor.setup({
-	'key': 'editor', // 에디터 작동 고유키 (선택)
+	'key': 'textedit', // 에디터 key
+	'type': 'text', // 에디터 type
 	'target': '#editor', // 에디터 적용 element
-	'submit': {
-		'image': '', // 이미지 파일 전송 서버 url
-		'opengraph': '' // 오픈그래프 반환 서버 url
-	},
+	'tooltip': true, // 툴팁 사용여부
 	'callback': { 
 		'init': null
 	}
-});
+}).on();
+
+// 이미지/동영상(작업중) 에디터
+api.editor.setup({
+	'key': 'multiedit', // 에디터 key
+	'type': 'multi', // 에디터 type
+	'target': '#editor', // 에디터 적용 element
+	'image': true, // 이미지 에디터 사용여부
+	'movie': true, // 비디오 에디터 사용여부
+	'tooltip': {
+		'image': {
+			'put': true, // 이미지 넣기 툴팁 보이기 / 숨기기
+			'location': true // 이미지 위치 수정 툴팁 보이기 / 숨기기
+		}
+	},
+	'submit': {
+		'image': '//makestory.net/files/editor', // 이미지 파일 전송 url
+	},
+	'class': { // element 에 설정할 class 속성값
+		'image': ''
+	},
+	'callback': {
+		'init': null
+	}
+}).on();
+
+// 오픈그래프 (링크 meta 출력)
+api.editor.setup({
+	'key': 'opengraph',
+	'type': 'opengraph',
+	'submit': '//makestory.net/opengraph', // link url 정보를 받아 meta 정보를 돌려줄 서버측 url
+	'callback': {
+		'init': null
+	}
+}).on();
 
 // 해당요소 에디터 해제
-api.editor.search('editor').off();
+api.editor.search('에디터키').off();
 
 // 오픈그래프 반환 json 구조
 {
@@ -578,6 +610,7 @@ api.modal.setup({
 
 /*
 position 값:
+auto
 topleft, topcenter, topright
 bottomleft, bottomcenter, bottomright
 lefttop, leftmiddle, leftbottom
@@ -943,11 +976,42 @@ api.util.requestAnimFrame(callback)
 api.util.cancelAnimationFrame(time)
 - cancelAnimationFrame
 
+
+
+api.util.isObject(value)
+- 오브젝트 여부 true/false
+
+api.util.isArray(value)
+- 배열여부 true/false
+
+api.util.isNumber(value)
+- 숫자여부 true/false
+
+api.util.isString(value)
+- 문자여부 true/false
+
+api.util.isBoolean(value)
+- boolean 여부 true/false
+
+api.util.isNodeList(value)
+- 노드 여부 true/false
+
+api.util.isHtmlElement(value)
+- html 엘리먼트 여부 true/false
+
+api.util.isFunction(value)
+- 함수 여부 true/false
+
+api.util.isUndefined(value)
+- undefined 여부 true/false
+
+api.util.isJSON(value)
+- json 여부 true/false
+
+
+
 api.util.numberUnit(value)
 - 숫자값 단위값 분리
-
-api.util.isNumeric(value)
-- 숫자여부 확인
 
 api.util.numberReturn(value)
 - 숫자만 추출
@@ -970,6 +1034,8 @@ api.util.floor(값, 자릿수)
 api.util.ceiling(값, 자릿수)
 - 지정자리 올림
 
+
+
 api.util.dateSpecificInterval()
 - 몇일째 되는날
 
@@ -987,10 +1053,9 @@ api.util.lastday(년도, 월);
 
 ----
 
-### api.script.js
+### api.script.js (현재작업중)
 
 js 파일 동적로딩, 의존성관리, 모듈화
-현재작업중
 
 ````javascript
 // 사용예 1
