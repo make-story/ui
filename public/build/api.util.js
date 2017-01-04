@@ -120,10 +120,6 @@ Dual licensed under the MIT and GPL licenses.
 				return original;
 			}
 		},
-		// json 데이터 여부
-		isJSON: function(value) {
-			return value && typeof value === 'object' && (/*Array.isArray(value)*/Object.prototype.toString.call(value) === "[object Array]" || /^{.*}$/.test(JSON.stringify(value)));
-		},
 		// 반응형 계산
 		sizePercent: function(t, c) {
 			//공식 : target / content = result
@@ -163,9 +159,9 @@ Dual licensed under the MIT and GPL licenses.
 			document.getElementById('div').onclick = function() { alert('div'); };
 			document.getElementById('img').onclick = function() { alert('img'); };
 
-		 	> 일반적인 이벤트(img를 클릭했을 경우): img -> div -> a 순서로 이벤트 발생
-		 	> stopPropagation 사용: img 를 클릭했을 경우 div 이벤트를 막을 수 있다. 그러나 a 이벤트는 중지되지 않으며 href에 따른 페이지 이동이 발생한다.
-		 	> preventDefault 사용: a 기본 이벤트인 href 의 이동을 중지 시킨다.
+			> 일반적인 이벤트(img를 클릭했을 경우): img -> div -> a 순서로 이벤트 발생
+			> stopPropagation 사용: img 를 클릭했을 경우 div 이벤트를 막을 수 있다. 그러나 a 이벤트는 중지되지 않으며 href에 따른 페이지 이동이 발생한다.
+			> preventDefault 사용: a 기본 이벤트인 href 의 이동을 중지 시킨다.
 		*/
 		// 현재 이벤트의 기본 동작을 중단한다.
 		stopCapture: function(e) {
@@ -487,10 +483,50 @@ Dual licensed under the MIT and GPL licenses.
 				win.focus();
 			}
 		},
+
+		// ---------- ---------- ---------- ---------- ---------- ---------- 
+		// 참/거짓
+
+		isObject: function(value) {
+			return value !== null && typeof value === 'object';
+		},
+		isArray: function(value) {
+			return value !== null && (typeof value === 'object' && value.constructor === Array);
+		},
+		isNumber: function(value) {
+			return value !== null && (typeof value === 'number' && !isNaN(value - 0) || (typeof value === 'object' && value.constructor === Number));
+		},
+		isString: function(value) {
+			return value !== null && (typeof value === 'string' || (typeof value === 'object' && value.constructor === String));
+		},
+		isBoolean: function(value) {
+			return value !== null && typeof value === 'boolean';
+		},
+		isNodeList: function(value) {
+			return value !== null && value instanceof NodeList;
+		},
+		isHtmlElement: function(value) {
+			return value !== null && value instanceof HTMLElement;
+		},
+		isFunction: function(value) {
+			return value !== null && typeof value === 'function';
+		},
+		isUndefined: function(value) {
+			return value !== null && typeof value === 'undefined';
+		},
+		// 숫자여부 확인
+		isNumeric: function(value) {
+			// /^[+-]?([\d]+)?[\.]?([\d]+)?$/.test(value); // 음수, 양수, 소수점 가능 (keyup 이벤트로 체크가능)
+			return !isNaN(parseFloat(value)) && isFinite(value);
+		},
+		// json 데이터 여부
+		isJSON: function(value) {
+			return value && typeof value === 'object' && (/*Array.isArray(value)*/Object.prototype.toString.call(value) === "[object Array]" || /^{.*}$/.test(JSON.stringify(value)));
+		},
 		//팝업차단확인
 		isWindowPopup: function() {
 			var win = window.open('', 'isWindowPopup', 'width=1, height=1, left=-10, top=-10, scrollbars=yes, resizable=yes');
-		    var is = true;
+			var is = true;
 			if(win == null || typeof win === "undefined" || (!win && win.outerWidth === 0) || (win && win.outerHeight === 0) || (win && win.innerWidth === 0))  {
 				alert("팝업 차단 기능이 설정되어있습니다\n차단 기능을 해제(팝업허용)한 후 이용해 주세요.");
 				is = false;
@@ -509,11 +545,6 @@ Dual licensed under the MIT and GPL licenses.
 			// [1]: 숫자값
 			// [2]: 단위
 			return /^([0-9]+)(\D+)$/i.exec(value);
-		},
-		// 숫자여부 확인
-		isNumeric: function(value) {
-			// /^[+-]?([\d]+)?[\.]?([\d]+)?$/.test(value); // 음수, 양수, 소수점 가능 (keyup 이벤트로 체크가능)
-			return !isNaN(parseFloat(value)) && isFinite(value);
 		},
 		// 숫자만 추출
 		numberReturn: function(value) { 
@@ -655,8 +686,6 @@ Dual licensed under the MIT and GPL licenses.
 			}
 			return arr[month-1];
 		}
-
-		// ---------- ---------- ---------- ---------- ---------- ---------- ---------- 
 	};
 
 })(this);

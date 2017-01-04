@@ -14,12 +14,6 @@ Dual licensed under the MIT and GPL licenses.
 IE8 이상
 querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
 RGBa: Internet Explorer 9
-
--
-사용예
-
--
-jQuery 또는 api.dom 에 종속적 실행
 */
 
 ;(function(factory, global) {
@@ -287,12 +281,41 @@ jQuery 또는 api.dom 에 종속적 실행
 					return {'left': 0, 'top': 0};
 				}
 			},
+			// element 가 현재 브라우저창 크기보다 더 큰지 여부
+			isBrowserOut: function(parameter) {
+				var that = this;
+				var parameter = parameter || {};
+				var position = parameter['position'];
+				var element = parameter['element']; // 출력할 element
+
+				var is = false;
+				var browser = {};
+				var info = {};
+
+				browser = {
+					'width': window.innerWidth || document.body.clientWidth || document.documentElement.clientWidth,
+					'height': window.innerHeight || document.body.clientHeight || document.documentElement.clientHeight
+				};
+				info = element.getBoundingClientRect();
+				if(!('width' in info) || !('height' in info)) {
+					//info.width = offsetWidth;
+					info.width = info.right - info.left;
+					//info.height = offsetHeight;
+					info.height = info.bottom - info.top;
+				}
+				if(browser.width < info.width || browser.height < info.height) {
+					is = true;
+				}
+
+				return is;
+			},
 			// 위치설정
 			setPosition: function(parameter) {
 				var that = this;
 				var parameter = parameter || {};
 				var position = parameter['position'];
 				var element = parameter['element'];
+
 				// 위치 설정
 				var width = 0;
 				var height = 0;
@@ -396,6 +419,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				var position = parameter['position'];
 				var element = parameter['element'];
 				var out = parameter['out'];
+
 				var i, min;
 				var key, rect, tmp;
 				var width = 0, height = 0;
@@ -460,9 +484,10 @@ jQuery 또는 api.dom 에 종속적 실행
 				var that = this;
 				var parameter = parameter || {};
 				var position = parameter['position'];
-				var element = parameter['element'];
-				var rect = parameter['rect'];
-				var fixed = parameter['fixed'];
+				var element = parameter['element']; // 출력할 element
+				var rect = parameter['rect']; // 출력위치 기준이 되는 element
+				var fixed = parameter['fixed']; // 화면 고정된 element 여부 (position: fixed; 여부)
+
 				var width, height;
 				var target = {};
 				var info = rect.getBoundingClientRect();
@@ -478,7 +503,6 @@ jQuery 또는 api.dom 에 종속적 실행
 				target.top = info.top + (fixed === true ? 0 : scroll.top);
 				target.width = Math.round($(rect).outerWidth()); // margin 값까지 포함하면 오차발생
 				target.height = Math.round($(rect).outerHeight()); // margin 값까지 포함하면 오차발생
-
 
 				// topleft, topcenter, topright 
 				// centerleft, center, centerright 
@@ -515,8 +539,83 @@ jQuery 또는 api.dom 에 종속적 실행
 				// righttop, rightmiddle, rightbottom
 				if(position === 'auto') {
 					// 최적화된 영역을 찾아 position 값을 자동 설정해준다.
-					// 브라우저 영역을 벗어난 것 처리
+					position = (function() {
+						var position = 'bottomcenter';
+						var browser = {};
+						var center = {};
+						var middle = {};
 
+						// 브라우저 크기를 3등분하여 중앙영역을 구한다.
+						// 중앙영역에 위치할 경우는 center 위치
+						browser = {
+							'width': window.innerWidth || document.body.clientWidth || document.documentElement.clientWidth,
+							'height': window.innerHeight || document.body.clientHeight || document.documentElement.clientHeight
+						};
+						if(browser.width < info.left || browser.width < info.right || info.top < 0 || browser.height < info.bottom) { // 브라우저창 영역밖에 위치하는지 확인
+							// window(브라우저창) 기준에서 document(body) 기준으로 크기를 변경한다.
+							browser.width = Math.max(
+								document.body.scrollWidth, document.documentElement.scrollWidth,
+								document.body.offsetWidth, document.documentElement.offsetWidth,
+								document.documentElement.clientWidth
+							);
+							browser.height = Math.max(
+								document.body.scrollHeight, document.documentElement.scrollHeight,
+								document.body.offsetHeight, document.documentElement.offsetHeight,
+								document.documentElement.clientHeight
+							);
+						}
+						center = {
+							'left': browser.width / 2,
+							'top': browser.height / 2
+						};
+						middle = {
+							'left': center.left - ((browser.width / 3) / 2), // 중앙영역 좌측
+							'right': center.left + ((browser.width / 3) / 2), // 중앙영역 우측
+							'top': center.top - ((browser.height / 3) / 2), // 중앙영역 상단
+							'bottom': center.top + ((browser.height / 3) / 2) // 중앙영역 하단
+						};
+						/*
+						스크린 화면기준 상단좌측, 상단우측, 중앙, 하단좌측, 하단우측으로 분리하여
+						출력기준이 되는 rect 가 어디에 위치하는지 확인한다.
+						-------------------------
+						| 3    | 2  |    |    4 |
+						|      |    |    |      |
+						|      -----------      |
+						|      | 1  |    |      |
+						|------|----|----|------|
+						|      |    |    |      |
+						|      -----------      |
+						|      |    |    |      |
+						| 6    | 5  |    |    7 |
+						-------------------------
+						1: bottomcenter
+						2: bottomleft
+						3: bottomright
+						4: topleft
+						5: topright
+						*/
+						if((middle.left <= info.left && info.left <= middle.right) && (middle.top <= info.top && info.top <= middle.bottom)) { // 1
+							position = 'bottomcenter';
+						}else if(info.top <= center.top) {
+							if(middle.left <= info.left && info.left <= middle.right) { // 2
+								position = 'bottomcenter';
+							}else if(info.left <= center.left) { // 3
+								position = 'bottomleft';
+							}else if(center.left <= info.left) { // 4
+								position = 'bottomright';
+							}
+						}else if(center.top <= info.top) {
+							if(middle.left <= info.left && info.left <= middle.right) { // 5
+								position = 'topcenter';
+							}else if(info.left <= center.left) { // 6
+								position = 'topleft';
+							}else if(center.left <= info.left) { // 7
+								position = 'topright';
+							}
+						}
+
+						return position;
+					})();
 				}
 
 				if(/^top/.test(position)) {
@@ -1217,8 +1316,8 @@ jQuery 또는 api.dom 에 종속적 실행
 					<div id="' + key.title + '" style="padding: 20px 20px 10px 20px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 20px; min-height: 45px; color: rgb(44, 45, 46); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 10px 20px 20px 20px; text-align: right; border-radius: 0 0 7px 7px;">\
-						<button id="' + key.cancel + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(140, 141, 142); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">CANCEL</button>\
-						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
+						<button id="' + key.cancel + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(140, 141, 142); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 5px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">CANCEL</button>\
+						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 5px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
 					</div>\
 				';
 
@@ -1369,11 +1468,11 @@ jQuery 또는 api.dom 에 종속적 실행
 				that.elements.container.setAttribute('tabindex', -1);
 				that.elements.container.focus();
 
-				// mousedown (사용자 터치영역 감시)
+				// mousedown (사용자 터치영역 감시, modal 영역을 제외한 다른 영역 터치 이벤트 불가능)
 				$(that.elements.container).on(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key, function(e) {
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					//if(event.target && (that.elements.container.isEqualNode(event.target) || !that.elements.contents.contains(event.target)) {
-					if(event.target && that.elements.container.isEqualNode(event.target) && (typeof event.target.storage === 'object' && event.target.storage.api === 'modal')) {
+					if(event.target && !that.elements.contents.contains(event.target)) {
 						event.preventDefault(); // 기본이벤트 정지
 						event.stopPropagation(); // 상위 전파 방지
 						event.stopImmediatePropagation(); // 상위 전파 + 같은 레벨 이벤트 전파 방지 (하나의 element에 여러개의 이벤트)
@@ -1562,7 +1661,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					<div id="' + key.title + '" style="padding: 20px 20px 10px 20px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
 					<div id="' + key.message + '" style="padding: 10px 20px; min-height: 45px; color: rgb(44, 45, 46); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 10px 20px 20px 20px; text-align: right; border-radius: 0 0 7px 7px;">\
-						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 7px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
+						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 5px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
 					</div>\
 				';
 
@@ -1698,9 +1797,10 @@ jQuery 또는 api.dom 에 종속적 실행
 				that.elements.container.setAttribute('tabindex', -1);
 				that.elements.container.focus();
 
-				// mousedown (사용자 터치영역 감시)
+				// mousedown (사용자 터치영역 감시, modal 영역을 제외한 다른 영역 터치 이벤트 불가능)
 				$(that.elements.container).on(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key, function(e) {
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+					//if(event.target && (that.elements.container.isEqualNode(event.target) || !that.elements.contents.contains(event.target)) {
 					if(event.target && !that.elements.contents.contains(event.target)) {
 						event.preventDefault(); // 기본이벤트 정지
 						event.stopPropagation(); // 상위 전파 방지
@@ -1933,6 +2033,9 @@ jQuery 또는 api.dom 에 종속적 실행
 					switch(key) {
 						case 'type':
 						case 'key':
+							break;
+						case 'position':
+							that.settings[key] = settings[key];
 							break;
 						case 'time':
 							that.settings.time = module.isNumeric(settings[key]) && settings[key] || 0;

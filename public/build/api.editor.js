@@ -80,6 +80,9 @@ FileReader: IE10 이상
 			// 선택된 텍스트 (window.getSelection())
 			that.selection; 
 
+			// element
+			that.elements = {};
+
 			// 한글입력관련
 			that.composition = false;
 			$(document).off('.EVENT_COMPOSITIONSTART_TEXTEDIT').on('compositionstart.EVENT_COMPOSITIONSTART_TEXTEDIT', function() {
@@ -90,6 +93,37 @@ FileReader: IE10 이상
 			});
 		}
 		EditModule.prototype = {
+			init: function() {
+				var fragment;
+
+				if(document.body) {
+					// fragment
+					fragment = document.createDocumentFragment();
+
+					// container
+					if(!this.elements.container || typeof this.elements.container !== 'object' || !this.elements.container.nodeType) {
+						this.elements.container = document.createElement('div');
+						fragment.appendChild(this.elements.container);
+					}
+
+					// text
+					if(!this.elements.text || typeof this.elements.text !== 'object' || !this.elements.text.nodeType) {
+						this.elements.text = document.createElement('div');
+						fragment.appendChild(this.elements.text);
+					}
+
+					// multi
+					if(!this.elements.multi || typeof this.elements.multi !== 'object' || !this.elements.multi.nodeType) {
+						this.elements.multi = document.createElement('div');
+						fragment.appendChild(this.elements.multi);
+					}
+
+					try {
+						//document.body.insertBefore(fragment, document.body.firstChild);
+						document.body.appendChild(fragment);
+					}catch(e) {}
+				}
+			},
 			setSettings: function(settings, options) {
 				var key;
 				for(key in options) {
@@ -249,6 +283,7 @@ FileReader: IE10 이상
 		that.settings = {
 			'key': 'editor', 
 			'target': null,
+			'tooltip': true,
 			'callback': {
 				'init': null
 			}
@@ -667,24 +702,26 @@ FileReader: IE10 이상
 
 		// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
 		module.setSelection();
-		if(module.isSelection() && module.selection.focusNode.nodeType === 1 && /figure|img/.test(module.selection.focusNode.nodeName.toLowerCase())) {
-			/*
-			console.log('----------');
-			console.dir(module.selection);
-			// 시작노드
-			console.log('anchorNode.nodeName: ' + module.selection.anchorNode.nodeName);
-			console.log('anchorNode.nodeValue: ' + module.selection.anchorNode.nodeValue);
-			console.log('anchorNode.nodeType: ' + module.selection.anchorNode.nodeType);
-			// 끝노드
-			console.log('focusNode.nodeName: ' + module.selection.focusNode.nodeName);
-			console.log('focusNode.nodeValue: ' + module.selection.focusNode.nodeValue);
-			console.log('focusNode.nodeType: ' + module.selection.focusNode.nodeType);
-			*/
-			that.setTextTooltipMenuPostion({'toggle': 'hide'});
-		}else {
-			that.setTextTooltipMenuPostion();
+		if(that.settings.tooltip === true) {
+			if(module.isSelection() && module.selection.focusNode.nodeType === 1 && /figure|img/.test(module.selection.focusNode.nodeName.toLowerCase())) {
+				/*
+				console.log('----------');
+				console.dir(module.selection);
+				// 시작노드
+				console.log('anchorNode.nodeName: ' + module.selection.anchorNode.nodeName);
+				console.log('anchorNode.nodeValue: ' + module.selection.anchorNode.nodeValue);
+				console.log('anchorNode.nodeType: ' + module.selection.anchorNode.nodeType);
+				// 끝노드
+				console.log('focusNode.nodeName: ' + module.selection.focusNode.nodeName);
+				console.log('focusNode.nodeValue: ' + module.selection.focusNode.nodeValue);
+				console.log('focusNode.nodeType: ' + module.selection.focusNode.nodeType);
+				*/
+				that.setTextTooltipMenuPostion({'toggle': 'hide'});
+			}else {
+				that.setTextTooltipMenuPostion();
+			}
+			that.setTextTooltipMenuState();
 		}
-		that.setTextTooltipMenuState();
 	};
 	EditText.prototype.on = function() {
 		var that = this;
@@ -761,7 +798,8 @@ FileReader: IE10 이상
 			if(module.isSelection()) {
 				if(event.keyCode === 13) { // keyCode 13: enter
 					// DIV 내부에서 엔터를 눌렀을 경우 div 내부에서 br로 처리되므로 p 태그로 변경되도록 처리한다.
-					if(module.selection.anchorNode.nodeName.toLowerCase() === 'div') {
+					//if(module.selection.anchorNode.nodeName.toLowerCase() === 'div') {
+					if(module.selection.anchorNode.nodeType !== 1 || module.selection.anchorNode.nodeName.toLowerCase() !== 'p' || !(/block|inline-block/i.test(module.getDisplay(module.selection.anchorNode)))) {
 						module.setFormatBlock("p");
 					}
 
@@ -916,6 +954,14 @@ FileReader: IE10 이상
 		that.settings = {
 			'key': 'editor', 
 			'target': null,
+			'image': true, // 이미지 에디터 사용여부
+			'movie': true, // 비디오 에디터 사용여부
+			'tooltip': {
+				'image': {
+					'put': true, // 이미지 넣기 툴팁 보이기 / 숨기기
+					'location': true // 이미지 위치 수정 툴팁 보이기 / 숨기기
+				}
+			},
 			'submit': {
 				'image': '//makestory.net/files/editor', // 이미지 파일 전송 url
 			},
@@ -1034,7 +1080,7 @@ FileReader: IE10 이상
 							if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
 								//console.log('setAppendWrap(that.elements.target)');
 								return setAppendWrap(that.elements.target);
-							}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && /block|inline-block/i.test(module.getDisplay(node.parentNode))))) {
+							}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(module.getDisplay(node.parentNode))))) {
 								//console.log('setInsertBeforeWrap(node)');
 								return setInsertBeforeWrap(node);
 							}/*else if(node.nodeType === 1 && (node.getAttribute('data-type') || (node.storage && node.storage.type))) {
@@ -1505,7 +1551,7 @@ FileReader: IE10 이상
 
 		return that;
 	};
-	OpenGraph.prototype.put = function(parameter) {
+	OpenGraph.prototype.put = function(parameter) { // 오픈그래프 삽입
 		var that = this;
 
 		var parameter = parameter || {};
@@ -1514,32 +1560,44 @@ FileReader: IE10 이상
 		var fragment;
 		var a, div, p, comment;
 
-		if(typeof node === 'object' && (url && regexp.url.test(url) || regexp.url.test(node.nodeValue)) && node.parentNode.nodeName.toLowerCase() !== 'a') {
+		if(typeof node === 'object' && node.nodeType && (url && regexp.url.test(url) || that.check(node))) {
 			url = url || node.nodeValue;
 			//console.log('url: ' + url);
 
 			(function(node, url) {
 				var fragment;
-				var a, div, p, comment;
+				var a, div, p;
+				var tmp;
+				var inserted;
+				var position, range;
 
-				//
+				// url text 를 a 링크로 변경
+				//paragraph = node.nodeValue.split(/\s+/); // 띄어쓰기 기준 문단 분리
+
+				//console.log(node);
 				if(!url.match("^(http|https)://")) {
 					url = "http://" + url;
 				}
 
-				fragment = document.createDocumentFragment();
-				a = document.createElement("a");
-				div = document.createElement("div");
-				p = document.createElement("p");
-				//comment = document.createComment('{"url":"'.url.'"}');
-				fragment.appendChild(a);
-				fragment.appendChild(div);
-				fragment.appendChild(p);
-				
 				// 링크 구성 (새창 등 속성 설정)
+				//var comment = document.createComment('{"url":"'.url.'"}');
+				a = document.createElement("a");
 				a.href = url;
 				a.target = '_blank';
 				a.textContent = a.innerText = url;
+				if(tmp = node.parentNode.insertBefore(a, node)) {
+					node.parentNode.removeChild(node);
+					node = tmp;
+				}else {
+					return false;
+				}
+
+				// 링크 정보 구성
+				fragment = document.createDocumentFragment();
+				div = document.createElement("div");
+				p = document.createElement("p");
+				fragment.appendChild(div);
+				fragment.appendChild(p);
 				div.setAttribute("data-type", "opengraph");
 				div.storage = {
 					'type': 'opengraph'
@@ -1550,56 +1608,92 @@ FileReader: IE10 이상
 				//div.innerHTML = '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 24 30" style="enable-background:new 0 0 50 50;" xml:space="preserve"><rect x="0" y="10" width="4" height="10"><animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0s" dur="0.6s" repeatCount="indefinite" /></rect><rect x="8" y="10" width="4" height="10"><animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.15s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.15s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.15s" dur="0.6s" repeatCount="indefinite" /></rect><rect x="16" y="10" width="4" height="10"><animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.3s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.3s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.3s" dur="0.6s" repeatCount="indefinite" /></rect></svg>';
 				p.innerHTML = '<br />';
 
-				// 사용자가 입력한 url 변경
 				// insertAdjacentHTML
 				//node.parentNode.replaceChild(fragment, node);
-				if(node.parentNode.insertBefore(fragment, node)) {
-					node.parentNode.removeChild(node);
+				inserted = module.getParent(
+					node,
+					// 조건
+					function(node) { // condition (검사)						
+						if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
+							return node;
+						}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(module.getDisplay(node.parentNode))))) {
+							return node;
+						}
+					}, 
+					// 조건에 따른 실행
+					function(node, result) { // callback (검사결과가 true의 경우)
+						if(node) {
+							return result;
+						}
+					}
+				);
+				if(!inserted || typeof inserted !== 'object' || !inserted.nodeName) {
+					inserted = node;
 				}
+				//if(inserted.parentNode.insertBefore(fragment, inserted)) { // 링크 이전 요소에 삽입
+				if(inserted.parentNode.insertBefore(fragment, inserted.nextSibling)) { // 링크 다음 요소에 삽입
+					// 포커스 이동
+					position = module.selection.getRangeAt(0).focusOffset;
+					range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
+					range.setStart(p, position);
+					range.setEnd(p, position);
+					range.collapse(true);
+					module.selection.removeAllRanges();
+					module.selection.addRange(range);
 
-				// 오픈그래프 정보 불러오기
-				$.ajax({
-					'url': that.settings.submit,
-					'timeout': 10000,
-					'data': {'url': encodeURIComponent(url)},
-					'dataType': 'json',
-					'success': function(json) {
-						var result = {}
-						var image = '';
-						if(typeof json === 'object' && json.msg === 'success') {
-							//console.dir(json);
-							//console.log(div);
-							result = json.result;
-							if(result.image) {
-								image = '<div class="opengraph-image" style="background-image: url(' + result.image + ');"><br /></div>';
+					// 오픈그래프 정보 불러오기
+					$.ajax({
+						'url': that.settings.submit,
+						'timeout': 10000,
+						'data': {'url': encodeURIComponent(url)},
+						'dataType': 'json',
+						'success': function(json) {
+							var result = {}
+							var image = '';
+							if(typeof json === 'object' && json.msg === 'success') {
+								//console.dir(json);
+								//console.log(div);
+								result = json.result;
+								if(result.image) {
+									image = '<div class="opengraph-image" style="background-image: url(' + result.image + ');"><br /></div>';
+								}else {
+									image = '<div class="opengraph-image"></div>';
+								}
+								div.innerHTML = '\
+									<a href="' + url + '" target="_blank" class="opengraph-wrap" style="display: block;">\
+										' + image + '\
+										<div class="opengraph-text">\
+											<strong class="opengraph-title">' + result.title + '</strong>\
+											<p class="opengraph-description">' + result.description + '</p>\
+											<p class="opengraph-url">' + (result.author || url) + '</p>\
+										</div>\
+										<div style="clear: both;"></div>\
+									</a>\
+								';
 							}else {
-								image = '<div class="opengraph-image"></div>';
+								// 제거
+								div.parentNode.removeChild(div);
+								p.parentNode.removeChild(p);
 							}
-							div.innerHTML = '\
-								<a href="' + url + '" target="_blank" class="opengraph-wrap" style="display: block;">\
-									' + image + '\
-									<div class="opengraph-text">\
-										<strong class="opengraph-title">' + result.title + '</strong>\
-										<p class="opengraph-description">' + result.description + '</p>\
-										<p class="opengraph-url">' + (result.author || url) + '</p>\
-									</div>\
-									<div style="clear: both;"></div>\
-								</a>\
-							';
-						}else {
+						},
+						'error': function() {
 							// 제거
 							div.parentNode.removeChild(div);
 							p.parentNode.removeChild(p);
 						}
-					},
-					'error': function() {
-						// 제거
-						div.parentNode.removeChild(div);
-						p.parentNode.removeChild(p);
-					}
-				});
+					});
+				}
 			})(node, url);
 		}
+	};
+	OpenGraph.prototype.check = function(node) { // node에 url이 존재하는지 검사
+		var is = false;
+
+		if(typeof node === 'object' && node.nodeType === 3 && node.nodeValue && regexp.url.test(node.nodeValue)) { // nodeType 3: textnode
+			is = true;
+		}
+
+		return is;
 	};
 	OpenGraph.prototype.on = function() {
 		var that = this;
@@ -1620,7 +1714,16 @@ FileReader: IE10 이상
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
 			module.setSelection();
-			if(event.keyCode === 13 && module.isCollapsed()) { // keyCode 13: enter
+			if(event.keyCode === 13 && module.isCollapsed() && that.check(module.selection.anchorNode)) { // keyCode 13: enter
+				// url 이 존재하면, event 를 정지한다.
+				module.stopCapture(event);
+				/*
+				console.log(last);
+				console.log(module.selection.anchorNode);
+				console.log(module.selection.anchorNode.nodeType);
+				console.log(module.selection.anchorNode.nodeValue);
+				console.log(module.selection.focusNode.nodeValue);
+				*/
 				that.put({'node': module.selection.anchorNode});
 			}
 		});

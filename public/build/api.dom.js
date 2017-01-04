@@ -1941,6 +1941,7 @@ http://www.quirksmode.org/js/detect.html
 				return function(parameter) {
 					var key;
 					var i, max = (this.elements && this.elements.length) || 0;
+					
 					if(!max) {
 						return this;
 						//return false;
@@ -1953,12 +1954,14 @@ http://www.quirksmode.org/js/detect.html
 							}
 						}
 					}
+
 					return this;
 				};
 			}else { // attr	
 				return function(parameter) {
 					var key, convert = {};
 					var i, max = (this.elements && this.elements.length) || 0;
+
 					if(!max) {
 						return this;
 						//return false;
@@ -1970,6 +1973,7 @@ http://www.quirksmode.org/js/detect.html
 						}
 						this.attr(convert);
 					}
+
 					return this;
 				};
 			}
@@ -1979,6 +1983,7 @@ http://www.quirksmode.org/js/detect.html
 				// x.setAttribute(y, z); // IE8이상 사용가능
 				var key;
 				var i, max = (this.elements && this.elements.length) || 0;
+
 				if(!max) {
 					return this;
 					//return false;
@@ -1999,6 +2004,7 @@ http://www.quirksmode.org/js/detect.html
 						}
 					}
 				}
+
 				return this;
 			};
 		})(),
