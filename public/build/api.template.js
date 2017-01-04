@@ -53,8 +53,6 @@ https://mustache.github.io/mustache.5.html
 
 */
 
-
-
 ;(function(factory, global) {
 
 	'use strict'; // ES5
@@ -308,7 +306,7 @@ https://mustache.github.io/mustache.5.html
 		var render = this.render(template, contents);
 		return paint(render);
 	};
-	if(typeof window === 'object' && window.document && window.document && window.document.createDocumentFragment) {
+	if(typeof window === 'object' && window.document && window.document.createDocumentFragment) {
 		template.fragment = function(template, contents) { // fragment 에 html 삽입 후 반환
 			var paint = this.paint(template, contents);
 			var fragment = document.createDocumentFragment(); // fragment 가 document에 렌더링(삽입)되기 전에, 셀렉터로 fragment 내부 element 검색이 가능하다.
