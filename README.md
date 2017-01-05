@@ -599,7 +599,8 @@ var instance = api.modal.setup({
 		'hide': null
 	},
 	'target': '', // #id
-	'close': '' // .class
+	'close': '', // .class
+	'esc': true // 키보드 esc 닫기실행
 });
 instance.show(); // 열기
 instance.hide(); // 닫기
@@ -617,7 +618,8 @@ api.modal.setup({
 	'key': 'rect',
 	'position': '', // 출력위치
 	'target': '', // 출력레이어 타겟
-	'rect': '' // 위치기준 타켓
+	'rect': '', // 위치기준 타켓
+	'esc': true // 키보드 esc 닫기실행
 }).toggle();
 
 /*
@@ -671,7 +673,8 @@ var instance = api.modal.setup({
 		'hide': null
 	},
 	'title': '',
-	'message': ''
+	'message': '',
+	'esc': true // 키보드 esc 닫기실행
 });
 instance.change({'title': '', ...}); // 재설정
 instance.show(); // 열기

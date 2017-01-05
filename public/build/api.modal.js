@@ -158,8 +158,10 @@ RGBa: Internet Explorer 9
 			that.elements = {};
 			// 실행 큐
 			that.queue = {
-				// 최우선 실행 (confirm, alert)
-				'priority': [],
+				// 현재 show 되어있는 모달 순서
+				'order': [], 
+				// 순차적으로 실행 (confirm, alert)
+				'wait': [],
 				// 위치 (겹쳐서 보이는 것 방지)
 				'position': {
 					'topleft': [],
@@ -184,6 +186,7 @@ RGBa: Internet Explorer 9
 			})();
 			//
 			that.init();
+			that.event();
 		}
 		ModalModule.prototype = {
 			init: function() {
@@ -223,6 +226,31 @@ RGBa: Internet Explorer 9
 						document.body.appendChild(fragment);
 					}catch(e) {}
 				}
+			},
+			event: function() {
+				var that = this;
+				var isCheck = function(key) {
+					var is = false;
+					if(key && key in that.instance && typeof that.instance[key].settings === 'object') {
+						is = true;
+					}
+					return is;
+				};
+
+				// 키보드 이벤트
+				$(document).on('keyup', function(e) {
+					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+					var code = event.which || event.keyCode;
+					var count = that.queue.order.length;
+					var key = count && that.queue.order[count-1] || null;
+					
+					// settings 에 esc 닫기실행 값이 true인 것만 작동한다.
+					if(code === 27 && key && isCheck(key) && that.instance[key].settings.esc === true) { // esc
+						if(typeof that.instance[key].hide === 'function') {
+							that.instance[key].hide();
+						}
+					}
+				});
 			},
 			setSettings: function(settings, options) {
 				var key;
@@ -704,7 +732,8 @@ RGBa: Internet Explorer 9
 			},
 			'theme:': {}, // 테마 (스타일 변경)
 			'target': '', // #id 또는 element
-			'close': '' // .class
+			'close': '', // .class
+			'esc': true // 키보드 esc 닫기실행
 		};
 		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {};
@@ -896,6 +925,12 @@ RGBa: Internet Explorer 9
 				that.elements.container.setAttribute('tabindex', -1);
 				that.elements.container.focus();
 
+				// queue
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
+				module.queue['order'].push(that.settings.key);
+
 				// resize 이벤트 실행 (이벤트 키는 that.settings.key 를 활용한다.)
 				$(window).on('resize.EVENT_RESIZE_' + that.settings.key, function(e) {
 					window.clearTimeout(that.time);
@@ -942,6 +977,11 @@ RGBa: Internet Explorer 9
 					module.active.focus();
 				}
 
+				// queue
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
+
 				// resize 이벤트 종료
 				$(window).off('resize.EVENT_RESIZE_' + that.settings.key);
 
@@ -980,6 +1020,11 @@ RGBa: Internet Explorer 9
 					that.elements.container.parentNode.removeChild(that.elements.container);
 				}
 				that.elements = {};
+
+				// queue
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
 
 				// instance
 				if(that.settings['key'] && module.instance[that.settings['key']]) {
@@ -1032,7 +1077,8 @@ RGBa: Internet Explorer 9
 			'target': '', // #id 또는 element (출력레이어 타겟)
 			'rect': '', // #id 또는 element (위치기준 타켓)
 			'out': true, // 화면(viewport) 영역 안에 표시되도록 자동 위치조절
-			'fixed': false // 화면 고정 여부
+			'fixed': false, // 화면 고정 여부
+			'esc': true // 키보드 esc 닫기실행
 		};
 		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {};
@@ -1155,6 +1201,12 @@ RGBa: Internet Explorer 9
 				that.elements.contents.setAttribute('tabindex', -1);
 				that.elements.contents.focus();
 
+				// queue
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
+				module.queue['order'].push(that.settings.key);
+
 				// resize 이벤트 실행 (이벤트 키는 that.settings.key 를 활용한다.)
 				$(window).on('resize.EVENT_RESIZE_' + that.settings.key, function(e) {
 					window.clearTimeout(that.time);
@@ -1192,6 +1244,11 @@ RGBa: Internet Explorer 9
 					module.active.focus();
 				}
 
+				// queue
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
+
 				// resize 이벤트 종료
 				$(window).off('resize.EVENT_RESIZE_' + that.settings.key);
 
@@ -1221,6 +1278,11 @@ RGBa: Internet Explorer 9
 					that.elements.contents.parentNode.removeChild(that.elements.contents);
 				}
 				that.elements = {};
+
+				// queue
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
 
 				// instance
 				if(that.settings['key'] && module.instance[that.settings['key']]) {
@@ -1338,21 +1400,13 @@ RGBa: Internet Explorer 9
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					module.stopCapture(event);
 					module.stopBubbling(event); 
-					that.hide();
-					// callback
-					if(typeof that.settings.callback.cancel === 'function') {
-						return that.settings.callback.cancel.call(that);
-					}
+					that.cancel();
 				});
 				$(that.elements.ok).on(env['event']['click'], function(e) {
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					module.stopCapture(event);
 					module.stopBubbling(event);
-					that.hide();
-					// callback
-					if(typeof that.settings.callback.ok === 'function') {
-						return that.settings.callback.ok.call(that);
-					}
+					that.ok();
 				});
 			}catch(e) {
 				if(typeof that.settings.callback.error === 'function') {
@@ -1436,8 +1490,8 @@ RGBa: Internet Explorer 9
 			var size, scroll;
 
 			// 실행되고 있는 최우선 modal 확인
-			if(module.queue['priority'].length > 0 && module.queue['priority'][0] !== that.settings.key /* 순차 실행의 첫번째 요소 여부 */) {
-				module.queue['priority'].push(that.settings.key);
+			if(module.queue['wait'].length > 0 && module.queue['wait'][0] !== that.settings.key /* 순차 실행의 첫번째 요소 여부 */) {
+				module.queue['wait'].push(that.settings.key);
 				return;
 			}
 
@@ -1454,19 +1508,23 @@ RGBa: Internet Explorer 9
 				that.above({'display': 'block'});
 				that.position();
 
-				// queue
-				if(module.queue['priority'].indexOf(that.settings.key) === -1) {
-					module.queue['priority'].push(that.settings.key);
-				}
-				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) === -1) {
-					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
-					module.queue['position'][that.settings.position].push(that.settings.key);
-				}*/
-
 				// focus (웹접근성)
 				module.active = document.activeElement;
 				that.elements.container.setAttribute('tabindex', -1);
 				that.elements.container.focus();
+
+				// queue
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
+				module.queue['order'].push(that.settings.key);
+				if(module.queue['wait'].indexOf(that.settings.key) === -1) {
+					module.queue['wait'].push(that.settings.key);
+				}
+				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) === -1) { // 같은 위치에 다른 모달과 서로 겹치지 않도록 한다.
+					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
+					module.queue['position'][that.settings.position].push(that.settings.key);
+				}*/
 
 				// mousedown (사용자 터치영역 감시, modal 영역을 제외한 다른 영역 터치 이벤트 불가능)
 				$(that.elements.container).on(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key, function(e) {
@@ -1507,19 +1565,22 @@ RGBa: Internet Explorer 9
 					that.elements.mask.style.display = 'none';
 				}
 
-				// queue
-				if(module.queue['priority'].indexOf(that.settings.key) !== -1) {
-					module.queue['priority'].splice(module.queue['priority'].indexOf(that.settings.key), 1);
-				}
-				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
-					module.setQueuePosition({'position': that.settings.position, 'out': false});
-				}*/
-
 				// focus (웹접근성)
 				if(module.active) {
 					module.active.focus();
 				}
+
+				// queue
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
+				if(module.queue['wait'].indexOf(that.settings.key) !== -1) {
+					module.queue['wait'].splice(module.queue['wait'].indexOf(that.settings.key), 1);
+				}
+				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) { // 같은 위치에 다른 모달과 서로 겹치지 않도록 한다.
+					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				}*/
 
 				// mousedown
 				$(that.elements.container).off(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key);
@@ -1539,13 +1600,13 @@ RGBa: Internet Explorer 9
 
 			// 다음 실행할 최우선 modal 확인
 			(function loop() {
-				if(module.queue['priority'].length > 0) {
-					if(!module.instance[module.queue['priority'][0]]) {
-						// priority 에는 존재하나 instance 에는 존재하지 않는 것
-						module.queue['priority'].shift();
+				if(module.queue['wait'].length > 0) {
+					if(!module.instance[module.queue['wait'][0]]) {
+						// wait 에는 존재하나 instance 에는 존재하지 않는 것
+						module.queue['wait'].shift();
 						loop(); // 재귀
-					}else if(typeof module.instance[module.queue['priority'][0]].show === 'function') {
-						module.instance[module.queue['priority'][0]].show();
+					}else if(typeof module.instance[module.queue['wait'][0]].show === 'function') {
+						module.instance[module.queue['wait'][0]].show();
 					}
 				}
 			})();
@@ -1568,10 +1629,13 @@ RGBa: Internet Explorer 9
 				that.elements = {};
 
 				// queue
-				if(module.queue['priority'].indexOf(that.settings.key) !== -1) {
-					module.queue['priority'].splice(module.queue['priority'].indexOf(that.settings.key), 1);
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
 				}
-				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) {
+				if(module.queue['wait'].indexOf(that.settings.key) !== -1) {
+					module.queue['wait'].splice(module.queue['wait'].indexOf(that.settings.key), 1);
+				}
+				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) { // 같은 위치에 다른 모달과 서로 겹치지 않도록 한다.
 					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
 					module.setQueuePosition({'position': that.settings.position, 'out': false});
 				}*/
@@ -1599,16 +1663,34 @@ RGBa: Internet Explorer 9
 
 			// 다음 실행할 최우선 modal 확인
 			(function loop() {
-				if(module.queue['priority'].length > 0) {
-					if(!module.instance[module.queue['priority'][0]]) {
-						// priority 에는 존재하나 instance 에는 존재하지 않는 것
-						module.queue['priority'].shift();
+				if(module.queue['wait'].length > 0) {
+					if(!module.instance[module.queue['wait'][0]]) {
+						// wait 에는 존재하나 instance 에는 존재하지 않는 것
+						module.queue['wait'].shift();
 						loop(); // 재귀
-					}else if(typeof module.instance[module.queue['priority'][0]].show === 'function') {
-						module.instance[module.queue['priority'][0]].show();
+					}else if(typeof module.instance[module.queue['wait'][0]].show === 'function') {
+						module.instance[module.queue['wait'][0]].show();
 					}
 				}
 			})();
+		},
+		cancel: function() {
+			var that = this;
+			
+			that.hide();
+			// callback
+			if(typeof that.settings.callback.cancel === 'function') {
+				return that.settings.callback.cancel.call(that);
+			}
+		},
+		ok: function() {
+			var that = this;
+
+			that.hide();
+			// callback
+			if(typeof that.settings.callback.ok === 'function') {
+				return that.settings.callback.ok.call(that);
+			}
 		}
 	};
 
@@ -1627,7 +1709,8 @@ RGBa: Internet Explorer 9
 			},
 			'theme:': {}, // 테마 (스타일 변경)
 			'title': 'Message',
-			'message': ''
+			'message': '',
+			'esc': true // 키보드 esc 닫기실행
 		};
 		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {};
@@ -1765,8 +1848,8 @@ RGBa: Internet Explorer 9
 			var size, scroll;
 
 			// 실행되고 있는 최우선 modal 확인
-			if(module.queue['priority'].length > 0 && module.queue['priority'][0] !== that.settings.key /* 순차 실행의 첫번째 요소 여부 */) {
-				module.queue['priority'].push(that.settings.key);
+			if(module.queue['wait'].length > 0 && module.queue['wait'][0] !== that.settings.key /* 순차 실행의 첫번째 요소 여부 */) {
+				module.queue['wait'].push(that.settings.key);
 				return;
 			}
 
@@ -1783,19 +1866,24 @@ RGBa: Internet Explorer 9
 				that.above({'display': 'block'});
 				that.position();
 
-				// queue
-				if(module.queue['priority'].indexOf(that.settings.key) === -1) {
-					module.queue['priority'].push(that.settings.key);
-				}
-				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) === -1) {
-					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
-					module.queue['position'][that.settings.position].push(that.settings.key);
-				}*/
-
 				// focus (웹접근성)
 				module.active = document.activeElement;
 				that.elements.container.setAttribute('tabindex', -1);
-				that.elements.container.focus();
+				//that.elements.container.focus();
+				that.elements.ok.focus();
+
+				// queue
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
+				module.queue['order'].push(that.settings.key);
+				if(module.queue['wait'].indexOf(that.settings.key) === -1) {
+					module.queue['wait'].push(that.settings.key);
+				}
+				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) === -1) { // 같은 위치에 다른 모달과 서로 겹치지 않도록 한다.
+					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
+					module.queue['position'][that.settings.position].push(that.settings.key);
+				}*/
 
 				// mousedown (사용자 터치영역 감시, modal 영역을 제외한 다른 영역 터치 이벤트 불가능)
 				$(that.elements.container).on(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key, function(e) {
@@ -1836,19 +1924,22 @@ RGBa: Internet Explorer 9
 					that.elements.mask.style.display = 'none';
 				}
 
-				// queue
-				if(module.queue['priority'].indexOf(that.settings.key) !== -1) {
-					module.queue['priority'].splice(module.queue['priority'].indexOf(that.settings.key), 1);
-				}
-				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
-					module.setQueuePosition({'position': that.settings.position, 'out': false});
-				}*/
-
 				// focus (웹접근성)
 				if(module.active) {
 					module.active.focus();
 				}
+
+				// queue
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
+				if(module.queue['wait'].indexOf(that.settings.key) !== -1) {
+					module.queue['wait'].splice(module.queue['wait'].indexOf(that.settings.key), 1);
+				}
+				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) { // 같은 위치에 다른 모달과 서로 겹치지 않도록 한다.
+					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				}*/
 
 				// mousedown
 				$(that.elements.container).off(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key);
@@ -1868,13 +1959,13 @@ RGBa: Internet Explorer 9
 
 			// 다음 실행할 최우선 modal 확인
 			(function loop() {
-				if(module.queue['priority'].length > 0) {
-					if(!module.instance[module.queue['priority'][0]]) {
-						// priority 에는 존재하나 instance 에는 존재하지 않는 것
-						module.queue['priority'].shift();
+				if(module.queue['wait'].length > 0) {
+					if(!module.instance[module.queue['wait'][0]]) {
+						// wait 에는 존재하나 instance 에는 존재하지 않는 것
+						module.queue['wait'].shift();
 						loop(); // 재귀
-					}else if(typeof module.instance[module.queue['priority'][0]].show === 'function') {
-						module.instance[module.queue['priority'][0]].show();
+					}else if(typeof module.instance[module.queue['wait'][0]].show === 'function') {
+						module.instance[module.queue['wait'][0]].show();
 					}
 				}
 			})();
@@ -1896,19 +1987,22 @@ RGBa: Internet Explorer 9
 				}
 				that.elements = {};
 
-				// queue
-				if(module.queue['priority'].indexOf(that.settings.key) !== -1) {
-					module.queue['priority'].splice(module.queue['priority'].indexOf(that.settings.key), 1);
-				}
-				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) {
-					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
-					module.setQueuePosition({'position': that.settings.position, 'out': false});
-				}*/
-
 				// instance
 				if(that.settings['key'] && module.instance[that.settings['key']]) {
 					delete module.instance[that.settings['key']];
 				}
+
+				// queue
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
+				if(module.queue['wait'].indexOf(that.settings.key) !== -1) {
+					module.queue['wait'].splice(module.queue['wait'].indexOf(that.settings.key), 1);
+				}
+				/*if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) { // 같은 위치에 다른 모달과 서로 겹치지 않도록 한다.
+					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
+					module.setQueuePosition({'position': that.settings.position, 'out': false});
+				}*/
 
 				// mousedown
 				$(that.elements.container).off(env.event.down + '.EVENT_MOUSEDOWN_' + that.settings.key);
@@ -1928,13 +2022,13 @@ RGBa: Internet Explorer 9
 
 			// 다음 실행할 최우선 modal 확인
 			(function loop() {
-				if(module.queue['priority'].length > 0) {
-					if(!module.instance[module.queue['priority'][0]]) {
-						// priority 에는 존재하나 instance 에는 존재하지 않는 것
-						module.queue['priority'].shift();
+				if(module.queue['wait'].length > 0) {
+					if(!module.instance[module.queue['wait'][0]]) {
+						// wait 에는 존재하나 instance 에는 존재하지 않는 것
+						module.queue['wait'].shift();
 						loop(); // 재귀
-					}else if(typeof module.instance[module.queue['priority'][0]].show === 'function') {
-						module.instance[module.queue['priority'][0]].show();
+					}else if(typeof module.instance[module.queue['wait'][0]].show === 'function') {
+						module.instance[module.queue['wait'][0]].show();
 					}
 				}
 			})();
@@ -2105,7 +2199,11 @@ RGBa: Internet Explorer 9
 				that.position();
 
 				// queue
-				if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) === -1) {
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
+				module.queue['order'].push(that.settings.key);
+				if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) === -1) { // 같은 위치에 다른 모달과 서로 겹치지 않도록 한다.
 					module.setQueuePosition({'position': that.settings.position, 'element': that.elements.contents, 'out': false});
 					module.queue['position'][that.settings.position].push(that.settings.key);
 				}
@@ -2143,7 +2241,10 @@ RGBa: Internet Explorer 9
 				}
 
 				// queue
-				if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) {
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
+				if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) { // 같은 위치에 다른 모달과 서로 겹치지 않도록 한다.
 					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
 					module.setQueuePosition({'position': that.settings.position, 'out': false});
 				}
@@ -2176,7 +2277,10 @@ RGBa: Internet Explorer 9
 				that.elements = {};
 
 				// queue
-				if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) {
+				while(module.queue['order'].indexOf(that.settings.key) !== -1) { // 기존값 제거
+					module.queue['order'].splice(module.queue['order'].indexOf(that.settings.key), 1);
+				}
+				if(!that.settings.mask && module.queue['position'][that.settings.position].indexOf(that.settings.key) !== -1) { // 같은 위치에 다른 모달과 서로 겹치지 않도록 한다.
 					module.queue['position'][that.settings.position].splice(module.queue['position'][that.settings.position].indexOf(that.settings.key), 1);
 					module.setQueuePosition({'position': that.settings.position, 'out': false});
 				}
