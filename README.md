@@ -483,7 +483,11 @@ api.editor.setup({
 		'image': '//makestory.net/files/editor', // 이미지 파일 전송 url
 	},
 	'class': { // element 에 설정할 class 속성값
-		'image': ''
+		'image': {
+			'figure': 'editor-figure',
+			'img': 'editor-img',
+			'figcaption': 'editor-figcaption'
+		}
 	},
 	'callback': {
 		'init': null
@@ -495,15 +499,20 @@ api.editor.setup({
 	'key': 'opengraph',
 	'type': 'opengraph',
 	'submit': '//makestory.net/opengraph', // link url 정보를 받아 meta 정보를 돌려줄 서버측 url
+	'class': {
+		'wrap': 'opengraph-wrap',
+		'image': 'opengraph-image',
+		'text': 'opengraph-text',
+		'title': 'opengraph-title',
+		'description': 'opengraph-description',
+		'author': 'opengraph-author'
+	},
 	'callback': {
 		'init': null
 	}
 }).on();
 
-// 해당요소 에디터 해제
-api.editor.search('에디터키').off();
-
-// 오픈그래프 반환 json 구조
+// 서버측 오픈그래프 return json 구조
 {
 	'msg': 'success', 
 	'result': {
@@ -514,6 +523,9 @@ api.editor.search('에디터키').off();
 		'keywords': '키워드'
 	}
 }
+
+// 해당요소 에디터 해제
+api.editor.search('에디터키').off();
 ````
 
 
@@ -593,13 +605,13 @@ instance.show(); // 열기
 instance.hide(); // 닫기
 
 /*
-position 값:
+position 값(브라우저 화면 기준):
 topleft, topcenter, topright
 bottomleft, bottomcenter, bottomright
 centerleft, center, centerright
 */
 
-// Rect (타겟위치를 기준으로 출력)
+// Rect (타겟위치를 기준으로 레이어 출력)
 api.modal.setup({
 	'type': 'rect', 
 	'key': 'rect',
@@ -609,7 +621,7 @@ api.modal.setup({
 }).toggle();
 
 /*
-position 값:
+position 값(타겟 위치 기준):
 auto
 topleft, topcenter, topright
 bottomleft, bottomcenter, bottomright
@@ -642,7 +654,7 @@ instance.hide(); // 닫기
 instance.remove(); // elememt 제거
 
 /*
-position 값:
+position 값(브라우저 화면 기준):
 topleft, topcenter, topright
 bottomleft, bottomcenter, bottomright
 centerleft, center, centerright
@@ -667,7 +679,7 @@ instance.hide(); // 닫기
 instance.remove(); // elememt 제거
 
 /*
-position 값:
+position 값(브라우저 화면 기준):
 topleft, topcenter, topright
 bottomleft, bottomcenter, bottomright
 centerleft, center, centerright
@@ -692,7 +704,7 @@ instance.hide(); // 닫기
 instance.remove(); // elememt 제거
 
 /*
-position 값:
+position 값(브라우저 화면 기준):
 topleft, topcenter, topright
 bottomleft, bottomcenter, bottomright
 centerleft, center, centerright

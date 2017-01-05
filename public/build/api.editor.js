@@ -965,8 +965,13 @@ FileReader: IE10 이상
 			'submit': {
 				'image': '//makestory.net/files/editor', // 이미지 파일 전송 url
 			},
+			// element 에 설정할 class 속성값
 			'class': {
-				'image': ''
+				'image': {
+					'figure': 'editor-figure',
+					'img': 'editor-img',
+					'figcaption': 'editor-figcaption'
+				}
 			},
 			'callback': {
 				'init': null
@@ -1336,11 +1341,12 @@ FileReader: IE10 이상
 					var setImage = function(result) {
 						var img = new Image();
 						img.src = result;
-						img.setAttribute("class", that.settings.class.image);
+						img.setAttribute("class", that.settings.class.image.img);
 						img.onload = function() {
 							var figure, figcaption;
 							//var rect = that.elements.target.getBoundingClientRect();
 							var rect = id.getBoundingClientRect();
+							var range;
 
 							// 이미지 크기 변경
 							if(rect.width && this.width && rect.width < this.width) {
@@ -1362,6 +1368,14 @@ FileReader: IE10 이상
 							figure.appendChild(img);
 							figure.appendChild(figcaption);
 							id.appendChild(figure);
+
+							// 포커스이동
+							range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
+							range.setStart(figcaption, 0);
+							range.setEnd(figcaption, 0);
+							range.collapse(true);
+							module.selection.removeAllRanges();
+							module.selection.addRange(range);
 						};
 					};
 
@@ -1529,7 +1543,15 @@ FileReader: IE10 이상
 		that.settings = {
 			'key': 'editor', 
 			'target': null,
-			'submit': '//makestory.net/opengraph',
+			'submit': '//makestory.net/opengraph', // link url 정보를 받아 meta 정보를 돌려줄 서버측 url
+			'class': {
+				'wrap': 'opengraph-wrap',
+				'image': 'opengraph-image',
+				'text': 'opengraph-text',
+				'title': 'opengraph-title',
+				'description': 'opengraph-description',
+				'author': 'opengraph-author'
+			},
 			'callback': {
 				'init': null
 			}
@@ -1655,17 +1677,17 @@ FileReader: IE10 이상
 								//console.log(div);
 								result = json.result;
 								if(result.image) {
-									image = '<div class="opengraph-image" style="background-image: url(' + result.image + ');"><br /></div>';
+									image = '<div class="' + that.settings.class.image + '" style="background-image: url(' + result.image + ');"><br /></div>';
 								}else {
-									image = '<div class="opengraph-image"></div>';
+									image = '<div class="' + that.settings.class.image + '"></div>';
 								}
 								div.innerHTML = '\
 									<a href="' + url + '" target="_blank" class="opengraph-wrap" style="display: block;">\
 										' + image + '\
-										<div class="opengraph-text">\
-											<strong class="opengraph-title">' + result.title + '</strong>\
-											<p class="opengraph-description">' + result.description + '</p>\
-											<p class="opengraph-url">' + (result.author || url) + '</p>\
+										<div class="' + that.settings.class.text + '">\
+											<strong class="' + that.settings.class.title + '">' + result.title + '</strong>\
+											<p class="' + that.settings.class.description + '">' + result.description + '</p>\
+											<p class="' + that.settings.class.author + '">' + (result.author || url) + '</p>\
 										</div>\
 										<div style="clear: both;"></div>\
 									</a>\
@@ -1689,7 +1711,7 @@ FileReader: IE10 이상
 	OpenGraph.prototype.check = function(node) { // node에 url이 존재하는지 검사
 		var is = false;
 
-		if(typeof node === 'object' && node.nodeType === 3 && node.nodeValue && regexp.url.test(node.nodeValue)) { // nodeType 3: textnode
+		if(typeof node === 'object' && node.nodeType === 3 && node.parentNode.nodeName.toLowerCase() !== 'a' && node.nodeValue && regexp.url.test(node.nodeValue)) { // nodeType 3: textnode
 			is = true;
 		}
 
