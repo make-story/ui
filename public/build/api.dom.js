@@ -264,9 +264,9 @@ http://www.quirksmode.org/js/detect.html
 		environment['event']['down'] = 'touchstart';
 		environment['event']['move'] = 'touchmove';
 		environment['event']['up'] = 'touchend';
-		if(/(iphone|ipad|ipod)/i.test(agent)) {
+		/*if(/(iphone|ipad|ipod)/i.test(agent)) { // touchend와 click 이벤트 실행 우선순위 문제발생
 			environment['event']['click'] = 'touchend';
-		}
+		}*/
 	}
 
 	// public return
