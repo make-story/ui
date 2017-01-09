@@ -14,6 +14,12 @@ Dual licensed under the MIT and GPL licenses.
 IE8 이상
 querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
 RGBa: Internet Explorer 9
+
+-
+사용예
+
+-
+jQuery 또는 api.dom 에 종속적 실행
 */
 
 ;(function(factory, global) {

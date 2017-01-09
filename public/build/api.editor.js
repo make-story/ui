@@ -225,6 +225,32 @@ FileReader: IE10 이상
 					}
 				}
 			},
+			// node 값 검사
+			isCheck: function(node, check) { 
+				var is = false;
+
+				if(typeof node === 'object' && node.nodeType) {
+					switch(check) {
+						case 'url':
+							if(node.nodeType === 3 && node.parentNode.nodeName.toLowerCase() !== 'a' && node.nodeValue && regexp.url.test(node.nodeValue)) { // nodeType 3: textnode
+								is = true;
+							}
+							break;
+						case 'opengraph':
+							if((typeof node.storage === 'object' && node.storage.type === 'opengraph') || (node.nodeType === 3 && typeof node.parentNode.storage === 'object' && node.parentNode.storage.type === 'opengraph')) { // nodeType 3: textnode
+								is = true;	
+							}
+							break;
+						case 'image':
+							if((typeof node.storage === 'object' && node.storage.type === 'image') || (node.nodeType === 3 && typeof node.parentNode.storage === 'object' && node.parentNode.storage.type === 'image')) { // nodeType 3: textnode
+								is = true;	
+							}
+							break;
+					}
+				}
+
+				return is;
+			},
 			// css display
 			getDisplay: function(element) {
 				var display = '';
@@ -966,7 +992,7 @@ FileReader: IE10 이상
 				'image': '//makestory.net/files/editor', // 이미지 파일 전송 url
 			},
 			// element 에 설정할 class 속성값
-			'class': {
+			'classes': {
 				'image': {
 					'figure': 'editor-figure',
 					'img': 'editor-img',
@@ -1117,11 +1143,9 @@ FileReader: IE10 이상
 				id = module.getKey();
 				wrap.setAttribute("id", id);
 				wrap.setAttribute("data-type", "image");
-				if(!wrap.storage) {
-					wrap.storage = {
-						'type': 'image'
-					};
-				}
+				wrap.storage = {
+					'type': 'image'
+				};
 
 				// FileReader 를 지원하지 않는 브라우저를 위해 iframe 기반 파일 전송
 				form.appendChild(hidden2);
@@ -1341,7 +1365,8 @@ FileReader: IE10 이상
 					var setImage = function(result) {
 						var img = new Image();
 						img.src = result;
-						img.setAttribute("class", that.settings.class.image.img);
+						img.className = that.settings.classes.image.img;
+						//img.setAttribute("class", that.settings.classes.image.img);
 						img.onload = function() {
 							var figure, figcaption;
 							//var rect = that.elements.target.getBoundingClientRect();
@@ -1350,10 +1375,11 @@ FileReader: IE10 이상
 
 							// 이미지 크기 변경
 							if(rect.width && this.width && rect.width < this.width) {
+								img.style.maxWidth = '100%';
 								//img.setAttribute('width', '100%');
-								img.style.width = '100%';
+								/*img.style.width = '100%';
 								img.style.maxWidth = this.width + 'px';
-								img.style.maxHeight = this.height + 'px';
+								img.style.maxHeight = this.height + 'px';*/
 
 								//console.log(rect.width);
 								//console.log(this.width);
@@ -1363,8 +1389,10 @@ FileReader: IE10 이상
 							// figure, figcaption
 							// http://html5doctor.com/the-figure-figcaption-that.elements/
 							figcaption = document.createElement("figcaption");
+							figcaption.className = that.settings.classes.image.figcaption;
 							//figcaption.innerHTML = '<br />';
 							figure = document.createElement("figure");
+							figure.className = that.settings.classes.image.figure;
 							figure.appendChild(img);
 							figure.appendChild(figcaption);
 							id.appendChild(figure);
@@ -1447,9 +1475,16 @@ FileReader: IE10 이상
 						function(node) {
 							return node;
 						}
-					);
-
-					
+					);	
+				}else if(event.keyCode === 8 && module.isCheck(module.selection.focusNode, 'image')) { // keyCode 8: backspace
+					// event 정지
+					module.stopCapture(event);
+					/*
+					console.log(module.selection.focusNode);
+					console.log(module.selection.focusNode.parentNode);
+					*/
+					// 삭제
+					module.selection.focusNode.parentNode.removeChild(module.selection.focusNode);
 				}
 			}
 		});
@@ -1544,7 +1579,7 @@ FileReader: IE10 이상
 			'key': 'editor', 
 			'target': null,
 			'submit': '//makestory.net/opengraph', // link url 정보를 받아 meta 정보를 돌려줄 서버측 url
-			'class': {
+			'classes': {
 				'wrap': 'opengraph-wrap',
 				'image': 'opengraph-image',
 				'text': 'opengraph-text',
@@ -1582,7 +1617,7 @@ FileReader: IE10 이상
 		var fragment;
 		var a, div, p, comment;
 
-		if(typeof node === 'object' && node.nodeType && (url && regexp.url.test(url) || that.check(node))) {
+		if(typeof node === 'object' && node.nodeType && (url && regexp.url.test(url) || module.isCheck(node, 'url'))) {
 			url = url || node.nodeValue;
 			//console.log('url: ' + url);
 
@@ -1677,17 +1712,17 @@ FileReader: IE10 이상
 								//console.log(div);
 								result = json.result;
 								if(result.image) {
-									image = '<div class="' + that.settings.class.image + '" style="background-image: url(' + result.image + ');"><br /></div>';
+									image = '<div class="' + that.settings.classes.image + '" style="background-image: url(' + result.image + ');"><br /></div>';
 								}else {
-									image = '<div class="' + that.settings.class.image + '"></div>';
+									image = '<div class="' + that.settings.classes.image + '"></div>';
 								}
 								div.innerHTML = '\
 									<a href="' + url + '" target="_blank" class="opengraph-wrap" style="display: block;">\
 										' + image + '\
-										<div class="' + that.settings.class.text + '">\
-											<strong class="' + that.settings.class.title + '">' + result.title + '</strong>\
-											<p class="' + that.settings.class.description + '">' + result.description + '</p>\
-											<p class="' + that.settings.class.author + '">' + (result.author || url) + '</p>\
+										<div class="' + that.settings.classes.text + '">\
+											<strong class="' + that.settings.classes.title + '">' + result.title + '</strong>\
+											<p class="' + that.settings.classes.description + '">' + result.description + '</p>\
+											<p class="' + that.settings.classes.author + '">' + (result.author || url) + '</p>\
 										</div>\
 										<div style="clear: both;"></div>\
 									</a>\
@@ -1708,15 +1743,6 @@ FileReader: IE10 이상
 			})(node, url);
 		}
 	};
-	OpenGraph.prototype.check = function(node) { // node에 url이 존재하는지 검사
-		var is = false;
-
-		if(typeof node === 'object' && node.nodeType === 3 && node.parentNode.nodeName.toLowerCase() !== 'a' && node.nodeValue && regexp.url.test(node.nodeValue)) { // nodeType 3: textnode
-			is = true;
-		}
-
-		return is;
-	};
 	OpenGraph.prototype.on = function() {
 		var that = this;
 
@@ -1736,17 +1762,29 @@ FileReader: IE10 이상
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
 			module.setSelection();
-			if(event.keyCode === 13 && module.isCollapsed() && that.check(module.selection.anchorNode)) { // keyCode 13: enter
-				// url 이 존재하면, event 를 정지한다.
-				module.stopCapture(event);
-				/*
-				console.log(last);
-				console.log(module.selection.anchorNode);
-				console.log(module.selection.anchorNode.nodeType);
-				console.log(module.selection.anchorNode.nodeValue);
-				console.log(module.selection.focusNode.nodeValue);
-				*/
-				that.put({'node': module.selection.anchorNode});
+			if(module.isCollapsed()) {
+				if(event.keyCode === 13 && module.isCheck(module.selection.anchorNode, 'url')) { // keyCode 13: enter
+					// url 이 존재하면, event 를 정지한다.
+					module.stopCapture(event);
+					/*
+					console.log(last);
+					console.log(module.selection.anchorNode);
+					console.log(module.selection.anchorNode.nodeType);
+					console.log(module.selection.anchorNode.nodeValue);
+					console.log(module.selection.focusNode.nodeValue);
+					*/
+					// 삽입
+					that.put({'node': module.selection.anchorNode});
+				}else if(event.keyCode === 8 && module.isCheck(module.selection.focusNode, 'opengraph')) { // keyCode 8: backspace
+					// event 정지
+					module.stopCapture(event);
+					/*
+					console.log(module.selection.focusNode);
+					console.log(module.selection.focusNode.parentNode);
+					*/
+					// 삭제
+					module.selection.focusNode.parentNode.removeChild(module.selection.focusNode);
+				}
 			}
 		});
 	};
