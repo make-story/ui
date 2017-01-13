@@ -43,12 +43,14 @@ all
 
 	// element value 값
 	var getValue = function(element) {
+		var result;
 		if(typeof element === 'object') {
 			element = getElement(element);
-			return trim(element.value);
+			result = trim(element.value);
 		}else if(typeof element === 'string' || typeof element === 'number') {
-			return trim(element);
+			result = trim(element);
 		}
+		return result;
 	};
 
 	global.api.validate = {
