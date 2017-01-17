@@ -1454,7 +1454,7 @@ http://www.quirksmode.org/js/detect.html
 			}else {
 				for(i=0; i<max; i++) {
 					// element
-					while(this.elements[i].hasChildNodes()) { // TextNode 포함
+					while(this.elements[i].hasChildNodes()) { // TextNode 포함 내부 element 전체 제거
 						this.elements[i].removeChild(this.elements[i].lastChild);
 					}
 					
@@ -2304,6 +2304,7 @@ http://www.quirksmode.org/js/detect.html
 	var browserStorage = global.localStorage && global.sessionStorage && (function() {
 		return {
 			clear: function(type) {
+				// No return value.
 				switch(type) {
 					case 'local':
 						window.localStorage.clear();
@@ -2341,6 +2342,7 @@ http://www.quirksmode.org/js/detect.html
 				return item;
 			},
 			set: function(type, key, item) {
+				// No return value.
 				item = (item && typeof item === 'object' && Object.keys(item).length > 0) ? JSON.stringify(item) : (item || '');
 				switch(type) {
 					case 'local':
@@ -2352,6 +2354,7 @@ http://www.quirksmode.org/js/detect.html
 				}
 			},
 			del: function(type, key) {
+				// No return value.
 				switch(type) {
 					case 'local':
 						window.localStorage.removeItem(key);

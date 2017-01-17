@@ -183,20 +183,22 @@ FileReader: IE10 이상
 				return range;
 			},
 			// 현재 node 상위(parentNode)를 검색하며, condition 결과에 따른 callback 실행
+			// 상위노드 탐색을 실행을 얼마나 줄이느냐가 관건
 			getParent: function(node, condition, callback) {
 				var result;
 				if(typeof node !== 'object' || !node.nodeType) {
 					return;
 				}
 				while(node.parentNode) {
-					// condition 함수를 실행하여 리턴값이 true 의 경우, callback 함수 실행
 					// 1. condition 실행
-					// 2. callback 실행 (condition 함수의 실행 결과에 따름)
-					result = condition(node);
+					// 리턴값이 true 의 경우, callback 함수 실행
+					result = condition(node); 
 					if(result) {
+						// 2. callback 실행 (return 값이 있을 경우 반환)
 						result = callback(node, result);
 						if(typeof result !== 'undefined') {
-							return result; // break
+							// callback 리턴값이 있을 경우 break
+							return result;
 						}
 					}
 					// 상위 node
@@ -310,6 +312,9 @@ FileReader: IE10 이상
 			'key': 'editor', 
 			'target': null,
 			'tooltip': true,
+			'classes': {
+				'link': 'editor-text-link'
+			},
 			'callback': {
 				'init': null
 			}
@@ -354,7 +359,7 @@ FileReader: IE10 이상
 									return /^(h1|h2|h3)$/i.test(node.nodeName.toLowerCase()); // h1, h2, h3 태그는 진한색의 글자이므로 제외
 								}, 
 								// 조건에 따른 실행
-								function(node) { // callback (검사결과가 true의 경우)
+								function(node, result) { // callback (검사결과가 true의 경우)
 									return true;
 								}
 							)) {
@@ -380,7 +385,7 @@ FileReader: IE10 이상
 									return /^(b|strong)$/i.test(node.nodeName.toLowerCase()); 
 								}, 
 								// 조건에 따른 실행
-								function(node) { // callback (검사결과가 true의 경우)
+								function(node, result) { // callback (검사결과가 true의 경우)
 									return true;
 								}
 							)) {
@@ -401,7 +406,7 @@ FileReader: IE10 이상
 										return typeof node.href !== 'undefined';
 									},
 									// 조건에 따른 실행
-									function(node) {
+									function(node, result) {
 										return node.href;
 									}
 								);
@@ -409,7 +414,7 @@ FileReader: IE10 이상
 								if(typeof url !== "undefined") { // 이미 a 태그 생성되어 있음
 									that.elements.other.link.input.value = url;
 								}else { // 신규 a 태그 생성
-									document.execCommand("createLink", false, '#none');
+									//document.execCommand("createLink", false, '#none');
 								}
 								// 위 a 태그의 위치를 기억한다.
 								// execCommand 로 createLink 생성된 위치를 기억한다.
@@ -436,24 +441,42 @@ FileReader: IE10 이상
 			var setTextTooltipLinkBlur = function(e) {
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 				var url = that.elements.other.link.input.value;
+				var node;
 
-				// 기억해둔 a 태그의 위치를 기능적용 위치로 설정한다.
-				window.getSelection().removeAllRanges();
-				window.getSelection().addRange(that.range);
 				if(url) {
 					if(!url.match("^(http://|https://|mailto:)")) {
 						url = "http://" + url;
 					}
-					document.execCommand('createLink', false, url);
+					//document.execCommand('createLink', false, url);
+
+					// a태그 생성
+					node = document.createElement('a');
+					node.className = that.settings.classes.link;
+					node.href = url;
+					node.target = '_blank';
+					node.textContent = node.innerText = that.range.toString() || url;
+					node.storage = {
+						'type': 'text'
+					};
+
+					// 기억해둔 위치(range)의 값을 변경한다.
+					// replace selected text
+					// http://stackoverflow.com/questions/3997659/replace-selected-text-in-contenteditable-div
+					that.range.deleteContents();
+					that.range.insertNode(node);
+					module.selection.removeAllRanges();
+					module.selection.addRange(that.range);
 				}else {
-					// a 태그 초기화(삭제)
+					module.selection.removeAllRanges();
+					module.selection.addRange(that.range);
 					document.execCommand('unlink', false);
+					//node = document.createTextNode(that.range.toString());
 				}
 				
 				// url 입력박스 숨기기
 				that.elements.other.link.wrap.style.display = 'none';
 
-				//
+				// 툴팁
 				that.setTextTooltipMenuState();
 				that.setTextTooltipMenuPostion();
 			};
@@ -465,18 +488,18 @@ FileReader: IE10 이상
 					that.elements.other.link.input.blur(); // trigger blur
 				}
 			};
+			// element 생성
 			var fragment = document.createDocumentFragment();
 			var button;
 
-			// 텍스트 툴바
+			// 툴바
 			that.elements.tooltip = document.createElement("div");
-			that.elements.tooltip.setAttribute('id', that.settings.key);
 			that.elements.tooltip.style.cssText = 'transition: all .05s ease-out; position: absolute; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); display: none;';
 			that.elements.tooltip.appendChild(that.elements.command.wrap = document.createElement("div"));
 			that.elements.tooltip.appendChild(that.elements.other.wrap = document.createElement("div"));
 			fragment.appendChild(that.elements.tooltip);
 
-			// 텍스트 에디터 버튼
+			// 에디터 버튼
 			button = document.createElement('button');
 			button.style.cssText = 'padding: 0px; width: 30px; height: 30px; font-size: 14px; color: rgb(44, 45, 46); background: none; border: 0px; outline: none; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;';
 			that.elements.command.wrap.appendChild(that.elements.command.h1 = (function(button) {
@@ -612,6 +635,7 @@ FileReader: IE10 이상
 				that.elements.command[key].style.color = 'rgb(44, 45, 46)';
 				that.elements.command[key].style.background = 'none';
 			}
+			// 현재노드 상위 검색
 			module.getParent(
 				module.selection.focusNode,
 				// 조건
@@ -619,7 +643,7 @@ FileReader: IE10 이상
 					return typeof node.nodeName !== 'undefined' && typeof node.style !== 'undefined';
 				},
 				// 조건에 따른 실행
-				function(node) {
+				function(node, result) {
 					//console.log(node.nodeName.toLowerCase());
 					// style 확인
 					/*
@@ -783,7 +807,7 @@ FileReader: IE10 이상
 
 			// getSelection 선택된 node
 			if(module.isSelection()) {
-				if(event.keyCode === 13) { // keyCode 13: enter
+				/*if(event.keyCode === 13) { // keyCode 13: enter
 					// 현재노드 상위 검색
 					module.getParent( 
 						module.selection.anchorNode,
@@ -793,21 +817,17 @@ FileReader: IE10 이상
 								case 'p':
 
 									break;
-								case 'figure':
-									// enter 기본 이벤트 중지
-									event.preventDefault();
-									break;
 								default:
 									return that.elements.target.isEqualNode(node);
 									break;
 							}
 						},
 						// 조건에 따른 실행
-						function(node) {
+						function(node, result) {
 							return node;
 						}
 					);
-				}
+				}*/
 			}
 		});
 		$(that.elements.target).on('keyup.EVENT_KEYUP_TEXTEDIT', function(e) {
@@ -824,33 +844,22 @@ FileReader: IE10 이상
 			if(module.isSelection()) {
 				if(event.keyCode === 13) { // keyCode 13: enter
 					// DIV 내부에서 엔터를 눌렀을 경우 div 내부에서 br로 처리되므로 p 태그로 변경되도록 처리한다.
-					//if(module.selection.anchorNode.nodeName.toLowerCase() === 'div') {
 					if(module.selection.anchorNode.nodeType !== 1 || module.selection.anchorNode.nodeName.toLowerCase() !== 'p' || !(/block|inline-block/i.test(module.getDisplay(module.selection.anchorNode)))) {
-						module.setFormatBlock("p");
-					}
-
-					// 현재노드 상위 검색
-					module.getParent( 
-						module.selection.anchorNode,
-						// 조건
-						function(node) {
-							switch(node.nodeName.toLowerCase()) {
-								case 'p':
-
-									break;
-								case 'figure':
-
-									break;
-								default:
-									return that.elements.target.isEqualNode(node);
-									break;
+						// 현재노드 상위 검색
+						if(module.getParent( 
+							module.selection.anchorNode,
+							function(node) {
+								if(/code|pre/.test(node.nodeName.toLowerCase())) {
+									return true;
+								}
+							},
+							function(node, result) {
+								return result;
 							}
-						},
-						// 조건에 따른 실행
-						function(node) {
-							return node;
+						) !== true) {
+							module.setFormatBlock("p");
 						}
-					);
+					}
 				}
 
 				// -, *, 1. 입력에 따른 목록태그 변환
@@ -870,7 +879,7 @@ FileReader: IE10 이상
 								return node.nodeName.toLowerCase() === 'ul';
 							},
 							// 조건에 따른 실행
-							function(node) {
+							function(node, result) {
 								return node;
 							}
 						);
@@ -885,7 +894,7 @@ FileReader: IE10 이상
 								return node.nodeName.toLowerCase() === 'ol';
 							},
 							// 조건에 따른 실행
-							function(node) {
+							function(node, result) {
 								return node;
 							}
 						);
@@ -899,7 +908,7 @@ FileReader: IE10 이상
 						parent = insertedNode.parentNode;
 						parent.parentNode.insertBefore(insertedNode, parent);
 						parent.parentNode.removeChild(parent);
-
+						// 포커스(커서) 이동
 						range = document.createRange();
 						range.setStart(node, 0);
 						range.setEnd(node, 0);
@@ -929,7 +938,43 @@ FileReader: IE10 이상
 			}else if(window.clipboardData) {
 				text = window.clipboardData.getData('Text');
 			}
-			if(document.queryCommandSupported('insertText')) {
+			
+			// 현재노드 상위 검색
+			if(module.getParent( 
+				module.selection.anchorNode,
+				function(node) {
+					if(/code|pre/.test(node.nodeName.toLowerCase())) {
+						return true;
+					}
+				},
+				function(node, result) {
+					return result;
+				}
+			) === true) {
+				// code, pre 는 별도의 로직으로 넣는다.
+				// execCommand 사용하면 각 라인마다 p태그가 들어간다.
+				(function() {
+					var fragment, line;
+					var range;
+
+					fragment = document.createDocumentFragment();
+					fragment.appendChild(document.createTextNode(text));
+					//line = document.createTextNode('\n');
+					line = document.createTextNode(' '); // \u00a0
+					fragment.appendChild(line);
+
+					range = module.selection.getRangeAt(0);
+					range.deleteContents();
+					range.insertNode(fragment);
+
+					range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
+					range.setStartAfter(line);
+					range.collapse(true);
+
+					module.selection.removeAllRanges();
+					module.selection.addRange(range);
+				})();
+			}else if(document.queryCommandSupported('insertText')) {
 				document.execCommand('insertText', false, text);
 			}else {
 				document.execCommand('paste', false, text);
@@ -974,18 +1019,42 @@ FileReader: IE10 이상
 		//$(document).off('.EVENT_MOUSEUP_TEXTEDIT_DOCUMENT');
 	};
 
-	// 멀티미디어 에디터
+	// 텍스트를 제외한 여러 기능 (이미지, 동영상, 코드 등)
 	var EditMulti = function(settings) {
 		var that = this;
 		that.settings = {
 			'key': 'editor', 
 			'target': null,
 			'image': true, // 이미지 에디터 사용여부
-			'movie': true, // 비디오 에디터 사용여부
+			'video': false, // 비디오 에디터 사용여부
+			'code': true, // 코드 에디터 사용여부
+			'line': true, // 구분선 에디터 사용여부
 			'tooltip': {
 				'image': {
 					'put': true, // 이미지 넣기 툴팁 보이기 / 숨기기
 					'location': true // 이미지 위치 수정 툴팁 보이기 / 숨기기
+				}
+			},
+			'size': {
+				'image': {
+					'min': {
+						'width': 0,
+						'height': 0
+					},
+					'max': {
+						'width': 0,
+						'height': 0
+					}
+				},
+				'video': {
+					'min': {
+						'width': 0,
+						'height': 0
+					},
+					'max': {
+						'width': 0,
+						'height': 0
+					}
 				}
 			},
 			'submit': {
@@ -994,9 +1063,19 @@ FileReader: IE10 이상
 			// element 에 설정할 class 속성값
 			'classes': {
 				'image': {
-					'figure': 'editor-figure',
-					'img': 'editor-img',
-					'figcaption': 'editor-figcaption'
+					'wrap': 'editor-image-wrap', // 이미지 감싸는 element
+					'wide': 'editor-image-wide', // 이미지 와이드
+					'left': 'editor-image-wrap-left', // 이미지 왼쪽 글자 오른쪽
+					'right': 'editor-image-wrap-right', // 이미지 오른쪽 글자 왼쪽
+					'figure': 'editor-image-figure', // img 태그 감싸는 element
+					'img': 'editor-image-img',
+					'figcaption': 'editor-image-figcaption'
+				},
+				'video': {
+					'wrap': 'editor-video-wrap'
+				},
+				'code': {
+					'wrap': 'editor-code-wrap'
 				}
 			},
 			'callback': {
@@ -1007,6 +1086,9 @@ FileReader: IE10 이상
 			'target': null,
 			'tooltip': null,
 			'command': {
+				'wrap': null
+			},
+			'other': {
 				'wrap': null
 			}
 		};
@@ -1032,6 +1114,7 @@ FileReader: IE10 이상
 								reader.onload = function(e) {
 									// 이미지 삽입
 									that.put({'type': 'image', 'id': id, 'data': e.target.result});
+
 									// 생성된 tag 삭제
 									form.parentNode.removeChild(form);
 								};
@@ -1141,6 +1224,7 @@ FileReader: IE10 이상
 				*/
 				// 이미지를 넣을 위치를 위해 id 속성 설정
 				id = module.getKey();
+				wrap.className = that.settings.classes.image.wrap;
 				wrap.setAttribute("id", id);
 				wrap.setAttribute("data-type", "image");
 				wrap.storage = {
@@ -1181,35 +1265,95 @@ FileReader: IE10 이상
 
 				document.body.appendChild(fragment);
 			};
+			var setCodeTooltipMousedown = function(e) {
+				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+				var fragment = document.createDocumentFragment();
+				var div = document.createElement("div"); // 코드를 감싸는 div
+				var pre = document.createElement("pre");
+				var code = document.createElement("code");
+				var p = document.createElement("p");
+				var range;
+
+				// 정보 구성
+				div.className = that.settings.classes.code.wrap;
+				div.setAttribute("data-type", "code");
+				div.storage = {
+					'type': 'code'
+				};
+
+				// element 삽입
+				fragment.appendChild(div);
+				fragment.appendChild(p);
+				div.appendChild(pre);
+				pre.appendChild(code);
+				code.innerHTML = '<br />';
+				p.innerHTML = '<br />';
+				if(that.elements.target.isEqualNode(module.selection.anchorNode)) {
+					that.elements.target.appendChild(fragment);
+				}else {
+					module.selection.anchorNode.parentNode.insertBefore(fragment, module.selection.anchorNode.nextSibling);
+				}
+
+				// 포커스(커서) 이동
+				range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
+				range.setStart(code, 0);
+				range.setEnd(code, 0);
+				range.collapse(true);
+				module.selection.removeAllRanges();
+				module.selection.addRange(range);
+			};
+			// element 생성
 			var fragment = document.createDocumentFragment();
 			var label;
 
-			// 멀티미디어 툴바
+			// 툴바
 			that.elements.tooltip = document.createElement("div");
-			that.elements.tooltip.style.cssText = 'transition: all .05s ease-out; position: absolute; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); display: none;';
+			that.elements.tooltip.style.cssText = 'transition: all .05s ease-out; position: absolute; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); border-radius: 3px; display: none;';
 			that.elements.tooltip.appendChild(that.elements.command.wrap = document.createElement("div"));
+			that.elements.tooltip.appendChild(that.elements.other.wrap = document.createElement("div"));
 			fragment.appendChild(that.elements.tooltip);
 
-			// 멀티미디어 에디터 버튼
+			// 에디터 버튼
 			label = document.createElement('label'); // input file 을 실행하기 위해 label tag 사용
 			label.style.cssText = 'display: block; margin: 2px 4px; background: none; border: 0px; outline: none; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;';
-			that.elements.command.wrap.appendChild(that.elements.command.insertImage = (function(label) {
-				label['storage'] = {
-					'command': 'insertImage'
-				};
-				label.onmousedown = setImageTooltipMousedown;
-				label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 368 368" style="fill: rgb(44, 45, 46);"><path d="M328,32H40C18,32,0,50,0,72v224c0,22,18,40,40,40h288c22,0,40-18,40-40V72C368,50,350,32,328,32z M352,185.6l-38-38 c-6.4-6.4-16-6.4-22.4,0L200,238.8l-0.4-0.4L153.2,192c-6-6-16.4-6-22.4,0l-39.2,39.2c-3.2,3.2-3.2,8,0,11.2 c3.2,3.2,8,3.2,11.2,0l39.2-39.2l46.4,46.4l0.4,0.4l-32.4,32.4c-3.2,3.2-3.2,8,0,11.2c1.6,1.6,3.6,2.4,5.6,2.4s4-0.8,5.6-2.4 l135.2-134.8l47.6,47.6c0.4,0.4,1.2,0.8,1.6,1.2V296c0,13.2-10.8,24-24,24H40c-13.2,0-24-10.8-24-24V72c0-13.2,10.8-24,24-24h288 c13.2,0,24,10.8,24,24V185.6z" fill="#000"/><path d="M72.4,250.4l-8,8c-3.2,3.2-3.2,8,0,11.2C66,271.2,68,272,70,272s4-0.8,5.6-2.4l8-8c3.2-3.2,3.2-8,0-11.2 C80.4,247.2,75.6,247.2,72.4,250.4z" fill="#000"/><path d="M88,80c-22,0-40,18-40,40s18,40,40,40s40-18,40-40S110,80,88,80z M88,144c-13.2,0-24-10.8-24-24s10.8-24,24-24 s24,10.8,24,24S101.2,144,88,144z" fill="#000"/></svg>';
-				//label.textContent = '+';
-				return label;
-			})(label.cloneNode()));
-			that.elements.command.wrap.appendChild(that.elements.command.insertVideo = (function(label) {
-				label['storage'] = {
-					'command': 'insertVideo'
-				};
-				//label.onmousedown = setImageTooltipMousedown;
-				label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 64 64" style="fill: rgb(44, 45, 46);"><path d="M42.4472008,36.1054993l-16-8c-0.3105011-0.1542988-0.6787014-0.1396999-0.9726009,0.0439014 C25.1795998,28.3320007,25,28.6532993,25,29v16c0,0.3466988,0.1795998,0.6679993,0.4745998,0.8506012 C25.6347008,45.9501991,25.8173008,46,26,46c0.1532993,0,0.3055992-0.0351982,0.4472008-0.1054993l16-8 C42.7860985,37.7246017,43,37.3788986,43,37S42.7860985,36.2753983,42.4472008,36.1054993z M27,43.3818016V30.6182003 L39.7635994,37L27,43.3818016z" fill="#000"/><path d="M60,5h-56C1.7909007,5,0.0000008,6.7908001,0.0000008,9v46c0,2.2092018,1.7908999,4,3.9999998,4h56 c2.2090988,0,4-1.7907982,4-4V9C64,6.7908001,62.2090988,5,60,5z M62,9v8h-8.3283005l2.6790009-10H60 C61.1026993,7,62,7.8972001,62,9z M21.2804241,7l-2.6790009,10H9.6508007l2.6788998-10H21.2804241z M23.3507004,7h8.9297218 l-2.6789989,10h-8.9297237L23.3507004,7z M34.3507004,7h8.9297218l-2.678997,10h-8.9297256L34.3507004,7z M45.3507004,7h8.9297218 l-2.678997,10h-8.9297256L45.3507004,7z M4.0000005,7h6.2594237L7.5805006,17H2.0000007V9 C2.0000007,7.8972001,2.8972008,7,4.0000005,7z M60,57h-56c-1.1027997,0-1.9999998-0.8972015-1.9999998-2V19h60v36 C62,56.1027985,61.1026993,57,60,57z" fill="#000"/></svg>';
-				return label;
-			})(label.cloneNode()));
+			if(that.settings.image === true) {
+				that.elements.command.wrap.appendChild(that.elements.command.insertImage = (function(label) {
+					label['storage'] = {
+						'command': 'insertImage'
+					};
+					label.onmousedown = setImageTooltipMousedown;
+					//label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 368 368" style="fill: rgb(44, 45, 46);"><path d="M328,32H40C18,32,0,50,0,72v224c0,22,18,40,40,40h288c22,0,40-18,40-40V72C368,50,350,32,328,32z M352,185.6l-38-38 c-6.4-6.4-16-6.4-22.4,0L200,238.8l-0.4-0.4L153.2,192c-6-6-16.4-6-22.4,0l-39.2,39.2c-3.2,3.2-3.2,8,0,11.2 c3.2,3.2,8,3.2,11.2,0l39.2-39.2l46.4,46.4l0.4,0.4l-32.4,32.4c-3.2,3.2-3.2,8,0,11.2c1.6,1.6,3.6,2.4,5.6,2.4s4-0.8,5.6-2.4 l135.2-134.8l47.6,47.6c0.4,0.4,1.2,0.8,1.6,1.2V296c0,13.2-10.8,24-24,24H40c-13.2,0-24-10.8-24-24V72c0-13.2,10.8-24,24-24h288 c13.2,0,24,10.8,24,24V185.6z" /><path d="M72.4,250.4l-8,8c-3.2,3.2-3.2,8,0,11.2C66,271.2,68,272,70,272s4-0.8,5.6-2.4l8-8c3.2-3.2,3.2-8,0-11.2 C80.4,247.2,75.6,247.2,72.4,250.4z" /><path d="M88,80c-22,0-40,18-40,40s18,40,40,40s40-18,40-40S110,80,88,80z M88,144c-13.2,0-24-10.8-24-24s10.8-24,24-24 s24,10.8,24,24S101.2,144,88,144z" /></svg>';
+					label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 64 64" style="fill: rgb(44, 45, 46);"><path d="M0,3.26315v57.4737015h64V3.26315H0z M62,5.2631502V34.480751L47.1523018,20.5346508 c-0.1992035-0.1875-0.4580002-0.2890015-0.7422028-0.2695007c-0.2733994,0.0156002-0.5282974,0.1425991-0.7059975,0.352499 L28.4267006,41.04245L15.4111004,30.3715496c-0.3984003-0.3270988-0.9863005-0.2967987-1.3496008,0.075201L2,42.8066483V5.2631502 H62z M2,58.7368507V45.6702499l12.8525-13.1707001l13.0684004,10.7137985 c0.4228001,0.347702,1.044899,0.2901001,1.3973999-0.1278992l17.2325001-20.3720989L62,37.2237511v21.5130997H2z" /><path d="M26,26.2631493c3.8593006,0,7-3.1406002,7-7c0-3.8592997-3.1406994-6.999999-7-6.999999 c-3.8593998,0-7,3.1406994-7,6.999999C19,23.1225491,22.1406002,26.2631493,26,26.2631493z M26,14.2631502 c2.7567997,0,5,2.2431993,5,4.999999c0,2.7569008-2.2432003,5-5,5c-2.7569008,0-5-2.2430992-5-5 C21,16.5063496,23.2430992,14.2631502,26,14.2631502z" /></svg>';
+					//label.textContent = '+';
+					return label;
+				})(label.cloneNode()));
+			}
+			if(that.settings.video === true) {
+				that.elements.command.wrap.appendChild(that.elements.command.insertVideo = (function(label) {
+					label['storage'] = {
+						'command': 'insertVideo'
+					};
+					//label.onmousedown = setImageTooltipMousedown;
+					label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 64 64" style="fill: rgb(44, 45, 46);"><path d="M42.4472008,36.1054993l-16-8c-0.3105011-0.1542988-0.6787014-0.1396999-0.9726009,0.0439014 C25.1795998,28.3320007,25,28.6532993,25,29v16c0,0.3466988,0.1795998,0.6679993,0.4745998,0.8506012 C25.6347008,45.9501991,25.8173008,46,26,46c0.1532993,0,0.3055992-0.0351982,0.4472008-0.1054993l16-8 C42.7860985,37.7246017,43,37.3788986,43,37S42.7860985,36.2753983,42.4472008,36.1054993z M27,43.3818016V30.6182003 L39.7635994,37L27,43.3818016z" /><path d="M60,5h-56C1.7909007,5,0.0000008,6.7908001,0.0000008,9v46c0,2.2092018,1.7908999,4,3.9999998,4h56 c2.2090988,0,4-1.7907982,4-4V9C64,6.7908001,62.2090988,5,60,5z M62,9v8h-8.3283005l2.6790009-10H60 C61.1026993,7,62,7.8972001,62,9z M21.2804241,7l-2.6790009,10H9.6508007l2.6788998-10H21.2804241z M23.3507004,7h8.9297218 l-2.6789989,10h-8.9297237L23.3507004,7z M34.3507004,7h8.9297218l-2.678997,10h-8.9297256L34.3507004,7z M45.3507004,7h8.9297218 l-2.678997,10h-8.9297256L45.3507004,7z M4.0000005,7h6.2594237L7.5805006,17H2.0000007V9 C2.0000007,7.8972001,2.8972008,7,4.0000005,7z M60,57h-56c-1.1027997,0-1.9999998-0.8972015-1.9999998-2V19h60v36 C62,56.1027985,61.1026993,57,60,57z" /></svg>';
+					//label.textContent = '[]';
+					return label;
+				})(label.cloneNode()));
+			}
+			if(that.settings.code === true) {
+				that.elements.command.wrap.appendChild(that.elements.command.insertCode = (function(label) {
+					label['storage'] = {
+						'command': 'insertCode'
+					};
+					label.onmousedown = setCodeTooltipMousedown;
+					//label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 511 511" style="fill: rgb(44, 45, 46);"><path d="M455.5,40h-400C24.897,40,0,64.897,0,95.5v320C0,446.103,24.897,471,55.5,471h400c30.603,0,55.5-24.897,55.5-55.5v-320 C511,64.897,486.103,40,455.5,40z M496,415.5c0,22.332-18.168,40.5-40.5,40.5h-400C33.168,456,15,437.832,15,415.5v-320 C15,73.168,33.168,55,55.5,55h400c22.332,0,40.5,18.168,40.5,40.5V415.5z" /><path d="M471.5,120h-432c-4.142,0-7.5,3.357-7.5,7.5s3.358,7.5,7.5,7.5h432c4.142,0,7.5-3.357,7.5-7.5S475.642,120,471.5,120z" /><path d="M55.5,95c1.98,0,3.91-0.8,5.3-2.2c1.4-1.39,2.2-3.32,2.2-5.3c0-1.971-0.8-3.91-2.2-5.3c-1.39-1.4-3.32-2.2-5.3-2.2 s-3.91,0.8-5.3,2.2c-1.4,1.39-2.2,3.329-2.2,5.3c0,1.979,0.8,3.91,2.2,5.3C51.59,94.2,53.52,95,55.5,95z" /><path d="M119.5,95c1.97,0,3.91-0.8,5.3-2.2c1.4-1.39,2.2-3.32,2.2-5.3c0-1.971-0.8-3.91-2.2-5.3c-1.39-1.4-3.33-2.2-5.3-2.2 c-1.98,0-3.91,0.8-5.3,2.2c-1.4,1.39-2.2,3.329-2.2,5.3c0,1.979,0.8,3.91,2.2,5.3C115.59,94.2,117.52,95,119.5,95z" /><path d="M87.5,95c1.98,0,3.91-0.8,5.3-2.2c1.4-1.39,2.2-3.32,2.2-5.3c0-1.971-0.8-3.91-2.2-5.3c-1.39-1.4-3.32-2.2-5.3-2.2 c-1.97,0-3.91,0.8-5.3,2.2c-1.4,1.39-2.2,3.329-2.2,5.3c0,1.979,0.8,3.91,2.2,5.3C83.59,94.2,85.53,95,87.5,95z" /><path d="M188.803,210.196c-2.929-2.928-7.678-2.928-10.606,0l-80,80c-2.929,2.93-2.929,7.678,0,10.607l80,80 c1.464,1.464,3.384,2.196,5.303,2.196s3.839-0.732,5.303-2.196c2.929-2.93,2.929-7.678,0-10.607L114.106,295.5l74.697-74.696 C191.732,217.874,191.732,213.126,188.803,210.196z" /><path d="M332.803,210.196c-2.929-2.928-7.678-2.928-10.606,0c-2.929,2.93-2.929,7.678,0,10.607l74.697,74.696l-74.697,74.696 c-2.929,2.93-2.929,7.678,0,10.607c1.464,1.464,3.384,2.196,5.303,2.196s3.839-0.732,5.303-2.196l80-80 c2.929-2.93,2.929-7.678,0-10.607L332.803,210.196z" /><path d="M290.063,200.451c-3.892-1.412-8.195,0.594-9.611,4.485l-64,176c-1.416,3.894,0.592,8.196,4.485,9.612 c0.846,0.308,1.711,0.453,2.563,0.453c3.064,0,5.941-1.893,7.049-4.938l64-176C295.964,206.17,293.956,201.867,290.063,200.451z" /></svg>';
+					label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 64 64" style="fill: rgb(44, 45, 46);"><path d="M39.0732994,41.3769989C39.2314987,41.7645988,39.6054993,42,40,42c0.1259995,0,0.2528992-0.0233994,0.3769989-0.0732002 l12-4.8790016C52.7509995,36.8955002,52.9960976,36.5331993,53,36.1299019 c0.0038986-0.4043007-0.2362785-0.7705002-0.607399-0.9287033l-12-5.1210995 c-0.5038795-0.2148991-1.0956993,0.0185013-1.3125,0.5273018c-0.2168007,0.5077991,0.0194969,1.0956993,0.527298,1.3125 l9.7919998,4.1786976l-9.7762985,3.9746017C39.1113014,40.2812004,38.8652,40.8652,39.0732994,41.3769989z" /><path d="M13.6231003,37.0477982l12,4.8790016C25.7471008,41.9766006,25.8740005,42,26,42 c0.3945007,0,0.7686005-0.2354012,0.9267998-0.6230011c0.2080002-0.5117989-0.0380783-1.0957985-0.549799-1.3037987 l-9.7763996-3.9746017l9.7919998-4.1786976c0.5077991-0.2168007,0.7441196-0.8047009,0.5272999-1.3125 c-0.217701-0.5088005-0.8095016-0.7431011-1.3125-0.5273018l-12,5.1210995 c-0.3711004,0.1582031-0.6113005,0.5244026-0.6073999,0.9287033 C13.0039005,36.5331993,13.2490005,36.8955002,13.6231003,37.0477982z" /><path d="M28.5937996,45.9141006C28.7255993,45.9726982,28.8633003,46,28.9990005,46 c0.3837986,0,0.7490997-0.2216988,0.9151001-0.5937996l8-18c0.2236214-0.5048008-0.0030022-1.0957012-0.5078011-1.3203011 c-0.5038986-0.2235985-1.094799,0.0049-1.3204002,0.5078011l-8,18 C27.8623009,45.0985985,28.0888996,45.6894989,28.5937996,45.9141006z" /><path d="M60,5h-56C1.7908008,5,0.0000008,6.7908001,0.0000008,9v5v2v39c0,2.2090988,1.7908,4,3.9999998,4h56 c2.209198,0,4-1.7909012,4-4V16v-2V9C64,6.7908001,62.209198,5,60,5z M62,55c0,1.1027985-0.8972015,2-2,2h-56 c-1.1027997,0-1.9999998-0.8972015-1.9999998-2V16h60V55z M62,14h-60V9c0-1.1027999,0.8972001-2,1.9999998-2h56 c1.1027985,0,2,0.8972001,2,2V14z" /><path d="M6.0000005,9c-0.9649997,0-1.75,0.7849998-1.75,1.75c0,0.9649,0.7850003,1.75,1.75,1.75s1.75-0.7851,1.75-1.75 C7.7500005,9.7849998,6.9650006,9,6.0000005,9z M6.0000005,11.5c-0.4141998,0-0.75-0.3358002-0.75-0.75s0.3358002-0.75,0.75-0.75 c0.4142003,0,0.75,0.3358002,0.75,0.75S6.4142008,11.5,6.0000005,11.5z" /><path d="M16,9c-0.9649992,0-1.75,0.7849998-1.75,1.75c0,0.9649,0.7850008,1.75,1.75,1.75s1.75-0.7851,1.75-1.75 C17.75,9.7849998,16.9650002,9,16,9z M16,11.5c-0.4141998,0-0.75-0.3358002-0.75-0.75S15.5858002,10,16,10 s0.75,0.3358002,0.75,0.75S16.4141998,11.5,16,11.5z" /><path d="M11.000001,9c-0.9650002,0-1.75,0.7849998-1.75,1.75c0,0.9649,0.7849998,1.75,1.75,1.75s1.75-0.7851,1.75-1.75 C12.750001,9.7849998,11.9650002,9,11.000001,9z M11.000001,11.5c-0.4142008,0-0.75-0.3358002-0.75-0.75s0.3357992-0.75,0.75-0.75 c0.4141998,0,0.75,0.3358002,0.75,0.75S11.4142008,11.5,11.000001,11.5z" /></svg>';
+					//label.textContent = '</>';
+					return label;
+				})(label.cloneNode()));
+			}
+			if(that.settings.line === true) {
+
+			}
 
 			// body 삽입
 			document.body.appendChild(fragment);
@@ -1290,7 +1434,7 @@ FileReader: IE10 이상
 
 		// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
 		module.setSelection();
-		if(module.isSelection() && module.selection.focusNode.nodeType === 1 && /img/.test(module.selection.focusNode.nodeName.toLowerCase())) {
+		if(module.isSelection()/* && module.selection.focusNode.nodeType === 1*/) {
 			/*
 			console.log('----------');
 			console.dir(module.selection);
@@ -1303,11 +1447,31 @@ FileReader: IE10 이상
 			console.log('focusNode.nodeValue: ' + module.selection.focusNode.nodeValue);
 			console.log('focusNode.nodeType: ' + module.selection.focusNode.nodeType);
 			*/
-			that.setImageTooltipMenuPostion({'toggle': 'show'});
-			that.setMultiTooltipMenuPostion({'toggle': 'hide'});
+
+			// 현재노드 상위 검색
+			if(module.getParent( 
+				module.selection.anchorNode,
+				function(node) {
+					if(/code|pre/.test(node.nodeName.toLowerCase())) {
+						return true;
+					}
+				},
+				function(node, result) {
+					return result;
+				}
+			) === true) {
+				that.setImageTooltipMenuPostion({'toggle': 'hide'}); // 이미지 관련 툴바
+				that.setMultiTooltipMenuPostion({'toggle': 'hide'});
+			}else if(/img/.test(module.selection.focusNode.nodeName.toLowerCase())) {
+				that.setImageTooltipMenuPostion({'toggle': 'show'}); // 이미지 관련 툴바
+				that.setMultiTooltipMenuPostion({'toggle': 'hide'});
+			}else {
+				that.setImageTooltipMenuPostion({'toggle': 'hide'}); // 이미지 관련 툴바
+				that.setMultiTooltipMenuPostion();
+			}
 		}else {
-			that.setImageTooltipMenuPostion({'toggle': 'hide'});
-			that.setMultiTooltipMenuPostion();
+			that.setImageTooltipMenuPostion({'toggle': 'hide'}); // 이미지 관련 툴바
+			that.setMultiTooltipMenuPostion({'toggle': 'hide'});
 		}
 	};
 	// 에디터에 데이터 넣기
@@ -1334,70 +1498,67 @@ FileReader: IE10 이상
 				// data 의 종류 구분 
 				// url, base64, element node
 				(function() {
-					var setSize = function() {
-						//썸네일 이미지 생성
-						/*var tempImage = new Image(); //drawImage 메서드에 넣기 위해 이미지 객체화
-						tempImage.src = result; //data-uri를 이미지 객체에 주입
-						tempImage.onload = function() {
-							//리사이즈를 위해 캔버스 객체 생성
-							var canvas = document.createElement('canvas');
-							var canvasContext = canvas.getContext("2d");
-
-							//캔버스 크기 설정
-							canvas.width = 100; //가로 100px
-							canvas.height = 100; //세로 100px
-
-							//이미지를 캔버스에 그리기
-							canvasContext.drawImage(this, 0, 0, 100, 100);
-
-							//캔버스에 그린 이미지를 다시 data-uri 형태로 변환
-							var dataURI = canvas.toDataURL("image/jpeg");
-
-							//썸네일 이미지 보여주기
-							document.querySelector('#thumbnail').src = dataURI;
-
-							//썸네일 이미지를 다운로드할 수 있도록 링크 설정
-							document.querySelector('#download').href = dataURI;
-
-							//<a id="download" download="thumbnail.jpg"></a> download 속성은 다운로드할 대상의 파일명을 미리 지정할 수 있다.
-						};*/
-					};
+					//var rect = id.getBoundingClientRect();
+					var min_width = that.settings.size.image.min.width;
+					var min_height = that.settings.size.image.min.height;
+					var max_width = that.settings.size.image.max.width;
+					var max_height = that.settings.size.image.max.height;
+					var i, max;
 					var setImage = function(result) {
+						// 이미지 사이즈 확인
 						var img = new Image();
 						img.src = result;
 						img.className = that.settings.classes.image.img;
 						//img.setAttribute("class", that.settings.classes.image.img);
-						img.onload = function() {
+						img.onload = function() { // this.src 를 변경할 경우 onload 이벤트가 실행된다.
+							var canvas, canvas_context;
 							var figure, figcaption;
-							//var rect = that.elements.target.getBoundingClientRect();
-							var rect = id.getBoundingClientRect();
 							var range;
+							/*
+							console.log(min_width, min_height);
+							console.log(max_width, max_height);
+							console.log(this.width, this.height);
+							*/
+							this.onload = null; // 이미지 resize 후 this.src 변경시 onload 가 중복 실행되지 않도록 초기화
+							if((0 < min_width && this.width < min_width) || (0 < min_height && this.height < min_height) || (0 < max_width && max_width < this.width) || (0 < max_height && max_height < this.height)) {
+								// 리사이즈를 위해 캔버스 객체 생성
+								canvas = document.createElement('canvas');
+								canvas_context = canvas.getContext("2d");
+								canvas.width = this.width;
+								canvas.height = this.height;
 
-							// 이미지 크기 변경
-							if(rect.width && this.width && rect.width < this.width) {
-								img.style.maxWidth = '100%';
-								//img.setAttribute('width', '100%');
-								/*img.style.width = '100%';
-								img.style.maxWidth = this.width + 'px';
-								img.style.maxHeight = this.height + 'px';*/
+								// 캔버스 크기 설정
+								// 대응점 = 현재위치 * 대응너비 / 현재너비
+								if(0 < max_width && max_width < this.width) {
+									canvas.width = max_width; // 가로
+									canvas.height = Math.round(max_width * this.height/this.width); // 가로에 따른 비율계산
+									//canvas.height = max_height; // 세로
+									//canvas.width = Math.round(max_height * this.width/this.height); // 세로에 따른 비율계산
+								}
+								//console.log(canvas.width, canvas.height);
 
-								//console.log(rect.width);
-								//console.log(this.width);
-								//console.log(img);
+								// 이미지를 캔버스에 그리기
+								canvas_context.drawImage(this, 0, 0, canvas.width, canvas.height);
+
+								// 캔버스에 그린 이미지를 다시 data-uri 형태로 변환
+								this.src = canvas.toDataURL("image/png"); // 주의! src 변경에 따른 onload 콜백 중복실행 가능성
 							}
+
+							// 반응형 가로크기 제어
+							img.style.maxWidth = '100%';
 
 							// figure, figcaption
 							// http://html5doctor.com/the-figure-figcaption-that.elements/
+							figure = document.createElement("figure");
+							figure.className = that.settings.classes.image.figure;
 							figcaption = document.createElement("figcaption");
 							figcaption.className = that.settings.classes.image.figcaption;
 							//figcaption.innerHTML = '<br />';
-							figure = document.createElement("figure");
-							figure.className = that.settings.classes.image.figure;
 							figure.appendChild(img);
 							figure.appendChild(figcaption);
 							id.appendChild(figure);
 
-							// 포커스이동
+							// 포커스(커서) 이동
 							range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
 							range.setStart(figcaption, 0);
 							range.setEnd(figcaption, 0);
@@ -1407,7 +1568,6 @@ FileReader: IE10 이상
 						};
 					};
 
-					var i, max;
 					if(Array.isArray(data)) { // 이미지 여러개
 						for(i=0, max=data.length; i<max; i++) {
 							setImage(data[i]);
@@ -1453,38 +1613,120 @@ FileReader: IE10 이상
 
 			// getSelection 선택된 node
 			if(module.isSelection()) {
-				if(event.keyCode === 13) { // keyCode 13: enter
-					//console.log(module.selection.anchorNode.nodeName.toLowerCase());
+				switch(event.keyCode) {
+					// keyCode 13: enter
+					case 13: 
+						//console.log(module.selection.anchorNode.nodeName.toLowerCase());
 
-					// 현재노드 상위 검색
-					module.getParent( 
-						module.selection.anchorNode,
-						// 조건
-						function(node) {
-							switch(node.nodeName.toLowerCase()) {
-								case 'figure':
-									// enter 기본 이벤트 중지
-									event.preventDefault();
-									break;
-								default:
-									return that.elements.target.isEqualNode(node);
-									break;
+						// 현재노드 상위 검색
+						module.getParent( 
+							module.selection.anchorNode,
+							// 조건
+							function(node) {
+								switch(node.nodeName.toLowerCase()) {
+									case 'figure':
+										// enter 기본 이벤트 중지
+										event.preventDefault();
+										break;
+									// 한개의 실행코드에 case 문을 2개 이상 여러개 줄 경우 여러번 중복 실행될 수 있다. (node 상위검색 반복문 때문)
+									case 'code':
+									//case 'pre':
+										// enter 기본 이벤트 중지
+										event.preventDefault();
+										(function() {
+											var fragment, line;
+											var range;
+
+											// 1. add a new line
+											// 개행문자: \r(캐럿이 그 줄 맨 앞으로), \n(캐럿이 다음 줄)
+											fragment = document.createDocumentFragment();
+											fragment.appendChild(document.createTextNode('\r'));
+											line = document.createTextNode('\n');
+											fragment.appendChild(line);
+
+											// 2. make the br replace selection
+											range = module.selection.getRangeAt(0);
+											range.deleteContents();
+											range.insertNode(fragment);
+											
+											// 3. create a new range
+											range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
+											//range.setStart(line, 0);
+											//range.setEnd(line, 0);
+											range.setStartAfter(line);
+											range.collapse(true);
+
+											// 4. make the cursor there
+											module.selection.removeAllRanges();
+											module.selection.addRange(range);
+										})();
+										break;
+									default:
+										return that.elements.target.isEqualNode(node);
+										break;
+								}
+							},
+							// 조건에 따른 실행
+							function(node, result) {
+								return node;
 							}
-						},
-						// 조건에 따른 실행
-						function(node) {
-							return node;
+						);
+						break;
+
+					// keyCode 9: tab
+					case 9:
+						// 현재노드 상위 검색
+						module.getParent( 
+							module.selection.anchorNode,
+							// 조건
+							function(node) {
+								switch(node.nodeName.toLowerCase()) {
+									// 한개의 실행코드에 case 문을 2개 이상 여러개 줄 경우 여러번 중복 실행될 수 있다. (node 상위검색 반복문 때문)
+									case 'code':
+									//case 'pre':
+										// tab 기본 이벤트 중지
+										event.preventDefault();
+										//document.execCommand('indent', false, null); // 들여쓰기
+										(function() {
+											var tab;
+											var	range;									
+
+											tab = document.createTextNode("\u0009"); // \u0009: tap
+											//tab = document.createTextNode("\u00a0\u00a0\u00a0\u00a0"); // \u00a0: space
+											
+											// 선택위치에 삽입
+											range = module.selection.getRangeAt(0);
+											range.insertNode(tab);
+											range.setStartAfter(tab);
+											range.setEndAfter(tab); 
+
+											module.selection.removeAllRanges();
+											module.selection.addRange(range);
+									})();
+									break;
+								}
+
+							},
+							// 조건에 따른 실행
+							function(node, result) {
+								return node;
+							}
+						);
+						break;
+
+					// keyCode 8: backspace
+					case 8:
+						if(module.isCheck(module.selection.focusNode, 'image')) { 
+							// event 정지
+							module.stopCapture(event);
+							/*
+							console.log(module.selection.focusNode);
+							console.log(module.selection.focusNode.parentNode);
+							*/
+							// 삭제
+							module.selection.focusNode.parentNode.removeChild(module.selection.focusNode);
 						}
-					);	
-				}else if(event.keyCode === 8 && module.isCheck(module.selection.focusNode, 'image')) { // keyCode 8: backspace
-					// event 정지
-					module.stopCapture(event);
-					/*
-					console.log(module.selection.focusNode);
-					console.log(module.selection.focusNode.parentNode);
-					*/
-					// 삭제
-					module.selection.focusNode.parentNode.removeChild(module.selection.focusNode);
+						break;
 				}
 			}
 		});
@@ -1525,12 +1767,14 @@ FileReader: IE10 이상
 									var br = document.createElement("br"); // 크롬은 p 태그 내부 br 이 존재해야 한다.
 									range = document.createRange();
 									node.parentNode.insertBefore(p, node.nextSibling);
+									
 									range.setStart(p, 0);
 									range.setEnd(p, 0);
 									//range.selectNode(p);
 									range.insertNode(br);
 									range.setStartAfter(br);
 									range.setEndAfter(br);
+
 									module.selection.removeAllRanges();
 									module.selection.addRange(range);*/
 									break;
@@ -1540,7 +1784,7 @@ FileReader: IE10 이상
 							}
 						},
 						// 조건에 따른 실행
-						function(node) {
+						function(node, result) {
 							return node;
 						}
 					);
@@ -1689,7 +1933,7 @@ FileReader: IE10 이상
 				}
 				//if(inserted.parentNode.insertBefore(fragment, inserted)) { // 링크 이전 요소에 삽입
 				if(inserted.parentNode.insertBefore(fragment, inserted.nextSibling)) { // 링크 다음 요소에 삽입
-					// 포커스 이동
+					// 포커스(커서) 이동
 					position = module.selection.getRangeAt(0).focusOffset;
 					range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
 					range.setStart(p, position);

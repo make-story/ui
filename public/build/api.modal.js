@@ -18,8 +18,6 @@ RGBa: Internet Explorer 9
 -
 사용예
 
--
-jQuery 또는 api.dom 에 종속적 실행
 */
 
 ;(function(factory, global) {
@@ -244,7 +242,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				};
 
 				// 키보드 이벤트
-				$(document).on('keyup', function(e) {
+				$(document).off('.EVENT_KEYUP_DOCUMENT_MODAL').on('keyup.EVENT_KEYUP_DOCUMENT_MODAL', function(e) {
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					var code = event.which || event.keyCode;
 					var count = that.queue.order.length;
