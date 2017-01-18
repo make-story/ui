@@ -18,6 +18,8 @@ RGBa: Internet Explorer 9
 -
 사용예
 
+-
+jQuery 또는 api.dom 에 종속적 실행
 */
 
 ;(function(factory, global) {
@@ -784,15 +786,15 @@ RGBa: Internet Explorer 9
 				/*
 				if(module.isIOS === true) {
 					// 아래 코드를 사용할 경우, 레이어 내부 슬라이드 또는 관련 이벤트가 작동하지 않는다.
-					$(that.elements.container).on(env['event']['down'] + '.EVENT_DOWN_' + that.settings.key, function(e) {
+					$(that.elements.container).on(env['event']['down'] + '.EVENT_MOUSEDOWN_' + that.settings.key, function(e) {
 						var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 						module.stopBubbling(event);
 					});
-					$(that.elements.container).on(env['event']['move'] + '.EVENT_MOVE_' + that.settings.key, function(e) {
+					$(that.elements.container).on(env['event']['move'] + '.EVENT_MOUSEMOVE_' + that.settings.key, function(e) {
 						var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 						module.stopBubbling(event);
 					});
-					$(that.elements.container).on(env['event']['up'] + '.EVENT_UP_' + that.settings.key, function(e) {
+					$(that.elements.container).on(env['event']['up'] + '.EVENT_MOUSEUP_' + that.settings.key, function(e) {
 						var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 						module.stopBubbling(event);
 					});
@@ -801,7 +803,7 @@ RGBa: Internet Explorer 9
 				
 				// 팝업내부 close 버튼 클릭시 닫기
 				if(that.settings.close) {
-					$(that.elements.target).find('.' + that.settings.close).on(env['event']['click'], function(e) {
+					$(that.elements.target).find('.' + that.settings.close).on(env['event']['click'] + '.EVENT_CLICK_CLOSE_' + that.settings.key, function(e) {
 						var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 						module.stopCapture(event);
 						module.stopBubbling(event); 
@@ -810,7 +812,7 @@ RGBa: Internet Explorer 9
 				}
 
 				// 팝업내부 click 시 zindex 값 변경 (해당 layer 가장위에 보이도록함)
-				$(that.settings.target).on(env['event']['down'], function() {
+				$(that.settings.target).on(env['event']['down'] + '.EVENT_MOUSEDOWN_ZINDEX_' + that.settings.key, function() {
 					that.above();
 				});
 			}catch(e) {
@@ -1377,9 +1379,12 @@ RGBa: Internet Explorer 9
 
 				// contents
 				that.elements.contents = document.createElement('div');
-				that.elements.contents.style.cssText = 'position: fixed; margin: 5px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
+				that.elements.contents.style.cssText = 'position: fixed; margin: 5px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(253, 254, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
 				that.elements.contents.innerHTML = '\
-					<div id="' + key.title + '" style="padding: 20px 20px 10px 20px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
+					<div style="padding: 20px 20px 10px 20px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">\
+						<div style="margin-right: 2px; width: 7px; height: 7px; color: rgba(253, 254, 255, .96); background-color: rgba(231, 68, 78, .96); border-radius: 100%; display: inline-block;"></div>\
+						<div style="display: inline-block;" id="' + key.title + '">' + that.settings.title + '</div>\
+					</div>\
 					<div id="' + key.message + '" style="padding: 10px 20px; min-height: 45px; color: rgb(44, 45, 46); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 10px 20px 20px 20px; text-align: right; border-radius: 0 0 7px 7px;">\
 						<button id="' + key.cancel + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(140, 141, 142); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 5px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">CANCEL</button>\
@@ -1400,13 +1405,13 @@ RGBa: Internet Explorer 9
 				that.elements.ok = that.elements.contents.querySelector('#' + key.ok);
 
 				// event
-				$(that.elements.cancel).on(env['event']['click'], function(e) {
+				$(that.elements.cancel).on(env['event']['click'] + '.EVENT_CLICK_CANCEL_' + that.settings.key, function(e) {
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					module.stopCapture(event);
 					module.stopBubbling(event); 
 					that.cancel();
 				});
-				$(that.elements.ok).on(env['event']['click'], function(e) {
+				$(that.elements.ok).on(env['event']['click'] + '.EVENT_CLICK_OK_' + that.settings.key, function(e) {
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					module.stopCapture(event);
 					module.stopBubbling(event);
@@ -1431,7 +1436,7 @@ RGBa: Internet Explorer 9
 						case 'key':
 							break;
 						case 'title':
-							that.elements.title.textContent = settings[key] || '';
+							that.elements.title.textContent = settings[key] || 'Message';
 							break;
 						case 'message':
 							//that.elements.message.textContent = settings[key] || '';
@@ -1743,9 +1748,12 @@ RGBa: Internet Explorer 9
 
 				// contents
 				that.elements.contents = document.createElement('div');
-				that.elements.contents.style.cssText = 'position: fixed; margin: 5px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
+				that.elements.contents.style.cssText = 'position: fixed; margin: 5px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(253, 254, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
 				that.elements.contents.innerHTML = '\
-					<div id="' + key.title + '" style="padding: 20px 20px 10px 20px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
+					<div style="padding: 20px 20px 10px 20px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">\
+						<div style="margin-right: 2px; width: 7px; height: 7px; color: rgba(253, 254, 255, .96); background-color: rgba(231, 68, 78, .96); border-radius: 100%; display: inline-block;"></div>\
+						<div style="display: inline-block;" id="' + key.title + '">' + that.settings.title + '</div>\
+					</div>\
 					<div id="' + key.message + '" style="padding: 10px 20px; min-height: 45px; color: rgb(44, 45, 46); word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 10px 20px 20px 20px; text-align: right; border-radius: 0 0 7px 7px;">\
 						<button id="' + key.ok + '" style="margin: 0 0 0 10px; padding: 5px 10px; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: rgb(240, 241, 242); border: 0 none; border-radius: 5px; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">OK</button>\
@@ -1764,7 +1772,7 @@ RGBa: Internet Explorer 9
 				that.elements.ok = that.elements.contents.querySelector('#' + key.ok);
 
 				// event
-				$(that.elements.ok).on(env['event']['click'], function(e) {
+				$(that.elements.ok).on(env['event']['click'] + '.EVENT_CLICK_OK_' + that.settings.key, function(e) {
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					module.stopCapture(event);
 					module.stopBubbling(event);
@@ -1789,7 +1797,7 @@ RGBa: Internet Explorer 9
 						case 'key':
 							break;
 						case 'title':
-							that.elements.title.textContent = settings[key] || '';
+							that.elements.title.textContent = settings[key] || 'Message';
 							break;
 						case 'message':
 							//that.elements.message.textContent = settings[key] || '';
@@ -2054,8 +2062,8 @@ RGBa: Internet Explorer 9
 			},
 			'theme:': {}, // 테마 (스타일 변경)
 			'title': 'Message',
-			'time': 0, // 0 보다 큰 값은 자동닫기 설정
-			'message': ''
+			'message': '',
+			'time': 0 // 0 보다 큰 값은 자동닫기 설정
 		};
 		that.settings = module.setSettings(that.settings, settings);
 		that.elements = {};
@@ -2085,15 +2093,18 @@ RGBa: Internet Explorer 9
 
 				// contents
 				that.elements.contents = document.createElement('div');
-				that.elements.contents.style.cssText = 'position: fixed; display: none; margin: 5px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(255, 255, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
+				that.elements.contents.style.cssText = 'position: fixed; display: none; margin: 5px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(253, 254, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none;';
 				/*that.elements.contents.innerHTML = '\
-					<div id="' + key.message + '" style="padding: 12px 12px 5px 12px; min-height: 33px; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
+					<div id="' + key.message + '" style="padding: 12px 12px 5px 12px; min-height: 33px; color: rgb(44, 45, 46); background-color: rgba(253, 254, 255, .96); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="padding: 5px 12px 12px 12px; background: rgba(250, 251, 252, .96); text-align: center; border-top: 1px solid rgb(240, 241, 242); border-radius: 0 0 7px 7px;">\
 						<button id="' + key.close + '" style="margin: 0; padding: 0; color: rgb(120, 121, 122); font-size: 12px; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; background: transparent; border: none; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">CLOSE</button>\
 					</div>\
 				';*/
 				that.elements.contents.innerHTML = '\
-					<div id="' + key.title + '" style="padding: 15px 15px 5px 15px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">' + that.settings.title + '</div>\
+					<div style="padding: 15px 15px 5px 15px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">\
+						<div style="margin-right: 2px; width: 7px; height: 7px; color: rgba(253, 254, 255, .96); background-color: rgba(231, 68, 78, .96); border-radius: 100%; display: inline-block;"></div>\
+						<div style="display: inline-block;" id="' + key.title + '">' + that.settings.title + '</div>\
+					</div>\
 					<div id="' + key.message + '" style="padding: 5px 15px 15px 15px; color: rgb(44, 45, 46); border-radius: 7px; word-wrap: break-word; word-break: break-all;">' + that.settings.message + '</div>\
 					<div style="position: absolute; top: 10px; right: 15px;">\
 						<button id="' + key.close + '" style="margin: 0; padding: 0; color: rgb(120, 121, 122); font-size: 12px; font-weight: bold; text-align: center; text-shadow: 0 1px #FFF; white-space: nowrap; vertical-align: middle; background-color: transparent; border: 0 none; cursor: pointer; -webkit-touch-callout: none; -webkit-touch-select: none; user-select: none;">CLOSE</button>\
@@ -2108,7 +2119,7 @@ RGBa: Internet Explorer 9
 				that.elements.close = that.elements.contents.querySelector('#' + key.close);
 
 				// event
-				$(that.elements.close).on(env['event']['click'], function(e) {
+				$(that.elements.close).on(env['event']['click'] + '.EVENT_CLICK_CLOSE_' + that.settings.key, function(e) {
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					module.stopCapture(event);
 					module.stopBubbling(event);
@@ -2135,12 +2146,15 @@ RGBa: Internet Explorer 9
 						case 'position':
 							that.settings[key] = settings[key];
 							break;
-						case 'time':
-							that.settings.time = module.isNumeric(settings[key]) && settings[key] || 0;
+						case 'title':
+							that.elements.title.textContent = settings[key] || 'Message';
 							break;
 						case 'message':
 							//that.elements.message.textContent = settings[key] || '';
 							that.elements.message.innerHTML = settings[key] || '';
+							break;
+						case 'time':
+							that.settings.time = module.isNumeric(settings[key]) && settings[key] || 0;
 							break;
 						case 'callback':
 							for(tmp in settings[key]) {
