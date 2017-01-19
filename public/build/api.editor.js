@@ -313,7 +313,7 @@ FileReader: IE10 이상
 			'target': null,
 			'tooltip': true,
 			'classes': {
-				'link': 'editor-text-link'
+				'link': 'editor-text-link' // a 태그에 적용될 class 속성값
 			},
 			'callback': {
 				'init': null
@@ -771,6 +771,8 @@ FileReader: IE10 이상
 				that.setTextTooltipMenuPostion();
 			}
 			that.setTextTooltipMenuState();
+		}else {
+			that.setTextTooltipMenuPostion({'toggle': 'hide'});
 		}
 	};
 	EditText.prototype.on = function() {
@@ -1025,10 +1027,10 @@ FileReader: IE10 이상
 		that.settings = {
 			'key': 'editor', 
 			'target': null,
-			'image': true, // 이미지 에디터 사용여부
-			'video': false, // 비디오 에디터 사용여부
-			'code': true, // 코드 에디터 사용여부
-			'line': true, // 구분선 에디터 사용여부
+			'image': true, // 이미지 사용여부
+			'video': true, // 비디오 사용여부
+			'code': true, // 코드 사용여부
+			'line': true, // 구분선 사용여부
 			'tooltip': {
 				'image': {
 					'put': true, // 이미지 넣기 툴팁 보이기 / 숨기기
@@ -1452,7 +1454,7 @@ FileReader: IE10 이상
 			if(module.getParent( 
 				module.selection.anchorNode,
 				function(node) {
-					if(/code|pre/.test(node.nodeName.toLowerCase())) {
+					if(/code|pre|figcaption|figure/.test(node.nodeName.toLowerCase())) {
 						return true;
 					}
 				},
@@ -1906,7 +1908,6 @@ FileReader: IE10 이상
 
 				// 빈공간, 하단영역 태그 내부 기본값 (크롬 등 일부 브라우저)
 				div.innerHTML = '<br />';
-				//div.innerHTML = '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 24 30" style="enable-background:new 0 0 50 50;" xml:space="preserve"><rect x="0" y="10" width="4" height="10"><animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0s" dur="0.6s" repeatCount="indefinite" /></rect><rect x="8" y="10" width="4" height="10"><animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.15s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.15s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.15s" dur="0.6s" repeatCount="indefinite" /></rect><rect x="16" y="10" width="4" height="10"><animate attributeName="opacity" attributeType="XML" values="0.2; 1; .2" begin="0.3s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="height" attributeType="XML" values="10; 20; 10" begin="0.3s" dur="0.6s" repeatCount="indefinite" /><animate attributeName="y" attributeType="XML" values="10; 5; 10" begin="0.3s" dur="0.6s" repeatCount="indefinite" /></rect></svg>';
 				p.innerHTML = '<br />';
 
 				// insertAdjacentHTML
