@@ -240,7 +240,7 @@ FileReader: IE10 이상
 				if(typeof node === 'object' && node !== null && node.nodeType) {
 					//console.log('커서');
 					//console.log(node);
-					
+
 					//position = that.selection.getRangeAt(0).focusOffset;
 					range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
 					range.setStart(node, 0);
@@ -1728,8 +1728,8 @@ FileReader: IE10 이상
 			var self = event.currentTarget; // event listener element
 			var target = event.target;
 
-			console.log('keydown');
-			console.log(module.selection.anchorNode);
+			//console.log('keydown');
+			//console.log(module.selection.anchorNode);
 
 			// getSelection 선택된 node
 			module.setSelection();
