@@ -238,6 +238,9 @@ FileReader: IE10 이상
 				var range, position;
 
 				if(typeof node === 'object' && node !== null && node.nodeType) {
+					//console.log('커서');
+					//console.log(node);
+					
 					//position = that.selection.getRangeAt(0).focusOffset;
 					range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
 					range.setStart(node, 0);
@@ -1100,7 +1103,8 @@ FileReader: IE10 이상
 					'wrap': 'editor-code-wrap'
 				},
 				'line': {
-					'wrap': 'editor-line-wrap'	
+					'wrap': 'editor-line-wrap',
+					'hr': 'editor-line-hr'
 				}
 			},
 			'callback': {
@@ -1205,6 +1209,9 @@ FileReader: IE10 이상
 					return div;
 				};
 
+				event.preventDefault(); // 현재 이벤트의 기본 동작을 중단한다.
+				event.stopPropagation(); // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+
 				// 이미지를 넣을 위치 설정
 				if(module.isSelection()) {
 					wrap = module.getParent(
@@ -1297,6 +1304,9 @@ FileReader: IE10 이상
 				var code = document.createElement("code");
 				var p = document.createElement("p");
 
+				event.preventDefault(); // 현재 이벤트의 기본 동작을 중단한다.
+				event.stopPropagation(); // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
+
 				// 정보 구성
 				div.className = that.settings.classes.code.wrap;
 				div.setAttribute("data-type", "code");
@@ -1311,11 +1321,22 @@ FileReader: IE10 이상
 				pre.appendChild(code);
 				code.innerHTML = '<br />';
 				p.innerHTML = '<br />';
-				if(that.elements.target.isEqualNode(module.selection.anchorNode)) {
-					that.elements.target.appendChild(fragment);
-				}else {
-					module.selection.anchorNode.parentNode.insertBefore(fragment, module.selection.anchorNode.nextSibling);
-				}
+				module.getParent(
+					module.selection.anchorNode,
+					null,
+					function(node) { // condition (검사)
+						if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
+							return that.elements.target.appendChild(fragment);
+						}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(module.getDisplay(node.parentNode))))) {
+							return node.parentNode.insertBefore(fragment, node.nextSibling);
+						}
+					}, 
+					function(node, result) { // callback (검사결과가 true의 경우)
+						if(node) {
+							return result;
+						}
+					}
+				);
 
 				// 포커스(커서) 이동
 				module.setCusor(code);
@@ -1324,7 +1345,11 @@ FileReader: IE10 이상
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 				var fragment = document.createDocumentFragment();
 				var div = document.createElement("div");
+				var hr = document.createElement("hr");
 				var p = document.createElement("p");
+
+				event.preventDefault(); // 현재 이벤트의 기본 동작을 중단한다.
+				event.stopPropagation(); // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
 
 				// 정보 구성
 				div.className = that.settings.classes.line.wrap;
@@ -1332,16 +1357,29 @@ FileReader: IE10 이상
 				div.storage = {
 					'type': 'line'
 				};
+				hr.className = that.settings.classes.line.hr;
 
 				// element 삽입
+				div.appendChild(hr);
 				fragment.appendChild(div);
 				fragment.appendChild(p);
 				p.innerHTML = '<br />';
-				if(that.elements.target.isEqualNode(module.selection.anchorNode)) {
-					that.elements.target.appendChild(fragment);
-				}else {
-					module.selection.anchorNode.parentNode.insertBefore(fragment, module.selection.anchorNode);
-				}
+				module.getParent(
+					module.selection.anchorNode,
+					null,
+					function(node) { // condition (검사)
+						if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
+							return that.elements.target.appendChild(fragment);
+						}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(module.getDisplay(node.parentNode))))) {
+							return node.parentNode.insertBefore(fragment, node);
+						}
+					}, 
+					function(node, result) { // callback (검사결과가 true의 경우)
+						if(node) {
+							return result;
+						}
+					}
+				);
 
 				// 포커스(커서) 이동
 				module.setCusor(p);
@@ -1648,18 +1686,21 @@ FileReader: IE10 이상
 			var target = event.target;
 
 			//console.log('mousedown');
+			//console.log(target);
+
 			module.setSelection();
 			if(that.elements.target.contains(target)) {
-				//console.log(module.selection.anchorNode);
 				// 현재노드 상위 검색
 				module.getParent( 
-					module.selection.anchorNode,
+					target,
 					that.elements.target,
 					function(node) {
 						// 해당노드 확인 (line, img, figure 등)
 						if(node.nodeType === 1 && typeof node.storage === 'object' && node.storage.type === 'line') {
 							// 기본 이벤트 중지
 							event.preventDefault();
+							// 포커스(커서) 이동
+							module.setCusor(node.nextSibling);
 						}
 					},
 					function(node, result) {
@@ -1675,41 +1716,23 @@ FileReader: IE10 이상
 			var target = event.target;
 
 			//console.log('mouseup');
+			//console.log(target);
+
 			module.setSelection();
-			if(that.elements.target.contains(target)) {
-				//console.log(module.selection.anchorNode);
-				// 현재노드 상위 검색
-				module.getParent( 
-					module.selection.anchorNode,
-					that.elements.target,
-					function(node) {
-						// 해당노드 확인 (line, img, figure 등)
-						if(node.nodeType === 1 && typeof node.storage === 'object' && node.storage.type === 'line') {
-							console.log(node.storage.type);
-							// 기본 이벤트 중지
-							event.preventDefault();
-							// 포커스(커서) 이동
-							module.setCusor(node.nextSibling);
-						}
-					},
-					function(node, result) {
-						return node;
-					}
-				);
-			}
 			that.setTooltipToggle();
 		});
 		
 		// 키보드 이벤트
 		$(that.elements.target).on('keydown.EVENT_KEYDOWN_MULTIEDIT', function(e) {
-			//console.log('setContenteditableKeydown');
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			var self = event.currentTarget; // event listener element
+			var target = event.target;
 
-			//console.log('keydown');
-			//console.log(module.selection.anchorNode);
-			module.setSelection();
+			console.log('keydown');
+			console.log(module.selection.anchorNode);
 
 			// getSelection 선택된 node
+			module.setSelection();
 			if(module.isSelection()) {
 				switch(event.keyCode) {
 					// keyCode 13: enter
@@ -1814,7 +1837,7 @@ FileReader: IE10 이상
 					case 8:
 						// 현재노드 상위 검색
 						module.getParent( 
-							module.selection.focusNode,
+							module.selection.anchorNode,
 							that.elements.target,
 							function(node) {
 								/*if(typeof node.storage === 'object' && /line/i.test(node.storage.type || '')) {
@@ -1830,7 +1853,7 @@ FileReader: IE10 이상
 										console.log(module.selection.focusNode.parentNode);
 										*/
 										// 삭제
-										module.selection.focusNode.parentNode.removeChild(module.selection.focusNode);
+										//module.selection.focusNode.parentNode.removeChild(module.selection.focusNode);
 										break;
 									default:
 										
@@ -1842,41 +1865,19 @@ FileReader: IE10 이상
 							}
 						);
 						break;
-
-					// keyCode: 37(left), 38(up)
-					case 37:
-					case 38:
-					// keyCode: 39(right), 40(down)
-					case 39:
-					case 40:
-						// 현재노드 상위 검색
-						module.getParent( 
-							module.selection.focusNode,
-							that.elements.target,
-							function(node) {
-								// 해당노드 확인 (line, img, figure 등)
-								if(node.nodeType === 1 && typeof node.storage === 'object' && node.storage.type === 'line') {
-									// 기본 이벤트 중지
-									event.preventDefault();
-								}
-							},
-							function(node, result) {
-								return node;
-							}
-						);
-						break;
 				}
 			}
 		});
 		$(that.elements.target).on('keyup.EVENT_KEYUP_MULTIEDIT', function(e) {
-			//console.log('setContenteditableKeyup');
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			var self = event.currentTarget; // event listener element
+			var target = event.target;
 
 			//console.log('keyup');
 			//console.log(module.selection.anchorNode);
-			module.setSelection();
 
 			// getSelection 선택된 node
+			module.setSelection();
 			if(module.isSelection()) {
 				switch(event.keyCode) {
 					// keyCode 13: enter
@@ -1911,18 +1912,16 @@ FileReader: IE10 이상
 					case 40:
 						// 현재노드 상위 검색
 						module.getParent( 
-							module.selection.focusNode,
+							module.selection.anchorNode,
 							that.elements.target,
 							function(node) {
 								// 해당노드 확인 (line, img, figure 등)
 								if(node.nodeType === 1 && typeof node.storage === 'object' && node.storage.type === 'line') {
-									// 기본 이벤트 중지
-									event.preventDefault();
 									// 포커스(커서) 이동
 									if(event.keyCode === 37 || event.keyCode === 38) {
-										module.setCusor(node.previousSibling);
+										module.setCusor(node.previousSibling || node.nextSibling);
 									}else if(event.keyCode === 39 || event.keyCode === 40) {
-										module.setCusor(node.nextSibling);
+										module.setCusor(node.nextSibling || node.previousSibling);
 									}
 								}
 							},
