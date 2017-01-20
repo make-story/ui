@@ -186,7 +186,7 @@ FileReader: IE10 이상
 			// 상위노드 탐색을 실행을 얼마나 줄이느냐가 관건
 			getParent: function(current, last, condition, callback) {
 				var result;
-				if(typeof current !== 'object' || !current.nodeType) {
+				if(typeof current !== 'object' || current === null || !current.nodeType) {
 					return;
 				}
 				if(typeof last !== 'object' || (last !== null && !last.nodeType)) {
@@ -215,7 +215,7 @@ FileReader: IE10 이상
 			isNodeCheck: function(node, check) { 
 				var is = false;
 
-				if(typeof node === 'object' && node.nodeType) {
+				if(typeof node === 'object' && node !== null && node.nodeType) {
 					switch(check) {
 						case 'url':
 							if(node.nodeType === 3 && node.parentNode.nodeName.toLowerCase() !== 'a' && node.nodeValue && regexp.url.test(node.nodeValue)) { // nodeType 3: textnode
@@ -237,7 +237,7 @@ FileReader: IE10 이상
 				var that = this;
 				var range, position;
 
-				if(typeof node === 'object' && node.nodeType) {
+				if(typeof node === 'object' && node !== null && node.nodeType) {
 					//position = that.selection.getRangeAt(0).focusOffset;
 					range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
 					range.setStart(node, 0);
@@ -271,7 +271,7 @@ FileReader: IE10 이상
 			// css display
 			getDisplay: function(element) {
 				var display = '';
-				if(typeof element === 'object' && element.nodeType) {
+				if(typeof element === 'object' && element !== null && element.nodeType) {
 					if(element.style.display) { // style로 값을 구할 수 있는 경우
 						display = element.style.display;
 					}else if(element.currentStyle && element.currentStyle.display) { // IE의 경우
@@ -1649,9 +1649,24 @@ FileReader: IE10 이상
 
 			//console.log('mousedown');
 			module.setSelection();
-			/*if(that.elements.target.contains(target)) {
-				console.log(module.selection.anchorNode);
-			}*/
+			if(that.elements.target.contains(target)) {
+				//console.log(module.selection.anchorNode);
+				// 현재노드 상위 검색
+				module.getParent( 
+					module.selection.anchorNode,
+					that.elements.target,
+					function(node) {
+						// 해당노드 확인 (line, img, figure 등)
+						if(node.nodeType === 1 && typeof node.storage === 'object' && node.storage.type === 'line') {
+							// 기본 이벤트 중지
+							event.preventDefault();
+						}
+					},
+					function(node, result) {
+						return node;
+					}
+				);
+			}
 			that.setTooltipToggle();			
 		});
 		$(document).on(env.event.up + '.EVENT_MOUSEUP_MULTIEDIT', function(e) {
@@ -1670,6 +1685,7 @@ FileReader: IE10 이상
 					function(node) {
 						// 해당노드 확인 (line, img, figure 등)
 						if(node.nodeType === 1 && typeof node.storage === 'object' && node.storage.type === 'line') {
+							console.log(node.storage.type);
 							// 기본 이벤트 중지
 							event.preventDefault();
 							// 포커스(커서) 이동
@@ -1689,8 +1705,8 @@ FileReader: IE10 이상
 			//console.log('setContenteditableKeydown');
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
-			console.log('keydown');
-			console.log(module.selection.anchorNode);
+			//console.log('keydown');
+			//console.log(module.selection.anchorNode);
 			module.setSelection();
 
 			// getSelection 선택된 node
@@ -1826,6 +1842,29 @@ FileReader: IE10 이상
 							}
 						);
 						break;
+
+					// keyCode: 37(left), 38(up)
+					case 37:
+					case 38:
+					// keyCode: 39(right), 40(down)
+					case 39:
+					case 40:
+						// 현재노드 상위 검색
+						module.getParent( 
+							module.selection.focusNode,
+							that.elements.target,
+							function(node) {
+								// 해당노드 확인 (line, img, figure 등)
+								if(node.nodeType === 1 && typeof node.storage === 'object' && node.storage.type === 'line') {
+									// 기본 이벤트 중지
+									event.preventDefault();
+								}
+							},
+							function(node, result) {
+								return node;
+							}
+						);
+						break;
 				}
 			}
 		});
@@ -1833,8 +1872,8 @@ FileReader: IE10 이상
 			//console.log('setContenteditableKeyup');
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
-			console.log('keyup');
-			console.log(module.selection.anchorNode);
+			//console.log('keyup');
+			//console.log(module.selection.anchorNode);
 			module.setSelection();
 
 			// getSelection 선택된 node
@@ -1964,7 +2003,7 @@ FileReader: IE10 이상
 		var fragment;
 		var a, div, p, comment;
 
-		if(typeof node === 'object' && node.nodeType && (url && regexp.url.test(url) || module.isNodeCheck(node, 'url'))) {
+		if(typeof node === 'object' && node !== null && node.nodeType && (url && regexp.url.test(url) || module.isNodeCheck(node, 'url'))) {
 			url = url || node.nodeValue;
 			//console.log('url: ' + url);
 
