@@ -175,7 +175,7 @@ FileReader: IE10 이상
 			'문서의 특정 부분’을 정의하는 것이라 생각하면 쉽다.
 			*/
 			getRange: function(index) {
-				var range = '';
+				var range;
 				if(typeof this.selection === 'object' && this.selection !== null && this.selection.rangeCount > 0) { // rangeCount 는 커서 자체도 하나의 range 로 본다.
 					// this.selection.rangeCount
 					range = this.selection.getRangeAt(index || 0);
@@ -184,51 +184,35 @@ FileReader: IE10 이상
 			},
 			// 현재 node 상위(parentNode)를 검색하며, condition 결과에 따른 callback 실행
 			// 상위노드 탐색을 실행을 얼마나 줄이느냐가 관건
-			getParent: function(node, condition, callback) {
+			getParent: function(current, last, condition, callback) {
 				var result;
-				if(typeof node !== 'object' || !node.nodeType) {
+				if(typeof current !== 'object' || !current.nodeType) {
 					return;
 				}
-				while(node.parentNode) {
+				if(typeof last !== 'object' || (last !== null && !last.nodeType)) {
+					last = null;
+				}
+				while(current.parentNode) {
 					// 1. condition 실행
 					// 리턴값이 true 의 경우, callback 함수 실행
-					result = condition(node); 
+					result = condition(current); 
 					if(result) {
 						// 2. callback 실행 (return 값이 있을 경우 반환)
-						result = callback(node, result);
+						result = callback(current, result);
 						if(typeof result !== 'undefined') {
 							// callback 리턴값이 있을 경우 break
 							return result;
 						}
 					}
-					// 상위 node
-					node = node.parentNode;
-				}
-			},
-			// 현재 선택된 글자에 블록태그(파라미터의 tag)를 설정한다.
-			setFormatBlock: function(tag) {
-				var that = this;
-				if(typeof tag === 'string') {
-					if(that.isSelection() && that.getRange() && that.getParent( // 추가하려는 tag가 상위에 존재하는지 확인
-						that.selection.focusNode,
-						// 조건
-						function(node) {
-							return node.nodeName.toLowerCase() === tag.toLowerCase();
-						},
-						// 조건에 따른 실행
-						function(node) {
-							return node;
-						}
-					)) {
-						document.execCommand("formatBlock", false, "p");
-						document.execCommand("outdent"); // 문자 선택(text selection)의 현위치에서 들어쓰기 한 증가분 만큼 왼쪽으로 내어쓰기 한다.
-					}else {
-						document.execCommand("formatBlock", false, tag);
+					// 검색 제한
+					if(last && (!last.contains(current) || last.isEqualNode(current))) {
+						return;
 					}
+					// 상위 node
+					current = current.parentNode;
 				}
 			},
-			// node 값 검사
-			isCheck: function(node, check) { 
+			isNodeCheck: function(node, check) { 
 				var is = false;
 
 				if(typeof node === 'object' && node.nodeType) {
@@ -243,15 +227,46 @@ FileReader: IE10 이상
 								is = true;	
 							}
 							break;
-						case 'image':
-							if((typeof node.storage === 'object' && node.storage.type === 'image') || (node.nodeType === 3 && typeof node.parentNode.storage === 'object' && node.parentNode.storage.type === 'image')) { // nodeType 3: textnode
-								is = true;	
-							}
-							break;
 					}
 				}
 
 				return is;
+			},
+			// 커서
+			setCusor: function(node) {
+				var that = this;
+				var range, position;
+
+				if(typeof node === 'object' && node.nodeType) {
+					//position = that.selection.getRangeAt(0).focusOffset;
+					range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
+					range.setStart(node, 0);
+					range.setEnd(node, 0);
+					range.collapse(true);
+					that.selection.removeAllRanges();
+					that.selection.addRange(range);
+				}
+			},
+			// 현재 선택된 글자에 블록태그(파라미터의 tag)를 설정한다.
+			setFormatBlock: function(tag) {
+				var that = this;
+				if(typeof tag === 'string') {
+					if(that.isSelection() && that.getRange() && that.getParent( // 추가하려는 tag가 상위에 존재하는지 확인
+						that.selection.focusNode,
+						null,
+						function(node) {
+							return node.nodeName.toLowerCase() === tag.toLowerCase();
+						},
+						function(node, result) {
+							return node;
+						}
+					)) {
+						document.execCommand("formatBlock", false, "p");
+						document.execCommand("outdent"); // 문자 선택(text selection)의 현위치에서 들어쓰기 한 증가분 만큼 왼쪽으로 내어쓰기 한다.
+					}else {
+						document.execCommand("formatBlock", false, tag);
+					}
+				}
 			},
 			// css display
 			getDisplay: function(element) {
@@ -354,11 +369,10 @@ FileReader: IE10 이상
 						case 'bold':
 							if(module.selection.anchorNode && !module.getParent(
 								module.selection.anchorNode,
-								// 조건
+								null,
 								function(node) { // condition (검사)
 									return /^(h1|h2|h3)$/i.test(node.nodeName.toLowerCase()); // h1, h2, h3 태그는 진한색의 글자이므로 제외
 								}, 
-								// 조건에 따른 실행
 								function(node, result) { // callback (검사결과가 true의 경우)
 									return true;
 								}
@@ -380,11 +394,10 @@ FileReader: IE10 이상
 						case "h3":
 							if(module.selection.focusNode && !module.getParent(
 								module.selection.focusNode,
-								// 조건
+								null,
 								function(node) { // condition (검사)
 									return /^(b|strong)$/i.test(node.nodeName.toLowerCase()); 
 								}, 
-								// 조건에 따른 실행
 								function(node, result) { // callback (검사결과가 true의 경우)
 									return true;
 								}
@@ -401,11 +414,10 @@ FileReader: IE10 이상
 							setTimeout(function() {
 								var url = module.getParent(
 									module.selection.focusNode,
-									// 조건
+									null,
 									function(node) {
 										return typeof node.href !== 'undefined';
 									},
-									// 조건에 따른 실행
 									function(node, result) {
 										return node.href;
 									}
@@ -488,6 +500,7 @@ FileReader: IE10 이상
 					that.elements.other.link.input.blur(); // trigger blur
 				}
 			};
+
 			// element 생성
 			var fragment = document.createDocumentFragment();
 			var button;
@@ -638,11 +651,10 @@ FileReader: IE10 이상
 			// 현재노드 상위 검색
 			module.getParent(
 				module.selection.focusNode,
-				// 조건
+				null,
 				function(node) {
 					return typeof node.nodeName !== 'undefined' && typeof node.style !== 'undefined';
 				},
-				// 조건에 따른 실행
 				function(node, result) {
 					//console.log(node.nodeName.toLowerCase());
 					// style 확인
@@ -753,7 +765,7 @@ FileReader: IE10 이상
 		// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
 		module.setSelection();
 		if(that.settings.tooltip === true) {
-			if(module.isSelection() && module.selection.focusNode.nodeType === 1 && /figure|img/.test(module.selection.focusNode.nodeName.toLowerCase())) {
+			if(module.isSelection() && (!that.elements.target.contains(module.selection.focusNode) || (module.selection.focusNode.nodeType === 1 && /figure|img/.test(module.selection.focusNode.nodeName.toLowerCase())))) {
 				/*
 				console.log('----------');
 				console.dir(module.selection);
@@ -790,10 +802,26 @@ FileReader: IE10 이상
 		}
 
 		// 마우스 이벤트
-		$(that.elements.target).on(env.event.down + '.EVENT_MOUSEDOWN_TEXTEDIT', function(e) {
+		$(document).on(env.event.down + '.EVENT_MOUSEDOWN_TEXTEDIT', function(e) {
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			var self = event.currentTarget; // event listener element
+			var target = event.target;
+
+			module.setSelection();
+			/*if(that.elements.target.contains(target)) {
+
+			}*/
 			that.setTooltipToggle();
 		});
-		$(that.elements.target).on(env.event.up + '.EVENT_MOUSEUP_TEXTEDIT', function(e) {
+		$(document).on(env.event.up + '.EVENT_MOUSEUP_TEXTEDIT', function(e) {
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			var self = event.currentTarget; // event listener element
+			var target = event.target;
+
+			module.setSelection();
+			/*if(that.elements.target.contains(target)) {
+				
+			}*/
 			that.setTooltipToggle();
 		});
 		
@@ -803,8 +831,6 @@ FileReader: IE10 이상
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
 			//console.log('keydown');
-
-			// 방향키, 엔터키 등
 			module.setSelection();
 
 			// getSelection 선택된 node
@@ -813,7 +839,7 @@ FileReader: IE10 이상
 					// 현재노드 상위 검색
 					module.getParent( 
 						module.selection.anchorNode,
-						// 조건
+						that.elements.target,
 						function(node) {
 							switch(node.nodeName.toLowerCase()) {
 								case 'p':
@@ -824,7 +850,6 @@ FileReader: IE10 이상
 									break;
 							}
 						},
-						// 조건에 따른 실행
 						function(node, result) {
 							return node;
 						}
@@ -835,11 +860,9 @@ FileReader: IE10 이상
 		$(that.elements.target).on('keyup.EVENT_KEYUP_TEXTEDIT', function(e) {
 			//console.log('setContenteditableKeyup');
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-			var insertedNode, unwrap, node, parent, range;
+			var insertedNode, unwrap, node, parent;
 
 			//console.log('keyup');
-
-			// 방향키, 엔터키 등
 			module.setSelection();
 
 			// getSelection 선택된 node
@@ -850,6 +873,7 @@ FileReader: IE10 이상
 						// 현재노드 상위 검색
 						if(module.getParent( 
 							module.selection.anchorNode,
+							that.elements.target,
 							function(node) {
 								if(/code|pre/.test(node.nodeName.toLowerCase())) {
 									return true;
@@ -876,11 +900,10 @@ FileReader: IE10 이상
 						module.selection.anchorNode.nodeValue = module.selection.anchorNode.nodeValue.substring(2);
 						insertedNode = module.getParent( // 현재노드 상위로 존재하는 ul 태그 반환
 							module.selection.anchorNode,
-							// 조건
+							null,
 							function(node) {
 								return node.nodeName.toLowerCase() === 'ul';
 							},
-							// 조건에 따른 실행
 							function(node, result) {
 								return node;
 							}
@@ -891,11 +914,10 @@ FileReader: IE10 이상
 						module.selection.anchorNode.nodeValue = module.selection.anchorNode.nodeValue.substring(3);
 						insertedNode = module.getParent( // 현재노드 상위로 존재하는 ol 태그 반환
 							module.selection.anchorNode,
-							// 조건
+							null,
 							function(node) {
 								return node.nodeName.toLowerCase() === 'ol';
 							},
-							// 조건에 따른 실행
 							function(node, result) {
 								return node;
 							}
@@ -911,11 +933,7 @@ FileReader: IE10 이상
 						parent.parentNode.insertBefore(insertedNode, parent);
 						parent.parentNode.removeChild(parent);
 						// 포커스(커서) 이동
-						range = document.createRange();
-						range.setStart(node, 0);
-						range.setEnd(node, 0);
-						module.selection.removeAllRanges();
-						module.selection.addRange(range);
+						module.setCusor(node);
 					}
 				}*/
 
@@ -934,6 +952,7 @@ FileReader: IE10 이상
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 			var text = '';
 
+			// 기본 이벤트 중지
 			event.preventDefault();
 			if(event.clipboardData) {
 				text = event.clipboardData.getData('text/plain');
@@ -944,6 +963,7 @@ FileReader: IE10 이상
 			// 현재노드 상위 검색
 			if(module.getParent( 
 				module.selection.anchorNode,
+				that.elements.target,
 				function(node) {
 					if(/code|pre/.test(node.nodeName.toLowerCase())) {
 						return true;
@@ -1007,8 +1027,8 @@ FileReader: IE10 이상
 		that.setTextTooltipMenuPostion({'toggle': 'hide'});
 
 		// 마우스 이벤트
-		$(that.elements.target).off('.EVENT_MOUSEDOWN_TEXTEDIT')
-		$(that.elements.target).off('.EVENT_MOUSEUP_TEXTEDIT');
+		$(document).off('.EVENT_MOUSEDOWN_TEXTEDIT')
+		$(document).off('.EVENT_MOUSEUP_TEXTEDIT');
 
 		// 키보드 이벤트
 		$(that.elements.target).off('.EVENT_KEYDOWN_TEXTEDIT');
@@ -1028,7 +1048,7 @@ FileReader: IE10 이상
 			'key': 'editor', 
 			'target': null,
 			'image': true, // 이미지 사용여부
-			'video': true, // 비디오 사용여부
+			'video': false, // 비디오 사용여부
 			'code': true, // 코드 사용여부
 			'line': true, // 구분선 사용여부
 			'tooltip': {
@@ -1078,6 +1098,9 @@ FileReader: IE10 이상
 				},
 				'code': {
 					'wrap': 'editor-code-wrap'
+				},
+				'line': {
+					'wrap': 'editor-line-wrap'	
 				}
 			},
 			'callback': {
@@ -1186,7 +1209,7 @@ FileReader: IE10 이상
 				if(module.isSelection()) {
 					wrap = module.getParent(
 						module.selection.anchorNode,
-						// 조건
+						null,
 						function(node) { // condition (검사)
 							/*
 							console.log('node');
@@ -1204,7 +1227,6 @@ FileReader: IE10 이상
 								return setInsertAfterWrap(node);
 							}*/
 						}, 
-						// 조건에 따른 실행
 						function(node, result) { // callback (검사결과가 true의 경우)
 							if(node) {
 								return result;
@@ -1274,7 +1296,6 @@ FileReader: IE10 이상
 				var pre = document.createElement("pre");
 				var code = document.createElement("code");
 				var p = document.createElement("p");
-				var range;
 
 				// 정보 구성
 				div.className = that.settings.classes.code.wrap;
@@ -1297,20 +1318,42 @@ FileReader: IE10 이상
 				}
 
 				// 포커스(커서) 이동
-				range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
-				range.setStart(code, 0);
-				range.setEnd(code, 0);
-				range.collapse(true);
-				module.selection.removeAllRanges();
-				module.selection.addRange(range);
+				module.setCusor(code);
 			};
+			var setLineTooltipMousedown = function(e) {
+				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+				var fragment = document.createDocumentFragment();
+				var div = document.createElement("div");
+				var p = document.createElement("p");
+
+				// 정보 구성
+				div.className = that.settings.classes.line.wrap;
+				div.setAttribute("data-type", "line");
+				div.storage = {
+					'type': 'line'
+				};
+
+				// element 삽입
+				fragment.appendChild(div);
+				fragment.appendChild(p);
+				p.innerHTML = '<br />';
+				if(that.elements.target.isEqualNode(module.selection.anchorNode)) {
+					that.elements.target.appendChild(fragment);
+				}else {
+					module.selection.anchorNode.parentNode.insertBefore(fragment, module.selection.anchorNode);
+				}
+
+				// 포커스(커서) 이동
+				module.setCusor(p);
+			};
+
 			// element 생성
 			var fragment = document.createDocumentFragment();
 			var label;
 
 			// 툴바
 			that.elements.tooltip = document.createElement("div");
-			that.elements.tooltip.style.cssText = 'transition: all .05s ease-out; position: absolute; color: rgb(44, 45, 46); background-color: rgba(255, 255, 255, .96); border-radius: 3px; display: none;';
+			that.elements.tooltip.style.cssText = 'transition: all .05s ease-out; position: absolute; color: rgb(44, 45, 46); border-radius: 3px; display: none;';
 			that.elements.tooltip.appendChild(that.elements.command.wrap = document.createElement("div"));
 			that.elements.tooltip.appendChild(that.elements.other.wrap = document.createElement("div"));
 			fragment.appendChild(that.elements.tooltip);
@@ -1326,7 +1369,7 @@ FileReader: IE10 이상
 					label.onmousedown = setImageTooltipMousedown;
 					//label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 368 368" style="fill: rgb(44, 45, 46);"><path d="M328,32H40C18,32,0,50,0,72v224c0,22,18,40,40,40h288c22,0,40-18,40-40V72C368,50,350,32,328,32z M352,185.6l-38-38 c-6.4-6.4-16-6.4-22.4,0L200,238.8l-0.4-0.4L153.2,192c-6-6-16.4-6-22.4,0l-39.2,39.2c-3.2,3.2-3.2,8,0,11.2 c3.2,3.2,8,3.2,11.2,0l39.2-39.2l46.4,46.4l0.4,0.4l-32.4,32.4c-3.2,3.2-3.2,8,0,11.2c1.6,1.6,3.6,2.4,5.6,2.4s4-0.8,5.6-2.4 l135.2-134.8l47.6,47.6c0.4,0.4,1.2,0.8,1.6,1.2V296c0,13.2-10.8,24-24,24H40c-13.2,0-24-10.8-24-24V72c0-13.2,10.8-24,24-24h288 c13.2,0,24,10.8,24,24V185.6z" /><path d="M72.4,250.4l-8,8c-3.2,3.2-3.2,8,0,11.2C66,271.2,68,272,70,272s4-0.8,5.6-2.4l8-8c3.2-3.2,3.2-8,0-11.2 C80.4,247.2,75.6,247.2,72.4,250.4z" /><path d="M88,80c-22,0-40,18-40,40s18,40,40,40s40-18,40-40S110,80,88,80z M88,144c-13.2,0-24-10.8-24-24s10.8-24,24-24 s24,10.8,24,24S101.2,144,88,144z" /></svg>';
 					label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 64 64" style="fill: rgb(44, 45, 46);"><path d="M0,3.26315v57.4737015h64V3.26315H0z M62,5.2631502V34.480751L47.1523018,20.5346508 c-0.1992035-0.1875-0.4580002-0.2890015-0.7422028-0.2695007c-0.2733994,0.0156002-0.5282974,0.1425991-0.7059975,0.352499 L28.4267006,41.04245L15.4111004,30.3715496c-0.3984003-0.3270988-0.9863005-0.2967987-1.3496008,0.075201L2,42.8066483V5.2631502 H62z M2,58.7368507V45.6702499l12.8525-13.1707001l13.0684004,10.7137985 c0.4228001,0.347702,1.044899,0.2901001,1.3973999-0.1278992l17.2325001-20.3720989L62,37.2237511v21.5130997H2z" /><path d="M26,26.2631493c3.8593006,0,7-3.1406002,7-7c0-3.8592997-3.1406994-6.999999-7-6.999999 c-3.8593998,0-7,3.1406994-7,6.999999C19,23.1225491,22.1406002,26.2631493,26,26.2631493z M26,14.2631502 c2.7567997,0,5,2.2431993,5,4.999999c0,2.7569008-2.2432003,5-5,5c-2.7569008,0-5-2.2430992-5-5 C21,16.5063496,23.2430992,14.2631502,26,14.2631502z" /></svg>';
-					//label.textContent = '+';
+					//label.textContent = '/#/';
 					return label;
 				})(label.cloneNode()));
 			}
@@ -1354,7 +1397,15 @@ FileReader: IE10 이상
 				})(label.cloneNode()));
 			}
 			if(that.settings.line === true) {
-
+				that.elements.command.wrap.appendChild(that.elements.command.insertLine = (function(label) {
+					label['storage'] = {
+						'command': 'insertLine'
+					};
+					label.onmousedown = setLineTooltipMousedown;
+					label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="22" height="22" viewBox="0 0 32 32" style="fill: rgb(44, 45, 46);" enable-background="new 0 0 32 32"><path d="m9,17c-2.4,0-4.6,1-7,1-1.1,0-2-0.9-2-2s0.9-2 2-2c2.4,0 4.6,1 7,1h12c2.7,0 5.3-2 8-2 1.7,0 3,1.3 3,3s-1.3,3-3,3c-2.7,0-5.3-2-8-2h-12z" /></svg>';
+					//label.textContent = '--';
+					return label;
+				})(label.cloneNode()));
 			}
 
 			// body 삽입
@@ -1436,7 +1487,7 @@ FileReader: IE10 이상
 
 		// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
 		module.setSelection();
-		if(module.isSelection()/* && module.selection.focusNode.nodeType === 1*/) {
+		if(module.isSelection() && that.elements.target.contains(module.selection.anchorNode)/* && module.selection.focusNode.nodeType === 1*/) {
 			/*
 			console.log('----------');
 			console.dir(module.selection);
@@ -1453,6 +1504,7 @@ FileReader: IE10 이상
 			// 현재노드 상위 검색
 			if(module.getParent( 
 				module.selection.anchorNode,
+				that.elements.target,
 				function(node) {
 					if(/code|pre|figcaption|figure/.test(node.nodeName.toLowerCase())) {
 						return true;
@@ -1515,7 +1567,6 @@ FileReader: IE10 이상
 						img.onload = function() { // this.src 를 변경할 경우 onload 이벤트가 실행된다.
 							var canvas, canvas_context;
 							var figure, figcaption;
-							var range;
 							/*
 							console.log(min_width, min_height);
 							console.log(max_width, max_height);
@@ -1561,12 +1612,7 @@ FileReader: IE10 이상
 							id.appendChild(figure);
 
 							// 포커스(커서) 이동
-							range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
-							range.setStart(figcaption, 0);
-							range.setEnd(figcaption, 0);
-							range.collapse(true);
-							module.selection.removeAllRanges();
-							module.selection.addRange(range);
+							module.setCusor(figcaption);
 						};
 					};
 
@@ -1596,10 +1642,45 @@ FileReader: IE10 이상
 		}
 
 		// 마우스 이벤트
-		$(that.elements.target).on(env.event.down + '.EVENT_MOUSEDOWN_MULTIEDIT', function(e) {
-			that.setTooltipToggle();
+		$(document).on(env.event.down + '.EVENT_MOUSEDOWN_MULTIEDIT', function(e) {
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			var self = event.currentTarget; // event listener element
+			var target = event.target;
+
+			//console.log('mousedown');
+			module.setSelection();
+			/*if(that.elements.target.contains(target)) {
+				console.log(module.selection.anchorNode);
+			}*/
+			that.setTooltipToggle();			
 		});
-		$(that.elements.target).on(env.event.up + '.EVENT_MOUSEUP_MULTIEDIT', function(e) {
+		$(document).on(env.event.up + '.EVENT_MOUSEUP_MULTIEDIT', function(e) {
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			var self = event.currentTarget; // event listener element
+			var target = event.target;
+
+			//console.log('mouseup');
+			module.setSelection();
+			if(that.elements.target.contains(target)) {
+				//console.log(module.selection.anchorNode);
+				// 현재노드 상위 검색
+				module.getParent( 
+					module.selection.anchorNode,
+					that.elements.target,
+					function(node) {
+						// 해당노드 확인 (line, img, figure 등)
+						if(node.nodeType === 1 && typeof node.storage === 'object' && node.storage.type === 'line') {
+							// 기본 이벤트 중지
+							event.preventDefault();
+							// 포커스(커서) 이동
+							module.setCusor(node.nextSibling);
+						}
+					},
+					function(node, result) {
+						return node;
+					}
+				);
+			}
 			that.setTooltipToggle();
 		});
 		
@@ -1608,9 +1689,8 @@ FileReader: IE10 이상
 			//console.log('setContenteditableKeydown');
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
-			//console.log('keydown');
-
-			// 방향키, 엔터키 등
+			console.log('keydown');
+			console.log(module.selection.anchorNode);
 			module.setSelection();
 
 			// getSelection 선택된 node
@@ -1618,22 +1698,20 @@ FileReader: IE10 이상
 				switch(event.keyCode) {
 					// keyCode 13: enter
 					case 13: 
-						//console.log(module.selection.anchorNode.nodeName.toLowerCase());
-
 						// 현재노드 상위 검색
 						module.getParent( 
 							module.selection.anchorNode,
-							// 조건
+							that.elements.target,
 							function(node) {
 								switch(node.nodeName.toLowerCase()) {
 									case 'figure':
-										// enter 기본 이벤트 중지
+										// 기본 이벤트 중지
 										event.preventDefault();
 										break;
 									// 한개의 실행코드에 case 문을 2개 이상 여러개 줄 경우 여러번 중복 실행될 수 있다. (node 상위검색 반복문 때문)
 									case 'code':
 									//case 'pre':
-										// enter 기본 이벤트 중지
+										// 기본 이벤트 중지
 										event.preventDefault();
 										(function() {
 											var fragment, line;
@@ -1664,11 +1742,10 @@ FileReader: IE10 이상
 										})();
 										break;
 									default:
-										return that.elements.target.isEqualNode(node);
+										
 										break;
 								}
 							},
-							// 조건에 따른 실행
 							function(node, result) {
 								return node;
 							}
@@ -1680,13 +1757,13 @@ FileReader: IE10 이상
 						// 현재노드 상위 검색
 						module.getParent( 
 							module.selection.anchorNode,
-							// 조건
+							that.elements.target,
 							function(node) {
 								switch(node.nodeName.toLowerCase()) {
 									// 한개의 실행코드에 case 문을 2개 이상 여러개 줄 경우 여러번 중복 실행될 수 있다. (node 상위검색 반복문 때문)
 									case 'code':
 									//case 'pre':
-										// tab 기본 이벤트 중지
+										// 기본 이벤트 중지
 										event.preventDefault();
 										//document.execCommand('indent', false, null); // 들여쓰기
 										(function() {
@@ -1704,12 +1781,13 @@ FileReader: IE10 이상
 
 											module.selection.removeAllRanges();
 											module.selection.addRange(range);
-									})();
-									break;
+										})();
+										break;
+									default:
+										
+										break;
 								}
-
 							},
-							// 조건에 따른 실행
 							function(node, result) {
 								return node;
 							}
@@ -1718,16 +1796,35 @@ FileReader: IE10 이상
 
 					// keyCode 8: backspace
 					case 8:
-						if(module.isCheck(module.selection.focusNode, 'image')) { 
-							// event 정지
-							module.stopCapture(event);
-							/*
-							console.log(module.selection.focusNode);
-							console.log(module.selection.focusNode.parentNode);
-							*/
-							// 삭제
-							module.selection.focusNode.parentNode.removeChild(module.selection.focusNode);
-						}
+						// 현재노드 상위 검색
+						module.getParent( 
+							module.selection.focusNode,
+							that.elements.target,
+							function(node) {
+								/*if(typeof node.storage === 'object' && /line/i.test(node.storage.type || '')) {
+
+								}*/
+								switch(node.nodeName.toLowerCase()) {
+									case 'img':
+									case 'figure':
+										// 상위로 전파 중지
+										module.stopCapture(event);
+										/*
+										console.log(module.selection.focusNode);
+										console.log(module.selection.focusNode.parentNode);
+										*/
+										// 삭제
+										module.selection.focusNode.parentNode.removeChild(module.selection.focusNode);
+										break;
+									default:
+										
+										break;
+								}
+							},
+							function(node, result) {
+								return node;
+							}
+						);
 						break;
 				}
 			}
@@ -1736,62 +1833,66 @@ FileReader: IE10 이상
 			//console.log('setContenteditableKeyup');
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
-			//console.log('keyup');
-
-			// 방향키, 엔터키 등
+			console.log('keyup');
+			console.log(module.selection.anchorNode);
 			module.setSelection();
 
 			// getSelection 선택된 node
 			if(module.isSelection()) {
-				if(event.keyCode === 13) { // keyCode 13: enter
-					// 현재노드 상위 검색
-					module.getParent( 
-						module.selection.anchorNode,
-						// 조건
-						function(node) {
-							switch(node.nodeName.toLowerCase()) {
-								case 'figure':
-									/*
-									figure 내부에 figcaption 태그가 없으면 figcaption 생성
-									figcaption 생성후 아무것도 입력하지 않은 상태에서 엔터키를 누르면 
-									figure 밖으로 빠져나옴
+				switch(event.keyCode) {
+					// keyCode 13: enter
+					case 13: 
+						// 현재노드 상위 검색
+						module.getParent( 
+							module.selection.anchorNode,
+							that.elements.target,
+							function(node) {
+								switch(node.nodeName.toLowerCase()) {
+									case 'figure':
+										// 기본 이벤트 중지
+										//event.preventDefault();
 
-									근데 불편할것 같다.
-									*/
-									//event.preventDefault();
-
-									/*
-									https://www.google.co.kr/webhp?sourceid=chrome-instant&ion=1&espv=2&ie=UTF-8#newwindow=1&q=chrome+contenteditable+p+tag+append
-									http://stackoverflow.com/questions/35705291/cross-browser-way-to-insert-br-or-p-tag-when-hitting-enter-on-a-contenteditable
-									http://stackoverflow.com/questions/3771824/select-range-in-contenteditable-div
-									*/
-									/*var p = document.createElement('p');
-									var br = document.createElement("br"); // 크롬은 p 태그 내부 br 이 존재해야 한다.
-									range = document.createRange();
-									node.parentNode.insertBefore(p, node.nextSibling);
-									
-									range.setStart(p, 0);
-									range.setEnd(p, 0);
-									//range.selectNode(p);
-									range.insertNode(br);
-									range.setStartAfter(br);
-									range.setEndAfter(br);
-
-									module.selection.removeAllRanges();
-									module.selection.addRange(range);*/
-									break;
-								default:
-									return that.elements.target.isEqualNode(node);
-									break;
+										break;
+									default:
+										
+										break;
+								}
+							},
+							function(node, result) {
+								return node;
 							}
-						},
-						// 조건에 따른 실행
-						function(node, result) {
-							return node;
-						}
-					);
-				}
+						);
+						break;
 
+					// keyCode: 37(left), 38(up)
+					case 37:
+					case 38:
+					// keyCode: 39(right), 40(down)
+					case 39:
+					case 40:
+						// 현재노드 상위 검색
+						module.getParent( 
+							module.selection.focusNode,
+							that.elements.target,
+							function(node) {
+								// 해당노드 확인 (line, img, figure 등)
+								if(node.nodeType === 1 && typeof node.storage === 'object' && node.storage.type === 'line') {
+									// 기본 이벤트 중지
+									event.preventDefault();
+									// 포커스(커서) 이동
+									if(event.keyCode === 37 || event.keyCode === 38) {
+										module.setCusor(node.previousSibling);
+									}else if(event.keyCode === 39 || event.keyCode === 40) {
+										module.setCusor(node.nextSibling);
+									}
+								}
+							},
+							function(node, result) {
+								return node;
+							}
+						);
+						break;
+				};
 				that.setTooltipToggle();
 			}
 		});
@@ -1809,8 +1910,8 @@ FileReader: IE10 이상
 		that.setMultiTooltipMenuPostion({'toggle': 'hide'});
 
 		// 마우스 이벤트
-		$(that.elements.target).off('.EVENT_MOUSEDOWN_MULTIEDIT');
-		$(that.elements.target).off('.EVENT_MOUSEUP_MULTIEDIT');
+		$(document).off('.EVENT_MOUSEDOWN_MULTIEDIT');
+		$(document).off('.EVENT_MOUSEUP_MULTIEDIT');
 
 		// 키보드 이벤트
 		$(that.elements.target).off('.EVENT_KEYDOWN_MULTIEDIT');
@@ -1863,7 +1964,7 @@ FileReader: IE10 이상
 		var fragment;
 		var a, div, p, comment;
 
-		if(typeof node === 'object' && node.nodeType && (url && regexp.url.test(url) || module.isCheck(node, 'url'))) {
+		if(typeof node === 'object' && node.nodeType && (url && regexp.url.test(url) || module.isNodeCheck(node, 'url'))) {
 			url = url || node.nodeValue;
 			//console.log('url: ' + url);
 
@@ -1872,7 +1973,6 @@ FileReader: IE10 이상
 				var a, div, p;
 				var tmp;
 				var inserted;
-				var position, range;
 
 				// url text 를 a 링크로 변경
 				//paragraph = node.nodeValue.split(/\s+/); // 띄어쓰기 기준 문단 분리
@@ -1914,7 +2014,7 @@ FileReader: IE10 이상
 				//node.parentNode.replaceChild(fragment, node);
 				inserted = module.getParent(
 					node,
-					// 조건
+					null,
 					function(node) { // condition (검사)						
 						if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
 							return node;
@@ -1922,7 +2022,6 @@ FileReader: IE10 이상
 							return node;
 						}
 					}, 
-					// 조건에 따른 실행
 					function(node, result) { // callback (검사결과가 true의 경우)
 						if(node) {
 							return result;
@@ -1935,13 +2034,7 @@ FileReader: IE10 이상
 				//if(inserted.parentNode.insertBefore(fragment, inserted)) { // 링크 이전 요소에 삽입
 				if(inserted.parentNode.insertBefore(fragment, inserted.nextSibling)) { // 링크 다음 요소에 삽입
 					// 포커스(커서) 이동
-					position = module.selection.getRangeAt(0).focusOffset;
-					range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
-					range.setStart(p, position);
-					range.setEnd(p, position);
-					range.collapse(true);
-					module.selection.removeAllRanges();
-					module.selection.addRange(range);
+					module.setCusor(p);
 
 					// 오픈그래프 정보 불러오기
 					$.ajax({
@@ -2008,7 +2101,7 @@ FileReader: IE10 이상
 
 			module.setSelection();
 			if(module.isCollapsed()) {
-				if(event.keyCode === 13 && module.isCheck(module.selection.anchorNode, 'url')) { // keyCode 13: enter
+				if(event.keyCode === 13 && module.isNodeCheck(module.selection.anchorNode, 'url')) { // keyCode 13: enter
 					// url 이 존재하면, event 를 정지한다.
 					module.stopCapture(event);
 					/*
@@ -2020,8 +2113,8 @@ FileReader: IE10 이상
 					*/
 					// 삽입
 					that.put({'node': module.selection.anchorNode});
-				}else if(event.keyCode === 8 && module.isCheck(module.selection.focusNode, 'opengraph')) { // keyCode 8: backspace
-					// event 정지
+				}else if(event.keyCode === 8 && module.isNodeCheck(module.selection.focusNode, 'opengraph')) { // keyCode 8: backspace
+					// 상위로 전파 중지
 					module.stopCapture(event);
 					/*
 					console.log(module.selection.focusNode);
