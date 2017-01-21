@@ -125,7 +125,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 		(function call(queue) {
 			var target = queue.shift(); // 현재 순서에 해당하는 정보
-			var element = DOM(target['element']); // 대상 element
+			var element = $(target['element']); // 대상 element
 			var original = element.get(); // 대상 element 리스트 반환
 			var style = target['style']; // 애니메이션을 적용할 CSS값 - {CSS 속성: 값}
 			var duration = target['duration'] || 800; // 애니메이션 진행시간
@@ -148,7 +148,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			for(key in style) {
 				for(i in original) {
 					//start = original[i]['style'][key]; // 기존 설정값
-					start = DOM(original[i]).css(key); // 기존 설정값
+					start = $(original[i]).css(key); // 기존 설정값
 					end = style[key]; // 사용자 설정값
 					if(start) {
 						// 설정할 스타일 생성
@@ -245,7 +245,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 		(function call(queue) {
 			var target = queue.shift(); // 현재 순서에 해당하는 정보
-			var element = DOM(target['element']); // 대상 element
+			var element = $(target['element']); // 대상 element
 			var animation = target['animation']; // animation 적용 class name
 			var complete = target['complete']; // 애니메이션 종료 후 콜백 (complete)
 			var handler;
@@ -348,7 +348,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 		(function call(queue) {
 			var target = queue.shift(); // 현재 순서에 해당하는 정보
-			var element = DOM(target['element']); // 대상 element
+			var element = $(target['element']); // 대상 element
 			var original = element.get();
 			var transition = target['transition']; // 트랜지션을 적용할 CSS값 - {CSS 속성: 값}
 			var duration = target['duration'] || 600; 
@@ -377,7 +377,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					original[i]['storage']['transition'] = {};
 					for(key in state) {
 						tmp = original[i]['style'][key];
-						//tmp = DOM(original[i]).css(key);
+						//tmp = $(original[i]).css(key);
 						if(tmp && !state[key].test(tmp)) { 
 							// 현재 element에 설정된 style의 값이 state 목록에 지정된 기본값(style property default value)이 아니므로 
 							// 현재 설정된 값을 저장(종료 후 현재값으로 재설정)
