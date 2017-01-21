@@ -53,8 +53,8 @@ http://www.quirksmode.org/js/detect.html
 		-
 		페이스북 참고
 		 1. 'f' + : 'f' 문자열에 뒤의 것을 더할 건데, // f
-		 2. Math.random() : 0~1 사이의 랜덤한 수 생성에  //  0.13190673617646098 
-		 3. * (1 << 30) : 2의 30승을 곱하고, //  0.13190673617646098  *  1073741824  = 141633779.5
+		 2. Math.random() : 0~1 사이의 랜덤한 수 생성에 // 0.13190673617646098 
+		 3. * (1 << 30) : 2의 30승을 곱하고, // 0.13190673617646098 * 1073741824 = 141633779.5
 		 4. .toString(16) : 16진수로 문자열로 표현한 후에, // Number(141633779.9).toString(16) = 87128f3.8
 		 5. .replace('.', '') : 문자열에서 닷(소수점)을 제거한다. // 'f' + 87128f38 = f87128f38
 		return 'f' + (Math.random() * (1 << 30)).toString(16).replace('.', '');
@@ -63,6 +63,7 @@ http://www.quirksmode.org/js/detect.html
 	};
 
 	// 클라이언트 브라우저 환경
+	// 3D지원여부 판단자료: ['perspective', 'WebkitPerspective', 'MozPerspective', 'OPerspective', 'msPerspective']
 	var agent = (navigator.userAgent || navigator.vendor || window.opera).toLowerCase();
 	var platform = navigator.platform;
 	var offset_name, offset_version;
@@ -83,7 +84,6 @@ http://www.quirksmode.org/js/detect.html
 		"OAnimation": ['oanimationstart', 'oanimationiteration', 'oanimationend'],
 		"msAnimation": ['MSAnimationStart', 'MSAnimationIteration', 'MSAnimationEnd']
 	};
-	// 3D지원여부 판단자료: ['perspective', 'WebkitPerspective', 'MozPerspective', 'OPerspective', 'msPerspective']
  	var environment = { // PC, 사용자 환경
 		//"zindex": 100,
 		"check": { // true, false 
@@ -129,6 +129,7 @@ http://www.quirksmode.org/js/detect.html
 					return 'DOMMouseScroll';
 				}
 				/*
+				// 마우스휠 스크롤
 				var scroll;
 				if(event.wheelDelta) {
 					scroll = event.wheelDelta / 3600; // Chrome / Safari
@@ -175,7 +176,7 @@ http://www.quirksmode.org/js/detect.html
 			break;
 		}
 	}
-	// 애니메이션 확인
+	// 애니메이션
 	for(key in animations) {
 		if(element.style[key] !== undefined) {
 			environment['check']['animation'] = true;

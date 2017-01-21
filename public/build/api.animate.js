@@ -16,21 +16,89 @@ Dual licensed under the MIT and GPL licenses.
 -
 사용예
 
+-
+jQuery 또는 api.dom 에 종속적 실행
 */
 
 ;(function(factory, global) {
 
 	'use strict'; // ES5
-	if(typeof global === 'undefined' || global !== window) {
+	if(typeof global === 'undefined' || global !== window || ((!global.api || !global.api.dom) && !global.jQuery)) {
 		return false;
 	}else if(!global.api) {
 		global.api = {};
 	}
-	api.animate = factory(global);
+	api.animate = factory(global, global.jQuery || global.api.dom);
 
-})(function(global, undefined) {
+})(function(global, $, undefined) {
 
 	'use strict'; // ES5
+
+	// 환경정보
+	var env = {};
+	if(global.api && global.api.env) {
+		env = global.api.env;
+	}else {
+		env = {
+			"check": { // true, false 
+				"transform": false,
+				"transition": false/*('transition' in element.style || 'WebkitTransition' in element.style || 'MozTransition' in element.style || 'OTransition' in element.style || 'msTransition' in element.style)*/,
+				"animation": false/*('animationName' in element.style || 'WebkitAnimationName' in element.style || 'MozAnimationName' in element.style || 'OAnimationName' in element.style || 'msAnimationName' in element.style || 'KhtmlAnimationName' in element.style)*/
+			},
+			"event": {
+				// 트랜지션, 애니메이션
+				"transitionend": "transitionend",
+				"animationstart": "animationstart",
+				"animationiteration": "animationiteration",
+				"animationend": "animationend"
+			}
+		};
+		(function() {
+			var key;
+			var element = document.createElement('div');
+			var transforms = ["transform", "WebkitTransform", "MozTransform", "OTransform", "msTransform"]; // css check (IE9 벤더프리픽스로 사용가능, IE10이상 공식지원)
+			var transitions = { // event check (IE10이상 공식지원)
+				"transition": "transitionend", 
+				"WebkitTransition": "webkitTransitionEnd", 
+				"MozTransition": "transitionend", 
+				"OTransition": "oTransitionEnd",
+				"msTransition": "MSTransitionEnd"
+			};
+			var animations = { // event check (IE10이상 공식지원)
+				"animation": ['animationstart', 'animationiteration', 'animationend'], 
+				"WebkitAnimation": ['webkitAnimationStart', 'webkitAnimationIteration', 'webkitAnimationEnd'],
+				"MozAnimation": ['animationstart', 'animationiteration', 'animationend'], 
+				"OAnimation": ['oanimationstart', 'oanimationiteration', 'oanimationend'],
+				"msAnimation": ['MSAnimationStart', 'MSAnimationIteration', 'MSAnimationEnd']
+			};
+
+			// 트랜스폼
+			for(key in transforms) {
+				if(element.style[key] !== undefined) {
+					env['check']['transform'] = true;
+					break;
+				}
+			}
+			// 트랜지션
+			for(key in transitions) {
+				if(element.style[key] !== undefined) {
+					env['check']['transition'] = true;
+					env['event']['transitionend'] = transitions[key];
+					break;
+				}
+			}
+			// 애니메이션
+			for(key in animations) {
+				if(element.style[key] !== undefined) {
+					env['check']['animation'] = true;
+					env['event']['animationstart'] = animations[key][0];
+					env['event']['animationiteration'] = animations[key][1];
+					env['event']['animationend'] = animations[key][2];
+					break;
+				}
+			}
+		})();
+	}
 
 	// requestAnimationFrame, cancelAnimationFrame
 	var setRequestAnimationFrame = (function() { 
@@ -193,7 +261,7 @@ Dual licensed under the MIT and GPL licenses.
 						break;
 					case "animationend":
 						element.removeClass(animation);
-						element.off(global.api.env['event']['animationend'] + '.EVENT_ANIMATIONEND_QUEUE');
+						element.off(env.event.animationend + '.EVENT_ANIMATIONEND_QUEUE');
 						element.removeProp('animationState');
 
 						// complete 실행
@@ -215,7 +283,7 @@ Dual licensed under the MIT and GPL licenses.
 					//console.log('[정보] 애니메이션 실행');
 					window.clearInterval(time);
 					element.prop({'animationState': 'running'});
-					element.addClass(animation).on(global.api.env['event']['animationend'] + '.EVENT_ANIMATIONEND_QUEUE', handler);
+					element.addClass(animation).on(env.event.animationend + '.EVENT_ANIMATIONEND_QUEUE', handler);
 				}else {
 					// 현재 실행중인 애니메이션이 존재 (대기 후 이전 애니메이션이 종료되면 실행)
 					//console.log('[정보] 애니메이션 대기');
@@ -331,7 +399,7 @@ Dual licensed under the MIT and GPL licenses.
 
 			// 이벤트
 			window.setTimeout(function() {
-				element.css(properties).on(global.api.env['event']['transitionend'] + '.EVENT_TRANSITION_QUEUE', function(event) {
+				element.css(properties).on(env.event.transitionend + '.EVENT_TRANSITION_QUEUE', function(event) {
 					var event = event || window.event;
 					var i, key;
 					//console.log('[정보] 트랜지션 종료');
@@ -344,7 +412,7 @@ Dual licensed under the MIT and GPL licenses.
 							}
 						}
 					}
-					element.off(global.api.env['event']['transitionend'] + '.EVENT_TRANSITION_QUEUE');
+					element.off(env.event.transitionend + '.EVENT_TRANSITION_QUEUE');
 					
 					// complete 실행
 					if(typeof complete === 'function') {
