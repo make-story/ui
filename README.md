@@ -1095,7 +1095,7 @@ api.animate.transition({
 
 ----
 
-### api.script.js (현재작업중)
+### api.script.js (작업 중 보류상태)
 
 js 파일 동적로딩, 의존성관리, 모듈화
 
