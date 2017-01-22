@@ -1328,7 +1328,7 @@ FileReader: IE10 이상
 						if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
 							return that.elements.target.appendChild(fragment);
 						}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(module.getDisplay(node.parentNode))))) {
-							return node.parentNode.insertBefore(fragment, node.nextSibling);
+							return node.parentNode.insertBefore(fragment, node);
 						}
 					}, 
 					function(node, result) { // callback (검사결과가 true의 경우)
@@ -1696,11 +1696,15 @@ FileReader: IE10 이상
 					that.elements.target,
 					function(node) {
 						// 해당노드 확인 (line, img, figure 등)
-						if(node.nodeType === 1 && typeof node.storage === 'object' && node.storage.type === 'line') {
-							// 기본 이벤트 중지
-							event.preventDefault();
-							// 포커스(커서) 이동
-							module.setCusor(node.nextSibling);
+						if(typeof node.storage === 'object' && node.storage.type) {
+							switch(node.storage.type.toLowerCase()) {
+								case 'line':
+									// 기본 이벤트 중지
+									event.preventDefault();
+									// 포커스(커서) 이동
+									module.setCusor(node.nextSibling);
+									break;
+							}
 						}
 					},
 					function(node, result) {
@@ -1840,25 +1844,40 @@ FileReader: IE10 이상
 							module.selection.anchorNode,
 							that.elements.target,
 							function(node) {
-								/*if(typeof node.storage === 'object' && /line/i.test(node.storage.type || '')) {
+								if(typeof node.storage === 'object' && node.storage.type) {
+									/*switch(node.storage.type.toLowerCase()) {
+										case 'code':
 
-								}*/
-								switch(node.nodeName.toLowerCase()) {
-									case 'img':
-									case 'figure':
-										// 상위로 전파 중지
-										module.stopCapture(event);
-										/*
-										console.log(module.selection.focusNode);
-										console.log(module.selection.focusNode.parentNode);
-										*/
-										// 삭제
-										//module.selection.focusNode.parentNode.removeChild(module.selection.focusNode);
-										break;
-									default:
-										
-										break;
-								}
+											break;	
+									}*/
+								}else {
+									switch(node.nodeName.toLowerCase()) {
+										case 'code':
+											(function() {
+												var text = node.textContent || node.innerText;
+												if(text && text.length <= 1) {
+													// 기본 이벤트 중지
+													event.preventDefault();
+													node.innerHTML = '<br />';
+												}
+											})();
+											break;
+										case 'img':
+										case 'figure':
+											// 상위로 전파 중지
+											module.stopCapture(event);
+											/*
+											console.log(module.selection.focusNode);
+											console.log(module.selection.focusNode.parentNode);
+											*/
+											// 삭제
+											//module.selection.focusNode.parentNode.removeChild(module.selection.focusNode);
+											break;
+										default:
+											
+											break;
+									}
+								}	
 							},
 							function(node, result) {
 								return node;
@@ -1904,6 +1923,36 @@ FileReader: IE10 이상
 						);
 						break;
 
+					// keyCode 8: backspace
+					case 8:
+						// 현재노드 상위 검색
+						module.getParent( 
+							module.selection.anchorNode,
+							that.elements.target,
+							function(node) {
+								if(typeof node.storage === 'object' && node.storage.type) {
+									switch(node.storage.type.toLowerCase()) {
+										case 'code':
+											(function() {
+												var pre = node.querySelector('pre');
+												var code = node.querySelector('code');
+												if(!pre || !code || !(code.textContent || code.innerText)) {
+													// 포커스(커서) 이동
+													module.setCusor(node.previousSibling || node.nextSibling);
+													// 삭제
+													node.parentNode.removeChild(node);
+												}
+											})();
+											break;
+									}
+								}
+							},
+							function(node, result) {
+								return node;
+							}
+						);
+						break;
+
 					// keyCode: 37(left), 38(up)
 					case 37:
 					case 38:
@@ -1916,12 +1965,16 @@ FileReader: IE10 이상
 							that.elements.target,
 							function(node) {
 								// 해당노드 확인 (line, img, figure 등)
-								if(node.nodeType === 1 && typeof node.storage === 'object' && node.storage.type === 'line') {
-									// 포커스(커서) 이동
-									if(event.keyCode === 37 || event.keyCode === 38) {
-										module.setCusor(node.previousSibling || node.nextSibling);
-									}else if(event.keyCode === 39 || event.keyCode === 40) {
-										module.setCusor(node.nextSibling || node.previousSibling);
+								if(typeof node.storage === 'object' && node.storage.type) {
+									switch(node.storage.type.toLowerCase()) {
+										case 'line':
+											// 포커스(커서) 이동
+											if(event.keyCode === 37 || event.keyCode === 38) {
+												module.setCusor(node.previousSibling || node.nextSibling);
+											}else if(event.keyCode === 39 || event.keyCode === 40) {
+												module.setCusor(node.nextSibling || node.previousSibling);
+											}
+											break;
 									}
 								}
 							},

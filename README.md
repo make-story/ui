@@ -369,85 +369,6 @@ api.touch.off('#ysm', 'one'); // eventkey: one, two, delay, all
 ````
 
 
-
-api.animationFrameQueue({})
-- requestAnimationFrame 애니메이션 리스트 실행
-
-````javascript
-// 여러개 실행
-api.animationFrameQueue([
-	{
-		'element': api.dom('#h2'), 
-		'style': {
-			'left': '100px',
-			'top': '100px'
-		}
-	}, 
-	{...}, 
-	... 
-]);
-// 단일 실행
-api.animationFrameQueue({
-	'element': '.h2', 
-	'style': {
-		'left': '100px', 
-		'top': '100px', 
-		'width': '100px', 
-		'height': '100px'
-	}
-});
-````
-
-api.animationQueue({})
-- 애니메이션 리스트 실행 (class 값으로 제어)
-
-````javascript
-// 여러개 실행
-api.animationQueue([
-	{
-		'element': api.dom('#view'), 
-		'animation': 'pt-page-moveToRight'
-	}, 
-	{
-		'element': api.dom('#list'), 
-		'animation': 'pt-page-moveToRight'
-	}
-]);
-// 단일 실행
-api.animationQueue({
-	'element': api.dom('#view'), 
-	'animation': 'pt-page-moveToLeft', 
-	'complete': function() { ... }
-});
-````
-
-api.transitionQueue({})
-- 트랜지션 리스트 실행
-
-````javascript
-// 여러개 실행
-api.transitionQueue([
-	{
-		'element': api.dom('#view'), 
-		'transition': {
-			'left': '100px', 
-			'top': '100px'
-		}
-	}, 
-	{...}, 
-	... 
-]);
-// 단일 실행
-api.transitionQueue({
-	'element': api.dom('#view'), 
-	'transition': {
-		'left': '100px', 
-		'top': '100px'
-	}
-});
-````
-
-
 ----
 
 ### api.editor.js
@@ -1090,7 +1011,91 @@ api.util.lastday(년도, 월);
 
 ----
 
-### api.script.js (현재작업중)
+### api.animate.js
+
+자바스크립트 애니메이션프레임, 애니메이션, 트랜지션
+
+api.animate.frame({})
+- requestAnimationFrame 애니메이션 리스트 실행
+
+````javascript
+// 여러개 실행
+api.animate.frame([
+	{
+		'element': api.dom('#h2'), 
+		'style': {
+			'left': '100px',
+			'top': '100px'
+		}
+	}, 
+	{...}, 
+	... 
+]);
+// 단일 실행
+api.animate.frame({
+	'element': '.h2', 
+	'style': {
+		'left': '100px', 
+		'top': '100px', 
+		'width': '100px', 
+		'height': '100px'
+	}
+});
+````
+
+api.animate.animation({})
+- 애니메이션 리스트 실행 (class 값으로 제어)
+
+````javascript
+// 여러개 실행
+api.animate.animation([
+	{
+		'element': api.dom('#view'), 
+		'animation': 'pt-page-moveToRight'
+	}, 
+	{
+		'element': api.dom('#list'), 
+		'animation': 'pt-page-moveToRight'
+	}
+]);
+// 단일 실행
+api.animate.animation({
+	'element': api.dom('#view'), 
+	'animation': 'pt-page-moveToLeft', 
+	'complete': function() { ... }
+});
+````
+
+api.animate.transition({})
+- 트랜지션 리스트 실행
+
+````javascript
+// 여러개 실행
+api.animate.transition([
+	{
+		'element': api.dom('#view'), 
+		'transition': {
+			'left': '100px', 
+			'top': '100px'
+		}
+	}, 
+	{...}, 
+	... 
+]);
+// 단일 실행
+api.animate.transition({
+	'element': api.dom('#view'), 
+	'transition': {
+		'left': '100px', 
+		'top': '100px'
+	}
+});
+````
+
+
+----
+
+### api.script.js (작업 중 보류상태)
 
 js 파일 동적로딩, 의존성관리, 모듈화
 
