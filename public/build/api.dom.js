@@ -64,9 +64,6 @@ http://www.quirksmode.org/js/detect.html
 
 	// 클라이언트 브라우저 환경
 	var agent = (global.navigator.userAgent || global.navigator.vendor || global.opera).toLowerCase();
-	var platform = global.navigator.platform;
-	var app_name = global.navigator.appName;
-	var app_version = global.navigator.appVersion;
 	var div = document.createElement('div');
  	var environment = { // PC, 사용자 환경
 		//"zindex": 100,
@@ -81,8 +78,8 @@ http://www.quirksmode.org/js/detect.html
 		},
 		"monitor": null, // pc | mobile | tablet (해상도에 따라 설정가능) - check['mobile'] 가 있음에도 따로 구분한 이유는 기기기준과 해상도(모니터) 기준의 영역을 나누어 관리하기 위함
 		"screen": { // browser 사이즈가 아닌 해상도 값
-			"width": screen.availWidth/*Windows Taskbar 제외*/ || screen.width || Math.round(global.innerWidth), 
-			"height": screen.availHeight/*Windows Taskbar 제외*/ || screen.height || Math.round(global.innerHeight)
+			"width": global.screen.availWidth/*Windows Taskbar 제외*/ || global.screen.width || Math.round(global.innerWidth), 
+			"height": global.screen.availHeight/*Windows Taskbar 제외*/ || global.screen.height || Math.round(global.innerHeight)
 		},
 		"browser": {
 			"name": null, // chrome | safari | opera | firefox | explorer (브라우저 구분)
@@ -113,7 +110,7 @@ http://www.quirksmode.org/js/detect.html
 					return 'DOMMouseScroll';
 				}
 				/*
-				// 마우스휠 스크롤
+				// 마우스휠 스크롤 코드 참고
 				var scroll;
 				if(event.wheelDelta) {
 					scroll = event.wheelDelta / 3600; // Chrome / Safari
@@ -196,39 +193,45 @@ http://www.quirksmode.org/js/detect.html
 	})();
 
 	// monitor
-	if(/android/i.test(agent)) { // 안드로이드
-		// mobile 없으면 태블릿임
-		if(/mobile/i.test(agent)) {
-			environment['monitor'] = 'mobile';
-		}else {
-			environment['monitor'] = 'tablet';
-		}
-	}else if(/(iphone|ipad|ipod)/i.test(agent)) { // 애플
-		if(/ipad/i.test(agent)) {
-			environment['monitor'] = 'tablet';
-		}else {
-			environment['monitor'] = 'mobile';
-		}
-	}else if(environment.check.mobile) {
-		environment['monitor'] = 'mobile';
-	}else if(/(MacIntel|MacPPC)/i.test(platform)) {
-		environment['monitor'] = 'pc';
-	}else if(/(win32|win64)/i.test(platform)) {
-		environment['monitor'] = 'pc';
-	}
+	(function() {
+		var platform = global.navigator.platform;
 
-	// agent 값보다 스크린 크기를 우선 적용하여 태블릿인지 모바일인지 여부를 결정한다.
-	// 테블렛인데 가로 길이가 미달이면 모바일로 인식하게 함
-	/*if((environment['monitor'] = 'tablet') && environment['screen']['width'] && environment['screen']['height'] && (Math.min(environment['screen']['width'], environment['screen']['height']) < 768)) {
-		environment['monitor'] = 'mobile';
-	}*/
-	// 모바일인데 가로 길이가 넘어가면 테블렛으로 인식하게 함
-	/*if((environment['monitor'] = 'mobile') && environment['screen']['width'] && environment['screen']['height'] && (Math.min(environment['screen']['width'], environment['screen']['height']) >= 768)) {
-		environment['monitor'] = 'tablet';
-	}*/
+		if(/android/i.test(agent)) { // 안드로이드
+			// mobile 없으면 태블릿임
+			if(/mobile/i.test(agent)) {
+				environment['monitor'] = 'mobile';
+			}else {
+				environment['monitor'] = 'tablet';
+			}
+		}else if(/(iphone|ipad|ipod)/i.test(agent)) { // 애플
+			if(/ipad/i.test(agent)) {
+				environment['monitor'] = 'tablet';
+			}else {
+				environment['monitor'] = 'mobile';
+			}
+		}else if(environment.check.mobile) {
+			environment['monitor'] = 'mobile';
+		}else if(/(MacIntel|MacPPC)/i.test(platform)) {
+			environment['monitor'] = 'pc';
+		}else if(/(win32|win64)/i.test(platform)) {
+			environment['monitor'] = 'pc';
+		}
+
+		// agent 값보다 스크린 크기를 우선 적용하여 태블릿인지 모바일인지 여부를 결정한다.
+		// 테블렛인데 가로 길이가 미달이면 모바일로 인식하게 함
+		/*if((environment['monitor'] = 'tablet') && environment['screen']['width'] && environment['screen']['height'] && (Math.min(environment['screen']['width'], environment['screen']['height']) < 768)) {
+			environment['monitor'] = 'mobile';
+		}*/
+		// 모바일인데 가로 길이가 넘어가면 테블렛으로 인식하게 함
+		/*if((environment['monitor'] = 'mobile') && environment['screen']['width'] && environment['screen']['height'] && (Math.min(environment['screen']['width'], environment['screen']['height']) >= 768)) {
+			environment['monitor'] = 'tablet';
+		}*/
+	})();
 
 	// browser 
 	(function() {
+		var app_name = global.navigator.appName;
+		var app_version = global.navigator.appVersion;
 		var offset_name, offset_version;
 
 		// if문 순서 중요함
