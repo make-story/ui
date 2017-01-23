@@ -59,7 +59,7 @@ http://www.quirksmode.org/js/detect.html
 		 5. .replace('.', '') : 문자열에서 닷(소수점)을 제거한다. // 'f' + 87128f38 = f87128f38
 		return 'f' + (Math.random() * (1 << 30)).toString(16).replace('.', '');
 		*/
-		return ['api', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
+		return ['api', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24); // MongoDB _id 24자 길이
 	};
 
 	// 클라이언트 브라우저 환경
@@ -173,6 +173,7 @@ http://www.quirksmode.org/js/detect.html
 				break;
 			}
 		}
+
 		// 트랜지션
 		for(key in transitions) {
 			if(div.style[key] !== undefined) {
@@ -181,6 +182,7 @@ http://www.quirksmode.org/js/detect.html
 				break;
 			}
 		}
+
 		// 애니메이션
 		for(key in animations) {
 			if(div.style[key] !== undefined) {
@@ -263,6 +265,7 @@ http://www.quirksmode.org/js/detect.html
 				environment['browser']['name'] = app_name;
 			}
 		}
+
 		if((offset_version = environment['browser']['version'].indexOf(';')) !== -1) {
 			environment['browser']['version'] = environment['browser']['version'].substring(0, offset_version);
 		}
