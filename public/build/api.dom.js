@@ -64,8 +64,8 @@ http://www.quirksmode.org/js/detect.html
 
 	// 클라이언트 브라우저 환경
 	// 3D지원여부 판단자료: ['perspective', 'WebkitPerspective', 'MozPerspective', 'OPerspective', 'msPerspective']
-	var agent = (navigator.userAgent || navigator.vendor || window.opera).toLowerCase();
-	var platform = navigator.platform;
+	var agent = (global.navigator.userAgent || global.navigator.vendor || global.opera).toLowerCase();
+	var platform = global.navigator.platform;
 	var offset_name, offset_version;
 	var key;
 	var element = document.createElement('div');
@@ -87,8 +87,8 @@ http://www.quirksmode.org/js/detect.html
  	var environment = { // PC, 사용자 환경
 		//"zindex": 100,
 		"check": { // true, false 
-			"mobile": (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino|android|ipad|playbook|silk/i.test(navigator.userAgent||navigator.vendor||window.opera)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test((navigator.userAgent||navigator.vendor||window.opera).substr(0,4))),
-			"touch": ('ontouchstart' in window || navigator.MaxTouchPoints > 0 || navigator.msMaxTouchPoints > 0),
+			"mobile": (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino|android|ipad|playbook|silk/i.test(global.navigator.userAgent || global.navigator.vendor || global.opera) || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test((global.navigator.userAgent || global.navigator.vendor || global.global.opera).substr(0,4))),
+			"touch": ('ontouchstart' in window || global.navigator.MaxTouchPoints > 0 || global.navigator.msMaxTouchPoints > 0),
 			//"orientationchange": 'onorientationchange' in window, // 모바일기기 회전
 			"transform": false,
 			"transition": false/*('transition' in element.style || 'WebkitTransition' in element.style || 'MozTransition' in element.style || 'OTransition' in element.style || 'msTransition' in element.style)*/,
@@ -97,8 +97,8 @@ http://www.quirksmode.org/js/detect.html
 		},
 		"monitor": null, // pc | mobile | tablet (해상도에 따라 설정가능) - check['mobile'] 가 있음에도 따로 구분한 이유는 기기기준과 해상도(모니터) 기준의 영역을 나누어 관리하기 위함
 		"screen": { // browser 사이즈가 아닌 해상도 값
-			"width": screen.availWidth/*Windows Taskbar 제외*/ || screen.width || Math.round(window.innerWidth), 
-			"height": screen.availHeight/*Windows Taskbar 제외*/ || screen.height || Math.round(window.innerHeight)
+			"width": screen.availWidth/*Windows Taskbar 제외*/ || screen.width || Math.round(global.innerWidth), 
+			"height": screen.availHeight/*Windows Taskbar 제외*/ || screen.height || Math.round(global.innerHeight)
 		},
 		"browser": {
 			"name": null, // chrome | safari | opera | firefox | explorer (브라우저 구분)
@@ -118,7 +118,7 @@ http://www.quirksmode.org/js/detect.html
 			"down": "mousedown",
 			"move": "mousemove",
 			"up": "mouseup",
-			//"click": ('ontouchstart' in window) ? 'touchstart' : (window.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click', // touchstart 를 사용할 경우 click 이벤트보다 먼저 작동하여, 예상과 다른 실행순서가 발생할 수 있다.
+			//"click": ('ontouchstart' in window) ? 'touchstart' : (global.DocumentTouch && document instanceof DocumentTouch) ? 'tap' : 'click', // touchstart 를 사용할 경우 click 이벤트보다 먼저 작동하여, 예상과 다른 실행순서가 발생할 수 있다.
 			"click": "click",
 			"wheel": (function() {
 				if(agent.indexOf('webkit') >= 0) { // Chrome / Safari
@@ -220,8 +220,8 @@ http://www.quirksmode.org/js/detect.html
 	}*/
 
 	// browser (if문 순서 중요함)
-	environment['browser']['name'] = navigator.appName;
-	environment['browser']['version'] = String(parseFloat(navigator.appVersion));
+	environment['browser']['name'] = global.navigator.appName;
+	environment['browser']['version'] = String(parseFloat(global.navigator.appVersion));
 	if((offset_version = agent.indexOf("opr/")) !== -1) {
 		environment['browser']['name'] = "opera";
 		environment['browser']['version'] = agent.substring(offset_version + 4);
@@ -250,7 +250,7 @@ http://www.quirksmode.org/js/detect.html
 		environment['browser']['name'] = agent.substring(offset_name, offset_version);
 		environment['browser']['version'] = agent.substring(offset_version + 1);
 		if(environment['browser']['name'].toLowerCase() === environment['browser']['name'].toUpperCase()) {
-			environment['browser']['name'] = navigator.appName;
+			environment['browser']['name'] = global.navigator.appName;
 		}
 	}
 	if((offset_version = environment['browser']['version'].indexOf(';')) !== -1) {
@@ -600,10 +600,10 @@ http://www.quirksmode.org/js/detect.html
 		// document ready
 		ready: (function() {
 			if(document.readyState === "interactive" || document.readyState === "complete") {
-				// IE8 등에서 window.setTimeout 파라미터로 바로 함수값을 넣으면 오류가 난다.
+				// IE8 등에서 global.setTimeout 파라미터로 바로 함수값을 넣으면 오류가 난다.
 				// 그러므로 function() {} 무명함수로 해당 함수를 실행시킨다.
 				return function(callback) {
-					window.setTimeout(function() {
+					global.setTimeout(function() {
 						callback();
 					});
 				};
@@ -1104,8 +1104,8 @@ http://www.quirksmode.org/js/detect.html
 
 						// window, document
 						if(this.elements[i].nodeType === 9 || this.elements[i] === window) {
-							this.elements[i] = window.document.documentElement; // html
-							//this.elements[i] = window.document.body;
+							this.elements[i] = global.document.documentElement; // html
+							//this.elements[i] = global.document.body;
 						}
 
 						// css 값 설정
@@ -1268,7 +1268,7 @@ http://www.quirksmode.org/js/detect.html
 				//return false;
 			}else if(typeof value === 'undefined') { // get
 				if(this.elements[0] === window) { // window (브라우저)
-					return window.innerWidth || document.documentElement.clientWidth;
+					return global.innerWidth || document.documentElement.clientWidth;
 				}else if(this.elements[0].nodeType === 9) { // document
 					return Math.max(
 						document.body.scrollWidth, document.documentElement.scrollWidth,
@@ -1319,7 +1319,7 @@ http://www.quirksmode.org/js/detect.html
 				//return false;
 			}else if(typeof value === 'undefined') { // get
 				if(this.elements[0] === window) { // window (브라우저)
-					return window.innerHeight || document.documentElement.clientHeight;
+					return global.innerHeight || document.documentElement.clientHeight;
 				}else if(this.elements[0].nodeType === 9) { // document
 					return Math.max(
 						document.body.scrollHeight, document.documentElement.scrollHeight,
@@ -2017,7 +2017,7 @@ http://www.quirksmode.org/js/detect.html
 			var scroll;
 			var getBrowserScroll = function() {
 				if('pageXOffset' in window && 'pageYOffset' in window) {
-					return {'left': window.pageXOffset, 'top': window.pageYOffset};
+					return {'left': global.pageXOffset, 'top': global.pageYOffset};
 				}else if(document.body && ('scrollLeft' in document.body && 'scrollTop' in document.body)) {
 					return {'left': document.body.scrollLeft, 'top': document.body.scrollTop};
 				}else if(document.documentElement && ('scrollLeft' in document.documentElement && 'scrollTop' in document.documentElement)) {
@@ -2032,7 +2032,7 @@ http://www.quirksmode.org/js/detect.html
 					// window, document
 					scroll = getBrowserScroll();
 					if('left' in parameter || 'top' in parameter) {
-						window.scrollTo((typeof parameter.left !== 'undefined' ? parameter.left : (scroll.left || 0)), (typeof parameter.top !== 'undefined' ? parameter.top : (scroll.top || 0)));
+						global.scrollTo((typeof parameter.left !== 'undefined' ? parameter.left : (scroll.left || 0)), (typeof parameter.top !== 'undefined' ? parameter.top : (scroll.top || 0)));
 					}else {
 						return {'left': scroll.left, 'top': scroll.top};
 					}
@@ -2114,7 +2114,7 @@ http://www.quirksmode.org/js/detect.html
 	api.touch.off('#ysm', 'all'); // 전체 해제
 	*/
 	var setTouchHandler = function(e, element) {
-		var event = e || window.event;
+		var event = e || global.event;
 		var touch = event.touches; // touchstart
 		var that = element || this;
 		var radius = 0; // 유효한 터치영역
@@ -2171,15 +2171,15 @@ http://www.quirksmode.org/js/detect.html
 		that.touchCheck['time']['start'] = new Date().getTime();
 		
 		// delay
-		window.clearTimeout(that.touchTimeCount);
-		that.touchTimeDelay = window.setTimeout(function() {
+		global.clearTimeout(that.touchTimeCount);
+		that.touchTimeDelay = global.setTimeout(function() {
 			if(that['storage']['EVENT_DOM_TOUCH_DELAY'] && typeof that['storage']['EVENT_DOM_TOUCH_DELAY'] === 'function') {
 				that['storage']['EVENT_DOM_TOUCH_DELAY'].call(that, e);
 			}
 		}, checkout.delay);
 
 		DOM(document).on(global.api.env['event']['move'] + '.EVENT_MOUSEMOVE_DOM_TOUCH', function(e) {
-			var event = e || window.event;
+			var event = e || global.event;
 			var touch = event.touches || event.changedTouches;
 
 			if(touch) {
@@ -2192,12 +2192,12 @@ http://www.quirksmode.org/js/detect.html
 
 			// delay 정지
 			if(Math.abs(that.touchCheck[0]['start']['top'] - that.touchCheck[that.touchCount]['end']['top']) > radius || Math.abs(that.touchCheck[0]['start']['left'] - that.touchCheck[that.touchCount]['end']['left']) > radius) {
-				window.clearTimeout(that.touchTimeDelay);
+				global.clearTimeout(that.touchTimeDelay);
 			}
 		});
 
 		DOM(document).on(global.api.env['event']['up'] + '.EVENT_MOUSEUP_DOM_TOUCH', function(e) { // IE7문제: window 가 아닌 document 에 할당해야 한다.
-			var event = e || window.event;
+			var event = e || global.event;
 			var touch = event.changedTouches; // touchend
 
 			// 현재 이벤트의 기본 동작을 중단한다. (모바일에서 스크롤 하단이동 기본기능)
@@ -2216,9 +2216,9 @@ http://www.quirksmode.org/js/detect.html
 			that.touchCheck['time']['end'] = new Date().getTime();
 
 			// click check: 지정된 시간까지 다음 클릭이 발생하지 않는다면, count 값을 확인하여 해당 콜백을 실행한다.
-			window.clearTimeout(that.touchTimeDelay);
+			global.clearTimeout(that.touchTimeDelay);
 			if(typeof that.touchCheck === 'object' && that.touchCheck[that.touchCount-1]) {
-				that.touchTimeCount = window.setTimeout(function() {
+				that.touchTimeCount = global.setTimeout(function() {
 					var start = that.touchCheck[0]['start'];
 					var end = that.touchCheck[that.touchCount-1]['end'];
 					var time = Number(that.touchCheck['time']['end']) - Number(that.touchCheck['time']['start']);
@@ -2308,10 +2308,10 @@ http://www.quirksmode.org/js/detect.html
 				// No return value.
 				switch(type) {
 					case 'local':
-						window.localStorage.clear();
+						global.localStorage.clear();
 						break;
 					case 'session':
-						window.sessionStorage.clear();
+						global.sessionStorage.clear();
 						break;
 				}
 			},
@@ -2319,10 +2319,10 @@ http://www.quirksmode.org/js/detect.html
 				var count = 0;
 				switch(type) {
 					case 'local':
-						count = window.localStorage.length;
+						count = global.localStorage.length;
 						break;
 					case 'session':
-						count = window.sessionStorage.length;
+						count = global.sessionStorage.length;
 						break;
 				}
 				return count;
@@ -2332,10 +2332,10 @@ http://www.quirksmode.org/js/detect.html
 				if(this.length(type) > 0) {
 					switch(type) {
 						case 'local':
-							item = window.localStorage.getItem(key); // return type string
+							item = global.localStorage.getItem(key); // return type string
 							break;
 						case 'session':
-							item = window.sessionStorage.getItem(key); // return type string
+							item = global.sessionStorage.getItem(key); // return type string
 							break;
 					}
 					item = (/^{.*}$|^\[.*\]$/.test(item)) ? JSON.parse(item) : item;
@@ -2347,10 +2347,10 @@ http://www.quirksmode.org/js/detect.html
 				item = (item && typeof item === 'object' && Object.keys(item).length > 0) ? JSON.stringify(item) : (item || '');
 				switch(type) {
 					case 'local':
-						window.localStorage.setItem(key, item);
+						global.localStorage.setItem(key, item);
 						break;
 					case 'session':
-						window.sessionStorage.setItem(key, item);
+						global.sessionStorage.setItem(key, item);
 						break;
 				}
 			},
@@ -2358,10 +2358,10 @@ http://www.quirksmode.org/js/detect.html
 				// No return value.
 				switch(type) {
 					case 'local':
-						window.localStorage.removeItem(key);
+						global.localStorage.removeItem(key);
 						break;
 					case 'session':
-						window.sessionStorage.removeItem(key);
+						global.sessionStorage.removeItem(key);
 						break;
 				}
 			}
