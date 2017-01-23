@@ -42,8 +42,8 @@ jQuery 또는 api.dom 에 종속적 실행
 		env = {
 			"check": { // true, false 
 				"transform": false,
-				"transition": false/*('transition' in element.style || 'WebkitTransition' in element.style || 'MozTransition' in element.style || 'OTransition' in element.style || 'msTransition' in element.style)*/,
-				"animation": false/*('animationName' in element.style || 'WebkitAnimationName' in element.style || 'MozAnimationName' in element.style || 'OAnimationName' in element.style || 'msAnimationName' in element.style || 'KhtmlAnimationName' in element.style)*/
+				"transition": false,
+				"animation": false
 			},
 			"event": {
 				// 트랜지션, 애니메이션
@@ -54,8 +54,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			}
 		};
 		(function() {
-			var key;
-			var element = document.createElement('div');
+			var div = document.createElement('div');
 			var transforms = ["transform", "WebkitTransform", "MozTransform", "OTransform", "msTransform"]; // css check (IE9 벤더프리픽스로 사용가능, IE10이상 공식지원)
 			var transitions = { // event check (IE10이상 공식지원)
 				"transition": "transitionend", 
@@ -71,17 +70,18 @@ jQuery 또는 api.dom 에 종속적 실행
 				"OAnimation": ['oanimationstart', 'oanimationiteration', 'oanimationend'],
 				"msAnimation": ['MSAnimationStart', 'MSAnimationIteration', 'MSAnimationEnd']
 			};
+			var key;
 
 			// 트랜스폼
 			for(key in transforms) {
-				if(element.style[key] !== undefined) {
+				if(div.style[transforms[key]] !== undefined) {
 					env['check']['transform'] = true;
 					break;
 				}
 			}
 			// 트랜지션
 			for(key in transitions) {
-				if(element.style[key] !== undefined) {
+				if(div.style[key] !== undefined) {
 					env['check']['transition'] = true;
 					env['event']['transitionend'] = transitions[key];
 					break;
@@ -89,7 +89,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			}
 			// 애니메이션
 			for(key in animations) {
-				if(element.style[key] !== undefined) {
+				if(div.style[key] !== undefined) {
 					env['check']['animation'] = true;
 					env['event']['animationstart'] = animations[key][0];
 					env['event']['animationiteration'] = animations[key][1];
@@ -401,7 +401,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			window.setTimeout(function() {
 				element.css(properties).on(env.event.transitionend + '.EVENT_TRANSITION_QUEUE', function(event) {
 					var event = event || window.event;
-					var i, key;
+					var i, max, key;
 					//console.log('[정보] 트랜지션 종료');
 
 					// transition 설정 초기화

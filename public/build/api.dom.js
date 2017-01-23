@@ -67,7 +67,7 @@ http://www.quirksmode.org/js/detect.html
 	var platform = global.navigator.platform;
 	var app_name = global.navigator.appName;
 	var app_version = global.navigator.appVersion;
-	var element = document.createElement('div');
+	var div = document.createElement('div');
  	var environment = { // PC, 사용자 환경
 		//"zindex": 100,
 		"check": { // true, false 
@@ -75,8 +75,8 @@ http://www.quirksmode.org/js/detect.html
 			"touch": ('ontouchstart' in window || global.navigator.MaxTouchPoints > 0 || global.navigator.msMaxTouchPoints > 0),
 			//"orientationchange": 'onorientationchange' in window, // 모바일기기 회전
 			"transform": false,
-			"transition": false/*('transition' in element.style || 'WebkitTransition' in element.style || 'MozTransition' in element.style || 'OTransition' in element.style || 'msTransition' in element.style)*/,
-			"animation": false/*('animationName' in element.style || 'WebkitAnimationName' in element.style || 'MozAnimationName' in element.style || 'OAnimationName' in element.style || 'msAnimationName' in element.style || 'KhtmlAnimationName' in element.style)*/,
+			"transition": false/*('transition' in div.style || 'WebkitTransition' in div.style || 'MozTransition' in div.style || 'OTransition' in div.style || 'msTransition' in div.style)*/,
+			"animation": false/*('animationName' in div.style || 'WebkitAnimationName' in div.style || 'MozAnimationName' in div.style || 'OAnimationName' in div.style || 'msAnimationName' in div.style || 'KhtmlAnimationName' in div.style)*/,
 			"fullscreen": (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled || document.msFullscreenEnabled)
 		},
 		"monitor": null, // pc | mobile | tablet (해상도에 따라 설정가능) - check['mobile'] 가 있음에도 따로 구분한 이유는 기기기준과 해상도(모니터) 기준의 영역을 나누어 관리하기 위함
@@ -107,9 +107,9 @@ http://www.quirksmode.org/js/detect.html
 			"wheel": (function() {
 				if(agent.indexOf('webkit') >= 0) { // Chrome / Safari
 					return 'mousewheel';
-				}else if(element.attachEvent) { // IE
+				}else if(div.attachEvent) { // IE
 					return 'mousewheel';
-				}else if(element.addEventListener) { // Mozilla
+				}else if(div.addEventListener) { // Mozilla
 					return 'DOMMouseScroll';
 				}
 				/*
@@ -167,7 +167,7 @@ http://www.quirksmode.org/js/detect.html
 
 		// 트랜스폼
 		for(key in transforms) {
-			if(element.style[key] !== undefined) {
+			if(div.style[transforms[key]] !== undefined) {
 				environment['check']['transform'] = true;
 				//environment['css']['transform'] = transforms[key];
 				break;
@@ -175,7 +175,7 @@ http://www.quirksmode.org/js/detect.html
 		}
 		// 트랜지션
 		for(key in transitions) {
-			if(element.style[key] !== undefined) {
+			if(div.style[key] !== undefined) {
 				environment['check']['transition'] = true;
 				environment['event']['transitionend'] = transitions[key];
 				break;
@@ -183,7 +183,7 @@ http://www.quirksmode.org/js/detect.html
 		}
 		// 애니메이션
 		for(key in animations) {
-			if(element.style[key] !== undefined) {
+			if(div.style[key] !== undefined) {
 				environment['check']['animation'] = true;
 				environment['event']['animationstart'] = animations[key][0];
 				environment['event']['animationiteration'] = animations[key][1];
