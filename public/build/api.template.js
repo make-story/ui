@@ -111,11 +111,9 @@ https://mustache.github.io/mustache.5.html
 			'close': new RegExp("\\s*" + escapeRegExp('}}')) // }}
 		},
 		'type': {
-			'variable': new RegExp('^[=|\\s*=|=\\s*](\\w+)'), // =tag
-			//'context_open': new RegExp('^[<|\\s*<|<\\s*](\\S+)'), // <tag
-			//'context_close': new RegExp('(\\S+)[>|\\s*>|>\\s*]$') // tag>
-			'context_open': new RegExp('<(\\w+)>'), // <tag>
-			'context_close': new RegExp('<\/(\\w+)>') // </tag>
+			'variable': new RegExp('^[\\s]*[^<|^>]?[\\s]*=?[\\s]*(\\w+)[\\s]*[^<|^>]?[\\s]*'), // =tag 또는 tag
+			'context_open': new RegExp('<[\\s]*=?[\\s]*(\\w+)[\\s]*>'), // <tag>
+			//'context_close': new RegExp('<[\\s]*\\/[\\s]*(\\w+)[\\s]*>') // </tag>
 		}
 	};
 
@@ -179,24 +177,24 @@ https://mustache.github.io/mustache.5.html
 			this.tree.push({'type': 'code', 'value': code}); // html 등의 tag
 
 			// tag
-			if(regexp.type.variable.test(tag)) { // =tag
+			if(regexp.type.context_open.test(tag)) { // <tag>
+				// <tag> 에서 tag에 해당하는 부분 추출 (컨텍스트명)
+				match_tag_name = tag.match(regexp.type.context_open); 
+				if(match_tag_name) {
+					// </tag> 찾기 (<tag>와 같은 name, 컨텍스트가 끝나는 부분)
+					//match_close = this.template.match(new RegExp(escapeRegExp('{{') + match_tag_name[1] + '[>|\\s*>|>\\s*]' + escapeRegExp('}}')));
+					match_close = this.template.match(new RegExp(escapeRegExp('{{') + '<[\\s]*\\/[\\s]*(' + match_tag_name[1] + ')[\\s]*>' + escapeRegExp('}}')));
+					if(match_close) {
+						// {{<tag>}} ... {{</tag>}}  사이의 텍스트로 새로운 컨텍스트(파싱)생성
+						this.tree.push({'type': 'context', 'value': new Parse(this.template.substring(0, match_close.index), match_tag_name[1], this)}); // 컨텍스트 (해당 컨텍스트 파싱)
+						this.template = this.template.substring(match_close[0].length + match_close.index);
+					}
+				}
+			}else if(regexp.type.variable.test(tag)) { // =tag 또는 tag
 				// =tag 에서 tag에 해당하는 부분 추출 (변수명)
 				match_tag_name = tag.match(regexp.type.variable);
 				if(match_tag_name) {
 					this.tree.push({'type': 'variable', 'value': match_tag_name[1]}); // 변수 (json 데이터에서 변수명에 해당하는 값을 바인딩)
-				}
-			}else if(regexp.type.context_open.test(tag)) { // <tag
-				// <tag 에서 tag에 해당하는 부분 추출 (컨텍스트명)
-				match_tag_name = tag.match(regexp.type.context_open); 
-				if(match_tag_name) {
-					// tag> 찾기 (<tag와 같은 name, 컨텍스트가 끝나는 부분)
-					//match_close = this.template.match(new RegExp(escapeRegExp('{{') + match_tag_name[1] + '[>|\\s*>|>\\s*]' + escapeRegExp('}}')));
-					match_close = this.template.match(new RegExp(escapeRegExp('{{') + '<\/(' + match_tag_name[1] + ')>' + escapeRegExp('}}')));
-					if(match_close) {
-						// {{<tag}} ... {{tag>}}  사이의 텍스트로 새로운 컨텍스트(파싱)생성
-						this.tree.push({'type': 'context', 'value': new Parse(this.template.substring(0, match_close.index), match_tag_name[1], this)}); // 컨텍스트 (해당 컨텍스트 파싱)
-						this.template = this.template.substring(match_close[0].length + match_close.index);
-					}
 				}
 			}
 		}
