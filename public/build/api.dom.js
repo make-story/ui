@@ -24,9 +24,6 @@ localStorage, sessionStorage: IE8 이상
 @webapi 참고
 https://developer.mozilla.org/en-US/docs/Web/API
 http://www.quirksmode.org/js/detect.html
-
--
-추후 웹스토리지(로컬스토리지)에 현재 코드를 저장하여, 보다 빠른 로딩경험을 제공하자.
 */
 
 ;(function(factory, global) {
@@ -1215,7 +1212,7 @@ http://www.quirksmode.org/js/detect.html
 
 			return this;
 		},
-		// 절대좌표 (jQuery 와 다르게 값 설정은 하지 않는다. position 을 디자인설계와 다르게 스크립트가 변경하기 때문)
+		// 절대좌표 (jQuery 와 다르게 값 설정은 하지 않는다.)
 		offset: function() {
 			var max = (this.elements && this.elements.length) || 0;
 			var win, doc; 
@@ -1276,7 +1273,7 @@ http://www.quirksmode.org/js/detect.html
 				};
 			}
 		},
-		//
+		// 너비
 		width: function(value) {
 			var i, key, max = (this.elements && this.elements.length) || 0;
 
@@ -1328,6 +1325,7 @@ http://www.quirksmode.org/js/detect.html
 				return getElementWidthHeight(this, 'width', 'outer', is);
 			}
 		},
+		// 높이
 		height: function(value) {
 			var i, key, max = (this.elements && this.elements.length) || 0;
 
@@ -1456,7 +1454,7 @@ http://www.quirksmode.org/js/detect.html
 
 			return this;
 		},
-		//
+		// 제거
 		empty: function() {
 			// x.hasChildNodes(); // 표준
 			// x.removeChild(y); // 표준
@@ -1506,7 +1504,7 @@ http://www.quirksmode.org/js/detect.html
 				}
 			}
 		},
-		//
+		// 복제
 		clone: function(is) { // jQuery 처럼 이벤트 복사는 api.dom 을 통해 설정된 이벤트 리스트(storage)에 한해 설계가능하다
 			// x = y.cloneNode(true | false); // 표준
 			// is : 자식 노드들도 모두 복제할지 여부(true:복사, false:해당없음)
@@ -1517,7 +1515,7 @@ http://www.quirksmode.org/js/detect.html
 
 			return this;
 		},
-		//
+		// 삽입
 		prepend: function(parameter) {
 			// x.insertBefore(y,z); // 표준
 			// x.firstChild; // IE9이상 사용가능 (TextNode 포함)
