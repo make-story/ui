@@ -70,8 +70,8 @@ api.xhr({
 			}
 		}
 
-		// 유효성 검사
-		if(/[^get|post|put|delete]/i.test(settings.type)) { // HTTP 타입 (get|post|put|delete|options|head|trace|connect)
+		// 유효성 검사 (지원 HTTP 메소드)
+		if(/[^get|post|put|delete|head]/i.test(settings.type)) { // HTTP 타입 (get|post|put|delete|options|head|trace|connect)
 			//console.log(settings.type);
 			return false;
 		}
@@ -106,7 +106,7 @@ api.xhr({
 			}
 			data = arr.join('&');
 		}
-		if(data && settings.type.toLowerCase() === 'get') { // GET
+		if(data && (settings.type.toLowerCase() === 'get' || settings.type.toLowerCase() === 'head')) { // GET
 			settings.url += settings.url.lastIndexOf('?') > -1 ? '&' + data : '?' + data;
 			settings.contentType = null;
 		}
