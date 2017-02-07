@@ -71,7 +71,7 @@ api.xhr({
 		}
 
 		// 유효성 검사 (지원 HTTP 메소드)
-		if(/[^get|post|put|delete|head]/i.test(settings.type)) { // HTTP 타입 (get|post|put|delete|options|head|trace|connect)
+		if(typeof settings.type !== 'string' || /[^get|post|put|delete|head]/i.test(settings.type)) { // HTTP 타입 (get|post|put|delete|options|head|trace|connect)
 			//console.log(settings.type);
 			return false;
 		}
