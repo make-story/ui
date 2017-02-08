@@ -325,19 +325,23 @@ jQuery 또는 api.dom 에 종속적 실행
 				var is = false;
 				var browser = {};
 				var info = {};
+				var width = 0, height = 0;
 
 				browser = {
 					'width': window.innerWidth || document.body.clientWidth || document.documentElement.clientWidth,
 					'height': window.innerHeight || document.body.clientHeight || document.documentElement.clientHeight
 				};
-				info = element.getBoundingClientRect();
-				if(!('width' in info) || !('height' in info)) {
-					//info.width = offsetWidth;
-					info.width = info.right - info.left;
-					//info.height = offsetHeight;
-					info.height = info.bottom - info.top;
+				info = element.getBoundingClientRect(); // getBoundingClientRect 함수는 읽기 전용값 반환
+				if('width' in info && 'height' in info) {
+					width = info.width;
+					height = info.height;
+				}else {
+					//width = offsetWidth;
+					width = info.right - info.left;
+					//height = offsetHeight;
+					height = info.bottom - info.top;
 				}
-				if(browser.width < info.width || browser.height < info.height) {
+				if(browser.width < width || browser.height < height) {
 					is = true;
 				}
 
