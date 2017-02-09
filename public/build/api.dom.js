@@ -16,7 +16,7 @@ http://www.opensource.org/licenses/MIT
 
 @browser compatibility
 IE7 이상(IE7, IE8 부분지원하며, 트랜지션, 애니메이션 등의 사용은 IE10 이상)
-querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2
+querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2 - IE8부분지원, CSS 2.1 Selector (https://www.w3.org/TR/CSS2/selector.html)
 element.classList: Chrome 8.0, Firefox 3.6, Internet Explorer 10, Opera 11.50, Safari 5.1
 box-sizing: border-box; IE8 이상 (boder 효과가 화면상에 안보일 수 있으니 주의한다.)
 localStorage, sessionStorage: IE8 이상
@@ -447,7 +447,7 @@ http://www.quirksmode.org/js/detect.html
 
 		// 해당 property 값
 		value = element.get(0)['offset' + (property.substring(0, 1).toUpperCase() + property.substring(1))]; // offsetWidth, offsetHeight (border + padding + width 값, display: none 의 경우는 0 반환)
-		if(element.get(0).getBoundingClientRect) { // chrome 에서는 정수가 아닌 실수단위로 정확한 값을 요구하므로 getBoundingClientRect 사용
+		if(typeof element.get(0).getBoundingClientRect === 'function') { // chrome 에서는 정수가 아닌 실수단위로 정확한 값을 요구하므로 getBoundingClientRect 사용
 			rect = element.get(0).getBoundingClientRect(); // width/height: IE9 이상 지원
 			if(property in rect) {
 				value = rect[property];
@@ -1225,7 +1225,7 @@ http://www.quirksmode.org/js/detect.html
 				doc = getDocument(this.elements[0]);
 
 				// getBoundingClientRect
-				if(typeof this.elements[0].getBoundingClientRect !== 'undefined') {
+				if(typeof this.elements[0].getBoundingClientRect === 'function') {
 					box = this.elements[0].getBoundingClientRect();
 				}
 
