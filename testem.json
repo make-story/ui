@@ -1,7 +1,4 @@
 {
 	"framework": "qunit",
-	"src_files": [
-		"test/qunit/dom/dom.js"
-	]/*,
-	"test_page": ""*/
+	"test_page": "test/qunit/agent/test.html"
 }
