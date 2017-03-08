@@ -548,16 +548,20 @@ http://www.quirksmode.org/js/detect.html
 					match2 = /(\w+):(\w+)/.exec(selector);
 					switch(match2 && match2[1] && match2[2] && match2[1].toLowerCase()) {
 						case 'xhtml':
+							// api.dom('<xhtml:값>')
 							this.elements[0] = document.createElementNS("http://www.w3.org/1999/xhtml", match2[2]);
 							break;
 						case 'math':
+							// api.dom('<math:값>')
 							this.elements[0] = document.createElementNS("http://www.w3.org/1998/Math/MathML", match2[2]);
 							break;
 						case 'svg':
+							// api.dom('<svg:값>')
 							this.elements[0] = document.createElementNS("http://www.w3.org/2000/svg", match2[2]);
 							break;
 						case 'text':
 							// text node
+							// api.dom('<text:텍스트값>')
 							// http://www.mediaevent.de/javascript/DOM-Neue-Knoten.html
 							this.elements[0] = document.createTextNode(match2[2]);
 							break;
@@ -727,6 +731,7 @@ http://www.quirksmode.org/js/detect.html
 			// x.classList; // IE10이상 사용가능
 			// x.className; // 표준
 			if(this.elements && this.elements.length > 0) {
+				// 초기화 시점분기 패턴을 사용하지 않고, if문으로 확인하는 이유는 $(selector) 리스트에 svg 등이 들어있을 가능성 때문이다.
 				if('classList' in this.elements[0]) {
 					return this.elements[0].classList;
 				}else if('className' in this.elements[0]) {
@@ -803,6 +808,7 @@ http://www.quirksmode.org/js/detect.html
 				arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 				for(i=0; i<max; i++) {
 					for(key in arr) {
+						// 초기화 시점분기 패턴을 사용하지 않고, if문으로 확인하는 이유는 $(selector) 리스트에 svg 등이 들어있을 가능성 때문이다.
 						if('classList' in this.elements[i]) {
 							this.elements[i].classList.add(arr[key]); // add(): 한번에 하나의 클래스만 입력 가능하다. 즉, 띄어쓰기로 여러 클래스 입력 불가능
 						}else if('className' in this.elements[i] && !(!!this.elements[i].className.match(new RegExp('(\\s|^)' + arr[key] + '(\\s|$)')))) { // new로 만들때에는 이스케이프문자 \는 \\로 해주어야 한다.
@@ -873,6 +879,7 @@ http://www.quirksmode.org/js/detect.html
 				arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 				for(i=0; i<max; i++) {
 					for(key in arr) {
+						// 초기화 시점분기 패턴을 사용하지 않고, if문으로 확인하는 이유는 $(selector) 리스트에 svg 등이 들어있을 가능성 때문이다.
 						if('classList' in this.elements[i]) {
 							this.elements[i].classList.remove(arr[key]); // remove(): 한번에 하나의 클래스만 삭제 가능하다. 즉, 띄어쓰기로 여러 클래스 삭제 불가능
 						}else if('className' in this.elements[i]) {
@@ -939,6 +946,7 @@ http://www.quirksmode.org/js/detect.html
 				arr = name.split(/\s+/); // 띄어쓰기로 구분된 여러 클래스 분리
 				for(i=0; i<max; i++) {
 					for(key in arr) {
+						// 초기화 시점분기 패턴을 사용하지 않고, if문으로 확인하는 이유는 $(selector) 리스트에 svg 등이 들어있을 가능성 때문이다.
 						if('classList' in this.elements[i]) {
 							this.elements[i].classList.toggle(arr[key]);
 						}else {
@@ -1254,7 +1262,6 @@ http://www.quirksmode.org/js/detect.html
 				//return false;
 			}else { // get
 				position = this.css.call(this, 'position');
-				//
 				if(position === 'fixed') {
 					offset = this.elements[0].getBoundingClientRect();
 				}else {
@@ -1266,7 +1273,7 @@ http://www.quirksmode.org/js/detect.html
 					parentOffset.top += getNumber(offsetParent.css('borderTopWidth'));
 					parentOffset.left += getNumber(offsetParent.css('borderLeftWidth'));
 				}
-				//
+				
 				return {
 					'top': offset.top - parentOffset.top - getNumber(this.css('marginTop')),
 					'left': offset.left - parentOffset.left - getNumber(this.css('marginLeft'))
@@ -2012,6 +2019,7 @@ http://www.quirksmode.org/js/detect.html
 				}else if(typeof parameter === 'object') { // set
 					for(i=0; i<max; i++) {
 						for(key in parameter) {
+							// 초기화 시점분기 패턴을 사용하지 않고, if문으로 확인하는 이유는 $(selector) 리스트에 svg 등이 들어있을 가능성 때문이다.
 							if('dataset' in this.elements[i]) {
 								this.elements[i].dataset[setTheFirstLetter(key)] = parameter[key];
 							}else if('setAttribute' in this.elements[i]) {
