@@ -380,9 +380,6 @@ jQuery 또는 api.dom 에 종속적 실행
 				//'duration': Number(that.settings.speed) / 1000
 				'duration': 0
 			};
-
-			// resize event off
-			$(window).off('resize.EVENT_RESIZE_FLICKING_' + that['settings']['key']);
 			
 			// toLowerCase
 			if(/^(horizontal|vertical)$/i.test(that.settings.flow) === false) {
@@ -450,9 +447,11 @@ jQuery 또는 api.dom 에 종속적 실행
 						'unit': 'px'
 					};
 				}
-				// resize event on
+
+				// resize event
 				(function() {
 					var time = null;
+					$(window).off('resize.EVENT_RESIZE_FLICKING_' + that['settings']['key']);
 					$(window).on('resize.EVENT_RESIZE_FLICKING_' + that['settings']['key'], function(e) {
 						window.clearTimeout(time);
 						time = window.setTimeout(function(){ 
@@ -468,20 +467,14 @@ jQuery 또는 api.dom 에 종속적 실행
 			style['parent']['overflow'] = 'hidden';
 			style['target']['height'] = 'auto';
 			if(that.settings.flow === 'vertical') {
-				//style['parent']['overflow-x'] = 'visible';
-				//style['parent']['overflow-y'] = 'hidden';
 				style['target']['width'] = that.width.value + 'px';
 				translate['top'] = that.current = (that.height.value * (that.index - 1)) * -1;
 			}else {
-				//style['parent']['overflow-x'] = 'hidden';
-				//style['parent']['overflow-y'] = 'visible';
 				style['target']['width'] = (that.width.value * that.total) + 'px';
 				translate['left'] = that.current = (that.width.value * (that.index - 1)) * -1;
 			}
 			$(parent).css(style['parent']);
 			$(target).css(style['target']);
-			//module.setTranslate(translate); 
-			//module.setFrame(translate);
 			module.setAnimate(translate); // resize 콜백 발생시 슬라이드 위치 초기화
 			
 			return that;
@@ -508,7 +501,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					// border 값을 포함한 width / height 값
 					width = Number(module.numberReturn(element.outerWidth()) || 0); 
 					height = Number(module.numberReturn(element.outerHeight()) || 0); 
-					if(element.get(0).getBoundingClientRect) { // chrome 에서는 정수가 아닌 실수단위로 정확한 값을 요구하므로 getBoundingClientRect 사용
+					if(element.get(0) && typeof element.get(0).getBoundingClientRect === 'function') { // chrome 에서는 정수가 아닌 실수단위로 정확한 값을 요구하므로 getBoundingClientRect 사용
 						rect = element.get(0).getBoundingClientRect(); // width/height: IE9 이상 지원
 						if('width' in rect || 'height' in rect) { 
 							width = rect.width || width;
@@ -528,7 +521,7 @@ jQuery 또는 api.dom 에 종속적 실행
 						// 양쪽 여백값 (슬라이드를 가운데 위치시키기 위함)
 						style['margin-left'] = style['margin-right'] = ((that.width.value - width) / 2) + 'px'; 
 					}else {
-						//
+						// 최소 가로 크기 (슬라이드 가로 크기)
 						style['min-width'] = that.width.value + 'px';
 					}
 					if(that.settings.flow === 'vertical') {
@@ -661,8 +654,8 @@ jQuery 또는 api.dom 에 종속적 실행
 			var duration = module.isNumeric(parameter['duration']) ? parameter['duration'] : Number(that.settings.speed) / 1000;
 
 			var is = false; // 이동이 발생했는지 여부
-			var before = that.index; 
-			var after = that.index;
+			var before = that.index; // 현재 슬라이드 index
+			var after = that.index; // 이동할 슬라이드 index
 			var translate = {
 				'target': that.elements.target,
 				'duration': duration
@@ -704,8 +697,6 @@ jQuery 또는 api.dom 에 종속적 실행
 			}else if(that.settings.flow === 'vertical') {
 				translate['top'] = that.current = (that.height.value * ((is ? after : before) - 1)) * -1;
 			}
-			//module.setTranslate(translate);
-			//module.setFrame(translate);
 			module.setAnimate(translate);
 
 			if(is) {
@@ -824,8 +815,6 @@ jQuery 또는 api.dom 에 종속적 실행
 							// 현재 이벤트의 기본 동작을 중단한다. (슬라이드가 작동중일 때 모바일의 기본이벤트인 스크롤 작동을 중단시킨다.)
 							module.stopCapture(event);
 							// slide 이동
-							//module.setTranslate(translate);
-							//module.setFrame(translate);
 							module.setAnimate(translate);
 						}
 					});

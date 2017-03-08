@@ -1,5 +1,6 @@
 /*
 Animate
+requestAnimationFrame, animation(keyframes), transition 실행 또는 순차실행
 
 @date (버전관리)
 2016.03
@@ -15,6 +16,14 @@ Dual licensed under the MIT and GPL licenses.
 
 -
 사용예
+api.animate.frame({'element': '.h2', 'style': {'left': '100px', 'top': '100px', 'width': '100px', 'height': '100px'}});
+api.animate.frame([{'element': api.dom('#h2'), 'style': {'left': '100px', 'top': '100px'}}, {...}, ... ]);
+
+api.animate.animation([{'element': api.dom('#view'), 'animation': 'pt-page-moveToRight'}, {'element': api.dom('#list'), 'animation': 'pt-page-moveToRight'}]);
+api.animate.animation({'element': api.dom('#view'), 'animation': 'pt-page-moveToLeft', 'complete': function() { ... }});
+
+api.animate.transition({'element': api.dom('#view'), 'transition': {'left': '100px', 'top': '100px'}});
+api.animate.transition([{'element': api.dom('#view'), 'transition': {'left': '100px', 'top': '100px'}}, {...}, ... ]);
 
 -
 jQuery 또는 api.dom 에 종속적 실행
@@ -110,12 +119,6 @@ jQuery 또는 api.dom 에 종속적 실행
 		return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function(time) { return window.clearTimeout(time); };
 	})();
 	var animationFrameQueue = function(queue) {
-		/*
-		-
-		사용예
-		api.animationFrameQueue({'element': '.h2', 'style': {'left': '100px', 'top': '100px', 'width': '100px', 'height': '100px'}});
-		api.animationFrameQueue([{'element': api.dom('#h2'), 'style': {'left': '100px', 'top': '100px'}}, {...}, ... ]);
-		*/
 		if(typeof queue !== 'object') {
 			return false;
 		}else if(!Array.isArray(queue)) {
@@ -132,7 +135,6 @@ jQuery 또는 api.dom 에 종속적 실행
 			//var easing = 'swing';
 			var complete = target['complete'];
 
-			//
 			var current = 0;
 			var increment = 20;
 			var start = 0; // 애니메이션 시작값 (기존 css등 설정값)
@@ -231,12 +233,6 @@ jQuery 또는 api.dom 에 종속적 실행
 	// element.style 로 애니메이션을 주는 것이 아닌, 애니메이션값이 있는 class 값을 toggle 하는 방식이다.
 	// https://developer.mozilla.org/ko/docs/Web/CSS/CSS_Animations/Detecting_CSS_animation_support
 	var animationQueue = function(queue) {
-		/*
-		-
-		사용예
-		api.animationQueue([{'element': api.dom('#view'), 'animation': 'pt-page-moveToRight'}, {'element': api.dom('#list'), 'animation': 'pt-page-moveToRight'}]);
-		api.animationQueue({'element': api.dom('#view'), 'animation': 'pt-page-moveToLeft', 'complete': function() { ... }});
-		*/
 		if(typeof queue !== 'object') {
 			return false;
 		}else if(!Array.isArray(queue)) {
@@ -251,7 +247,6 @@ jQuery 또는 api.dom 에 종속적 실행
 			var handler;
 			var time;
 
-			//
 			handler = function(event) {
 				var event = event || window.event;
 				//console.log('[정보] 이벤트타입: ' + event.type);
@@ -295,12 +290,6 @@ jQuery 또는 api.dom 에 종속적 실행
 
 	// 트랜지션 순차실행 
 	var transitionQueue = function(queue) {
-		/*
-		-
-		사용예
-		api.transitionQueue({'element': api.dom('#view'), 'transition': {'left': '100px', 'top': '100px'}});
-		api.transitionQueue([{'element': api.dom('#view'), 'transition': {'left': '100px', 'top': '100px'}}, {...}, ... ]);
-		*/
 		if(typeof queue !== 'object') {
 			return false;
 		}else if(!Array.isArray(queue)) {
