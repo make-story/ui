@@ -70,14 +70,16 @@ function test(factory, global) {
 
 QUnit.module("Agent Test", {
 	// 단위 테스트를 수행하기 전에 beforeEach 함수가 실행
-	beforeEach: function() { // 1.x: setup
+	// 1.x 버전: setup
+	beforeEach: function() { 
 		//this.agent = agent;
 		this.fakeWindow = {
 			"navigator": {}
 		};
 	},
 	// 단위 테스트가 종료된 후에 afterEach 함수가 실행
-	afterEach: function() { // 1.x: teardown
+	// 1.x 버전: teardown
+	afterEach: function() { 
 		
 	}
 });
