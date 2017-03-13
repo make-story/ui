@@ -617,7 +617,7 @@ http://www.quirksmode.org/js/detect.html
 
 	// DOM prototype
 	DOM.fn = DOM.prototype = {
-		constructor: DOM, // constructor 를 Object 가 아닌 DOM 으로 변경
+		constructor: DOM, // constructor 를 Object 가 아닌 DOM 으로 변경 - instanceof 활용이 가능
 		// document ready
 		ready: (function() {
 			if(document.readyState === "interactive" || document.readyState === "complete") {
