@@ -16,7 +16,7 @@ http://www.opensource.org/licenses/MIT
 
 @browser compatibility
 IE7 이상(IE7, IE8 부분지원하며, 트랜지션, 애니메이션 등의 사용은 IE10 이상)
-querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2 - IE8부분지원, CSS 2.1 Selector (https://www.w3.org/TR/CSS2/selector.html)
+querySelectorAll: Chrome 1, Firefox 3.5, Internet Explorer 8, Opera 10, Safari 3.2 - IE8의 경우 CSS 2.1 Selector (https://www.w3.org/TR/CSS2/selector.html) 제한적으로 지원
 element.classList: Chrome 8.0, Firefox 3.6, Internet Explorer 10, Opera 11.50, Safari 5.1
 box-sizing: border-box; IE8 이상 (boder 효과가 화면상에 안보일 수 있으니 주의한다.)
 localStorage, sessionStorage: IE8 이상
@@ -572,7 +572,7 @@ http://www.quirksmode.org/js/detect.html
 					}
 				}else { // search element
 					try {
-						// document.querySelectorAll(x); // IE8이상 사용가능 ('.testClass + p' selector 형태는 IE9이상 사용가능) 
+						// document.querySelectorAll(x); // IE8의 경우 CSS 2.1 Selector (https://www.w3.org/TR/CSS2/selector.html) 제한적으로 지원
 						elements = (context || document).querySelectorAll(selector); // querySelectorAll: length 있음, querySelector: length 없음
 						if(elements instanceof NodeList || elements instanceof HTMLCollection) {
 							for(i=0, max=elements.length; i<max; i++) {
@@ -589,6 +589,9 @@ http://www.quirksmode.org/js/detect.html
 								}
 							}catch(e) {}
 						}else { // tag
+							// element.getElementsByTagName(x);
+							// element.getElementsByTagName("*"); // IE6이상 사용가능
+							// element.getElementsByClassName(x); // IE9이상 사용가능
 							elements = (context || document).getElementsByTagName(selector);
 							try {
 								if(elements && (elements.length || elements instanceof NodeList || elements instanceof HTMLCollection)) { // IE7 문제: NodeList, HTMLCollection
