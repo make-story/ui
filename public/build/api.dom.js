@@ -1927,6 +1927,8 @@ http://www.quirksmode.org/js/detect.html
 			};
 			// on
 			that.on(events + '.' + key, callback, capture);
+
+			return this;
 		},
 		trigger: (function() {
 			if(document.createEvent) {
