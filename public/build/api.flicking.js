@@ -352,6 +352,12 @@ jQuery 또는 api.dom 에 종속적 실행
 								}
 							}
 							break;
+						case 'width':
+						case 'height':
+							that.settings[key] = settings[key];
+							that.wrap();
+							that.view();
+							break;
 						/*
 						default:
 							that.settings[key] = settings[key];
@@ -449,23 +455,27 @@ jQuery 또는 api.dom 에 종속적 실행
 				}
 
 				// resize event
-				(function() {
-					var time = null;
-					$(window).off('resize.EVENT_RESIZE_FLICKING_' + that['settings']['key']);
-					$(window).on('resize.EVENT_RESIZE_FLICKING_' + that['settings']['key'], function(e) {
-						window.clearTimeout(time);
-						time = window.setTimeout(function(){ 
-							that.wrap();
-							that.view();
-						}, 60);
-					});
-				})();
+				if(that.settings.width === 'auto' && that.settings.height === 'auto') {
+					(function() {
+						var time = null;
+						$(window).off('resize.EVENT_RESIZE_FLICKING_' + that['settings']['key']).on('resize.EVENT_RESIZE_FLICKING_' + that['settings']['key'], function(e) {
+							window.clearTimeout(time);
+							time = window.setTimeout(function(){ 
+								that.wrap();
+								that.view();
+							}, 60);
+						});
+					})();
+				}
 			}
 
 			// style / translate
 			style['parent']['position'] = 'relative';
 			style['parent']['overflow'] = 'hidden';
 			style['target']['height'] = 'auto';
+			style['target']['user-select'] = 'none';
+			//style['target']['touch-action'] = 'pan-y';
+			//style['target']['-webkit-user-drag'] = 'none';
 			if(that.settings.flow === 'vertical') {
 				style['target']['width'] = that.width.value + 'px';
 				translate['top'] = that.current = (that.height.value * (that.index - 1)) * -1;
@@ -514,6 +524,10 @@ jQuery 또는 api.dom 에 종속적 실행
 					style['margin-right'] = '0px';
 					style['margin-top'] = '0px';
 					style['margin-bottom'] = '0px';
+					style['min-width'] = '0';
+					style['max-width'] = 'none';
+					style['min-height'] = '0';
+					style['max-height'] = 'none';
 					if(width <= 0 || that.width.value < width) {
 						// 슬라이드 width 크기가 플리킹 wrap width 보다 클경우 강제 width 설정
 						style['max-width'] = that.width.value + 'px';
