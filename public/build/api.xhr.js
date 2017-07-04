@@ -299,6 +299,11 @@ api.xhr({
 			
 			// 전송
 			instance.send(data || null);
+
+			// 취소
+			//instance.abort();
+
+			return instance;
 		}
 	};
 	
