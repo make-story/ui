@@ -233,7 +233,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				}
 			})(),
 			// 현재 이벤트의 기본 동작을 중단한다.
-			stopCapture: function(e) {
+			preventDefault: function(e) {
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 				if(event.preventDefault) { 
 					event.preventDefault();
@@ -242,7 +242,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				}
 			},
 			// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
-			stopBubbling: function(e) {
+			stopPropagation: function(e) {
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 				if(event.stopPropagation) { 
 					event.stopPropagation();
@@ -752,7 +752,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					// 현재 이벤트의 기본 동작을 중단한다. (터치 디바이스에서 기본 이벤트를 중단시키면 스크롤이 작동을 안한다. 모바일에서는 user-select: none; CSS로 해결한다.)
 					if(!env['check']['touch'] && /[^input|select|textarea|button]/i.test(target.tagName)) {
 						// PC에서는 마우스 이벤트 정확도(기능 정상작동)를 올리기 위해 정지
-						module.stopCapture(event);
+						module.preventDefault(event);
 					}
 					
 					// 멀티터치 방지
@@ -797,7 +797,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 						// 현재 이벤트의 기본 동작을 중단한다.
 						if(that.settings.flow === 'vertical') {
-							module.stopCapture(event);
+							module.preventDefault(event);
 						}
 
 						// 이동값
@@ -827,7 +827,7 @@ jQuery 또는 api.dom 에 종속적 실행
 						}
 						if(is) {
 							// 현재 이벤트의 기본 동작을 중단한다. (슬라이드가 작동중일 때 모바일의 기본이벤트인 스크롤 작동을 중단시킨다.)
-							module.stopCapture(event);
+							module.preventDefault(event);
 							// slide 이동
 							module.setAnimate(translate);
 						}
@@ -845,7 +845,7 @@ jQuery 또는 api.dom 에 종속적 실행
 						var is = false;
 
 						// 현재 이벤트의 기본 동작을 중단한다. (터치 디바이스에서 기본 이벤트를 중단시키면 슬라이드 내부 a 태그등이 작동을 안한다. 모바일에서는 user-select: none; CSS로 해결한다.)
-						//module.stopCapture(event);
+						//module.preventDefault(event);
 
 						// 정지값
 						if(touch) {
@@ -960,7 +960,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					var scroll;
 
 					// 현재 이벤트의 기본 동작을 중단한다.
-					module.stopCapture(event);
+					module.preventDefault(event);
 
 					//
 					if(event.wheelDelta) {

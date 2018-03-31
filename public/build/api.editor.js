@@ -291,7 +291,7 @@ FileReader: IE10 이상
 				return display;
 			},
 			// 현재 이벤트의 기본 동작을 중단한다.
-			stopCapture: function(e) {
+			preventDefault: function(e) {
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 				if(event.preventDefault) { 
 					event.preventDefault();
@@ -300,7 +300,7 @@ FileReader: IE10 이상
 				}
 			},
 			// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
-			stopBubbling: function(e) {
+			stopPropagation: function(e) {
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 				if(event.stopPropagation) { 
 					event.stopPropagation();
@@ -1242,7 +1242,8 @@ FileReader: IE10 이상
 			input.setAttribute('multiple', 'multiple');
 
 			input.onchange = function(e) {
-				setImageInputChange.call(that, e, form, input, id, wrap);
+				// 이미지 첨부 (이미지를 선택했을 경우 실행된다.)
+				setImageInputChange.call(that, e, form, input, id, wrap);				
 			};
 			input.click(); // 실행
 
@@ -1905,7 +1906,7 @@ FileReader: IE10 이상
 											case 'img':
 											case 'figure':
 												// 상위로 전파 중지
-												//module.stopCapture(event);
+												//module.preventDefault(event);
 												/*
 												console.log(module.selection.focusNode);
 												console.log(module.selection.focusNode.parentNode);
@@ -2237,7 +2238,7 @@ FileReader: IE10 이상
 			if(module.isCollapsed()) {
 				if(event.keyCode === 13 && module.isNodeCheck(module.selection.anchorNode, 'url')) { // keyCode 13: enter
 					// url 이 존재하면, event 를 정지한다.
-					module.stopCapture(event);
+					module.preventDefault(event);
 					/*
 					console.log(last);
 					console.log(module.selection.anchorNode);
@@ -2249,7 +2250,7 @@ FileReader: IE10 이상
 					that.put({'node': module.selection.anchorNode});
 				}else if(event.keyCode === 8 && module.isNodeCheck(module.selection.focusNode, 'opengraph')) { // keyCode 8: backspace
 					// 상위로 전파 중지
-					module.stopCapture(event);
+					module.preventDefault(event);
 					/*
 					console.log(module.selection.focusNode);
 					console.log(module.selection.focusNode.parentNode);

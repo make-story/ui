@@ -18,16 +18,16 @@ Dual licensed under the MIT and GPL licenses.
 
 	'use strict'; // ES5
 	if(typeof global === 'undefined' || global !== window) {
-		return false;	
+		return false;
 	}else if(!global.api) {
 		global.api = {};
 	}
-	
+
 	global.api.util = {
 		// 상속 - Object.create() 효과
-		inherit: function(C, P) { 
+		inherit: function(Child, Parent) {
 			/*
-			원칙적으로 재사용할 멤버는 this가 아니라 프로토타입에 추가되어야 한다.
+			원칙적으로 재사용할 멤버는 this가 아니라 prototype(프로토타입)에 추가되어야 한다.
 			따라서 상속되어야 하는 모든 것들도 프로토타입 안에 존재해야 한다.
 			그렇다면 부모의 프로토타입을 똑같이 자식의 프로토타입으로 지정하기만 하면 될 것이다.
 
@@ -36,23 +36,24 @@ Dual licensed under the MIT and GPL licenses.
 			빈 함수 F()가 부모와 자식 사이에서 프록시(proxy) 기능을 맡는다.
 			F()의 prototype 프로퍼티는 부모의 프로토타입을 가리킨다. 이 빈 함수의 인스턴스가 자식의 프로토타입이 된다.
 
+			자식 프로토타입이 수정되더라도 부모의 프로토타입에 영향을 주지 않는다.
 			부모 생성자에서 this에 추가된 멤버는 상속되지 않는다. (재사용한다는 prototype 의미를 정확히 사용)
 			*/
 			var F = function() {};
-			F.prototype = P.prototype;
-			C.prototype = new F();
+			F.prototype = Parent.prototype;
+			Child.prototype = new F();
 			/*
 			부모 원본에 대한 참조를 추가할 수도 있다.
 			다른 언어에서 상위 클래스에 대한 접근 경로를 가지는 것과 같은 기능으로,
 			경우에 따라 매우 편리하게 쓸 수 있다.
 			*/
-			C.uber = P.prototype; // 상위 클래스 접근경로
+			Child.uber = Parent.prototype; // 상위 클래스 접근경로
 			/*
 			constructor 프로퍼티는 자주 사용되진 않지만 런타임 객체 판별에 유용하다.
 			거의 정보성으로만 사용되는 프로퍼티이기 때문에, 원하는 생성자 함수를 가리키도록 재설정해도 기능에는
 			영향을 미치지 않는다.
 			*/
-			C.prototype.constructor = C; // 생성자 재설정 (런타임시 객체 판별)
+			Child.prototype.constructor = Child; // 생성자 재설정 (런타임시 객체 판별)
 		},
 		// deep copy
 		// http://davidwalsh.name/javascript-clone
@@ -115,7 +116,7 @@ Dual licensed under the MIT and GPL licenses.
 		jsonDeepCopy: function(original, copy) {
 			// json object 를 string 으로 바꾸고, string 을 다시 object로 변경하는 방법을 사용한다.
 			if(typeof original === 'object' && typeof copy === 'object') {
-				return original = JSON.parse(JSON.stringify(copy)); 
+				return original = JSON.parse(JSON.stringify(copy));
 			}else {
 				return original;
 			}
@@ -130,64 +131,62 @@ Dual licensed under the MIT and GPL licenses.
 			var content = Number(c);
 			var result = (target / content) * 100;
 
-			return result; 
+			return result;
 		},
 		/*
 		-
-		IE는 캡쳐를 지원하지 않기 때문에 addEventListener 는 버블링으로 설정하여 사용하는 것이 좋음 
-		
+		IE는 캡쳐를 지원하지 않기 때문에 addEventListener 는 버블링으로 설정하여 사용하는 것이 좋음
+
 		-
 		캡쳐 : 이벤트가 발생 대상까지 전달되는 단계(아래로)
-		 > 설명1 : 이벤트가 다른 이벤트로 전파되기 전에 폼 전송과 같은 이벤트를 취소 (기본 동작을 중지한다)
-		 > 설명2 : 처리를 완료하기 전에 이벤트(기본 또는 다른이벤트)를 취소하고 싶을 때
-		
 		버블링 : 발생 대상에서 document, window 까지 전달되는 단계(위로)
-		 > 설명1 : 내부에 다른 요소를 포함한 어떤 요소(<div><div></div></div>)가 있습니다. 두요소 모두 클릭 이벤트를 캡쳐합니다. 안쪽요소에서 발생한 클릭 이벤트가 바깥쪽 요소로 전파되는 것을 막음
-		 > 설명2 : 이벤트를 취소하고 싶지는 않지만 전파하는 것을 막을 때
-		
+
 		-
 		stopImmediatePropagation: 현재 이벤트가 상위뿐 아니라 현재 레벨에 걸린 다른 이벤트도 동작하지 않도록 중단한다.
-		
-		-
-		사용자가 발생한(설정한) 현재 element 이벤트의 상위 element 이벤트를 중지시키는냐, 
-		브라우저 기본 이벤트를 중지하느냐의 차이
-			<a href="http://test.com">
-				<div id="div">
-					<img src="" id="img" />
-				</div>
-			</a>
-			document.getElementById('div').onclick = function() { alert('div'); };
-			document.getElementById('img').onclick = function() { alert('img'); };
 
-			> 일반적인 이벤트(img를 클릭했을 경우): img -> div -> a 순서로 이벤트 발생
-			> stopPropagation 사용: img 를 클릭했을 경우 div 이벤트를 막을 수 있다. 그러나 a 이벤트는 중지되지 않으며 href에 따른 페이지 이동이 발생한다.
-			> preventDefault 사용: a 기본 이벤트인 href 의 이동을 중지 시킨다.
+		-
+		stopPropagation: element 이벤트의 버블링(상위) 또는 캡쳐링(하위) 전파를 중지시킨다. addEventListener 의 세번째 파라미터 버블(false, IE기본값), 캡쳐(true)에 따라 작동
+		preventDefault: 브라우저 기본 이벤트를 중지
+
+		<a href="http://test.com">
+			<div id="div">
+				<img src="" id="img" />
+			</div>
+		</a>
+		document.getElementById('div').onclick = function() { alert('div'); };
+		document.getElementById('img').onclick = function() { alert('img'); };
+
+		> 일반적인 이벤트(img를 클릭했을 경우): img -> div -> a 순서로 이벤트 발생
+		> stopPropagation 사용: img 를 클릭했을 경우 div 이벤트를 막을 수 있다. 그러나 a 이벤트는 중지되지 않으며 href에 따른 페이지 이동이 발생한다.
+		> preventDefault 사용: a 기본 이벤트인 href 의 이동을 중지 시킨다.
 		*/
 		// 현재 이벤트의 기본 동작을 중단한다.
-		stopCapture: function(e) {
-			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-			if(event.preventDefault) { 
+		preventDefault: function(e) { // stopDefault
+			// event.isDefaultPrevented() : event.preventDefault() 상태인지 체크 true / false
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event (IE8 이하: window.event)
+			if(event.preventDefault) {
 				event.preventDefault();
 			}else {
 				event.returnValue = false;
 			}
 		},
 		// 현재 이벤트가 상위로 전파되지 않도록 중단한다.
-		stopBubbling: function(e) {
-			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-			if(event.stopPropagation) { 
+		stopPropagation: function(e) { // stopBubbling
+			// event.isPropagationStopped() : event.stopPropagation()이 호출 됐는지 여부 리턴 true / false
+			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event (IE8 이하: window.event)
+			if(event.stopPropagation) {
 				event.stopPropagation();
 			}else {
 				event.cancelBubble = true;
 			}
 		},
-		// 캡쳐단계, 버블링단계 동시 실행
-		stopEventDelivery: function(e) { 
-			this.stopCapture(e);
-			this.stopBubbling(e);
+		// 기본이벤트, 캡쳐링, 버블링 동시 실행
+		stopEventAction: function(e) { // stopEventDelivery
+			this.preventDefault(e);
+			this.stopPropagation(e);
 		},
 		// setTimeout (한번 실행)
-		startCall: function(callback, seconds) { 
+		startCall: function(callback, seconds) {
 			if(typeof callback !== 'function') return false;
 			var seconds = seconds || 3000; //1000 -> 1초
 			// 시간 작동
@@ -201,7 +200,7 @@ Dual licensed under the MIT and GPL licenses.
 			window.clearTimeout(time);
 		},
 		// setInterval (반복 실행)
-		startTime: function(callback, seconds) { 
+		startTime: function(callback, seconds) {
 			if(typeof callback !== 'function') return false;
 			var seconds = seconds || 3000; //1000 -> 1초
 			// 시간 작동
@@ -232,7 +231,7 @@ Dual licensed under the MIT and GPL licenses.
 		type: function(value) {
 			return ({}).toString.call(value).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
 		},
-		// 좌우 공백 제거 
+		// 좌우 공백 제거
 		trim: function(text) {
 			if(!text) {
 				return text;
@@ -260,7 +259,7 @@ Dual licensed under the MIT and GPL licenses.
 				return html;
 			}
 		},
-		// 키보드 이벤트 정보 
+		// 키보드 이벤트 정보
 		keyboardCode: function(e) {
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 			var code = event.which || event.keyCode;
@@ -345,7 +344,7 @@ Dual licensed under the MIT and GPL licenses.
 				//tab
 				case 9:
 					key = 'tab';
-					break;	
+					break;
 				//end
 				case 35:
 					key = 'end';
@@ -375,11 +374,11 @@ Dual licensed under the MIT and GPL licenses.
 					key = 'up';
 					break;
 				//right
-				case 39: 
+				case 39:
 					key = 'right';
 					break;
 				//down
-				case 40: 
+				case 40:
 					key = 'down';
 					break;
 			}
@@ -392,11 +391,11 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// 대기 - 예: sleep(10000);
 		sleep: function(milliSeconds) {
-			var startTime = new Date().getTime(); // get the current time   
-			while(new Date().getTime() < startTime + milliSeconds); // hog cpu 
+			var startTime = new Date().getTime(); // get the current time
+			while(new Date().getTime() < startTime + milliSeconds); // hog cpu
 		},
 		// value 앞에 count 수만큼 add를 채운다
-		// 사용예: '0'. '3', 2 => '03' 
+		// 사용예: '0'. '3', 2 => '03'
 		leftFormatString: function(add, value, count) {
 			var value = String(value);
 			var result = '';
@@ -447,7 +446,7 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// empty
 		empty: function(element) {
-			while(element.hasChildNodes()) { // textnode 포함
+			while(element.hasChildNodes()) { // TextNode 포함
 				element.removeChild(element.lastChild);
 			}
 		},
@@ -456,12 +455,12 @@ Dual licensed under the MIT and GPL licenses.
 			/*
 			//features
 			- menubar : 메뉴바를 보여주거나 숨긴다. (옵션 : yes/no, 1/0)
-			- toolbar : 도구막대를 보여주거나 숨긴다. (옵션 : yes/no, 1/0) 
+			- toolbar : 도구막대를 보여주거나 숨긴다. (옵션 : yes/no, 1/0)
 			- directories : 디렉토리바를 보여주거나 숨긴다. (옵션 : yes/no, 1/0)
 			- scrollbars : 스크롤바를 보여주거나 숨긴다. (옵션 : yes/no, 1/0)
 			- status : 상태표시줄을 보여주거나 숨긴다. (옵션 : yes/no, 1/0)
 			- location : 주소표시줄을 보여주거나 숨긴다. (옵션 : yes/no, 1/0)
-			- width : 팝업 윈도우의 가로크기를 지정한다. (옵션 : 픽셀) 
+			- width : 팝업 윈도우의 가로크기를 지정한다. (옵션 : 픽셀)
 			- height : 팝업 윈도우의 높이를 지정한다. (옵션 : 픽셀)
 			- left : 팝업 윈도우의 x축 위치를 지정한다. (옵션 : 픽셀)
 			- top : 팝업 윈도우의 y축 위치를 지정한다. (옵션 : 픽셀)
@@ -476,15 +475,42 @@ Dual licensed under the MIT and GPL licenses.
 			//var features = features || '';
 			if(typeof features === 'undefined') {
 				win = window.open(url, name, 'width=' + width + ', height=' + height + ', menubar=no, status=no, location=no');
-			}else {	
+			}else {
 				win = window.open(url, name, 'width=' + width + ', height=' + height + ', ' + features);
 			}
 			if(win !== null) {
 				win.focus();
 			}
 		},
+		// 스크롤 위치
+		scrollPosition: function(scroll) {
+			if(typeof scroll === 'object' && scroll !== null) {
+				window.scrollTo(scroll.x || 0, scroll.y || 0);
+			}else {
+				return {
+					x: window.pageXOffset || 0,
+					y: window.pageYOffset || 0
+				};
+			}
+		},
+		// 온라인 / 오프라인 여부
+		isOnline: function() {
+			// https://developer.mozilla.org/en-US/docs/Web/API/NavigatorOnLine
+			if(window.navigator && 'onLine' in window.navigator) {
+				if(window.navigator.onLine === true) {
+					// online
+					return true;
+				}else {
+					// offline
+					return false;
+				}
+			}else {
+				// online / offline 미지원
+				return;
+			}
+		},
 
-		// ---------- ---------- ---------- ---------- ---------- ---------- 
+		// ---------- ---------- ---------- ---------- ---------- ----------
 		// 참/거짓
 
 		isObject: function(value) {
@@ -531,32 +557,32 @@ Dual licensed under the MIT and GPL licenses.
 				alert("팝업 차단 기능이 설정되어있습니다\n차단 기능을 해제(팝업허용)한 후 이용해 주세요.");
 				is = false;
 			}
-			if(win) { 
+			if(win) {
 				win.close();
 			}
 			return is;
 		},
 
-		// ---------- ---------- ---------- ---------- ---------- ---------- 
+		// ---------- ---------- ---------- ---------- ---------- ----------
 		// 숫자
 
 		// 단위 분리
-		numberUnit: function(value) { 
+		numberUnit: function(value) {
 			// [1]: 숫자값
 			// [2]: 단위
 			return /^([0-9]+)(\D+)$/i.exec(value);
 		},
 		// 숫자만 추출
-		numberReturn: function(value) { 
+		numberReturn: function(value) {
 			//return Number(String(value).replace(/,/g, '').replace(/^(-?)([0-9]*)(\.?)([^0-9]*)([0-9]*)([^0-9]*)/, '$1$2$3$5')); // 음의 실수 포함
 			return String(value).replace(/[^+-\.\d]|,/g, '');
 		},
 		// 금액
-		numberFormat: function(value) { 
+		numberFormat: function(value) {
 			var value = String(value);
 			var reg = /(^[+-]?\d+)(\d{3})/;
 			while(reg.test(value)) {
-				value = value.replace(reg, '$1' + ',' + '$2');  
+				value = value.replace(reg, '$1' + ',' + '$2');
 			}
 			/*
 			var parts = value.toString().split(".");
@@ -570,13 +596,13 @@ Dual licensed under the MIT and GPL licenses.
 			var value = String(value);
 			var orgnum = value;
 			var arrayOfStrings = [];
-			
+
 			if(value.length > 3) {
 				value = value + ".";
 			}
 			arrayOfStrings = value.split('.');
 			value = '' + arrayOfStrings[0];
-			
+
 			if(value.length > 3) {
 				var mod = value.length % 3;
 				var output = (mod > 0 ? (value.substring(0, mod)) : '');
@@ -587,7 +613,7 @@ Dual licensed under the MIT and GPL licenses.
 						output += ',' + value.substring(mod + 3 * i, mod + 3 * i + 3);
 					}
 				}
-				
+
 				if(orgnum.indexOf(".") > -1) {
 					output += '.' + arrayOfStrings[1];
 				}
@@ -604,8 +630,8 @@ Dual licensed under the MIT and GPL licenses.
 			var i, max;
 			for(i=0, max=value.length; i<max; i++) {
 				substr = value.substring(i, i+1);
-				if(substr !== ',') { 
-					result += substr; 
+				if(substr !== ',') {
+					result += substr;
 				}
 			}
 			return result;
@@ -637,7 +663,7 @@ Dual licensed under the MIT and GPL licenses.
 		},
 
 		// ---------- ---------- ---------- ---------- ---------- ----------
-		// 날짜 
+		// 날짜
 
 		// 몇일째 되는날
 		/*
@@ -663,7 +689,7 @@ Dual licensed under the MIT and GPL licenses.
 				return false;
 			}
 			var start_arr = start.split("-");
-			var end_arr = end.split("-"); 
+			var end_arr = end.split("-");
 			var start_obj = new Date(start_arr[0], Number(start_arr[1])-1, start_arr[2]);
 			var end_obj = new Date(end_arr[0], Number(end_arr[1])-1, end_arr[2]);
 
@@ -674,8 +700,8 @@ Dual licensed under the MIT and GPL licenses.
 			var result = {};
 			result['day'] = (end_obj.getTime()-start_obj.getTime())/(1000*60*60*24);
 			result['month'] = (years * 12 + months + (days >= 0 ? 0 : -1)),
-			result['year'] = Math.floor(result['month'] / 12);  
-			
+			result['year'] = Math.floor(result['month'] / 12);
+
 			return result;
 		},
 		// 해당 년월의 마지막 날짜
