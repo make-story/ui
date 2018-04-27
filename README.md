@@ -385,7 +385,7 @@ api.editor.setup({
 	'classes': {
 		'link': 'editor-text-link' // a 태그에 적용될 class 속성값
 	},
-	'callback': { 
+	'listeners': { 
 		'init': null
 	}
 }).on();
@@ -435,7 +435,7 @@ api.editor.setup({
 			'wrap': 'editor-code-wrap'
 		}
 	},
-	'callback': {
+	'listeners': {
 		'init': null
 	}
 }).on();
@@ -453,7 +453,7 @@ api.editor.setup({
 		'description': 'opengraph-description',
 		'author': 'opengraph-author'
 	},
-	'callback': {
+	'listeners': {
 		'init': null
 	}
 }).on();
@@ -493,7 +493,7 @@ var instance = api.flicking.setup({
 	'touch': true, // 클릭 또는 터치 슬라이드 작동여부
 	'auto': 0, // 자동 슬라이드 작동여부 (0 이상의 값이 입력되면 작동합니다.)
 	'wheel': false, // 마우스 휠 이벤트 작동여부
-	'callback': { // 플리킹 작동 callback (선택)
+	'listeners': { // 플리킹 작동 callback (선택)
 		'init': null,
 		'next': null,
 		'prev': null,
@@ -540,7 +540,7 @@ var instance = api.modal.setup({
 	'key': '',
 	'position': 'center',
 	'mask': null, 
-	'callback': {
+	'listeners': {
 		'show': null,
 		'hide': null
 	},
@@ -583,7 +583,7 @@ var instance = api.modal.setup({
 	'key': '',
 	'position': 'topcenter',
 	'mask': null, 
-	'callback': {
+	'listeners': {
 		'show': null,
 		'hide': null,
 		'ok': function() {
@@ -614,7 +614,7 @@ var instance = api.modal.setup({
 	'key': '',
 	'position': 'topcenter',
 	'mask': null,
-	'callback': {
+	'listeners': {
 		'show': null,
 		'hide': null
 	},
@@ -640,7 +640,7 @@ var instance = api.modal.setup({
 	'key': '',
 	'position': 'topright',
 	'mask': null,
-	'callback': {
+	'listeners': {
 		'show': null,
 		'hide': null
 	},
@@ -673,7 +673,7 @@ WebSocket
 ````javascript
 var socket = api.socket({
 	'url': 'ws://', // 필수
-	'callback': {
+	'listeners': {
 		'open': function() {
 			console.log('open 콜백');
 		},
@@ -702,7 +702,7 @@ Worker
 ````javascript
 var worker = api.worker({
 	'url': 'js파일위치', // 필수
-	'callback': {
+	'listeners': {
 		'message': function(data) {
 			console.log('워커로 부터 받은 메시지 콜백');
 		},
