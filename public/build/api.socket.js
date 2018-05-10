@@ -17,7 +17,7 @@ https://developer.mozilla.org/ko/docs/Web/API/WebSocket
 사용예
 var socket = api.socket({
 	'url': 'ws://www.makestory.net:3000',
-	'callback': {
+	'listeners': {
 		'open': function() {
 	
 		},
@@ -33,6 +33,7 @@ var socket = api.socket({
 	}
 });
 socket.send(데이터);
+socket.close(); // 소켓 연결 종료
 */
 
 ;(function(factory, global) {
@@ -72,7 +73,7 @@ socket.send(데이터);
 			// settings
 			that.settings = {
 				'url': '',
-				'callback': {
+				'listeners': {
 					'open': null,
 					'message': null,
 					'close': null,
@@ -95,41 +96,54 @@ socket.send(데이터);
 			};
 			that.settings = setSettings(that.settings, settings);
 			that.settings.url = /^ws:\/\//.test(that.settings.url) ? that.settings.url : 'ws://' + that.settings.url;
-			
-			// private
-			try {
-				socket = new WebSocket(that.settings.url);
-			}catch(e) { 
-				throw e; 
-			};
-			socket.onopen = function() { // readyState changes to OPEN
-				that.send();
-				if(typeof that.settings.callback.open === 'function') {
-					that.settings.callback.open.call(that, Array.prototype.slice.call(arguments));
-				}
-			};
-			socket.onmessage = function(e) { // 메시지가 도착할 시점
-				var event = (typeof e === 'object' && e) || window.event || {};
-				if(typeof that.settings.callback.message === 'function') {
-					that.settings.callback.message.call(that, event['data']);
-				}
-			};
-			socket.onclose = function(e) { // readyState changes to CLOSED
-				var event = (typeof e === 'object' && e) || window.event || {};
-				var code = event.code; // 연결이 종료되는 이유를 가리키는 숫자 값입니다. 지정되지 않을 경우 기본값은 1000으로 간주됩니다. (일반적인 경우의 "transaction complete" 종료를 나타내는 값).
-				var reason = event.reason; // 연결이 왜 종료되는지를 사람이 읽을 수 있도록 나타내는 문자열입니다. 이 문자열은 UTF-8 포멧이며, 123 바이트를 넘을 수 없습니다.
-				var wasClean = event.wasClean;
-				if(typeof that.settings.callback.close === 'function') {
-					that.settings.callback.close.call(that, Array.prototype.slice.call(arguments));
-				}
-			};
-			socket.onerror = function() { // 에러
-				if(typeof that.settings.callback.error === 'function') {
-					that.settings.callback.error.call(that, Array.prototype.slice.call(arguments));
-				}
-			};
+
+			// connection
+			that.open();
 		};
 		APISocket.prototype = {
+			open: function() {
+				var that = this;
+
+				// 기존 연결여부 확인 
+				if(that.settings.url in connect) {
+					that.close();
+				}
+
+				// WebSocket
+				try {
+					socket = new WebSocket(that.settings.url);
+					socket.onopen = function() { // readyState changes to OPEN
+						that.send();
+						if(typeof that.settings.listeners.open === 'function') {
+							that.settings.listeners.open.call(that, Array.prototype.slice.call(arguments));
+						}
+					};
+					socket.onmessage = function(e) { // 메시지가 도착할 시점
+						var event = (typeof e === 'object' && e) || window.event || {};
+						if(typeof that.settings.listeners.message === 'function') {
+							that.settings.listeners.message.call(that, event['data']);
+						}
+					};
+					socket.onclose = function(e) { // readyState changes to CLOSED
+						var event = (typeof e === 'object' && e) || window.event || {};
+						var code = event.code; // 연결이 종료되는 이유를 가리키는 숫자 값입니다. 지정되지 않을 경우 기본값은 1000으로 간주됩니다. (일반적인 경우의 "transaction complete" 종료를 나타내는 값).
+						var reason = event.reason; // 연결이 왜 종료되는지를 사람이 읽을 수 있도록 나타내는 문자열입니다. 이 문자열은 UTF-8 포멧이며, 123 바이트를 넘을 수 없습니다.
+						var wasClean = event.wasClean;
+						if(typeof that.settings.listeners.close === 'function') {
+							that.settings.listeners.close.call(that, Array.prototype.slice.call(arguments));
+						}
+					};
+					socket.onerror = function() { // 에러
+						if(typeof that.settings.listeners.error === 'function') {
+							that.settings.listeners.error.call(that, Array.prototype.slice.call(arguments));
+						}
+					};
+				}catch(e) { 
+					throw e; 
+				};
+
+				return that;
+			},
 			send: function(data) { // 보낼 수 있는 데이터는 String, Blob, 또는 ArrayBuffer
 				var that = this;
 
