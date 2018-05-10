@@ -115,7 +115,7 @@ socket.close(); // 소켓 연결 종료
 					socket.onopen = function() { // readyState changes to OPEN
 						that.send();
 						if(typeof that.settings.listeners.open === 'function') {
-							that.settings.listeners.open.call(that, Array.prototype.slice.call(arguments));
+							that.settings.listeners.open.apply(that, Array.prototype.slice.call(arguments));
 						}
 					};
 					socket.onmessage = function(e) { // 메시지가 도착할 시점
@@ -130,12 +130,12 @@ socket.close(); // 소켓 연결 종료
 						var reason = event.reason; // 연결이 왜 종료되는지를 사람이 읽을 수 있도록 나타내는 문자열입니다. 이 문자열은 UTF-8 포멧이며, 123 바이트를 넘을 수 없습니다.
 						var wasClean = event.wasClean;
 						if(typeof that.settings.listeners.close === 'function') {
-							that.settings.listeners.close.call(that, Array.prototype.slice.call(arguments));
+							that.settings.listeners.close.apply(that, Array.prototype.slice.call(arguments));
 						}
 					};
 					socket.onerror = function() { // 에러
 						if(typeof that.settings.listeners.error === 'function') {
-							that.settings.listeners.error.call(that, Array.prototype.slice.call(arguments));
+							that.settings.listeners.error.apply(that, Array.prototype.slice.call(arguments));
 						}
 					};
 				}catch(e) { 
