@@ -281,7 +281,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			'touch': true, // 클릭 또는 터치 슬라이드 작동여부
 			'auto': 0, // 자동 슬라이드 작동여부 (0 이상의 값이 입력되면 작동합니다.)
 			'wheel': false, // 마우스 휠 이벤트 작동여부
-			'callback': { // 플리킹 작동 callback (선택)
+			'listeners': { // 플리킹 작동 listeners (선택)
 				'init': null,
 				'next': null,
 				'prev': null,
@@ -314,9 +314,9 @@ jQuery 또는 api.dom 에 종속적 실행
 		that.auto({'mode': 'start'});
 		that.wheel({'mode': 'on'});
 
-		// callback
-		if(typeof that.settings.callback.init === 'function') {
-			that.settings.callback.init.call(that, that.elements.target);
+		// listeners
+		if(typeof that.settings.listeners.init === 'function') {
+			that.settings.listeners.init.call(that, that.elements.target);
 		}
 	};
 	Flicking.prototype = {
@@ -345,10 +345,10 @@ jQuery 또는 api.dom 에 종속적 실행
 			try {
 				for(key in settings) {
 					switch(key) {
-						case 'callback':
+						case 'listeners':
 							for(tmp in settings[key]) {
 								if(settings[key].hasOwnProperty(tmp)) {
-									that.settings.callback[tmp] = settings[key][tmp];
+									that.settings.listeners[tmp] = settings[key][tmp];
 								}
 							}
 							break;
@@ -608,9 +608,9 @@ jQuery 또는 api.dom 에 종속적 실행
 				$(that.elements.target).css({'width': (that.settings.flow === 'vertical' ? that.width.value : (that.width.value * that.total)) + 'px'}); 
 				that.view({'index': that.total});
 
-				// callback
-				if(typeof that.settings.callback.append === 'function') {
-					that.settings.callback.append.call(that, element);
+				// listeners
+				if(typeof that.settings.listeners.append === 'function') {
+					that.settings.listeners.append.call(that, element);
 				}
 			}
 
@@ -652,9 +652,9 @@ jQuery 또는 api.dom 에 종속적 실행
 					that.slide({'index': 'prev'});
 				}
 
-				// callback
-				if(typeof that.settings.callback.remove === 'function') {
-					that.settings.callback.remove.call(that, that.elements.target);
+				// listeners
+				if(typeof that.settings.listeners.remove === 'function') {
+					that.settings.listeners.remove.call(that, that.elements.target);
 				}
 			}
 
@@ -716,14 +716,14 @@ jQuery 또는 api.dom 에 종속적 실행
 			if(is) {
 				// 값 변경
 				that.index = after;
-				// callback
-				if(before < after && typeof that['settings']['callback']['next'] === 'function') { // next
-					that['settings']['callback']['next'].call(that, that.elements.target);
-				}else if(before > after && typeof that['settings']['callback']['prev'] === 'function') { // prev
-					that['settings']['callback']['prev'].call(that, that.elements.target);
+				// listeners
+				if(before < after && typeof that['settings']['listeners']['next'] === 'function') { // next
+					that['settings']['listeners']['next'].call(that, that.elements.target);
+				}else if(before > after && typeof that['settings']['listeners']['prev'] === 'function') { // prev
+					that['settings']['listeners']['prev'].call(that, that.elements.target);
 				}
-				if(typeof that['settings']['callback']['slidechange'] === 'function') { // slidechange
-					that['settings']['callback']['slidechange'].call(that, that.elements.target);
+				if(typeof that['settings']['listeners']['slidechange'] === 'function') { // slidechange
+					that['settings']['listeners']['slidechange'].call(that, that.elements.target);
 				}
 			}
 

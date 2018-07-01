@@ -407,6 +407,7 @@ FileReader: IE10 이상
 							if(typeof url !== "undefined") { // 이미 a 태그 생성되어 있음
 								that.elements.other.link.input.value = url;
 							}else { // 신규 a 태그 생성
+								that.elements.other.link.input.value = '';
 								//document.execCommand("createLink", false, '#none');
 							}
 							// 위 a 태그의 위치를 기억한다.
@@ -444,7 +445,7 @@ FileReader: IE10 이상
 			var node;
 
 			if(url) {
-				if(!url.match("^(http://|https://|mailto:)")) {
+				if(!url.match("^(http://|https://|chrome://|mailto:)")) {
 					url = "http://" + url;
 				}
 				//document.execCommand('createLink', false, url);
@@ -502,7 +503,7 @@ FileReader: IE10 이상
 				'classes': {
 					'link': 'editor-text-link' // a 태그에 적용될 class 속성값
 				},
-				'callback': {
+				'listeners': {
 					'init': null
 				}
 			};
@@ -630,6 +631,7 @@ FileReader: IE10 이상
 					that.elements.other.wrap.appendChild(that.elements.other.link.wrap);
 					// style
 					that.elements.other.link.wrap.style.cssText = 'display: none;';
+					that.elements.other.link.input.style.cssText = 'margin: 0; padding: 0; width: 100%;';
 					// event
 					that.elements.other.link.input.onblur = setTextTooltipLinkBlur.bind(that);
 					that.elements.other.link.input.onkeydown = setTextTooltipLinkKeydown.bind(that);
@@ -1407,7 +1409,7 @@ FileReader: IE10 이상
 						'hr': 'editor-line-hr'
 					}
 				},
-				'callback': {
+				'listeners': {
 					'init': null
 				}
 			};
@@ -2069,7 +2071,7 @@ FileReader: IE10 이상
 				'description': 'opengraph-description',
 				'author': 'opengraph-author'
 			},
-			'callback': {
+			'listeners': {
 				'init': null
 			}
 		};
@@ -2180,7 +2182,7 @@ FileReader: IE10 이상
 						'success': function(json) {
 							var result = {}
 							var image = '';
-							if(typeof json === 'object' && json.msg === 'success') {
+							if(typeof json === 'object' && json.status === 'success') {
 								//console.dir(json);
 								//console.log(div);
 								result = json.result;

@@ -152,6 +152,14 @@ all
 			}else {
 				return this.isText(element);
 			}
+		},
+		// base64 확인 
+		isBase64: function(str) {
+			try {
+				return btoa(atob(str)) == str;
+			}catch(error) {
+				return false;
+			}
 		}
 	};
 

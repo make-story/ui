@@ -121,6 +121,54 @@ Dual licensed under the MIT and GPL licenses.
 				return original;
 			}
 		},
+		// deep Extend
+		// deepExtend({}, objA, objB);
+		deepExtend: function(out) {
+			var i, key;
+			var obj;
+
+			out = out || {};
+
+			for(i=1; i<arguments.length; i++) {
+				obj = arguments[i];
+
+				if(!obj) {
+					continue;
+				}
+
+				for(key in obj) {
+					if(obj.hasOwnProperty(key)) {
+						if(typeof obj[key] === 'object') {
+							out[key] = this.deepExtend(out[key], obj[key]);
+					  	}else {
+							out[key] = obj[key];
+						}
+					}
+				}
+			}
+
+			return out;
+		},
+		// extend
+		// extend({}, objA, objB);
+		extend: function() {
+			var i, key;
+
+			out = out || {};
+
+			for(i=1; i<arguments.length; i++) {
+				if(!arguments[i]) {
+					continue;
+				}
+				for(key in arguments[i]) {
+					if(arguments[i].hasOwnProperty(key)) {
+						out[key] = arguments[i][key];
+			  		}
+				}
+			}
+
+			return out;
+		},
 		// 반응형 계산
 		sizePercent: function(t, c) {
 			//공식 : target / content = result
@@ -213,6 +261,11 @@ Dual licensed under the MIT and GPL licenses.
 			// 시간 중지
 			window.clearInterval(time);
 		},
+		// 대기 - 예: sleep(10000);
+		sleep: function(milliSeconds) {
+			var startTime = new Date().getTime(); // get the current time
+			while(new Date().getTime() < startTime + milliSeconds); // hog cpu
+		},
 		/*
 		// type 체크
 		// https://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/
@@ -237,26 +290,6 @@ Dual licensed under the MIT and GPL licenses.
 				return text;
 			}else {
 				return String(text).replace(/(^\s*)|(\s*$)/g, "");
-			}
-		},
-		// html 제거
-		stripTags: function(html) {
-			/*
-			// HTML 태그 제거 (사용법은 php 의 strip_tags 와 동일)
-			var strip_tags = function(input, allowed) {
-				allowed = (((allowed || "") + "").toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join(''); // making sure the allowed arg is a string containing only tags in lowercase (<a><b><c>)
-				var tags = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi;
-				return input.replace(tags, function ($0, $1) {
-					return allowed.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : '';
-				});
-			};
-			// 사용예: i 와 b 태그만 허용하고 그 외의 태그는 모두 제거
-			strip_tags('<p>Aaa</p> <b>Bbb</b> <i>Ccc</i>', '<i><b>');
-			*/
-			if(html && typeof html === 'string') {
-				return html.replace(/(<([^>]+)>)/ig,"");
-			}else {
-				return html;
 			}
 		},
 		// 키보드 이벤트 정보
@@ -389,11 +422,6 @@ Dual licensed under the MIT and GPL licenses.
 				return false;
 			}
 		},
-		// 대기 - 예: sleep(10000);
-		sleep: function(milliSeconds) {
-			var startTime = new Date().getTime(); // get the current time
-			while(new Date().getTime() < startTime + milliSeconds); // hog cpu
-		},
 		// value 앞에 count 수만큼 add를 채운다
 		// 사용예: '0'. '3', 2 => '03'
 		leftFormatString: function(add, value, count) {
@@ -412,43 +440,6 @@ Dual licensed under the MIT and GPL licenses.
 				bytes = value.replace(/[\0-\x7f]|([0-\u07ff]|(.))/g,"$&$1$2").length;
 			}
 			return bytes;
-		},
-		// fragment 에 html 삽입 후 반환
-		fragmentHtml: function(html) {
-			// Source: https://github.com/Alhadis/Snippets/blob/master/js/polyfills/IE8-child-elements.js
-			/*if(!("firstElementChild" in document.documentElement)) {
-				Object.defineProperty(Element.prototype, "firstElementChild", {
-					get: function() {
-						for(var nodes = this.children, n, i = 0, l = nodes.length; i < l; ++i) {
-							if(n = nodes[i], 1 === n.nodeType) {
-								return n;
-							}
-						}
-						return null;
-					}
-				});
-			}*/
-
-			var fragment = document.createDocumentFragment(); // fragment 가 document에 렌더링(삽입)되기 전에, 셀렉터로 fragment 내부 element 검색이 가능하다.
-			/*
-			var temp = document.createElement('template'); // IE 미지원
-			temp.innerHTML = html;
-			fragment.appendChild(temp.content);
-			*/
-			var temp = document.createElement('div');
-			var child;
-			temp.innerHTML = html;
-			while(child = temp.firstChild) { // temp.firstElementChild (textnode 제외)
-				fragment.appendChild(child);
-			}
-
-			return fragment;
-		},
-		// empty
-		empty: function(element) {
-			while(element.hasChildNodes()) { // TextNode 포함
-				element.removeChild(element.lastChild);
-			}
 		},
 		// window popup
 		windowPopup: function(url, name, width, height, features) {
@@ -484,6 +475,7 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// 스크롤 위치
 		scrollPosition: function(scroll) {
+			// scroll.x / scroll.y
 			if(typeof scroll === 'object' && scroll !== null) {
 				window.scrollTo(scroll.x || 0, scroll.y || 0);
 			}else {
@@ -508,6 +500,127 @@ Dual licensed under the MIT and GPL licenses.
 				// online / offline 미지원
 				return;
 			}
+		},
+		// 페이징 계산 
+		pager: function(total, page, list_size, page_size) {
+			/*
+			total_row : 데이터 전체개수(select count(*) from 테이블)
+			page : 현재페이지(no값)
+			list_size : 한페이지에 보여질 게시물의 수
+			page_size : 페이지 나누기에 표시될 페이지의 수
+
+			// 페이지번호 리스트 출력
+			for(i = start_page; i <= end_page && i <= total_page; i++) {
+				if(page == i) {
+					number = '<strong>' + i + '</strong>';
+				}else {
+					number = i;
+				}
+				'<a href="?page=' + i + '">' + number + '</a>';
+			}
+			*/
+			if(!total || total <= 0) {
+				total = 0;
+			}
+			if(!page || page <= 0) {
+				page = 0;
+			}
+		
+			var result = {};
+			var total_page = Math.ceil(total / list_size) ; // 총페이지수(Total Page)
+			var current_block = Math.ceil(page / page_size); // 현재블록(Current Block)
+			var start_page = (current_block - 1) * page_size + 1; // 블록의 처음 페이지(Start Page)
+			var end_page = (current_block * page_size); // 블록의 마지막 페이지(End Page)
+			var total_block = Math.ceil(total_page / page_size); // 총블록수(Total Block)
+
+			result['total_page'] = total_page;
+			result['current_block'] = current_block;
+			result['start_page'] = start_page;
+			result['end_page'] = end_page;
+			result['total_block'] = total_block;
+			if(result['current_block'] > 1) {
+				result['prev_page'] = start_page - 1; // 이전 블록
+			}
+			if(result['current_block'] < result['total_block']) {
+				result['next_page'] = end_page + 1; // 다음 블록
+			}
+
+			return result;
+		},
+
+		// ---------- ---------- ---------- ---------- ---------- ----------
+		// element/html
+
+		// html 제거
+		stripTags: function(html) {
+			/*
+			// HTML 태그 제거 (사용법은 php 의 strip_tags 와 동일)
+			var strip_tags = function(input, allowed) {
+				allowed = (((allowed || "") + "").toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join(''); // making sure the allowed arg is a string containing only tags in lowercase (<a><b><c>)
+				var tags = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi;
+				return input.replace(tags, function ($0, $1) {
+					return allowed.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : '';
+				});
+			};
+			// 사용예: i 와 b 태그만 허용하고 그 외의 태그는 모두 제거
+			strip_tags('<p>Aaa</p> <b>Bbb</b> <i>Ccc</i>', '<i><b>');
+			*/
+			if(html && typeof html === 'string') {
+				return html.replace(/(<([^>]+)>)/ig,"");
+			}else {
+				return html;
+			}
+		},
+		// fragment 에 html 삽입 후 반환
+		fragmentHtml: function(html) {
+			// Source: https://github.com/Alhadis/Snippets/blob/master/js/polyfills/IE8-child-elements.js
+			/*if(!("firstElementChild" in document.documentElement)) {
+				Object.defineProperty(Element.prototype, "firstElementChild", {
+					get: function() {
+						for(var nodes = this.children, n, i = 0, l = nodes.length; i < l; ++i) {
+							if(n = nodes[i], 1 === n.nodeType) {
+								return n;
+							}
+						}
+						return null;
+					}
+				});
+			}*/
+
+			var fragment = document.createDocumentFragment(); // fragment 가 document에 렌더링(삽입)되기 전에, 셀렉터로 fragment 내부 element 검색이 가능하다.
+			/*
+			var temp = document.createElement('template'); // IE 미지원
+			temp.innerHTML = html;
+			fragment.appendChild(temp.content);
+			*/
+			var temp = document.createElement('div');
+			var child;
+			temp.innerHTML = html;
+			while(child = temp.firstChild) { // temp.firstElementChild (textnode 제외)
+				fragment.appendChild(child);
+			}
+
+			return fragment;
+		},
+		// parseHTML
+		// IE9이상 사용가능
+		// parseHTML(htmlString);
+		parseHTML: function(html) {
+			var tmp = document.implementation.createHTMLDocument();
+			tmp.body.innerHTML = html;
+			return tmp.body.children;
+		},
+		// empty
+		empty: function(element) {
+			while(element.hasChildNodes()) { // TextNode 포함
+				element.removeChild(element.lastChild);
+			}
+		},
+		// element 노출 여부 
+		isVisible: function(element) {
+			// Support: Opera <= 12.12
+			// Opera reports offsetWidths and offsetHeights less than zero on some elements
+			return element.offsetWidth > 0 && element.offsetHeight > 0;
 		},
 
 		// ---------- ---------- ---------- ---------- ---------- ----------
@@ -547,7 +660,7 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// json 데이터 여부
 		isJSON: function(value) {
-			return value && typeof value === 'object' && (/*Array.isArray(value)*/Object.prototype.toString.call(value) === "[object Array]" || /^{.*}$/.test(JSON.stringify(value)));
+			return value && typeof value === 'object' && value !== null && (/*Array.isArray(value)*/Object.prototype.toString.call(value) === "[object Array]" || /^{.*}$|^\[.*\]$/.test(JSON.stringify(value)));
 		},
 		//팝업차단확인
 		isWindowPopup: function() {
@@ -665,6 +778,38 @@ Dual licensed under the MIT and GPL licenses.
 		// ---------- ---------- ---------- ---------- ---------- ----------
 		// 날짜
 
+		// date format
+		date: function(date) {
+			var setNumberFormat = function(value) {
+				if(Number(value) < 10) {
+					value = '0' + value;
+				}
+				return value;
+			}
+			var result = {
+				'date': new Date(),
+				'year': '',
+				'month': '',
+				'day': '',
+				'hour': '',
+				'minute': '',
+				'second': '',
+				'time': ''
+			};
+
+			if(date && date instanceof Date) {
+				result.date = date;
+			}
+			result.year = result.date.getFullYear();
+			result.month = setNumberFormat(result.date.getMonth() + 1);
+			result.day = setNumberFormat(result.date.getDate());
+			result.hour = setNumberFormat(result.date.getHours());
+			result.minute = setNumberFormat(result.date.getMinutes());
+			result.second = setNumberFormat(result.date.getSeconds());
+			result.time = result.date.getTime();
+			
+			return result;
+		},
 		// 몇일째 되는날
 		/*
 		사용예: (year, month, day 분리 입력 또는 new Date 인스턴스값 입력)
@@ -706,7 +851,7 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// 해당 년월의 마지막 날짜
 		lastday: function(year, month) {
-			var arr = [31,28,31,30,31,30,31,31,30,31,30,31];
+			var arr = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 			if((year %4 == 0 && year % 100 !== 0) || year % 400 == 0) {
 				arr[1] = 29;
 			}
