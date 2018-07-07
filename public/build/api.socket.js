@@ -191,7 +191,9 @@ socket.close(); // 소켓 연결 종료
 				// 기존 연결여부 확인 
 				if(typeof socket === 'object' && socket instanceof WebSocket && socket.readyState === 1) {
 					socket.close(); // 소켓종료
-					delete socket;
+					// delete 는 단순히 객체와 속성과의 연결을 끊을 뿐 실제로 메모리에서 제거하는 것은 아니다
+					//delete socket;
+					socket = undefined;
 				}
 
 				// WebSocket

@@ -502,10 +502,10 @@ Dual licensed under the MIT and GPL licenses.
 			}
 		},
 		// 페이징 계산 
-		pager: function(total, page, list_size, page_size) {
+		pager: function(total_count, current_page, list_size, page_size) {
 			/*
-			total_row : 데이터 전체개수(select count(*) from 테이블)
-			page : 현재페이지(no값)
+			total_count : 데이터 전체개수(select count(*) from 테이블)
+			current_page : 현재페이지(no값)
 			list_size : 한페이지에 보여질 게시물의 수
 			page_size : 페이지 나누기에 표시될 페이지의 수
 
@@ -519,25 +519,40 @@ Dual licensed under the MIT and GPL licenses.
 				'<a href="?page=' + i + '">' + number + '</a>';
 			}
 			*/
-			if(!total || total <= 0) {
-				total = 0;
+			if(!total_count || total_count <= 0) {
+				total_count = 0;
 			}
-			if(!page || page <= 0) {
-				page = 0;
+			if(!current_page || current_page <= 0) {
+				current_page = 1;
 			}
-		
+			if(!list_size || list_size <= 0) {
+				list_size = 20;
+			}
+			if(!page_size || page_size <= 0) {
+				page_size = 10;
+			}
+
 			var result = {};
-			var total_page = Math.ceil(total / list_size) ; // 총페이지수(Total Page)
-			var current_block = Math.ceil(page / page_size); // 현재블록(Current Block)
+			var total_page = Math.ceil(total_count / list_size) ; // 총페이지수(Total Page)
+			var current_block = Math.ceil(current_page / page_size); // 현재블록(Current Block)
+			var total_block = Math.ceil(total_page / page_size); // 총블록수(Total Block)
 			var start_page = (current_block - 1) * page_size + 1; // 블록의 처음 페이지(Start Page)
 			var end_page = (current_block * page_size); // 블록의 마지막 페이지(End Page)
-			var total_block = Math.ceil(total_page / page_size); // 총블록수(Total Block)
+			
+			result['total_count'] = total_count;
+			result['current_page'] = current_page;
+			result['list_size'] = list_size;
+			result['page_size'] = page_size;
 
 			result['total_page'] = total_page;
 			result['current_block'] = current_block;
+			result['total_block'] = total_block;
 			result['start_page'] = start_page;
 			result['end_page'] = end_page;
-			result['total_block'] = total_block;
+
+			if(result['total_page'] < result['end_page']) {
+				result['end_page'] = result['total_page'];
+			}
 			if(result['current_block'] > 1) {
 				result['prev_page'] = start_page - 1; // 이전 블록
 			}
