@@ -123,7 +123,7 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// deep Extend
 		// deepExtend({}, objA, objB);
-		deepExtend: function(out) {
+		/*deepExtend: function(out) {
 			var i, key;
 			var obj;
 
@@ -140,7 +140,7 @@ Dual licensed under the MIT and GPL licenses.
 					if(obj.hasOwnProperty(key)) {
 						if(typeof obj[key] === 'object') {
 							out[key] = this.deepExtend(out[key], obj[key]);
-					  	}else {
+						}else {
 							out[key] = obj[key];
 						}
 					}
@@ -148,10 +148,10 @@ Dual licensed under the MIT and GPL licenses.
 			}
 
 			return out;
-		},
-		// extend
+		},*/
+		// extend (deep copy)
 		// extend({}, objA, objB);
-		extend: function() {
+		extend: function(out) {
 			var i, key;
 
 			out = out || {};
@@ -163,7 +163,7 @@ Dual licensed under the MIT and GPL licenses.
 				for(key in arguments[i]) {
 					if(arguments[i].hasOwnProperty(key)) {
 						out[key] = arguments[i][key];
-			  		}
+					}
 				}
 			}
 
@@ -269,17 +269,17 @@ Dual licensed under the MIT and GPL licenses.
 		/*
 		// type 체크
 		// https://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/
-		type({a: 4}); //"object"
-		type([1, 2, 3]); //"array"
-		(function() {console.log(type(arguments))})(); //arguments
-		type(new ReferenceError); //"error"
-		type(new Date); //"date"
-		type(/a-z/); //"regexp"
-		type(Math); //"math"
-		type(JSON); //"json"
-		type(new Number(4)); //"number"
-		type(new String("abc")); //"string"
-		type(new Boolean(true)); //"boolean"
+		type({a: 4}); // "object"
+		type([1, 2, 3]); // "array"
+		(function() {console.log(type(arguments))})(); // arguments
+		type(new ReferenceError); // "error"
+		type(new Date); // "date"
+		type(/a-z/); // "regexp"
+		type(Math); // "math"
+		type(JSON); // "json"
+		type(new Number(4)); // "number"
+		type(new String("abc")); // "string"
+		type(new Boolean(true)); // "boolean"
 		*/
 		type: function(value) {
 			return ({}).toString.call(value).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
@@ -459,18 +459,18 @@ Dual licensed under the MIT and GPL licenses.
 			- fullscreen : 전체화면 모드로 열어준다.
 			- channelmode : 채널모드 창으로 열어준다.
 			 */
-			var win;
+			var popup;
 			var name = name || 'popup';
 			var width = width || 400;
 			var height = height || 600;
 			//var features = features || '';
 			if(typeof features === 'undefined') {
-				win = window.open(url, name, 'width=' + width + ', height=' + height + ', menubar=no, status=no, location=no');
+				popup = window.open(url, name, 'width=' + width + ', height=' + height + ', menubar=no, status=no, location=no');
 			}else {
-				win = window.open(url, name, 'width=' + width + ', height=' + height + ', ' + features);
+				popup = window.open(url, name, 'width=' + width + ', height=' + height + ', ' + features);
 			}
-			if(win !== null) {
-				win.focus();
+			if(popup !== null) {
+				popup.focus();
 			}
 		},
 		// 스크롤 위치
@@ -510,7 +510,7 @@ Dual licensed under the MIT and GPL licenses.
 			page_size : 페이지 나누기에 표시될 페이지의 수
 
 			// 페이지번호 리스트 출력
-			for(i = start_page; i <= end_page && i <= total_page; i++) {
+			for(i=start_page; i<=end_page && i<=total_page; i++) {
 				if(page == i) {
 					number = '<strong>' + i + '</strong>';
 				}else {

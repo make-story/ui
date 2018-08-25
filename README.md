@@ -5,7 +5,7 @@ javascript
 
 ----
 
-### api.dom.js
+### api.brower.js  (기존 파일명 api.dom.js)
 
 api.key()
 - 일반적인 고유값 반환
@@ -27,6 +27,10 @@ api.env.check.animation
 
 api.env.check.fullscreen
 - 풀스크린 브라우저 지원여부 true/false
+
+api.env.os.name
+- OS 
+android/ios/mac/window
 
 api.env.monitor
 - 사용자 해상도 종류(기준 픽셀값에 따라 분기) pc/mobile/tablet
@@ -58,6 +62,9 @@ api.env.event.up
 api.env.event.click
 - touchstart/tap/click
 
+api.env.event.wheel
+- mousewheel/DOMMouseScroll
+
 api.env.event.transitionend
 - transitionend/webkitTransitionEnd/oTransitionEnd/MSTransitionEnd
 
@@ -69,6 +76,10 @@ api.env.event.animationiteration
 
 api.env.event.animationend
 - animationend/webkitAnimationEnd/oanimationend/MSAnimationEnd
+
+api.env.event.passive
+크롬 기본이벤트 true/false
+
 
 api.dom(selector, [context])
 - 요소 검색
@@ -162,8 +173,14 @@ api.dom("ul").children();
 .hide()
 - 요소 display none 설정
 
+.isVisible()
+- 요소 화면 노출여부 
+
 .offset()
 - 현재요소 위치(좌표)값 반환
+
+.offsetParent()
+- 현재요소 부모 정보 반환 
 
 .position()
 - 부모요소 기준 현재요소 위치(좌표)값 반환
@@ -177,6 +194,9 @@ api.dom("ul").children();
 .outerWidth(is)
 - 요소의 width + padding + border + [margin] 값 반환
 
+.scrollWidth()
+- 요소의 overflow auto/scroll 값에서 보이지 않는 부분까지 포함한 값 
+
 .height(value)
 - 요소의 height 값 반환
 
@@ -185,6 +205,9 @@ api.dom("ul").children();
 
 .outerHeight(is)
 - 요소의 height + padding + border + [margin] 값 반환	
+
+.scrollHeight()
+- 요소의 overflow auto/scroll 값에서 보이지 않는 부분까지 포함한 값 
 
 .attr({name: value})
 .attr(name)
@@ -202,6 +225,9 @@ api.dom("ul").children();
 
 .removeProp(name)
 - 해당 property 삭제
+
+.empty()
+- 요소내 제거 
 
 .remove()
 - 요소 제거
@@ -235,6 +261,12 @@ api.dom("ul").append(api.dom('<li>'));
 
 .replaceWith(value)
 - 요소 바꾸기
+
+.next()
+- 다음 요소
+
+.prev()
+- 이전 요소 
 
 .on(events, handlers, [capture])
 - 이벤트 바인딩
@@ -279,10 +311,28 @@ api.dom("#target").off();
 .contains(value)
 - 특정 노드가 다른 노드 내에 포함되었는지 여부
 
+.is(selector)
+- 셀럭터 조건 반환
+
+.isEqualNode(selector || element)
+- 동일한 요소 여부 반환 
+
 api.extend({name: value})
 api.fn.extend({name: value})
 - api.dom 객체 또는 prototype 에 기능추가
 
+
+api.hash.get(key)
+- 해쉬 값 불러오기 
+
+api.hash.set(key, value)
+- 해쉬 값 추가 
+
+api.hash.del(key)
+- 해쉬 값 제거 
+
+api.hash.is(key)
+- 해쉬 값 존재여부 
 
 
 api.storage.clear(type)
@@ -340,6 +390,21 @@ api.storage.del('session', 'mykey');
 api.storage.del('local', 'mykey');
 ````
 
+
+api.history.storage
+- 히스토리값 저장소 history/session
+
+api.history.get(key)
+- 히스토리 값 불러오기
+
+api.history.set(key, value)
+- 히스토리 값 추가 
+
+api.history.del(key)
+- 히스토리 값 제거 
+
+api.history.navigation()
+- 사용자 브라우저 네비게이션 조작상태 NONE/NAVIGATENEXT/RELOAD/BACK_FORWARD/UNDEFINED
 
 
 api.touch.on(selector, handlers)

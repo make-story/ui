@@ -159,7 +159,14 @@ socket.close(); // 소켓 연결 종료
 			또한 WSS 역시 HTTPS와 는 별도의 프로토콜을 사용하지만, HTTPS와 같은 방식으로 TCP 기반에서 TLS를 이용하여 통신합니다. 
 			URL로 사용되는 것을 보면, "ws://~~"로 사용되고, 보안 통신을 위해서는 "wss://~~"로 사용됩니다.
 			*/
-			that.settings.url = /^ws:\/\//.test(that.settings.url) || /^wss:\/\//.test(that.settings.url) ? that.settings.url : 'ws://' + that.settings.url;
+			that.settings.url = that.settings.url.replace(/^http(s?):\/\//i, ""); // http:// 또는 https:// 제거
+			that.settings.url = /^ws:\/\//i.test(that.settings.url) || /^wss:\/\//i.test(that.settings.url) ? that.settings.url : (function() {
+				if(window.location.protocol === 'https:') {
+					return 'wss://' + that.settings.url;
+				}else {
+					return 'ws://' + that.settings.url;
+				}
+			})();
 
 			// connection
 			if(that.settings.automatic === true) {
