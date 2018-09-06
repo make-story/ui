@@ -73,7 +73,25 @@ http://www.quirksmode.org/js/detect.html
 			"transform3d": false,
 			"transition": false/*('transition' in div.style || 'WebkitTransition' in div.style || 'MozTransition' in div.style || 'OTransition' in div.style || 'msTransition' in div.style)*/,
 			"animation": false/*('animationName' in div.style || 'WebkitAnimationName' in div.style || 'MozAnimationName' in div.style || 'OAnimationName' in div.style || 'msAnimationName' in div.style || 'KhtmlAnimationName' in div.style)*/,
-			"fullscreen": (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled || document.msFullscreenEnabled)
+			"fullscreen": (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled || document.msFullscreenEnabled),
+			"passive": (function() { // 크롬 기본이벤트 관련 
+				var passiveSupported = false;
+				var options;
+
+				try {
+					options = Object.defineProperty({}, "passive", {
+						get: function() {
+							passiveSupported = true;
+						}
+					});
+					window.addEventListener("test", options, options);
+					window.removeEventListener("test", options, options);
+				}catch(err) {
+					passiveSupported = false;
+				}
+
+				return passiveSupported;
+			})()
 		},
 		"os": { // android | ios | mac | window
 			"name": ""
@@ -136,26 +154,7 @@ http://www.quirksmode.org/js/detect.html
 			"transitionend": "transitionend",
 			"animationstart": "animationstart",
 			"animationiteration": "animationiteration",
-			"animationend": "animationend",
-			// 크롬 기본이벤트 관련 
-			"passive": (function() {
-				var passiveSupported = false;
-				var options;
-
-				try {
-					options = Object.defineProperty({}, "passive", {
-						get: function() {
-							passiveSupported = true;
-						}
-					});
-					window.addEventListener("test", options, options);
-					window.removeEventListener("test", options, options);
-				}catch(err) {
-					passiveSupported = false;
-				}
-
-				return passiveSupported;
-			})()
+			"animationend": "animationend"
 		}/*,
 		"css": {
 			"prefix": '', // 벤더 프리픽스

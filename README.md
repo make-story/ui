@@ -28,6 +28,9 @@ api.env.check.animation
 api.env.check.fullscreen
 - 풀스크린 브라우저 지원여부 true/false
 
+api.env.check.passive
+- 크롬 기본이벤트 true/false
+
 api.env.os.name
 - OS 
 android/ios/mac/window
@@ -76,9 +79,6 @@ api.env.event.animationiteration
 
 api.env.event.animationend
 - animationend/webkitAnimationEnd/oanimationend/MSAnimationEnd
-
-api.env.event.passive
-크롬 기본이벤트 true/false
 
 
 api.dom(selector, [context])
