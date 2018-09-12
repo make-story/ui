@@ -1305,7 +1305,7 @@ http://www.quirksmode.org/js/detect.html
 			if(!this.elements || !this.elements.length) {
 				return false;
 			}else {
-				return this.elements[0].offsetWidth > 0 && this.elements[0].offsetHeight > 0;
+				return !(this.elements[0].offsetWidth <= 0 && this.elements[0].offsetHeight <= 0 || ((this.elements[0].style && this.elements[0].style.display) || this.css("display")) === "none");
 			}
 		},
 		// 절대좌표 (jQuery 와 다르게 값 설정은 하지 않는다.)

@@ -423,7 +423,7 @@ Dual licensed under the MIT and GPL licenses.
 			}
 		},
 		// value 앞에 count 수만큼 add를 채운다
-		// 사용예: '0'. '3', 2 => '03'
+		// 사용예: ('0', '3', 2) => '03'
 		leftFormatString: function(add, value, count) {
 			var value = String(value);
 			var result = '';
@@ -440,6 +440,32 @@ Dual licensed under the MIT and GPL licenses.
 				bytes = value.replace(/[\0-\x7f]|([0-\u07ff]|(.))/g,"$&$1$2").length;
 			}
 			return bytes;
+		},
+		// 말줄임
+		// CSS : 
+		/*
+		// 한 줄 자르기 
+		display: inline-block; 
+		width: 200px; 
+		white-space: 
+		nowrap; overflow: hidden; 
+		text-overflow: ellipsis; 
+		
+		// 여러 줄 자르기 추가 스타일 
+		white-space: normal; 
+		line-height: 1.2; 
+		height: 3.6em; 
+		text-align: left; 
+		word-wrap: break-word; 
+		display: -webkit-box; 
+		-webkit-line-clamp: 3; 
+		-webkit-box-orient: vertical;
+		*/
+		// jQuery : https://github.com/jjenzz/jquery.ellipsis/blob/master/jquery.ellipsis.js
+		stringEllipsis: function(value, length, options) {
+			if(typeof value === 'string' && !isNaN(parseFloat(length)) && isFinite(length) && length < value.length) {
+				return value.substr(0, length-2) + (typeof options === 'string' ? options : '..');
+			}
 		},
 		// window popup
 		windowPopup: function(url, name, width, height, features) {
@@ -635,7 +661,14 @@ Dual licensed under the MIT and GPL licenses.
 		isVisible: function(element) {
 			// Support: Opera <= 12.12
 			// Opera reports offsetWidths and offsetHeights less than zero on some elements
-			return element.offsetWidth > 0 && element.offsetHeight > 0;
+			// 검사하려는 element 하위 element 가 position: fixed; 되어있을 경우, 숨겨진 것으로 처리되니 주의해야 한다.
+			var is = true;
+			if(element.offsetWidth <= 0 && element.offsetHeight <= 0) {
+				is = false;
+			}else if(element.style && element.style.display === 'none') {
+				is = false;
+			}
+			return is;
 		},
 
 		// ---------- ---------- ---------- ---------- ---------- ----------
