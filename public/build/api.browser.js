@@ -70,7 +70,7 @@ http://www.quirksmode.org/js/detect.html
 			"touch": ('ontouchstart' in global || global.navigator.MaxTouchPoints > 0 || global.navigator.msMaxTouchPoints > 0 || (global.DocumentTouch && global.document instanceof DocumentTouch)),
 			//"orientationchange": 'onorientationchange' in window, // 모바일기기 회전
 			"transform": false,
-			"transform3d": false,
+			"transform3d": false, // 3d 지원할 경우 translateZ
 			"transition": false/*('transition' in div.style || 'WebkitTransition' in div.style || 'MozTransition' in div.style || 'OTransition' in div.style || 'msTransition' in div.style)*/,
 			"animation": false/*('animationName' in div.style || 'WebkitAnimationName' in div.style || 'MozAnimationName' in div.style || 'OAnimationName' in div.style || 'msAnimationName' in div.style || 'KhtmlAnimationName' in div.style)*/,
 			"fullscreen": (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled || document.msFullscreenEnabled),
@@ -114,6 +114,7 @@ http://www.quirksmode.org/js/detect.html
 				return scrollbar;
 			})()
 		},
+		// https://developer.mozilla.org/en-US/docs/Web/Events
 		"event": {
 			// 마우스 또는 터치
 			"down": "mousedown",
@@ -150,8 +151,12 @@ http://www.quirksmode.org/js/detect.html
 				*/
 				return false;
 			})(),
+			"resize": 'onorientationchange' in window ? 'orientationchange' : 'resize',
 			// 트랜지션, 애니메이션
+			"transitionstart": "transitionstart",
 			"transitionend": "transitionend",
+			"transitionrun": "transitionrun",
+			"transitioncancel": "transitioncancel",
 			"animationstart": "animationstart",
 			"animationiteration": "animationiteration",
 			"animationend": "animationend"
@@ -167,12 +172,12 @@ http://www.quirksmode.org/js/detect.html
 	(function() {
 		var transforms = ["transform", "WebkitTransform", "MozTransform", "OTransform", "msTransform"]; // css check (IE9 벤더프리픽스로 사용가능, IE10이상 공식지원)
 		var transforms3d = ["perspective", "WebkitPerspective", "MozPerspective", "OPerspective", "msPerspective"]; // 3D지원여부 판단자료
-		var transitions = { // event check (IE10이상 공식지원)
-			"transition": "transitionend",
-			"WebkitTransition": "webkitTransitionEnd",
-			"MozTransition": "transitionend",
-			"OTransition": "oTransitionEnd",
-			"msTransition": "MSTransitionEnd"
+		var transitions = { // event check (IE10이상 공식지원) - start, run, cancel 브라우저 지원 확인 필요
+			"transition": ["transitionstart", "transitionend", "transitionrun", "transitioncancel"],
+			"WebkitTransition": ["webkitTransitionStart", "webkitTransitionEnd", "webkitTtransitionRun", "webkitTransitionCancel"],
+			"MozTransition": ["transitionstart", "transitionend", "transitionrun", "transitioncancel"],
+			"OTransition": ["oTransitionStart", "oTransitionEnd", "oTransitionRun", "oTransitionCancel"],
+			"msTransition": ["MSTransitionStart", "MSTransitionEnd", "MSTransitionRun", "MSTransitionCancel"]
 		};
 		var animations = { // event check (IE10이상 공식지원)
 			"animation": ['animationstart', 'animationiteration', 'animationend'],
@@ -203,7 +208,10 @@ http://www.quirksmode.org/js/detect.html
 		for(key in transitions) {
 			if(div.style[key] !== undefined) {
 				environment['check']['transition'] = true;
-				environment['event']['transitionend'] = transitions[key];
+				environment['event']['transitionstart'] = transitions[key][0];
+				environment['event']['transitionend'] = transitions[key][1];
+				environment['event']['transitionrun'] = transitions[key][2];
+				environment['event']['transitioncancel'] = transitions[key][3];
 				break;
 			}
 		}
@@ -748,6 +756,7 @@ http://www.quirksmode.org/js/detect.html
 					}
 				}
 			}
+			return this;
 		},
 		// parent node search
 		closest: function(selector, context) {
