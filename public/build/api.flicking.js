@@ -154,13 +154,13 @@ jQuery 또는 api.dom 에 종속적 실행
 						var that = this;
 						var parameter = parameter || {};
 						var element = parameter['element'];
-						var duration = parameter['duration'] || 0;
+						var duration = parameter['duration'] || 0; // 애니메이션 진행시간 (단위기준: 1s)
 						var left = Number(parameter['left'] || 0); // translateX
 						var top = Number(parameter['top'] || 0); // translateY
 						var complete = parameter['complete'];
 						
 						try {
-							element.style.webkitTransitionDuration = element.style.MozTransitionDuration = element.style.msTransitionDuration = element.style.OTransitionDuration = element.style.transitionDuration = duration + 's';
+							element.style.webkitTransitionDuration = element.style.MozTransitionDuration = element.style.msTransitionDuration = element.style.OTransitionDuration = element.style.transitionDuration = Number(duration) + 's';
 							element.style.webkitTransform = 'translate(' + left + 'px, ' + top + 'px)' + 'translateZ(0)'; // translateZ : CSS GPU가속 사용을 위한 핵 (3d로 속여서 GPU가속 사용)
 							element.style.msTransform = element.style.MozTransform = element.style.OTransform = 'translate(' + left + 'px, ' + top + 'px)';
 							$(element).off(env['event']['transitionend'] + '.EVENT_TRANSITION_FLICKING').on(env['event']['transitionend'] + '.EVENT_TRANSITION_FLICKING', function(e) {
@@ -189,7 +189,7 @@ jQuery 또는 api.dom 에 종속적 실행
 						var that = this;
 						var parameter = parameter || {};
 						var element = parameter['element'];
-						var duration = parameter['duration'] || 0;
+						var duration = parameter['duration'] || 0; // 애니메이션 진행시간 (단위기준: 1s)
 						var left = Number(parameter['left'] || 0);
 						var top = Number(parameter['top'] || 0);
 						var complete = parameter['complete'];
@@ -221,8 +221,8 @@ jQuery 또는 api.dom 에 종속적 실행
 							element.style.left = left + 'px';
 							element.style.top = top + 'px';
 						}else {
-							// duration 소수값 변경
-							duration = duration * 1000;
+							// duration 값 변경
+							duration = Number(duration) * 1000;
 
 							// start, end 값 추출
 							start = Number(that.numberReturn(element.style.left) || 0);
@@ -308,7 +308,7 @@ jQuery 또는 api.dom 에 종속적 실행
 		that.settings = {
 			'key': '', // 플리킹 작동 고유키 (선택)
 			'target': null, // 슬라이드 wrap (셀렉터 또는 element 값)
-			'flow': 'horizontal', // 플리킹 방향 (horizontal, vertical)
+			'flow': 'horizontal', // 플리킹 방향 (가로:horizontal, 세로:vertical)
 			'width': 'auto', // 슬라이드 width 값 설정 (auto: 슬라이드가 target 가운데 위치하도록 wrap width 값에 따라 자동설정)
 			'height': 'auto', // 슬라이드 height 값 설정
 			'centered': false, // true / false / margin / padding 
@@ -316,6 +316,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			'touch': true, // 클릭 또는 터치 슬라이드 작동여부
 			'auto': 0, // 자동 슬라이드 작동여부 (0 이상의 값이 입력되면 작동합니다.)
 			'wheel': false, // 마우스 휠 이벤트 작동여부
+			'edge': true, // 가장자리 터치(클릭)시 슬라이드 이동여부
 			'listeners': { // 플리킹 작동 listeners (선택)
 				'init': null,
 				'next': null,
@@ -896,12 +897,18 @@ jQuery 또는 api.dom 에 종속적 실행
 				$(that.elements.target).on(env['event']['down'] + '.EVENT_MOUSEDOWN_FLICKING_' + that['settings']['key'], function(e) {
 					//console.log('[정보] flicking MOUSEDOWN');
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+					var self = event.currentTarget; // event listener element (event 실행 element)
 					var target = event && event.target; // event 가 발생한 element
 					//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
 					var touch = event.touches; // touchstart
+					var rect; 
 
-					// event.currentTarget; // event listener element (event 실행 element)
-					// event.target; // event 가 발생한 element
+					// 위치 / 크기 
+					if(self.parentNode) {
+						rect = self.parentNode.getBoundingClientRect();
+					}
+					console.log('offset: ' + self.offsetLeft + '/' + self.offsetTop + '|' + self.offsetWidth + '/' + self.offsetHeight);
+					console.log('client: ' + self.clientLeft + '/' + self.clientTop + '|' + self.clientWidth + '/' + self.clientHeight);
 
 					// 버블링(stopPropagation) 중지시키면, 상위 이벤트(예: document 에 적용된 이벤트)이 작동을 안한다.
 					// 현재 이벤트의 기본 동작을 중단한다. (터치 디바이스에서 기본 이벤트를 중단시키면 스크롤이 작동을 안한다. 모바일에서는 user-select: none; CSS로 해결한다.)
@@ -983,7 +990,7 @@ jQuery 또는 api.dom 에 종속적 실행
 							return false;
 						}*/
 
-						// 사용자 터치가 스크롤인지 슬라이드인지 확인하여 안정화함
+						// 사용자 터치가 브라우저 스크롤인지 슬라이드 이동 목적인지 확인하여 실행(안정화)
 						if(that.settings.flow === 'horizontal' && Math.abs(left - that['start']['left']) > Math.abs(top - that['start']['top'])) {
 							translate['left'] = (left - that['start']['left']) + that.current;
 						}else if(that.settings.flow === 'vertical' && Math.abs(top - that['start']['top']) > Math.abs(left - that['start']['left'])) {
@@ -1009,6 +1016,20 @@ jQuery 또는 api.dom 에 종속적 실행
 						var time;
 						var left, top;
 						var index, duration;
+						var standard = { // 기준값 (이동)
+							'time': 100, 
+							'move': 30, // 최소/최대 이동범위
+							'size': 6 // 화면 분할 기준
+						};
+						var isChildren = function(element) {
+							var i, max;
+							for(i=0, max=that.total; i<max; i++) {
+								if(that.elements.children[i].isEqualNode(element)) {
+									return true;
+								}
+							}
+							return false;
+						};
 
 						// event.currentTarget; // event listener element (event 실행 element)
 						// event.target; // event 가 발생한 element
@@ -1033,7 +1054,7 @@ jQuery 또는 api.dom 에 종속적 실행
 						duration = Number(that.settings.speed) / 1000; /* 300 / 1000 */
 
 						// 이동 가능한지 검사
-						if(that.settings.flow === 'horizontal' && ((Math.abs(left) > Math.abs(top) && (time <= 100 && 30 <= Math.abs(left)/*마우스를 빠르게 이동한 경우*/)) || (that.width.value / 6) < Math.abs(left)/*기준값 이상 이동한 경우*/)) {
+						if(that.settings.flow === 'horizontal' && ((Math.abs(left) > Math.abs(top)/*좌우 이동값이 더 큰 경우*/ && (time <= standard.time && standard.move <= Math.abs(left)/*마우스를 빠르게 이동한 경우*/)) || (that.width.value / standard.size) < Math.abs(left)/*슬라이드 크기 기준 어느정도 이동이 발생했을 때*/)) {
 							if(index < that.total && left < 0) { // 다음
 								index++;
 							}else if(1 < index && left > 0) { // 이전
@@ -1041,7 +1062,7 @@ jQuery 또는 api.dom 에 종속적 실행
 							}
 							// 슬라이드 속도
 							duration = (time > 1000 || 6000 < time) ? duration : (time+100) / 1000;
-						}else if(that.settings.flow === 'vertical' && ((Math.abs(top) > Math.abs(left) && (time <= 100 && 30 <= Math.abs(top)/*마우스를 빠르게 이동한 경우*/)) || (that.height.value / 6) < Math.abs(top)/*기준값 이상 이동한 경우*/)) {
+						}else if(that.settings.flow === 'vertical' && ((Math.abs(top) > Math.abs(left)/*상하 이동값이 더 큰 경우*/ && (time <= standard.time && standard.move <= Math.abs(top)/*마우스를 빠르게 이동한 경우*/)) || (that.height.value / standard.size) < Math.abs(top)/*슬라이드 크기 기준 어느정도 이동이 발생했을 때*/)) {
 							if(index < that.total && top < 0) { // 다음
 								index++;
 							}else if(1 < index && top > 0) { // 이전
@@ -1049,7 +1070,32 @@ jQuery 또는 api.dom 에 종속적 실행
 							}
 							// 슬라이드 속도
 							duration = (time > 1000 || 6000 < time) ? duration : (time+100) / 1000;
+						}else if(that.settings.edge === true && Math.abs(left) < standard.move && Math.abs(top) < standard.move && (that.elements.target.isEqualNode(target)/*슬라이드 영역*/ || (that.elements.target.contains(target)/*바로하위자식*/ && isChildren(target)))) {
+							// 슬라이드 좌/우 또는 상/하 끝부분을 클릭(터치) 했을 경우
+							console.log('current slide', that.elements.children[that.index-1]);
+							console.log('rect', rect);
+							console.log('start', that['start']);
+							console.log('end', that['end']);
+							console.log(rect.left <= that['end']['left']);
+							console.log(that['end']['left'] <= rect.left+standard.move);
+							console.log(rect.right-standard.move <= that['end']['left']);
+							console.log(that['end']['left'] <= rect.right);
+							if(that.settings.flow === 'horizontal') {
+								if(rect.left <= that['end']['left'] && that['end']['left'] <= rect.left+standard.move) { // 좌측기준
+									index--;
+								}else if(rect.right-standard.move <= that['end']['left'] && that['end']['left'] <= rect.right) { // 우측기준
+									index++;
+								}
+							}else if(that.settings.flow === 'vertical') {
+								if(rect.top <= that['end']['top'] && that['end']['top'] <= rect.top+standard.move) { // 상단기준 
+									index--;
+								}else if(rect.bottom-standard.move <= that['end']['top'] && that['end']['top'] <= rect.bottom) { // 하단기준 
+									index++;
+								}
+							}
 						}
+						console.log('slide element', that.elements.target);
+						console.log('target', target);
 
 						/*
 						// 로그

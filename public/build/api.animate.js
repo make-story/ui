@@ -135,6 +135,7 @@ jQuery 또는 api.dom 에 종속적 실행
 	};
 
 	// requestAnimationFrame, cancelAnimationFrame
+	// 이론적으로 60fps로 호출되지만, 실제로는 인터벌 없이 다음에 사용 가능한 기회에 애니메이션 드로잉(drawing)을 요청
 	var setRequestAnimationFrame = (function() { 
 		// https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame
 		return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback) { return window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
@@ -154,7 +155,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var config = queue.shift(); // 현재 순서에 해당하는 정보
 			var $element = $(config['element']); // 대상 element - .class 가 각각 다른 초기 값을 가질 경우, 예상과 다른 결과가 나올 수 있다.
 			var style = config['style']; // 애니메이션을 적용할 CSS값 - {CSS 속성: 값}
-			var duration = config['duration'] || 600; // 애니메이션 진행시간
+			var duration = config['duration'] || 0; // 애니메이션 진행시간 (단위기준: 1s)
 			//var easing = config['easing'];
 			var complete = config['complete'];
 	
@@ -169,6 +170,11 @@ jQuery 또는 api.dom 에 종속적 실행
 				}
 			};
 			var total = $element.length;
+
+			// duration 값 변경
+			if(duration) {
+				duration = Number(duration) * 1000;
+			}
 			
 			$element.each(function(index) {	
 				var $element = $(this);
@@ -219,10 +225,14 @@ jQuery 또는 api.dom 에 종속적 실행
 					for(key in properties) {
 						if(regexp.num.test(properties[key]['start']) && regexp.num.test(properties[key]['change'])) {
 							// 적용 값
-							val = easeOutQuad(current, Number(properties[key]['start']), Number(properties[key]['change']), duration); 
-							if(regexp.pixel_unit_list.test(key)) {
-								// opacity 등 소수점 단위는 제외
-								val = Math.round(val); // 반올림
+							if(duration <= 0) {
+								val = properties[key]['end']; // 애니메이션 진행시간이 없으므로 바로 적용 
+							}else {
+								val = easeOutQuad(current, Number(properties[key]['start']), Number(properties[key]['change']), duration); 
+								if(regexp.pixel_unit_list.test(key)) {
+									// opacity 등 소수점 단위는 제외
+									val = Math.round(val); // 반올림
+								}
 							}
 							// 단위값이 없을 경우 설정
 							unit = properties[key]['end_unit'] || properties[key]['start_unit'] || '';
@@ -318,14 +328,14 @@ jQuery 또는 api.dom 에 종속적 실행
 			var config = queue.shift(); // 현재 순서에 해당하는 정보
 			var $element = $(config['element']); // 대상 element
 			var transition = config['style'] || config['transition']; // 트랜지션을 적용할 CSS값 - {CSS 속성: 값}
-			var duration = config['duration'] || 600; 
+			var duration = config['duration'] || 0; // 애니메이션 진행시간 (단위기준: 1s)
 			var easing = config['easing'] || 'ease'; 
 			var delay = config['delay'] || 0; // 효과가 시작할 때까지의 딜레이
 			var complete = config['complete']; // 애니메이션 종료 후 콜백 (complete)
 			
+			var element = $element.get();
 			var properties = {}; // css 적용 프로퍼티 
 			var transitionend = {}; // transitionend 이벤트 실행된 것 (true)
-			var element = $element.get();
 			var i, max, key, tmp;
 	
 			// transition 값 확인
@@ -340,6 +350,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				if(typeof element[i] !== 'object' || !element[i].nodeType) {
 					continue;
 				}
+
 				// 현재 상태값 저장
 				if(typeof element[i]['storage'] !== 'object') {
 					element[i]['storage'] = {};
@@ -363,7 +374,7 @@ jQuery 또는 api.dom 에 종속적 실행
 	
 				// transition 설정
 				element[i]['style'].msTransitionProperty = element[i]['style'].OTransitionProperty = element[i]['style'].MozTransitionProperty = element[i]['style'].WebkitTransitionProperty = element[i]['style'].transitionProperty = Object.keys(properties).join(',');
-				element[i]['style'].msTransitionDuration = element[i]['style'].OTransitionDuration = element[i]['style'].MozTransitionDuration = element[i]['style'].WebkitTransitionDuration = element[i]['style'].transitionDuration = Number(duration) / 1000 + 's';
+				element[i]['style'].msTransitionDuration = element[i]['style'].OTransitionDuration = element[i]['style'].MozTransitionDuration = element[i]['style'].WebkitTransitionDuration = element[i]['style'].transitionDuration = Number(duration) + 's';
 				element[i]['style'].msTransitionTimingFunction = element[i]['style'].OTtransitionTimingFunction = element[i]['style'].MozTransitionTimingFunction = element[i]['style'].WebkitTransitionTimingFunction = element[i]['style'].transitionTimingFunction = easing;
 				//element[i]['style'].msTransitionDelay = element[i]['style'].OTransitionDelay = element[i]['style'].MozTransitionDelay = element[i]['style'].WebkitTransitionDelay = element[i]['style'].transitionDelay = Number(delay) / 1000 + 's';
 			}

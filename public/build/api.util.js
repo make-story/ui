@@ -465,6 +465,8 @@ Dual licensed under the MIT and GPL licenses.
 		stringEllipsis: function(value, length, options) {
 			if(typeof value === 'string' && !isNaN(parseFloat(length)) && isFinite(length) && length < value.length) {
 				return value.substr(0, length-2) + (typeof options === 'string' ? options : '..');
+			}else {
+				return value;
 			}
 		},
 		// window popup
@@ -588,6 +590,19 @@ Dual licensed under the MIT and GPL licenses.
 
 			return result;
 		},
+		// URL/Hash key:value 형태로 반환
+		urlParameters: function(url) {
+			var pageParamString = unescape(window.location.search.substring(1));
+			var paramsArray = pageParamString.split('&');
+			var paramsHash = {};
+		
+			for (var i = 0; i < paramsArray.length; i++)
+			{
+				var singleParam = paramsArray[i].split('=');
+				paramsHash[singleParam[0]] = singleParam[1];
+			}
+			return paramsHash;
+		},
 
 		// ---------- ---------- ---------- ---------- ---------- ----------
 		// element/html
@@ -647,6 +662,12 @@ Dual licensed under the MIT and GPL licenses.
 		// IE9이상 사용가능
 		// parseHTML(htmlString);
 		parseHTML: function(html) {
+			/*
+			var tmp = document.createElement('div');
+			var childNodes = [];
+			tmp.innerHtml = html;
+			childNodes = tmp.childNodes;
+			*/
 			var tmp = document.implementation.createHTMLDocument();
 			tmp.body.innerHTML = html;
 			return tmp.body.children;

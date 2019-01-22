@@ -378,6 +378,31 @@ http://www.quirksmode.org/js/detect.html
 			};
 		}());
 	}
+	// https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/Function/bind
+	if(!Function.prototype.bind) {
+		Function.prototype.bind = function(oThis) {
+			if(typeof this !== 'function') {
+				// ECMAScript 5 내부 IsCallable 함수와
+				// 가능한 가장 가까운 것
+				throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable');
+			}
+		
+			var aArgs   = Array.prototype.slice.call(arguments, 1),
+				fToBind = this,
+				fNOP    = function() {},
+				fBound  = function() {
+					return fToBind.apply(this instanceof fNOP ? this : oThis, aArgs.concat(Array.prototype.slice.call(arguments)));
+				};
+		
+			if(this.prototype) {
+				// Function.prototype은 prototype 속성이 없음
+				fNOP.prototype = this.prototype;
+			}
+			fBound.prototype = new fNOP();
+		
+			return fBound;
+		};
+	}
 
 	// 정규식
 	var regexp = {
@@ -703,6 +728,7 @@ http://www.quirksmode.org/js/detect.html
 		constructor: DOM, // constructor 를 Object 가 아닌 DOM 으로 변경 - instanceof 활용이 가능
 		// document ready
 		ready: (function() {
+			// readyState: IE8에서는 Only supports 'complete'
 			if(document.readyState === "interactive" || document.readyState === "complete") {
 				// IE8 등에서 global.setTimeout 파라미터로 바로 함수값을 넣으면 오류가 난다.
 				// 그러므로 function() {} 무명함수로 해당 함수를 실행시킨다.
@@ -713,10 +739,12 @@ http://www.quirksmode.org/js/detect.html
 				};
 			}else if(document.addEventListener) { // Mozilla, Opera, Webkit
 				return function(callback) {
+					// IE9 이상
 					document.addEventListener("DOMContentLoaded", callback, false);
 				};
 			}else if(document.attachEvent) { // IE
 				return function(callback) {
+					// IE6–8 버전
 					// https://developer.mozilla.org/ko/docs/Web/API/Document/readyState
 					document.attachEvent("onreadystatechange", function(e) {
 						if(document.readyState === "complete") {
@@ -766,6 +794,11 @@ http://www.quirksmode.org/js/detect.html
 			var context = context || document.documentElement; // documentElement: <html />
 			var element, search;
 
+			/*
+			-
+			참고: 이벤트 발생 target 부터 상위 element 리스트(배열)
+			event.path || (event.composedPath && event.composedPath());
+			*/
 			if(!max) {
 				return this;
 				//return false;
@@ -1902,8 +1935,9 @@ http://www.quirksmode.org/js/detect.html
 							callback = handler.bind(element);
 							element.addEventListener(type, callback, capture); // IE9이상 사용가능
 						}else if(element.attachEvent) { // IE (typeof 검사시 IE8에서는 function 이 아닌 object 반환)
-							callback = function(e) { // IE this 바인딩 문제
-								handler(e, element);
+							callback = function(e) { 
+								//handler(e, element);
+								handler.call(element, e);
 							};
 							/*
 							// 아래 같이 선언했을 경우 IE에서 스택풀 발생
@@ -2625,8 +2659,8 @@ http://www.quirksmode.org/js/detect.html
 				}
 			}
 		},
-		// 해쉬값 존재여부 
-		is: function(key) {
+		// 해쉬값 존재여부
+		has: function(key) {
 			var criteria = this.get() || {};
 			var is = false;
 
@@ -2701,7 +2735,7 @@ http://www.quirksmode.org/js/detect.html
 		del: function() {
 
 		},
-		is: function() {
+		has: function() {
 
 		}
 	};
@@ -2792,6 +2826,33 @@ http://www.quirksmode.org/js/detect.html
 	})();
 
 	// history
+	/*
+	// hashchange 이벤트 (url 변경에 따른 location.href 기준 history 재설정)
+	window.onhashchange = function(event) {
+		if(typeof event === 'object') {
+			console.log('event', event);
+			console.log('oldURL', event.oldURL);
+			console.log('newURL', event.newURL);
+		}
+	};
+
+	// IOS 등에서 터치(플리킹)로 뒤로가기를 했을 경우
+	// iOS nitro엔진 WKWebview는 히스토리백시 BFCache를 사용
+	// pageshow, pagebeforeshow, pagebeforehide, pagehide 이벤트
+	// https://developer.mozilla.org/en-US/docs/Web/Events/pagehide
+	// https://developer.mozilla.org/en-US/docs/Web/Events/pageshow
+	window.onpageshow = function(event) {
+		console.log('event', event);
+		console.log('navigation', window.performance.navigation);
+		console.log('referrer', document.referrer);
+		
+		if(event.persisted) {
+			console.log('BFCache');
+		}else {
+			console.log('새로 진입');
+		}
+	};
+	*/
 	var browserHistory = (function() {
 		// private / public 구분 
 		var result = {
@@ -2799,12 +2860,7 @@ http://www.quirksmode.org/js/detect.html
 			"get": function() {},
 			"set": function() {},
 			"del": function() {},
-			"navigation": function() {
-				var result = {
-					"type": null,
-					"state": 'NONE'
-				};
-
+			"navigation": function(callback) {
 				/*
 				window.performance.navigation.type
 				IE9이상 사용가능
@@ -2815,22 +2871,46 @@ http://www.quirksmode.org/js/detect.html
 				TYPE_BACK_FORWARD (2)	: 히스토리 순회(traversal) 연산을 통한 내비게이션
 				TYPE_UNDEFINED (255)	: 위 값으로 정의되지 않는 어떠한 내비게이션 타입.
 				*/
-				if(window.performance && window.performance.navigation) {
-					result.type = window.performance.navigation.type;
-					switch(window.performance.navigation.type) {
-						case 0:
-							result.state = 'NAVIGATENEXT';
-							break;
-						case 1:
-							result.state = 'RELOAD';
-							break;
-						case 2:
-							result.state = 'BACK_FORWARD';
-							break;
-						default:
-							result.state = 'UNDEFINED';
-							break;
+				var result = {
+					"type": null,
+					"state": 'NONE'
+				};
+				var setResult = function() {
+					if(window.performance && window.performance.navigation) {
+						result.type = window.performance.navigation.type;
+						switch(window.performance.navigation.type) {
+							case 0:
+								result.state = 'NAVIGATENEXT';
+								break;
+							case 1:
+								result.state = 'RELOAD';
+								break;
+							case 2:
+								result.state = 'BACK_FORWARD';
+								break;
+							default:
+								result.state = 'UNDEFINED';
+								break;
+						}
 					}
+				};
+				setResult();
+
+				// IOS pageshow 대응 (callback 필수)
+				if('onpageshow' in window && 'readyState' in document && document.readyState !== 'complete') {
+					window.onpageshow = function(event) {
+						/*if(event.persisted) { 
+							// BFCache
+						}else { 
+
+						}*/
+						setResult(); // result 값 변경 
+						if(typeof callback === 'function') {
+							callback(result);
+						}
+					};
+				}else if(typeof callback === 'function') {
+					callback(result);
 				}
 
 				return result;

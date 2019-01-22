@@ -210,7 +210,7 @@ https://mustache.github.io/mustache.5.html
 
 		var tree = parse.tree || []; // 파싱된 트리
 		var contents = contents || {}; // 변수에 할당(파싱된 트리에 contents값 설정)할 json 데이터
-		var tokens = [];
+		var tokens = []; // 코드 조각 
 		var i, max;
 
 		//debug.dir('tree', tree);
