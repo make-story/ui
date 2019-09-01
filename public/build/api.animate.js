@@ -16,17 +16,17 @@ IE8에서는 element for in 오류
 
 -
 사용예
-api.animate.frame({'element': '.h2', 'style': {'left': '100px', 'top': '100px', 'width': '100px', 'height': '100px'}});
-api.animate.frame([{'element': api.dom('#h2'), 'style': {'left': '100px', 'top': '100px'}}, {...}, ... ]);
+api.animate.frame({'element': '.h2', 'style': {'left': '100px', 'top': '100px', 'width': '100px', 'height': '100px'}, 'duration': 3});
+api.animate.frame([{'element': api.dom('#h2'), 'style': {'left': '100px', 'top': '100px'}, 'duration': 3, 'complete': function() { ... }}, {...}, ... ]);
 
-api.animate.transition({'element': api.dom('#view'), 'transition': {'left': '100px', 'top': '100px'}});
-api.animate.transition([{'element': api.dom('#view'), 'transition': {'left': '100px', 'top': '100px'}}, {...}, ... ]);
+api.animate.transition({'element': api.dom('#view'), 'style': {'left': '100px', 'top': '100px'}, 'duration': 3});
+api.animate.transition([{'element': api.dom('#view'), 'style': {'left': '100px', 'top': '100px'}, 'duration': 3, 'complete': function() { ... }}, {...}, ... ]);
 
-api.animate.animation([{'element': api.dom('#view'), 'animation': 'pt-page-moveToRight'}, {'element': api.dom('#list'), 'animation': 'pt-page-moveToRight'}]);
-api.animate.animation({'element': api.dom('#view'), 'animation': 'pt-page-moveToLeft', 'complete': function() { ... }});
+api.animate.animation([{'element': api.dom('#view'), 'class': 'pt-page-moveToRight'}, {'element': api.dom('#list'), 'class': 'pt-page-moveToRight'}]);
+api.animate.animation({'element': api.dom('#view'), 'class': 'pt-page-moveToLeft', 'complete': function() { ... }});
 
 -
-jQuery 또는 api.dom 에 종속적 실행
+jQuery 또는 api.browser 또는 jQuery 에 종속적 실행
 */
 
 ;(function(factory, global) {
@@ -447,7 +447,7 @@ jQuery 또는 api.dom 에 종속적 실행
 		(function call(queue) {
 			var config = queue.shift(); // 현재 순서에 해당하는 정보
 			var $element = $(config['element']); // 대상 element
-			var animation = config['animation']; // animation 적용 class name
+			var animation = config['class'] || config['animation']; // animation 적용 class name
 			var complete = config['complete']; // 애니메이션 종료 후 콜백 (complete)
 			var handler;
 			var time;

@@ -118,13 +118,13 @@ jQuery 또는 api.dom 에 종속적 실행
 	}
 
 	// 모듈 (private)
-	var module = (function() {
-		function FlickingModule() {
+	var bundle = (function() {
+		function FlickingBundle() {
 			var that = this;
 			// key가 있는 인스턴스
 			that.instance = {};
 		}
-		FlickingModule.prototype = {
+		FlickingBundle.prototype = {
 			setSettings: function(settings, options) {
 				var key;
 				for(key in options) {
@@ -299,7 +299,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				return String(value).replace(/[^+-\.\d]|,/g, '');
 			}
 		};
-		return new FlickingModule();
+		return new FlickingBundle();
 	})();
 	
 	// 플리킹
@@ -318,7 +318,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			'wheel': false, // 마우스 휠 이벤트 작동여부
 			'edge': true, // 가장자리 터치(클릭)시 슬라이드 이동여부
 			'listeners': { // 플리킹 작동 listeners (선택)
-				'init': null,
+				'initialize': null,
 				'next': null,
 				'prev': null,
 				'slidechange': null,
@@ -327,7 +327,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				'transitionend': null
 			}
 		};
-		that.settings = module.setSettings(that.settings, settings);
+		that.settings = bundle.setSettings(that.settings, settings);
 		that.elements = {};
 		that.total = 0; // 총 슬라이드 수
 		that.index = 1; // 현재 출력되고 있는 슬라이드 (1부터 시작)
@@ -350,8 +350,8 @@ jQuery 또는 api.dom 에 종속적 실행
 		that.elements.children = that.elements.target.children; // 슬라이드 elements (IE8 이하 사용 불가능)
 		that.total = that.elements.children.length || 0;
 
-		// init
-		that.init();
+		// initialize
+		that.initialize();
 		that.wrap();
 		that.view();
 		that.on();
@@ -362,10 +362,10 @@ jQuery 또는 api.dom 에 종속적 실행
 		$(window).off('resize.EVENT_RESIZE_FLICKING_' + that['settings']['key']);
 		if(that.settings.width === 'auto' && that.settings.height === 'auto') {
 			$(window).on('resize.EVENT_RESIZE_FLICKING_' + that['settings']['key'], function(e) {
-				console.log('[정보] 플리킹 resize event');
+				console.log('[플리킹 정보] resize event');
 				window.clearTimeout(that.time.resize);
 				that.time.resize = window.setTimeout(function(){ 
-					console.log('[정보] 플리킹 resize set');
+					console.log('[플리킹 정보] resize set');
 					// 애니메이션 정지!
 					that.wrap();
 					that.view();
@@ -374,13 +374,13 @@ jQuery 또는 api.dom 에 종속적 실행
 		}
 
 		// listeners
-		if(typeof that.settings.listeners.init === 'function') {
-			that.settings.listeners.init.call(that, that.elements.target);
+		if(typeof that.settings.listeners.initialize === 'function') {
+			that.settings.listeners.initialize.call(that, that.elements.target);
 		}
 	};
 	Flicking.prototype = {
 		// 초기값 (모션)
-		init: function() {
+		initialize: function() {
 			var that = this;
 
 			that.start = {
@@ -460,7 +460,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				'duration': 0
 			};
 
-			console.log('[정보] parent', parent);
+			console.log('[플리킹 정보] parent', parent);
 
 			// toLowerCase
 			if(/^(horizontal|vertical)$/i.test(that.settings.flow) === false) {
@@ -486,7 +486,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			};
 
 			// 사용자가 width /  height 를 설정
-			if(module.isNumeric(that.settings.width)) {
+			if(bundle.isNumeric(that.settings.width)) {
 				that.width = {
 					'value': Number(that.settings.width),
 					'unit': 'px'
@@ -498,7 +498,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					'unit': tmp[2]
 				};
 			}
-			if(module.isNumeric(that.settings.height)) {
+			if(bundle.isNumeric(that.settings.height)) {
 				that.height = {
 					'value': Number(that.settings.height),
 					'unit': 'px'
@@ -518,7 +518,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				// flow, flow-root, table, flex, ruby, grid, list-item
 				// !/flow|table|flex|ruby|grid|list/ig.test(display)
 				display = $(target).css('display'); 
-				//console.log('[정보] 플리킹 display', display);
+				//console.log('[플리킹 정보] display', display);
 
 				// target 상위 parent element 의 정확한 값을 구하기 위해 플리킹 wrap 의 width / height 초기화
 				// float해제방식: overflow: hidden; 또는 부모요소 inline-block
@@ -526,19 +526,19 @@ jQuery 또는 api.dom 에 종속적 실행
 				$(target).css({'display': 'none'});
 				if(that.settings.width === 'auto') {
 					that.width = {
-						'value': Number(module.numberReturn($(parent).innerWidth()) || 0),
+						'value': Number(bundle.numberReturn($(parent).innerWidth()) || 0),
 						'unit': 'px'
 					};
 				}
 				if(that.settings.height === 'auto' && that.settings.flow === 'vertical') {
 					that.height = {
-						'value': Number(module.numberReturn($(parent).innerHeight()) || 0),
+						'value': Number(bundle.numberReturn($(parent).innerHeight()) || 0),
 						'unit': 'px'
 					};
 				}
 				$(target).css({'display': display || ''});
-				//console.log('[정보] wrap width', that.width);
-				//console.log('[정보] wrap height', that.height);
+				//console.log('[플리킹 정보] wrap width', that.width);
+				//console.log('[플리킹 정보] wrap height', that.height);
 			}
 
 			// style
@@ -562,7 +562,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			}else {
 				translate['left'] = that.current = (that.width.value * (that.index - 1)) * -1;
 			}
-			module.setAnimate(translate); // resize 콜백 발생시 슬라이드 위치 초기화
+			bundle.setAnimate(translate); // resize 콜백 발생시 슬라이드 위치 초기화
 			
 			return that;
 		},
@@ -622,7 +622,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					past['min-height'] = element.css('min-height');
 					past['max-height'] = element.css('max-height');
 					past['display'] = element.css('display');
-					console.log('[정보] 플리킹 대상 element 기존 style', past);
+					console.log('[플리킹 정보] 대상 element 기존 style', past);
 
 					// 슬라이드의 width / height 값 계산(정확한 width / height 값 반환을 위해 float: left 설정, max-width 값 초기화)
 					// 플리킹을 위한 기본 style 설정
@@ -634,15 +634,15 @@ jQuery 또는 api.dom 에 종속적 실행
 
 					// border 값을 포함한 width / height 값
 					// 중앙정렬 조건이 padding 경우 width, height 값 확인 다시!
-					width = Number(module.numberReturn(element.outerWidth()) || 0); 
-					height = Number(module.numberReturn(element.outerHeight()) || 0); 
-					console.log('[정보] 플리킹 슬라이드 사이즈1', width + '/' + height); 
+					width = Number(bundle.numberReturn(element.outerWidth()) || 0); 
+					height = Number(bundle.numberReturn(element.outerHeight()) || 0); 
+					console.log('[플리킹 정보] 슬라이드 사이즈 확인(outerWidth/outerHeight)', [width, height].join('/')); 
 					if(element.get(0) && typeof element.get(0).getBoundingClientRect === 'function') { // chrome 에서는 정수가 아닌 실수단위로 정확한 값을 요구하므로 getBoundingClientRect 사용
 						rect = element.get(0).getBoundingClientRect(); // width/height: IE9 이상 지원
 						if('width' in rect || 'height' in rect) { 
 							width = rect.width || width;
 							height = rect.height || height;
-							console.log('[정보] 플리킹 슬라이드 사이즈2', width + '/' + height); 
+							console.log('[플리킹 정보] 슬라이드 사이즈 확인(getBoundingClientRect)', [width, height].join('/')); 
 						}
 					}
 
@@ -660,7 +660,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					style['display'] = past['display'] || 'block';
 
 					// width
-					console.log('[정보] 플리킹 width', width); 
+					//console.log('[플리킹 정보] width', width); 
 					if(0 < that.width.value && (width <= 0 || that.width.value < width)) {
 						// 슬라이드 width 크기가 플리킹 wrap width 보다 클경우 강제 width 설정
 						style['max-width'] = that.width.value + 'px';
@@ -673,7 +673,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					}
 
 					// height 
-					console.log('[정보] 플리킹 height', height);
+					//console.log('[플리킹 정보] height', height);
 					if(that.settings.flow === 'vertical') {
 						if(0 < that.height.value && (height <= 0 || that.height.value < height)) {
 							style['max-height'] = that.height.value + 'px';
@@ -684,7 +684,7 @@ jQuery 또는 api.dom 에 종속적 실행
 						}
 					}
 					
-					console.log('[정보] 플리킹 style', style);
+					console.log('[플리킹 정보] style', style);
 					element.css(style);
 				}
 			};
@@ -723,7 +723,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			if(typeof element === 'object' && element.nodeType) {
 				// index 값에 따라 해당 위치에 삽입
-				if(module.isNumeric(index)) { // 숫자
+				if(bundle.isNumeric(index)) { // 숫자
 					if(!that.elements.target.insertBefore(element, that.elements.children[index-1])) {
 						return false;
 					}
@@ -747,7 +747,7 @@ jQuery 또는 api.dom 에 종속적 실행
 				that.total = that.elements.children.length || 0; 
 				$(that.elements.target).css({'width': (that.settings.flow === 'vertical' ? that.width.value : (that.width.value * that.total)) + 'px'}); // wrap width 수정
 				that.view({'index': that.total});
-				console.log('[정보] append total', that.total);
+				console.log('[플리킹 정보] append total', that.total);
 
 				// listeners
 				if(typeof that.settings.listeners.append === 'function') {
@@ -774,7 +774,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			};
 
 			if(index) {
-				if(module.isNumeric(index)) { // 숫자
+				if(bundle.isNumeric(index)) { // 숫자
 					if(index == that.index) {
 						is = true;
 					}
@@ -818,7 +818,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			var that = this;
 			var parameter = parameter || {};
 			var index = parameter['index'] && typeof parameter['index'] === 'string' && String(parameter['index']).toLowerCase() || parameter['index']; // index 숫자이면 해당 index로 이동, next || prev 이면 해당 모드에 따라 이동
-			var duration = module.isNumeric(parameter['duration']) ? parameter['duration'] : Number(that.settings.speed) / 1000;
+			var duration = bundle.isNumeric(parameter['duration']) ? parameter['duration'] : Number(that.settings.speed) / 1000;
 
 			var is = false; // 이동이 발생했는지 여부
 			var before = that.index; // 현재 슬라이드 index
@@ -848,13 +848,13 @@ jQuery 또는 api.dom 에 종속적 실행
 					break;
 				default:
 					// index 값에 해당하는 index 로 이동
-					if(module.isNumeric(index)) {
+					if(bundle.isNumeric(index)) {
 						after = index;
 					}
 			}
 
 			// 다음 또는 이전 이동이 발생했는지 확인
-			if(module.isNumeric(after) && 1 <= after && (before < after || before > after) && after <= that.total) {
+			if(bundle.isNumeric(after) && 1 <= after && (before < after || before > after) && after <= that.total) {
 				is = true;
 			}
 
@@ -864,7 +864,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			}else if(that.settings.flow === 'vertical') {
 				translate['top'] = that.current = (that.height.value * ((is ? after : before) - 1)) * -1;
 			}
-			module.setAnimate(translate/*, complete*/);
+			bundle.setAnimate(translate/*, complete*/);
 
 			if(is) {
 				// 값 변경
@@ -888,237 +888,270 @@ jQuery 또는 api.dom 에 종속적 실행
 		// 마우스, 터치 이벤트 설정
 		on: function() {
 			var that = this;
-
-			// 이벤트 초기화
-			that.off(); 
-			
-			if(that.settings.touch === true) {
-				// down 이벤트
-				$(that.elements.target).on(env['event']['down'] + '.EVENT_MOUSEDOWN_FLICKING_' + that['settings']['key'], function(e) {
-					//console.log('[정보] flicking MOUSEDOWN');
-					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-					var self = event.currentTarget; // event listener element (event 실행 element)
-					var target = event && event.target; // event 가 발생한 element
-					//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
-					var touch = event.touches; // touchstart
-					var rect; 
-
-					// 위치 / 크기 
-					if(self.parentNode) {
-						rect = self.parentNode.getBoundingClientRect();
+			var rect = {}; 
+			var setUp = function(event) {
+				//console.log('[플리킹 정보] MOUSEUP');
+				var self = event.currentTarget; // event listener element (event 실행 element)
+				var target = event && event.target; // event 가 발생한 element
+				//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+				var touch = event.changedTouches; // touchend
+				var time;
+				var left, top;
+				var index, duration;
+				var standard = { // 기준값 (이동)
+					'time': 100, 
+					'move': 30, // 최소/최대 이동범위
+					'size': 6 // 화면 분할 기준
+				};
+				var isChildren = function(element) {
+					var i, max;
+					for(i=0, max=that.total; i<max; i++) {
+						if(that.elements.children[i].isEqualNode(element)) {
+							return true;
+						}
 					}
-					console.log('offset: ' + self.offsetLeft + '/' + self.offsetTop + '|' + self.offsetWidth + '/' + self.offsetHeight);
-					console.log('client: ' + self.clientLeft + '/' + self.clientTop + '|' + self.clientWidth + '/' + self.clientHeight);
+					return false;
+				};
 
-					// 버블링(stopPropagation) 중지시키면, 상위 이벤트(예: document 에 적용된 이벤트)이 작동을 안한다.
-					// 현재 이벤트의 기본 동작을 중단한다. (터치 디바이스에서 기본 이벤트를 중단시키면 스크롤이 작동을 안한다. 모바일에서는 user-select: none; CSS로 해결한다.)
-					if(!env['check']['touch'] && /[^input|select|textarea|button]/i.test(target.tagName)) {
-						// PC에서는 마우스 이벤트 정확도(기능 정상작동)를 올리기 위해 정지
-						module.preventDefault(event);
+				// event.currentTarget; // event listener element (event 실행 element)
+				// event.target; // event 가 발생한 element
+
+				// 현재 이벤트의 기본 동작을 중단한다. (터치 디바이스에서 기본 이벤트를 중단시키면 슬라이드 내부 a 태그등이 작동을 안한다. 모바일에서는 user-select: none; CSS로 해결한다.)
+				//bundle.preventDefault(event);
+
+				// 정지값
+				if(touch) {
+					that['end']['left'] = touch[0].clientX;
+					that['end']['top'] = touch[0].clientY;
+				}else {
+					that['end']['left'] = event.clientX;
+					that['end']['top'] = event.clientY;
+				}
+				that['end']['time'] = new Date().getTime();
+
+				time = Number(that['end']['time']) - Number(that['start']['time']);
+				left = that['end']['left'] - that['start']['left'];
+				top = that['end']['top'] - that['start']['top'];
+				index = that.index;
+				duration = Number(that.settings.speed) / 1000; /* 300 / 1000 */
+
+				// 이동 가능한지 검사
+				if(that.settings.flow === 'horizontal' && ((Math.abs(left) > Math.abs(top)/*좌우 이동값이 더 큰 경우*/ && (time <= standard.time && standard.move <= Math.abs(left)/*마우스를 빠르게 이동한 경우*/)) || (that.width.value / standard.size) < Math.abs(left)/*슬라이드 크기 기준 어느정도 이동이 발생했을 때*/)) {
+					if(index < that.total && left < 0) { // 다음
+						index++;
+					}else if(1 < index && left > 0) { // 이전
+						index--;
 					}
-					
-					// 멀티터치 방지
-					if(touch && touch.length && 1 < touch.length) {
-						return;
+					// 슬라이드 속도
+					duration = (time > 1000 || 6000 < time) ? duration : (time+100) / 1000;
+				}else if(that.settings.flow === 'vertical' && ((Math.abs(top) > Math.abs(left)/*상하 이동값이 더 큰 경우*/ && (time <= standard.time && standard.move <= Math.abs(top)/*마우스를 빠르게 이동한 경우*/)) || (that.height.value / standard.size) < Math.abs(top)/*슬라이드 크기 기준 어느정도 이동이 발생했을 때*/)) {
+					if(index < that.total && top < 0) { // 다음
+						index++;
+					}else if(1 < index && top > 0) { // 이전
+						index--;
 					}
+					// 슬라이드 속도
+					duration = (time > 1000 || 6000 < time) ? duration : (time+100) / 1000;
+				}else if(typeof rect === 'object' && that.settings.edge === true && Math.abs(left) < standard.move && Math.abs(top) < standard.move && (that.elements.target.isEqualNode(target)/*슬라이드 영역*/ || (that.elements.target.contains(target)/*바로하위자식*/ && isChildren(target)))) {
+					// 슬라이드 좌/우 또는 상/하 끝부분을 클릭(터치) 했을 경우
+					console.log('[플리킹 정보] 슬라이드 좌/우 또는 상/하 끝부분');
+					console.log('current slide', that.elements.children[that.index-1]);
+					console.log('rect', rect);
+					console.log('start', that['start']);
+					console.log('end', that['end']);
+					//console.log(rect.left <= that['end']['left']);
+					//console.log(that['end']['left'] <= rect.left+standard.move);
+					//console.log(rect.right-standard.move <= that['end']['left']);
+					//console.log(that['end']['left'] <= rect.right);
+					if(that.settings.flow === 'horizontal') {
+						if(rect.left <= that['end']['left'] && that['end']['left'] <= rect.left+standard.move) { // 좌측기준
+							index--;
+						}else if(rect.right-standard.move <= that['end']['left'] && that['end']['left'] <= rect.right) { // 우측기준
+							index++;
+						}
+					}else if(that.settings.flow === 'vertical') {
+						if(rect.top <= that['end']['top'] && that['end']['top'] <= rect.top+standard.move) { // 상단기준 
+							index--;
+						}else if(rect.bottom-standard.move <= that['end']['top'] && that['end']['top'] <= rect.bottom) { // 하단기준 
+							index++;
+						}
+					}
+				}
+				//console.log('slide element', that.elements.target);
+				//console.log('target', target);
+
+				/*
+				// 로그
+				console.log('[플리킹 정보] 실행정보');
+				console.log('index: ' + that.index);
+				console.log('index: ' + index);
+				console.log('duration: ' + duration);
+				console.dir(that['start']);
+				console.dir(that['end']);
+				*/
+
+				// 슬라이드 이동 (transitionend 이벤트 발생됨)
+				that.slide({'index': index, 'duration': duration});
+
+				// ---------- ---------- ---------- ---------- ---------- ----------
+
+				// 이벤트 정지
+				$(window).off('.EVENT_MOUSEMOVE_FLICKING_' + that['settings']['key']);
+				$(window).off('.EVENT_MOUSEUP_FLICKING_' + that['settings']['key']);
+
+				// auto
+				that.auto({'mode': 'start'});
+
+				// initialize
+				that.initialize();
+			};
+			var setMove = function(event) {
+				//console.log('[플리킹 정보] MOUSEMOVE');
+				var self = event.currentTarget; // event listener element (event 실행 element)
+				var target = event && event.target; // event 가 발생한 element
+				//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+				var touch = event.touches || event.changedTouches;
+				var left, top;
+				var is = true;
+				var translate = {
+					'element': that.elements.target,
+					'duration': 0
+				};
+
+				// event.currentTarget; // event listener element (event 실행 element)
+				// event.target; // event 가 발생한 element
+				// event.currentTarget.contains(event.target); // 특정 노드가 다른 노드 내에 포함되었는지 여부
+
+				// 마우스 element target 이 플리킹 내부 element 가 아니면 중지시킨다. 
+				//console.log('contains', that.elements.target.contains(target));
+				if(that.elements.target.contains(target) === false) {
+					console.log('contains', target);
+					setUp(event);
+					/*that.slide({'index': that.index});
 
 					// 이벤트 정지
 					$(window).off('.EVENT_MOUSEMOVE_FLICKING_' + that['settings']['key']);
 					$(window).off('.EVENT_MOUSEUP_FLICKING_' + that['settings']['key']);
 
 					// auto
-					that.auto({'mode': 'stop'});
-					
-					// init
-					that.init();
+					that.auto({'mode': 'start'});
 
-					// ---------- ---------- ---------- ---------- ---------- ----------
-					
-					// 시작값
-					if(touch) {
-						that['start']['left'] = touch[0].clientX;
-						that['start']['top'] = touch[0].clientY;
-					}else {
-						that['start']['left'] = event.clientX;
-						that['start']['top'] = event.clientY;
-					}
-					that['start']['time'] = new Date().getTime();
+					// initialize
+					that.initialize();*/
+					return false;
+				}
+
+				// 현재 이벤트의 기본 동작을 중단한다.
+				if(that.settings.flow === 'vertical') {
+					bundle.preventDefault(event);
+				}
+
+				// 이동값
+				if(touch) {
+					left = touch[0].clientX;
+					top = touch[0].clientY;
+				}else {
+					left = event.clientX;
+					top = event.clientY;
+				}
+
+				// 로그
+				/*console.log("left: " + left);
+				console.log("that['start']['left']: " + that['start']['left']);
+				console.log("top: " + top);
+				console.log("that['start']['top']: " + that['start']['top']);
+				console.log(Math.abs(left - that['start']['left']));
+				console.log(Math.abs(top - that['start']['top']));*/
+
+				// 슬라이드 영역 외 element 검사
+				/*if(!that.elements.target.contains(event.target)) {
+					that.slide({'index': that.index, 'duration': Number(that.settings.speed) / 1000});
+					return false;
+				}*/
+
+				// 사용자 터치가 브라우저 스크롤인지 슬라이드 이동 목적인지 확인하여 실행(안정화)
+				if(that.settings.flow === 'horizontal' && Math.abs(left - that['start']['left']) > Math.abs(top - that['start']['top'])) {
+					translate['left'] = (left - that['start']['left']) + that.current;
+				}else if(that.settings.flow === 'vertical' && Math.abs(top - that['start']['top']) > Math.abs(left - that['start']['left'])) {
+					translate['top'] = (top - that['start']['top']) + that.current;
+				}else {
+					is = false;
+				}
+				if(is) {
+					// 현재 이벤트의 기본 동작을 중단한다. (슬라이드가 작동중일 때 모바일의 기본이벤트인 스크롤 작동을 중단시킨다.)
+					bundle.preventDefault(event);
+					// slide 이동
+					bundle.setAnimate(translate);
+				}
+			};
+			var setDown = function(event) {
+				//console.log('[플리킹 정보] MOUSEDOWN');
+				var self = event.currentTarget; // event listener element (event 실행 element)
+				var target = event && event.target; // event 가 발생한 element
+				//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
+				var touch = event.touches; // touchstart
+
+				// 위치 / 크기 
+				if(self.parentNode) {
+					rect = self.parentNode.getBoundingClientRect();
+				}
+				console.log('[플리킹 정보] element 값', self);
+				console.log('[플리킹 정보] offset 값', ['left(' + self.offsetLeft + ')', 'top(' + self.offsetTop + ')', 'width(' + self.offsetWidth + ')', 'height(' + self.offsetHeight + ')'].join(' '));
+				console.log('[플리킹 정보] client 값', ['left(' + self.clientLeft + ')', 'top(' + self.clientTop + ')', 'width(' + self.clientWidth + ')', 'height(' + self.clientHeight + ')'].join(' '));
+
+				// 버블링(stopPropagation) 중지시키면, 상위 이벤트(예: document 에 적용된 이벤트)이 작동을 안한다.
+				// 현재 이벤트의 기본 동작을 중단한다. (터치 디바이스에서 기본 이벤트를 중단시키면 스크롤이 작동을 안한다. 모바일에서는 user-select: none; CSS로 해결한다.)
+				if(!env['check']['touch'] && /[^input|select|textarea|button]/i.test(target.tagName)) {
+					// PC에서는 마우스 이벤트 정확도(기능 정상작동)를 올리기 위해 정지
+					bundle.preventDefault(event);
+				}
+				
+				// 멀티터치 방지
+				if(touch && touch.length && 1 < touch.length) {
+					return;
+				}
+
+				// ---------- ---------- ---------- ---------- ---------- ----------
+
+				// 이벤트 정지
+				$(window).off('.EVENT_MOUSEMOVE_FLICKING_' + that['settings']['key']);
+				$(window).off('.EVENT_MOUSEUP_FLICKING_' + that['settings']['key']);
+
+				// auto
+				that.auto({'mode': 'stop'});
+				
+				// initialize
+				that.initialize();
+
+				// ---------- ---------- ---------- ---------- ---------- ----------
+				
+				// 시작값
+				if(touch) {
+					that['start']['left'] = touch[0].clientX;
+					that['start']['top'] = touch[0].clientY;
+				}else {
+					that['start']['left'] = event.clientX;
+					that['start']['top'] = event.clientY;
+				}
+				that['start']['time'] = new Date().getTime();
+			};
+			
+			// 이벤트 초기화
+			that.off(); 
+			
+			if(that.settings.touch === true) {
+				// down 이벤트
+				$(that.elements.target).on(env['event']['down'] + '.EVENT_MOUSEDOWN_FLICKING_' + that['settings']['key'], function(e) {
+					setDown((typeof e === 'object' && e.originalEvent || e) || window.event); // originalEvent: jQuery Event
 
 					// move 이벤트
 					$(window).on(env['event']['move'] + '.EVENT_MOUSEMOVE_FLICKING_' + that['settings']['key'], function(e) {
-						//console.log('[정보] flicking MOUSEMOVE');
-						var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-						var target = event && event.target; // event 가 발생한 element
-						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
-						var touch = event.touches || event.changedTouches;
-						var left, top;
-						var is = true;
-						var translate = {
-							'element': that.elements.target,
-							'duration': 0
-						};
-
-						// event.currentTarget; // event listener element (event 실행 element)
-						// event.target; // event 가 발생한 element
-						// event.currentTarget.contains(event.target); // 특정 노드가 다른 노드 내에 포함되었는지 여부
-
-						// 현재 이벤트의 기본 동작을 중단한다.
-						if(that.settings.flow === 'vertical') {
-							module.preventDefault(event);
-						}
-
-						// 이동값
-						if(touch) {
-							left = touch[0].clientX;
-							top = touch[0].clientY;
-						}else {
-							left = event.clientX;
-							top = event.clientY;
-						}
-
-						// 로그
-						/*console.log("left: " + left);
-						console.log("that['start']['left']: " + that['start']['left']);
-						console.log("top: " + top);
-						console.log("that['start']['top']: " + that['start']['top']);
-						console.log(Math.abs(left - that['start']['left']));
-						console.log(Math.abs(top - that['start']['top']));*/
-
-						// 슬라이드 영역 외 element 검사
-						/*if(!that.elements.target.contains(event.target)) {
-							that.slide({'index': that.index, 'duration': Number(that.settings.speed) / 1000});
-							return false;
-						}*/
-
-						// 사용자 터치가 브라우저 스크롤인지 슬라이드 이동 목적인지 확인하여 실행(안정화)
-						if(that.settings.flow === 'horizontal' && Math.abs(left - that['start']['left']) > Math.abs(top - that['start']['top'])) {
-							translate['left'] = (left - that['start']['left']) + that.current;
-						}else if(that.settings.flow === 'vertical' && Math.abs(top - that['start']['top']) > Math.abs(left - that['start']['left'])) {
-							translate['top'] = (top - that['start']['top']) + that.current;
-						}else {
-							is = false;
-						}
-						if(is) {
-							// 현재 이벤트의 기본 동작을 중단한다. (슬라이드가 작동중일 때 모바일의 기본이벤트인 스크롤 작동을 중단시킨다.)
-							module.preventDefault(event);
-							// slide 이동
-							module.setAnimate(translate);
-						}
+						setMove((typeof e === 'object' && e.originalEvent || e) || window.event); // originalEvent: jQuery Event
 					});
 					
 					// up 이벤트
 					$(window).on(env['event']['up'] + '.EVENT_MOUSEUP_FLICKING_' + that['settings']['key'], function(e) {
-						//console.log('[정보] flicking MOUSEUP');
-						var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-						var target = event && event.target; // event 가 발생한 element
-						//var touch = (event.touches && event.touches[0]) || (event.changedTouches && event.changedTouches[0]);
-						var touch = event.changedTouches; // touchend
-						var time;
-						var left, top;
-						var index, duration;
-						var standard = { // 기준값 (이동)
-							'time': 100, 
-							'move': 30, // 최소/최대 이동범위
-							'size': 6 // 화면 분할 기준
-						};
-						var isChildren = function(element) {
-							var i, max;
-							for(i=0, max=that.total; i<max; i++) {
-								if(that.elements.children[i].isEqualNode(element)) {
-									return true;
-								}
-							}
-							return false;
-						};
-
-						// event.currentTarget; // event listener element (event 실행 element)
-						// event.target; // event 가 발생한 element
-
-						// 현재 이벤트의 기본 동작을 중단한다. (터치 디바이스에서 기본 이벤트를 중단시키면 슬라이드 내부 a 태그등이 작동을 안한다. 모바일에서는 user-select: none; CSS로 해결한다.)
-						//module.preventDefault(event);
-
-						// 정지값
-						if(touch) {
-							that['end']['left'] = touch[0].clientX;
-							that['end']['top'] = touch[0].clientY;
-						}else {
-							that['end']['left'] = event.clientX;
-							that['end']['top'] = event.clientY;
-						}
-						that['end']['time'] = new Date().getTime();
-
-						time = Number(that['end']['time']) - Number(that['start']['time']);
-						left = that['end']['left'] - that['start']['left'];
-						top = that['end']['top'] - that['start']['top'];
-						index = that.index;
-						duration = Number(that.settings.speed) / 1000; /* 300 / 1000 */
-
-						// 이동 가능한지 검사
-						if(that.settings.flow === 'horizontal' && ((Math.abs(left) > Math.abs(top)/*좌우 이동값이 더 큰 경우*/ && (time <= standard.time && standard.move <= Math.abs(left)/*마우스를 빠르게 이동한 경우*/)) || (that.width.value / standard.size) < Math.abs(left)/*슬라이드 크기 기준 어느정도 이동이 발생했을 때*/)) {
-							if(index < that.total && left < 0) { // 다음
-								index++;
-							}else if(1 < index && left > 0) { // 이전
-								index--;
-							}
-							// 슬라이드 속도
-							duration = (time > 1000 || 6000 < time) ? duration : (time+100) / 1000;
-						}else if(that.settings.flow === 'vertical' && ((Math.abs(top) > Math.abs(left)/*상하 이동값이 더 큰 경우*/ && (time <= standard.time && standard.move <= Math.abs(top)/*마우스를 빠르게 이동한 경우*/)) || (that.height.value / standard.size) < Math.abs(top)/*슬라이드 크기 기준 어느정도 이동이 발생했을 때*/)) {
-							if(index < that.total && top < 0) { // 다음
-								index++;
-							}else if(1 < index && top > 0) { // 이전
-								index--;
-							}
-							// 슬라이드 속도
-							duration = (time > 1000 || 6000 < time) ? duration : (time+100) / 1000;
-						}else if(that.settings.edge === true && Math.abs(left) < standard.move && Math.abs(top) < standard.move && (that.elements.target.isEqualNode(target)/*슬라이드 영역*/ || (that.elements.target.contains(target)/*바로하위자식*/ && isChildren(target)))) {
-							// 슬라이드 좌/우 또는 상/하 끝부분을 클릭(터치) 했을 경우
-							console.log('current slide', that.elements.children[that.index-1]);
-							console.log('rect', rect);
-							console.log('start', that['start']);
-							console.log('end', that['end']);
-							console.log(rect.left <= that['end']['left']);
-							console.log(that['end']['left'] <= rect.left+standard.move);
-							console.log(rect.right-standard.move <= that['end']['left']);
-							console.log(that['end']['left'] <= rect.right);
-							if(that.settings.flow === 'horizontal') {
-								if(rect.left <= that['end']['left'] && that['end']['left'] <= rect.left+standard.move) { // 좌측기준
-									index--;
-								}else if(rect.right-standard.move <= that['end']['left'] && that['end']['left'] <= rect.right) { // 우측기준
-									index++;
-								}
-							}else if(that.settings.flow === 'vertical') {
-								if(rect.top <= that['end']['top'] && that['end']['top'] <= rect.top+standard.move) { // 상단기준 
-									index--;
-								}else if(rect.bottom-standard.move <= that['end']['top'] && that['end']['top'] <= rect.bottom) { // 하단기준 
-									index++;
-								}
-							}
-						}
-						console.log('slide element', that.elements.target);
-						console.log('target', target);
-
-						/*
-						// 로그
-						console.log('[실행정보] 플로킹');
-						console.log('index: ' + that.index);
-						console.log('index: ' + index);
-						console.log('duration: ' + duration);
-						console.dir(that['start']);
-						console.dir(that['end']);
-						*/
-
-						// 슬라이드 이동 (transitionend 이벤트 발생됨)
-						that.slide({'index': index, 'duration': duration});
-
-						// 이벤트 정지
-						$(window).off('.EVENT_MOUSEMOVE_FLICKING_' + that['settings']['key']);
-						$(window).off('.EVENT_MOUSEUP_FLICKING_' + that['settings']['key']);
-
-						// auto
-						that.auto({'mode': 'start'});
-
-						// init
-						that.init();
+						setUp((typeof e === 'object' && e.originalEvent || e) || window.event); // originalEvent: jQuery Event
 					});
 				});
 
@@ -1184,7 +1217,7 @@ jQuery 또는 api.dom 에 종속적 실행
 					var scroll;
 
 					// 현재 이벤트의 기본 동작을 중단한다.
-					module.preventDefault(event);
+					bundle.preventDefault(event);
 
 					//
 					if(event.wheelDelta) {
@@ -1212,7 +1245,7 @@ jQuery 또는 api.dom 에 종속적 실행
 	// public return
 	return {
 		search: function(key) {
-			return module.instance[key] || false;
+			return bundle.instance[key] || false;
 		},
 		setup: function(settings) {
 			var instance;
@@ -1226,7 +1259,7 @@ jQuery 또는 api.dom 에 종속적 실행
 			}else {
 				instance = new Flicking(settings);
 				if(settings['key'] && instance) {
-					module.instance[settings['key']] = instance;
+					bundle.instance[settings['key']] = instance;
 				}
 			}
 			return instance;
@@ -1235,9 +1268,9 @@ jQuery 또는 api.dom 에 종속적 실행
 			if(key) {
 				this.search(key) && this.search(key).on();
 			}else {
-				for(key in module.instance) {
-					if(module.instance.hasOwnProperty(key)) {
-						module.instance[key].on();
+				for(key in bundle.instance) {
+					if(bundle.instance.hasOwnProperty(key)) {
+						bundle.instance[key].on();
 					}
 				}
 			}
@@ -1246,9 +1279,9 @@ jQuery 또는 api.dom 에 종속적 실행
 			if(key) {
 				this.search(key) && this.search(key).off();
 			}else {
-				for(key in module.instance) {
-					if(module.instance.hasOwnProperty(key)) {
-						module.instance[key].off();
+				for(key in bundle.instance) {
+					if(bundle.instance.hasOwnProperty(key)) {
+						bundle.instance[key].off();
 					}
 				}
 			}

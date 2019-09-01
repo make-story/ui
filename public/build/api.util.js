@@ -169,6 +169,56 @@ Dual licensed under the MIT and GPL licenses.
 
 			return out;
 		},
+		// Deep extend/merge destination object with N more objects
+		// http://andrewdupont.net/2009/08/28/deep-extending-objects-in-javascript/
+		// Removed call to arguments.callee (used explicit function name instead)
+		// extend({}, properties, {plyr: api})
+		/*extend: function() {
+			// Get arguments
+			var objects = arguments;
+			var destination, length;
+			var i;
+			var source, property;
+
+			// Bail if nothing to merge
+			if(!objects.length) {
+				return;
+			}
+	
+			// Return first if specified but nothing to merge
+			if(objects.length === 1) {
+				return objects[0];
+			}
+	
+			// First object is the destination
+			destination = Array.prototype.shift.call(objects);
+			length = objects.length;
+	
+			// Loop through all objects to merge
+			for(i=0; i<length; i++) {
+				source = objects[i];
+				for(property in source) {
+					if(source[property] && source[property].constructor && source[property].constructor === Object) {
+						destination[property] = destination[property] || {};
+						this.extend(destination[property], source[property]);
+					}else {
+						destination[property] = source[property];
+					}
+				}
+			}
+	
+			return destination;
+		},*/
+		// Element exists in an array
+		// inArray(['a', 'b'], 'a')
+		inArray: function(haystack, needle) {
+			return Array.prototype.indexOf && (haystack.indexOf(needle) !== -1);
+		},
+		// Replace all
+		// replaceAll(html, '{seektime}', config.seekTime);
+		replaceAll: function(string, find, replace) {
+			return string.replace(new RegExp(find.replace(/([.*+?\^=!:${}()|\[\]\/\\])/g, '\\$1'), 'g'), replace);
+		},
 		// 반응형 계산
 		sizePercent: function(t, c) {
 			//공식 : target / content = result
@@ -422,53 +472,6 @@ Dual licensed under the MIT and GPL licenses.
 				return false;
 			}
 		},
-		// value 앞에 count 수만큼 add를 채운다
-		// 사용예: ('0', '3', 2) => '03'
-		leftFormatString: function(add, value, count) {
-			var value = String(value);
-			var result = '';
-			var i;
-			for(i=value.length; i<count; i++){
-				result = result + add;
-			}
-			return result + value;
-		},
-		// 글자 Byte 수 출력
-		stringByteLength: function(value) {
-			var bytes = 0;
-			if(typeof value === 'string') {
-				bytes = value.replace(/[\0-\x7f]|([0-\u07ff]|(.))/g,"$&$1$2").length;
-			}
-			return bytes;
-		},
-		// 말줄임
-		// CSS : 
-		/*
-		// 한 줄 자르기 
-		display: inline-block; 
-		width: 200px; 
-		white-space: 
-		nowrap; overflow: hidden; 
-		text-overflow: ellipsis; 
-		
-		// 여러 줄 자르기 추가 스타일 
-		white-space: normal; 
-		line-height: 1.2; 
-		height: 3.6em; 
-		text-align: left; 
-		word-wrap: break-word; 
-		display: -webkit-box; 
-		-webkit-line-clamp: 3; 
-		-webkit-box-orient: vertical;
-		*/
-		// jQuery : https://github.com/jjenzz/jquery.ellipsis/blob/master/jquery.ellipsis.js
-		stringEllipsis: function(value, length, options) {
-			if(typeof value === 'string' && !isNaN(parseFloat(length)) && isFinite(length) && length < value.length) {
-				return value.substr(0, length-2) + (typeof options === 'string' ? options : '..');
-			}else {
-				return value;
-			}
-		},
 		// window popup
 		windowPopup: function(url, name, width, height, features) {
 			/*
@@ -511,22 +514,6 @@ Dual licensed under the MIT and GPL licenses.
 					x: window.pageXOffset || 0,
 					y: window.pageYOffset || 0
 				};
-			}
-		},
-		// 온라인 / 오프라인 여부
-		isOnline: function() {
-			// https://developer.mozilla.org/en-US/docs/Web/API/NavigatorOnLine
-			if(window.navigator && 'onLine' in window.navigator) {
-				if(window.navigator.onLine === true) {
-					// online
-					return true;
-				}else {
-					// offline
-					return false;
-				}
-			}else {
-				// online / offline 미지원
-				return;
 			}
 		},
 		// 페이징 계산 
@@ -591,17 +578,79 @@ Dual licensed under the MIT and GPL licenses.
 			return result;
 		},
 		// URL/Hash key:value 형태로 반환
-		urlParameters: function(url) {
+		urlParameters: function() {
 			var pageParamString = unescape(window.location.search.substring(1));
 			var paramsArray = pageParamString.split('&');
 			var paramsHash = {};
-		
-			for (var i = 0; i < paramsArray.length; i++)
-			{
-				var singleParam = paramsArray[i].split('=');
+			var i;
+			var singleParam;
+
+			for(i = 0; i < paramsArray.length; i++) {
+				singleParam = paramsArray[i].split('=');
 				paramsHash[singleParam[0]] = singleParam[1];
 			}
+
 			return paramsHash;
+		},
+		
+		// ---------- ---------- ---------- ---------- ---------- ----------
+		// string 
+
+		// value 앞에 count 수만큼 add를 채운다
+		// 사용예: ('0', '3', 2) => '03'
+		stringLeftFormat: function(add, value, count) {
+			var value = String(value);
+			var result = '';
+			var i;
+			for(i=value.length; i<count; i++){
+				result = result + add;
+			}
+			return result + value;
+		},
+		// 글자 Byte 수 출력
+		stringByteLength: function(value) {
+			var bytes = 0;
+			if(typeof value === 'string') {
+				bytes = value.replace(/[\0-\x7f]|([0-\u07ff]|(.))/g,"$&$1$2").length;
+			}
+			return bytes;
+		},
+		// length 만큼 문자열 분리 배열 반환 
+		stringSplitLength: function(str, length) {
+			if(typeof str !== 'string') {
+				return str;
+			}else if(!length) {
+				length = 5;
+			}
+			return str.match(new RegExp('.{1,' + length + '}', 'g'));
+		},
+		// 말줄임
+		// CSS : 
+		/*
+		// 한 줄 자르기 
+		display: inline-block; 
+		width: 200px; 
+		white-space: 
+		nowrap; overflow: hidden; 
+		text-overflow: ellipsis; 
+		
+		// 여러 줄 자르기 추가 스타일 
+		white-space: normal; 
+		line-height: 1.2; 
+		height: 3.6em; 
+		text-align: left; 
+		word-wrap: break-word; 
+		display: -webkit-box; 
+		-webkit-line-clamp: 3; 
+		-webkit-box-orient: vertical;
+		*/
+		// jQuery : https://github.com/jjenzz/jquery.ellipsis/blob/master/jquery.ellipsis.js
+		stringEllipsis: function(value, length, options) {
+			if(typeof value === 'string' && !isNaN(parseFloat(length)) && isFinite(length) && length < value.length) {
+				return value.substr(0, length-2) + (typeof options === 'string' ? options : '..');
+			}else {
+				return value;
+			}
 		},
 
 		// ---------- ---------- ---------- ---------- ---------- ----------
@@ -678,22 +727,10 @@ Dual licensed under the MIT and GPL licenses.
 				element.removeChild(element.lastChild);
 			}
 		},
-		// element 노출 여부 
-		isVisible: function(element) {
-			// Support: Opera <= 12.12
-			// Opera reports offsetWidths and offsetHeights less than zero on some elements
-			// 검사하려는 element 하위 element 가 position: fixed; 되어있을 경우, 숨겨진 것으로 처리되니 주의해야 한다.
-			var is = true;
-			if(element.offsetWidth <= 0 && element.offsetHeight <= 0) {
-				is = false;
-			}else if(element.style && element.style.display === 'none') {
-				is = false;
-			}
-			return is;
-		},
 
 		// ---------- ---------- ---------- ---------- ---------- ----------
-		// 참/거짓
+		// 유효성 
+		// true/false 
 
 		isObject: function(value) {
 			return value !== null && typeof value === 'object';
@@ -731,6 +768,22 @@ Dual licensed under the MIT and GPL licenses.
 		isJSON: function(value) {
 			return value && typeof value === 'object' && value !== null && (/*Array.isArray(value)*/Object.prototype.toString.call(value) === "[object Array]" || /^{.*}$|^\[.*\]$/.test(JSON.stringify(value)));
 		},
+		// 온라인 / 오프라인 여부
+		isOnline: function() {
+			// https://developer.mozilla.org/en-US/docs/Web/API/NavigatorOnLine
+			if(window.navigator && 'onLine' in window.navigator) {
+				if(window.navigator.onLine === true) {
+					// online
+					return true;
+				}else {
+					// offline
+					return false;
+				}
+			}else {
+				// online / offline 미지원
+				return;
+			}
+		},
 		//팝업차단확인
 		isWindowPopup: function() {
 			var win = window.open('', 'isWindowPopup', 'width=1, height=1, left=-10, top=-10, scrollbars=yes, resizable=yes');
@@ -741,6 +794,27 @@ Dual licensed under the MIT and GPL licenses.
 			}
 			if(win) {
 				win.close();
+			}
+			return is;
+		},
+		// Determine if we're in an iframe
+		isInFrame: function() {
+			try {
+				return window.self !== window.top;
+			}catch (e) {
+				return true;
+			}
+		},
+		// element 노출 여부 
+		isVisible: function(element) {
+			// Support: Opera <= 12.12
+			// Opera reports offsetWidths and offsetHeights less than zero on some elements
+			// 검사하려는 element 하위 element 가 position: fixed; 되어있을 경우, 숨겨진 것으로 처리되니 주의해야 한다.
+			var is = true;
+			if(element.offsetWidth <= 0 && element.offsetHeight <= 0) {
+				is = false;
+			}else if(element.style && element.style.display === 'none') {
+				is = false;
 			}
 			return is;
 		},
@@ -772,6 +846,46 @@ Dual licensed under the MIT and GPL licenses.
 			return parts.join(".");
 			*/
 			return value;
+		},
+		// 금액 4단위 한글변환
+		numberMoney: function(money) {
+			var won  = (money + "").replace(/,/g, ""); // 콤마제거 
+			var unit  = [/*"원",*/"", "만", "억", "조", "경", "해", "자", "양", "구", "간", "정"]; // 금액단위 (4단위)
+			var change = ""; // 변환금액 
+			var pattern = /(-?[0-9]+)([0-9]{4})/;
+			var arr = []; // 4단위 분리 값 
+			var count = 0;
+			var index = 0;
+			var j, i;
+			var tmp1, tmp2;
+
+			while(pattern.test(won)) {
+				won = won.replace(pattern, "$1,$2"); // 4단위 분리 ,(콤마) 넣음
+			}
+			arr = won.split(",");
+			count = arr.length; // ,(콤마) 기준 분리 배열크기 
+			index = count - 1; 
+
+			// 단위 앞부분부터 확인 반복문 
+			for(j=0; j<count; j++) {
+				if(unit[index] === undefined) {
+					break;
+				}
+				tmp1 = 0;
+				for(i=0; i<arr[j].length; i++) {
+					tmp2 = arr[j].substring(i, i+1);
+					tmp1 = tmp1 + Number(tmp2);
+				}
+				if(tmp1 > 0) {
+					change += arr[j] + unit[index];
+					if(0 < index) { // 원단위 이상의 경우 break
+						break;
+					}
+				}
+				index--;
+			}
+
+			return change;
 		},
 		// 소수점 단위 금액
 		floatFormat: function(value) {
@@ -886,7 +1000,7 @@ Dual licensed under the MIT and GPL licenses.
 		getDateSpecificInterval({'instance': tmp}, -19); // -19일
 		*/
 		dateSpecificInterval: function(date, interval) {
-			var instance, interval;
+			var instance;
 			if(date.instance) { //{'instance': 값}
 				instance = date.instance;
 			}else if(date.year && date.month && date.day) { //{'year': 값, 'month': 값, 'day': 값}

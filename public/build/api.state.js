@@ -97,7 +97,7 @@ state.set({'key': 'event.action', 'value': true});
 					}else {
 						result = result[arr[i]];
 					}
-				}else { // init (값 초기화)
+				}else { // initialize (값 초기화)
 					result = result[arr[i]] = undefined;
 				}
 

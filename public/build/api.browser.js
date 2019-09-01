@@ -60,8 +60,8 @@ http://www.quirksmode.org/js/detect.html
 	};
 
 	// 클라이언트 브라우저 환경
-	var agent = (global.navigator.userAgent || global.navigator.vendor || global.opera).toLowerCase();
 	var div = document.createElement('div');
+	var agent = (global.navigator.userAgent || global.navigator.vendor || global.opera || '').toLowerCase();
  	var environment = {
 		//"zindex": 100, // z-index 최대값: 2147483647 (대부분 브라우저 32 비트 값 -2147483648 ~ +2147483647으로 제한)
 		//"support": {
@@ -152,14 +152,19 @@ http://www.quirksmode.org/js/detect.html
 				return false;
 			})(),
 			"resize": 'onorientationchange' in window ? 'orientationchange' : 'resize',
-			// 트랜지션, 애니메이션
+			// 트랜지션
 			"transitionstart": "transitionstart",
 			"transitionend": "transitionend",
 			"transitionrun": "transitionrun",
 			"transitioncancel": "transitioncancel",
+			// 애니메이션
 			"animationstart": "animationstart",
 			"animationiteration": "animationiteration",
-			"animationend": "animationend"
+			"animationend": "animationend",
+			// 풀스크린 
+			"requestFullscreen": "requestFullscreen",
+			"exitFullscreen": "exitFullscreen",
+			"fullscreenElement": "fullscreenElement"
 		}/*,
 		"css": {
 			"prefix": '', // 벤더 프리픽스
@@ -168,8 +173,9 @@ http://www.quirksmode.org/js/detect.html
 		}*/
 	};
 
-	// transform, transition, animation
+	// transform, transition, animation, fullscreen
 	(function() {
+		// 브라우저별로 프리픽스(종류)가 다를 수 있다.
 		var transforms = ["transform", "WebkitTransform", "MozTransform", "OTransform", "msTransform"]; // css check (IE9 벤더프리픽스로 사용가능, IE10이상 공식지원)
 		var transforms3d = ["perspective", "WebkitPerspective", "MozPerspective", "OPerspective", "msPerspective"]; // 3D지원여부 판단자료
 		var transitions = { // event check (IE10이상 공식지원) - start, run, cancel 브라우저 지원 확인 필요
@@ -186,7 +192,14 @@ http://www.quirksmode.org/js/detect.html
 			"OAnimation": ['oanimationstart', 'oanimationiteration', 'oanimationend'],
 			"msAnimation": ['MSAnimationStart', 'MSAnimationIteration', 'MSAnimationEnd']
 		};
+		var fullscreen = {
+			// https://developer.apple.com/documentation/webkitjs/htmlvideoelement/1628805-webkitsupportsfullscreen
+			"requestFullscreen": ['requestFullscreen', 'webkitEnterFullscreen', 'webkitEnterFullScreen', 'webkitRequestFullscreen', 'webkitRequestFullScreen', 'mozRequestFullScreen', 'msRequestFullscreen'],
+			"exitFullscreen": ['exitFullscreen', 'webkitExitFullscreen', 'webkitExitFullScreen', 'webkitCancelFullScreen', 'mozCancelFullScreen', 'msExitFullscreen'],
+			"fullscreenElement": ['fullscreenElement', 'webkitFullscreenElement', 'webkitCurrentFullScreenElement', 'mozFullScreenElement', 'msFullscreenElement'],
+		};
 		var key;
+		var i, max;
 
 		// 트랜스폼
 		for(key in transforms) {
@@ -206,7 +219,7 @@ http://www.quirksmode.org/js/detect.html
 
 		// 트랜지션
 		for(key in transitions) {
-			if(div.style[key] !== undefined) {
+			if(key in div.style) {
 				environment['check']['transition'] = true;
 				environment['event']['transitionstart'] = transitions[key][0];
 				environment['event']['transitionend'] = transitions[key][1];
@@ -218,12 +231,27 @@ http://www.quirksmode.org/js/detect.html
 
 		// 애니메이션
 		for(key in animations) {
-			if(div.style[key] !== undefined) {
+			if(key in div.style) {
 				environment['check']['animation'] = true;
 				environment['event']['animationstart'] = animations[key][0];
 				environment['event']['animationiteration'] = animations[key][1];
 				environment['event']['animationend'] = animations[key][2];
 				break;
+			}
+		}
+
+		// 풀스크린 
+		for(key in fullscreen) {
+			if(typeof fullscreen[key] !== 'object') {
+				continue;
+			}
+			for(i=0, max=fullscreen[key].length; i<max; i++) {
+				// 브라우저 지원 여부 
+				if(fullscreen[key][i] in document || fullscreen[key][i] in document.documentElement || fullscreen[key][i] in div) {
+					// 해당 이벤트 키 설정
+					environment['event'][key] = fullscreen[key][i];
+					break;
+				}
 			}
 		}
 	})();
@@ -425,6 +453,7 @@ http://www.quirksmode.org/js/detect.html
 	// element 의 docuemnt
 	var getDocument = function(element) {
 		// document.documentElement; // <html> element //표준
+		// document.getRootNode(options); // 문맥 객체의 루트를 반환 (options 값이 {composed:false}의 경우 ShadowRoot 반환될 수 있음)
 		return element && element.ownerDocument || global.document;
 	};
 
@@ -679,6 +708,14 @@ http://www.quirksmode.org/js/detect.html
 							break;
 					}
 				}else { // search element
+					/*
+					getElementById()
+					getElementsByClassName()
+					getElementsByTagName()
+					getElementsByTagNameNS()
+					querySelector()
+					querySelectorAll()
+					*/
 					try {
 						// document.querySelectorAll(x); // IE8의 경우 CSS 2.1 Selector (https://www.w3.org/TR/CSS2/selector.html) 제한적으로 지원
 						elements = (context || document).querySelectorAll(selector); // querySelectorAll: length 있음, querySelector: length 없음
@@ -1681,6 +1718,7 @@ http://www.quirksmode.org/js/detect.html
 			// x.insertBefore(y,z); // 표준
 			// x.firstChild; // IE9이상 사용가능 (TextNode 포함)
 			// x.firstElementChild // TextNode 제외
+			// x.insertAdjacentHTML('위치', '값'); // 위치: beforebegin, afterbegin, beforeend, afterend
 			var i, max = (this.elements && this.elements.length) || 0;
 			var element;
 
@@ -1712,6 +1750,7 @@ http://www.quirksmode.org/js/detect.html
 		},
 		append: function(parameter) {
 			// x.appendChild(y); // 표준
+			// x.insertAdjacentHTML('위치', '값'); // 위치: beforebegin, afterbegin, beforeend, afterend
 			var i, max = (this.elements && this.elements.length) || 0;
 			var element;
 
@@ -1746,6 +1785,7 @@ http://www.quirksmode.org/js/detect.html
 			// x.insertBefore(y,z); // 표준
 			// x.parentNode; // 표준
 			// x.nextSibling; // IE9이상 사용가능
+			// x.insertAdjacentHTML('위치', '값'); // 위치: beforebegin, afterbegin, beforeend, afterend
 
 			// api.dom(기준 요소).before(이동할 요소);
 			// 이동(또는 삽입)시킬 element 가 기준 element 바로 뒤로 이동(또는 삽입)한다.
@@ -1777,6 +1817,7 @@ http://www.quirksmode.org/js/detect.html
 		before: function(parameter) {
 			// x.insertBefore(y,z); // 표준
 			// x.parentNode; // 표준
+			// x.insertAdjacentHTML('위치', '값'); // 위치: beforebegin, afterbegin, beforeend, afterend
 
 			// api.dom(기준 요소).before(이동할 요소);
 			// 이동(또는 삽입)시킬 element 가 기준 element 바로 전으로 이동(또는 삽입)한다.
@@ -1809,6 +1850,7 @@ http://www.quirksmode.org/js/detect.html
 		insertBefore: function(parameter) {
 			// x.insertBefore(y,z); // 표준
 			// x.parentNode; // 표준
+			// x.insertAdjacentHTML('위치', '값'); // 위치: beforebegin, afterbegin, beforeend, afterend
 
 			// api.dom(이동할 요소).insertBefore(기준 요소);
 			// 이동(또는 삽입)시킬 element 가 기준 element 바로 전으로 이동(또는 삽입)한다.
@@ -2129,11 +2171,13 @@ http://www.quirksmode.org/js/detect.html
 		// data
 		data: (function() {
 			// x.dataset; // IE11이상 사용가능
+			// IE 10 이하를 지원하기 위해서는 getAttribute()를 통해 데이터 속성을 접근 (JS 데이터 저장소에 저장하는 것과 비교해서 데이터 속성 읽기의 성능은 저조, https://jsperf.com/data-dataset)
 
 			/*
 			! 주의
 			data-* 속성값에서 -(hyphen) 다음의 첫글자는 무조건 대문자로 들어가야 한다.
-			http://www.sitepoint.com/managing-custom-data-html5-dataset-api/
+			https://developer.mozilla.org/ko/docs/Learn/HTML/Howto/%EB%8D%B0%EC%9D%B4%ED%84%B0_%EC%86%8D%EC%84%B1_%EC%82%AC%EC%9A%A9%ED%95%98%EA%B8%B0
+			[data-index-number="12314"] 속성을 JavaScript 에서 접근할 경우 element.dataset.indexNumber; // "12314"
 			*/
 			var setTheFirstLetter = function(value) {
 				if(typeof value === 'string') {
@@ -2269,6 +2313,17 @@ http://www.quirksmode.org/js/detect.html
 				}
 			}
 		},
+		// 엘리먼트가 화면 상에 보일 수 있도록 화면을 스크롤
+		scrollIntoView: function(is) {
+			// x.scrollIntoView(alignWithTop); // alignWithTop: true 일 경우 엘리먼트가 스크롤 영역의 상단에 위치하도록 스크롤 됩니다. 만약  false 인 경우 스크롤 영역의 하단에 위치
+			
+			if(typeof is !== 'boolean') {
+				is = true;
+			}
+			if(this.elements && this.elements.length > 0 && this.elements[0].nodeType) {
+				this.elements[0].scrollIntoView(is);
+			}
+		},
 		// 특정 노드가 다른 노드 내에 포함되었는지 여부
 		// 사용예: api.dom('#test').contains(event.target)
 		contains: function(parameter) {
@@ -2325,6 +2380,18 @@ http://www.quirksmode.org/js/detect.html
 					return this.elements[0].isEqualNode(target[0]);
 				}
 			}
+		},
+		// activeElement
+		focusElement: function() {
+			var focused = document.activeElement;
+
+			if(!focused || focused === document.body) {
+				focused = null;
+			}else if(document.querySelector) {
+				focused = document.querySelector(':focus');
+			}
+
+			return focused;
 		}
 	};
 
@@ -2545,202 +2612,214 @@ http://www.quirksmode.org/js/detect.html
 		}
 	};
 
-	// hash
-	// 해쉬값 형태를 '#/a/b/' path 형태로 할 것인가, '#{a:'',b:''} json 형태로 할 것인가 구분..
+	// Location (URL)
 	/*
-	(function(){
-		var lastURL = document.URL;
-		window.addEventListener("hashchange", function(event) {
-			Object.defineProperty(event, "oldURL", {enumerable:true,configurable:true,value:lastURL});
-			Object.defineProperty(event, "newURL", {enumerable:true,configurable:true,value:document.URL});
-			lastURL = document.URL;
-		});
-	})();
-	*/
-	var locationHash = {
-		// 해쉬값 불러오기 
-		get: function(key) {
-			var hash = window.location.hash;
-			var tmp;
-			var criteria = {};
-			var result;
-
-			if(!hash) {
-				hash = window.location.href.replace(/^[^#]*#?(.*)$/, '$1');
-			}
-			
-			//console.log('hash', hash);
-			if(hash) {
-				hash = hash.replace('#', '');
-				/*if(/^[^{|^%7B](\S+\:\S+[\,]*)*[^}|^%7D]$/i.test(hash)) { // xxx:xxx,xxx:xxx 형태의 경우 
-					hash = (function(value) {
-						var arr = [];
-						var tmp1 = value.split(',');
-						var tmp2 = [];
-						var i, max;
-
-						for(i=0, max=tmp1.length; i<max; i++) {
-							tmp2 = tmp1[i].split(':');
-							if(tmp2.length === 2) {
-								tmp2[0] = tmp2[0].replace(/[\"\']/g, '');
-								tmp2[1] = tmp2[1].replace(/[\"\']/g, '');
-								arr.push('\"' + tmp2[0] + '\":\"' + tmp2[1] + '\"');
-							}
-						}
-						
-						//console.log('arr', arr);
-						return '{' + arr.join(',') + '}';
-					})(hash);
-				}*/
-
-				// hash에서 json 형태 추출 
-				tmp = /([{|%7B].*[}|%7D])/.exec(hash);
-				if(tmp && tmp[0]) {
-					hash = tmp[0];
-				}
-
-				try {
-					criteria = JSON.parse(decodeURIComponent(hash));
-				}catch(error) {}
-				
-				//console.log('criteria', criteria);
-				if(typeof criteria === 'object' && criteria !== null) {
-					if(!key) {
-						result = criteria;
-					}else if(key in criteria) {
-						result = criteria[key];
-					}
-				}
-			}
-
-			return result;
-		},
-		// 해쉬값 추가 
-		// 웹킷엔진은 location.hash -> location.href 값 
-		set: function(key, value) {
-			var criteria = this.get() || {};
-			var state = history.state && typeof history.state === 'object' ? JSON.parse(JSON.stringify(history.state))/* json deep copy, 함수불가능 */ : {}; // state: Read only
-
-			//console.log('set', criteria);
-			if(key) {
-				if(typeof criteria === 'object' && criteria !== null) {
-					criteria[key] = value;
-					value = encodeURIComponent(JSON.stringify(criteria));
-				}else {
-					value = encodeURIComponent('{"' + key + '":"' + value + '"}');
-				}
-
-				if(value) {
-					window.location.hash = '#' + value;
-					//window.location.href = '#' + value;
-					if(typeof history.replaceState === 'function') {
-						history.replaceState(state, "", location.href); // IE에서는 세번째 파라미터값 필수 (세번째 파라미터 값으로 브라우저 URL변경됨)
-					}
-				}
-			}
-		},
-		// 해쉬 제거 
-		del: function(key) {
-			var criteria = this.get() || {};
-			var state = history.state && typeof history.state === 'object' ? JSON.parse(JSON.stringify(history.state))/* json deep copy, 함수불가능 */ : {}; // state: Read only (URL변경전 history 값)
-			var value;
-
-			//console.log('del', criteria);
-			if(key && typeof criteria === 'object' && criteria !== null && key in criteria) {
-				delete criteria[key];
-				value = encodeURIComponent(JSON.stringify(criteria));
-
-				if(value) {
-					window.location.hash = '#' + value;
-					//window.location.href = '#' + value;
-					if(typeof history.replaceState === 'function') {
-						history.replaceState(state, "", location.href); // IE에서는 세번째 파라미터값 필수 (세번째 파라미터 값으로 브라우저 URL변경됨)
-					}
-				}
-			}
-		},
-		// 해쉬값 존재여부
-		has: function(key) {
-			var criteria = this.get() || {};
-			var is = false;
-
-			//console.log('is', criteria);
-			if(key && typeof criteria === 'object' && criteria !== null && key in criteria) {
-				is = true;
-			}
-			
-			return is;
+	// hashchange 이벤트 (url 변경에 따른 location.href 기준 history 재설정)
+	window.onhashchange = function(event) {
+		if(typeof event === 'object') {
+			console.log('event', event);
+			console.log('oldURL', event.oldURL);
+			console.log('newURL', event.newURL);
 		}
 	};
+	*/
+	var browserLocation = {
+		// hash
+		// 해쉬값 형태를 '#/a/b/' path 형태로 할 것인가, '#{a:'',b:''} json 형태로 할 것인가 구분..
+		/*
+		(function(){
+			var lastURL = document.URL;
+			window.addEventListener("hashchange", function(event) {
+				Object.defineProperty(event, "oldURL", {enumerable:true,configurable:true,value:lastURL});
+				Object.defineProperty(event, "newURL", {enumerable:true,configurable:true,value:document.URL});
+				lastURL = document.URL;
+			});
+		})();
+		*/
+		hash: {
+			// 해쉬값 불러오기 
+			get: function(key) {
+				var hash = window.location.hash;
+				var tmp;
+				var criteria = {};
+				var result;
 
-	// url parameters
-	var locationSearch = {
-		get: function(url) {
-			// window.location.search
-			var queryString = url ? url.split('?')[1] : window.location.search.slice(1);
-			var obj = {};
-			var arr = [];
-			var i, max;
-			var a;
-			var paramNum;
-			var paramName, paramValue;
+				if(!hash) {
+					hash = window.location.href.replace(/^[^#]*#?(.*)$/, '$1');
+				}
+				
+				//console.log('hash', hash);
+				if(hash) {
+					hash = hash.replace('#', '');
+					/*if(/^[^{|^%7B](\S+\:\S+[\,]*)*[^}|^%7D]$/i.test(hash)) { // xxx:xxx,xxx:xxx 형태의 경우 
+						hash = (function(value) {
+							var arr = [];
+							var tmp1 = value.split(',');
+							var tmp2 = [];
+							var i, max;
 
-			if(queryString) {
-				// 해쉬 제거
-				queryString = queryString.split('#')[0];
-				// & 기준 분리
-				arr = queryString.split('&');
-				for(i=0, max=arr.length; i<max; i++) {
-					a = arr[i].split('=');
-					paramNum = undefined;
-					paramName = a[0].replace(/\[\d*\]/, function(v) {
-						paramNum = v.slice(1, -1);
-						return '';
-					});
+							for(i=0, max=tmp1.length; i<max; i++) {
+								tmp2 = tmp1[i].split(':');
+								if(tmp2.length === 2) {
+									tmp2[0] = tmp2[0].replace(/[\"\']/g, '');
+									tmp2[1] = tmp2[1].replace(/[\"\']/g, '');
+									arr.push('\"' + tmp2[0] + '\":\"' + tmp2[1] + '\"');
+								}
+							}
+							
+							//console.log('arr', arr);
+							return '{' + arr.join(',') + '}';
+						})(hash);
+					}*/
 
-					paramValue = typeof(a[1]) === 'undefined' ? true : a[1];
-
-					// (optional) keep case consistent
-					paramName = paramName.toLowerCase();
-					paramValue = paramValue.toLowerCase();
-
-					// if parameter name already exists
-					if(obj[paramName]) {
-						// convert value to array (if still string)
-						if(typeof obj[paramName] === 'string') {
-							obj[paramName] = [obj[paramName]];
-						}
-						// if no array index number specified...
-						if(typeof paramNum === 'undefined') {
-							// put the value on the end of the array
-							obj[paramName].push(paramValue);
-						}
-						// if array index number specified...
-						else {
-							// put the value at that index number
-							obj[paramName][paramNum] = paramValue;
-						}
+					// hash에서 json 형태 추출 
+					tmp = /([{|%7B].*[}|%7D])/.exec(hash);
+					if(tmp && tmp[0]) {
+						hash = tmp[0];
 					}
-					// if param name doesn't exist yet, set it
-					else {
-						obj[paramName] = paramValue;
+
+					try {
+						criteria = JSON.parse(decodeURIComponent(hash));
+					}catch(error) {}
+					
+					//console.log('criteria', criteria);
+					if(typeof criteria === 'object' && criteria !== null) {
+						if(!key) {
+							result = criteria;
+						}else if(key in criteria) {
+							result = criteria[key];
+						}
 					}
 				}
+
+				return result;
+			},
+			// 해쉬값 추가 
+			// 웹킷엔진은 location.hash -> location.href 값 
+			set: function(key, value) {
+				var criteria = this.get() || {};
+				var state = history.state && typeof history.state === 'object' ? JSON.parse(JSON.stringify(history.state))/* json deep copy, 함수불가능 */ : {}; // state: Read only
+
+				//console.log('set', criteria);
+				if(key) {
+					if(typeof criteria === 'object' && criteria !== null) {
+						criteria[key] = value; // 기존 key 데이터가 있었다면, 덮어쓰기가 된다. 
+						value = encodeURIComponent(JSON.stringify(criteria));
+					}else {
+						value = encodeURIComponent('{"' + key + '":"' + value + '"}');
+					}
+
+					if(value) {
+						window.location.hash = '#' + value;
+						//window.location.href = '#' + value;
+						if(typeof history.replaceState === 'function') { // IE10 이상지원 (popstate 이벤트가 발생할 수 있도록 replaceState 실행)
+							history.replaceState(state, "", location.href); // IE에서는 세번째 파라미터값 필수 (세번째 파라미터 값으로 브라우저 URL변경됨)
+						}
+					}
+				}
+			},
+			// 해쉬 제거 
+			del: function(key) {
+				var criteria = this.get() || {};
+				var state = history.state && typeof history.state === 'object' ? JSON.parse(JSON.stringify(history.state))/* json deep copy, 함수불가능 */ : {}; // state: Read only (URL변경전 history 값)
+				var value;
+
+				//console.log('del', criteria);
+				if(key && typeof criteria === 'object' && criteria !== null && key in criteria) {
+					delete criteria[key]; // key 에 따른 데이터 제거 
+					value = encodeURIComponent(JSON.stringify(criteria));
+
+					if(value) {
+						window.location.hash = '#' + value;
+						//window.location.href = '#' + value;
+						if(typeof history.replaceState === 'function') { // IE10 이상지원 (popstate 이벤트가 발생할 수 있도록 replaceState 실행)
+							history.replaceState(state, "", location.href); // IE에서는 세번째 파라미터값 필수 (세번째 파라미터 값으로 브라우저 URL변경됨)
+						}
+					}
+				}
+			},
+			// 해쉬값 존재여부
+			has: function(key) {
+				var criteria = this.get() || {};
+				var is = false;
+
+				//console.log('is', criteria);
+				if(key && typeof criteria === 'object' && criteria !== null && key in criteria) {
+					is = true;
+				}
+				
+				return is;
 			}
-			return obj;
 		},
-		set: function(key, value) {
-
-		},
-		del: function() {
-
-		},
-		has: function() {
-
+		// url parameters
+		// Location.search
+		params: {
+			get: function(url) {
+				// window.location.search
+				var queryString = url ? url.split('?')[1] : window.location.search.slice(1);
+				var result = {};
+				var arr = [];
+				var i, max;
+				var tmp;
+				var index; // 파라미터가 배열형태 a[]=1&a[]=2&b[0]=1&b[1]=a 의 경우 해당 배열 인덱스  
+				var key, value; // key=value&key=value
+		
+				if(queryString) {
+					// 해쉬 제거
+					queryString = queryString.split('#')[0];
+					// & 기준 분리
+					arr = queryString.split('&');
+					for(i=0, max=arr.length; i<max; i++) {
+						tmp = arr[i].split('='); // key, value
+						index = '';
+		
+						// key / value
+						key = tmp[0].replace(/\[\d*\]/, function(value) { // arr[]=1&arr[]=2 또는 arr[0]=1&arr[1]=2 등 배열형태 파라미터 
+							index = value.slice(1, -1);
+							return '';
+						});
+						key = key.toLowerCase();
+						if(tmp[1] && typeof tmp[1] === 'string') {
+							value = tmp[1];
+							value = value.toLowerCase();
+						}else {
+							value = true;
+						}
+		
+						if(key in result) { // 동일한 파라미터 키 있음 (파라미터 키 중복으로 존재함)
+							if(typeof result[key] === 'string') {
+								// 신규 배열 생성 
+								result[key] = [result[key]];
+							}
+							if(!index) {
+								// arr[]=1&arr[]=2 형태라면 push 로 순차 추가 
+								result[key].push(value);
+							}else {
+								// index 가 존재하면 해당 index 배열에 추가 
+								result[key][index] = value;
+							}
+						}else {
+							result[key] = value;
+						}
+					}
+				}
+		
+				return result;
+			},
+			set: function(key, value) {
+				
+			},
+			del: function() {
+	
+			},
+			has: function() {
+	
+			}
 		}
 	};
 
 	// BOM localStorage, sessionStorage 
+	// IE8이상 사용가능 (폴리필: https://developer.mozilla.org/en-US/docs/Web/API/Storage/LocalStorage)
 	var browserStorage = (function() {
 		// private / public 구분 
 		var result = {
@@ -2751,7 +2830,6 @@ http://www.quirksmode.org/js/detect.html
 			"del": function() {}
 		};
 		
-		// IE8이상 사용가능 (폴리필: https://developer.mozilla.org/en-US/docs/Web/API/Storage/LocalStorage)
 		// Variable Types: string
 		if(global.localStorage && global.sessionStorage) {
 			result.clear = function(type) {
@@ -2826,18 +2904,21 @@ http://www.quirksmode.org/js/detect.html
 	})();
 
 	// history
+	// IE10 이상이면 history.replaceState 저장, 이하이면 IE8 이상 지원하는 sessionStorage 저장 
+	// IOS 등에서 터치(플리킹)로 뒤로가기를 했을 경우 BFCache 활용됨 
+	// (IOS nitro엔진 WKWebview는 히스토리백시 BFCache를 사용)
 	/*
-	// hashchange 이벤트 (url 변경에 따른 location.href 기준 history 재설정)
-	window.onhashchange = function(event) {
-		if(typeof event === 'object') {
-			console.log('event', event);
-			console.log('oldURL', event.oldURL);
-			console.log('newURL', event.newURL);
-		}
+	// popstate 이벤트 
+	// popstate 이벤트는 브라우저의 백 버튼이나 (history.back() 호출) 등을 통해서만 발생 (history.pushState, history.replaceState 의해 추가/변경된 state 값 확인)
+	// popstate 이벤트의 state 속성은 히스토리 엔트리 state 객체의 복사본을 갖게 됩니다.
+	// state 객체의 직렬화 결과 크기는 최대 640k로 제한됩니다.
+	// 브라우저는 popstate 이벤트를 페이지 로딩시에 다르게 처리합니다. Chrome(v34 이전버전) 와 Safari는 popstate 이벤트를 페이지 로딩시에 발생시킵니다. 하지만 Firefox 는 그렇지 않습니다.
+	// https://developer.mozilla.org/ko/docs/Web/API/History_API
+	window.onpopstate = function(event) {
+		console.log("location: ", document.location);
+		console.log("state: ", event.state);
 	};
 
-	// IOS 등에서 터치(플리킹)로 뒤로가기를 했을 경우
-	// iOS nitro엔진 WKWebview는 히스토리백시 BFCache를 사용
 	// pageshow, pagebeforeshow, pagebeforehide, pagehide 이벤트
 	// https://developer.mozilla.org/en-US/docs/Web/Events/pagehide
 	// https://developer.mozilla.org/en-US/docs/Web/Events/pageshow
@@ -2852,95 +2933,317 @@ http://www.quirksmode.org/js/detect.html
 			console.log('새로 진입');
 		}
 	};
+
+	// IOS BFCache 대응 
+	// 일반적 대응. 페이지 로드가 끝났을 때 페이지쇼 이벤트를 등록해 둔다. 그리고 뒤로가기로 BF캐시가 되었을 때, 등록했던 페이지쇼 이벤트가 실행되도록 한다.
+	// (페이지 이동 후 뒤로가기, 다시 페이지 이동 후 뒤로가기로 했을 때, 즉 링크이동 다시 뒤로가기를 반복했을 때 pageshow가 이벤트가 실행되지 않을 수 있다.)
+	window.onpageshow = function(event) {
+		if(event.persisted) {
+			// 페이지 새로고침 
+		}
+	};
+
+	// 추가 1. 페이지 이동전에 setInterval을 실행하여, 다시 뒤로가기로 현재 페이지를 진입하는지 확인한다. (페이지 이동전에 페이지진입여부를 계속 확인하는 setInterval 를 실행한다) 
+	// 즉 setInterval을 실행한 후, 페이지 이동을 한다. (이 상태에서 뒤로가기/앞으로 진입시, setInterval을 통해 BFCache를 무시하면서 네비게이션 상태를 확인할 수 있다.)
+	var timeBackForwardCache = null;
+	var setBackForwardCache = function() {
+		window.clearInterval(timeBackForwardCache);
+		timeBackForwardCache = window.setInterval(function() {
+			var navigation = browserHistory.navigation();
+			// 뒤로가기/앞으로 버튼 진입여부 확인 
+			if((typeof navigation === 'object' && navigation.state === 'BACK_FORWARD')|| browserHistory.get('history') === true) {
+				window.clearInterval(timeBackForwardCache);
+				browserHistory.del('history');
+				// ...
+			}
+		}, 1);
+	};
+	window.clearInterval(timeBackForwardCache);
+	$(window).off('pagehide.EVENT_BACKFORWARDCACHE beforeunload.EVENT_BACKFORWARDCACHE unload.EVENT_BACKFORWARDCACHE').on('pagehide.EVENT_BACKFORWARDCACHE beforeunload.EVENT_BACKFORWARDCACHE unload.EVENT_BACKFORWARDCACHE', function(event) { // IOS 등에서 beforeunload 이벤트가 작동안할 수 있다.
+		// 페이지 이동이 있었다는 것을 기록
+		browserHistory.set('history', true);
+		setBackForwardCache();
+	});
+	$('body').off('click.EVENT_BACKFORWARDCACHE').on('click.EVENT_BACKFORWARDCACHE', 'a[href]', function(event) { // IOS 등에서 beforeunload 이벤트가 작동안할 수 있다.
+		var pattern = /(https?:\/\/(\w*:\w*@)?[-\w.]+(:\d+)?)?(\/([\w\/_\.]*(\?\S+)?)?)?/i;
+		// 페이지 이동이 있었다는 것을 기록
+		if(typeof href === 'string' && href !== '#' && pattern.test(href)) {
+			browserHistory.set('history', true);
+			setBackForwardCache();
+		}
+	});
+
+	// 추가 2. setInterval 를 실행시켜 계속 화면을 모니터링한다. (비효율)
+	var setBackForward = function() {
+		var navigation = browserHistory.navigation();
+
+		// 뒤로가기/앞으로 버튼 진입여부 확인 
+		if(!navigation || typeof navigation !== 'object') {
+			window.clearInterval(s.timeBackForwardCache);
+		}else if(navigation.state === 'BACK_FORWARD') {
+			window.clearInterval(s.timeBackForwardCache);
+			// BackForwardCache 관련 현재 히스토리 저장 
+			// ..
+			// 페이지 새로고침 
+			window.location.reload();
+		}
+	};
+	window.clearInterval(timeBackForwardCache);
+	timeBackForwardCache = window.setInterval(function() {
+		setBackForward();
+	}, 1);
+	$(window).off('pageshow.EVENT_TVS_HISTORY').on('pageshow.EVENT_TVS_HISTORY', function() {
+		window.clearInterval(timeBackForwardCache);
+		setBackForward();
+	});
+	$(document).ready(function() {
+		window.clearInterval(timeBackForwardCache);
+		setBackForward();
+	});
+	$(window).off('load.EVENT_TVS_HISTORY').on("load.EVENT_TVS_HISTORY", function() {
+		window.clearInterval(timeBackForwardCache);
+		setBackForward();
+	});
+	window.setTimeout(function() {
+		window.clearInterval(timeBackForwardCache);
+		setBackForward();
+	}, 10000);
 	*/
 	var browserHistory = (function() {
-		// private / public 구분 
+		// 상태 (주소입력, 새로고침, 뒤로가기/앞으로, 구분없음 등 사용자 인지의 문자열 형태 값) 
+		var STATE = {
+			'NAVIGATENEXT': 'NAVIGATENEXT',
+			'RELOAD': 'RELOAD',
+			'BACK_FORWARD': 'BACK_FORWARD',
+			'UNDEFINED': 'UNDEFINED',
+			'HASHCHANGE': 'HASHCHANGE'
+		};
+
+		// 네비게이션 정보 
+		var navigation = {
+			'type': null,
+			'state': STATE.UNDEFINED, // navigation type의 숫자값을 문자값 형태로 출력 
+			'persisted': null
+		};
+
+		// 상태별 콜백 리스트 
+		var callstack = {}; // 각 상태(state) 별 callback 리스트 
+		callstack[STATE.NAVIGATENEXT] = {};
+		callstack[STATE.RELOAD] = {};
+		callstack[STATE.BACK_FORWARD] = {};
+		callstack[STATE.UNDEFINED] = {}; // 아무설정도 안한 history에 따른 콜백 (네비게이션)
+		callstack[STATE.HASHCHANGE] = []; // hash 변경 이벤트 콜백 
+
+		// navigation 값 설정  
+		function setNavigation() {
+			/*
+			window.performance.navigation.type
+			IE9이상 사용가능
+			https://developer.mozilla.org/ko/docs/Navigation_timing
+
+			TYPE_NAVIGATENEXT (0)	: 아래 목록의 TYPE_RELOAD과 TYPE_BACK_FORWARD가 사용하는 것 외에, 링크 클릭하기, 사용자 에이전트(UA) 주소 바에 URL 입력하기, 폼 전송, 스크립트 연산으로 초기화하기로 시작한 내비게이션.
+			TYPE_RELOAD (1) 		: 리로드(reload) 연산 혹은 location.reload() 메소드를 통한 내비게이션.
+			TYPE_BACK_FORWARD (2)	: 히스토리 순회(traversal) 연산을 통한 내비게이션
+			TYPE_UNDEFINED (255)	: 위 값으로 정의되지 않는 어떠한 내비게이션 타입.
+			*/
+			if(window.performance && window.performance.navigation) {
+				// type (결과값 숫자)
+				navigation.type = window.performance.navigation.type;
+				// state (결과값을 문자형태로 표현)
+				switch(window.performance.navigation.type) {
+					case 0:
+						navigation.state = STATE.NAVIGATENEXT;
+						break;
+					case 1:
+						navigation.state = STATE.RELOAD;
+						break;
+					case 2:
+						navigation.state = STATE.BACK_FORWARD;
+						break;
+					default:
+						navigation.state = STATE.UNDEFINED;
+						break;
+				}
+			}
+		}
+
+		// navigation 값 반환 
+		function getNavigation(options) {
+			// navigation 정보 
+			setNavigation();
+			if(options) {
+				if(typeof options === 'function') {
+					//options(navigation);
+					setCallback(options);
+				}else if(typeof options === 'object' && options.callback) {
+					setCallback(options.callback, options);
+				}
+			}
+			return navigation;
+		}
+
+		// navigation 상태(state)에 따른 콜백 실행 
+		function setCallstack(state, options) {
+			var key;
+			var i, max;
+
+			if(!state || typeof callstack[state] !== 'object') {
+				return;
+			}
+
+			// state 값에 따른 콜백 실행 
+			switch(state) {
+				case STATE.HASHCHANGE:
+					// hash 변경관련 콜백 - [value, value, ...]
+					//console.log('oldURL', options.oldURL);
+					//console.log('newURL', options.newURL);
+					for(i=0, max=callstack[STATE.HASHCHANGE].length; i<max; i++) {
+						if(typeof callstack[STATE.HASHCHANGE][i] === 'function') {
+							callstack[STATE.HASHCHANGE][i](options);
+						}
+					}
+					break;
+				default:
+					// navigation - {key: value, key: value, ...}
+					for(key in callstack[state]) {
+						if(typeof callstack[state][key].callback === 'function' && callstack[state][key].is === false/*아직 실행하지 않은 콜백*/) {
+							callstack[state][key].is = true;
+							callstack[state][key].callback(navigation);
+						}
+					}
+					break;
+			}
+		}
+
+		// navigation 상태(state) 콜백 추가
+		// key 값을 명시적으로 설정하면 중복실행 방지 (한번실행된 후 재실행 안함)
+		// options: {'key': '', 'state': ''}
+		function setCallback(callback, options) {
+			var key;
+			var i, max;
+			var state = [STATE.UNDEFINED]; // 기본상태값 
+
+			if(typeof callback !== 'function') {
+				return;
+			}
+
+			// 콜백 실행 state 리스트 조립 
+			if(options) {
+				if(typeof options === 'string') {
+					state = [options];
+				}else if(Object.prototype.toString.call(options) === '[object Array]') {
+					state = options;
+				}else if(typeof options === 'object') {
+					if(options.key && typeof options.key === 'string') {
+						key = options.key;
+					}
+					if(options.state) {
+						if(typeof options.state === 'string') {
+							state = [options.state];
+						}else if(Object.prototype.toString.call(options.state) === '[object Array]') {
+							state = options.state;
+						}
+					}
+				}
+			}
+
+			// key
+			if(!key) {
+				//key = ['history', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
+				key = global.api.key();
+			}
+
+			// 콜백 실행 등록 
+			for(i=0, max=state.length; i<max; i++) {
+				if(state[i] in callstack) {
+					if(state[i] === STATE.HASHCHANGE) {
+						// hash 변경관련 콜백 
+						callstack[state[i]].push(callback);
+					}else {
+						// 브라우저 네비게이션 관련 콜백 
+						if(typeof callstack[state[i]][key] !== 'object') {
+							callstack[state[i]][key] = {};
+							callstack[state[i]][key].is = false;
+						}
+						callstack[state[i]][key].callback = callback;
+					}
+				}
+			}
+
+			// navigation 정보 
+			setNavigation();
+
+			// 콜백 실행 
+			setCallstack(navigation.state);
+			//setCallstack(STATE.UNDEFINED);
+		}
+
+		// IOS에서 뒤로가기/앞으로 형태로 재접속시 BF캐시여부를 구분할 수 있도록 onpageshow 이벤트 등록 
+		// IOS에서 뒤로가기/앞으로 형태로 진입, BFCache가 작동하면, 아래 pageshow 이벤트가 실행된다.
+		// 그러면서 pageshow 내부에 있는 setCallstack 함수를 실행시키며, 뒤로가기/앞으로 콜백들을 실행시킨다.
+		// [주의!] pageshow는 페이지 이동 -> 뒤로가기, 다시 페이지 이동 -> 뒤로가기 등 반복했을 경우 콜백이 실행되지 않을 수 있다.
+		if('onpageshow' in window/* && 'readyState' in document && document.readyState !== 'complete'*/) {
+			window.onpageshow = function(event) {
+				// navigation 정보 
+				setNavigation();
+				
+				// event 값 
+				if(event && typeof event === 'object') {
+					// jQuery event
+					if(event.originalEvent) {
+						event = event.originalEvent;
+					}
+					// pageshow persisted 값 추가 
+					navigation.persisted = event.persisted;
+				}
+
+				// 콜백 실행 
+				setCallstack(navigation.state);
+				//setCallstack(STATE.UNDEFINED);
+			};
+		}
+
+		// onhashchange
+		if('onhashchange' in window) {
+			window.onhashchange = function(event) {
+				//console.log('oldURL', event.oldURL);
+				//console.log('newURL', event.newURL);
+
+				// 콜백 실행 
+				setCallstack(STATE.HASHCHANGE, event);
+			};
+		}
+
+		// 페이지 이동전 
+		/*function setBefore() {
+
+		}
+		$(window).off('pagehide.EVENT_HISTORY_UTIL beforeunload.EVENT_HISTORY_UTIL unload.EVENT_HISTORY_UTIL').on('pagehide.EVENT_HISTORY_UTIL beforeunload.EVENT_HISTORY_UTIL unload.EVENT_HISTORY_UTIL', setBefore);
+		$('body').off('click.EVENT_CLICK_HISTORY_UTIL').on('click.EVENT_CLICK_HISTORY_UTIL', 'a[href]', function(event) {
+			var pattern = /(https?:\/\/(\w*:\w*@)?[-\w.]+(:\d+)?)?(\/([\w\/_\.]*(\?\S+)?)?)?/i;
+			var $target;
+			var href;
+			
+			if(!_.isObject(event)) {
+				return;
+			}
+			
+			$target = $(event.currentTarget);
+			href = $target.attr('href');
+			if(_.isString(href) && $.trim(href) !== '#' && pattern.test(href)) {
+				// 페이지 이동 있음 
+				setBefore();
+			}
+		});*/
 		var result = {
+			"STATE": STATE,
 			"storage": '', // 브라우저 버전에 따른 history값 저장소 
 			"get": function() {},
 			"set": function() {},
 			"del": function() {},
-			"navigation": function(callback) {
-				/*
-				window.performance.navigation.type
-				IE9이상 사용가능
-				https://developer.mozilla.org/ko/docs/Navigation_timing
-
-				TYPE_NAVIGATENEXT (0)	: 아래 목록의 TYPE_RELOAD과 TYPE_BACK_FORWARD가 사용하는 것 외에, 링크 클릭하기, 사용자 에이전트(UA) 주소 바에 URL 입력하기, 폼 전송, 스크립트 연산으로 초기화하기로 시작한 내비게이션.
-				TYPE_RELOAD (1) 		: 리로드(reload) 연산 혹은 location.reload() 메소드를 통한 내비게이션.
-				TYPE_BACK_FORWARD (2)	: 히스토리 순회(traversal) 연산을 통한 내비게이션
-				TYPE_UNDEFINED (255)	: 위 값으로 정의되지 않는 어떠한 내비게이션 타입.
-				*/
-				var result = {
-					"type": null,
-					"state": 'NONE'
-				};
-				var setResult = function() {
-					if(window.performance && window.performance.navigation) {
-						result.type = window.performance.navigation.type;
-						switch(window.performance.navigation.type) {
-							case 0:
-								result.state = 'NAVIGATENEXT';
-								break;
-							case 1:
-								result.state = 'RELOAD';
-								break;
-							case 2:
-								result.state = 'BACK_FORWARD';
-								break;
-							default:
-								result.state = 'UNDEFINED';
-								break;
-						}
-					}
-				};
-				setResult();
-
-				// IOS pageshow 대응 (callback 필수)
-				if('onpageshow' in window && 'readyState' in document && document.readyState !== 'complete') {
-					window.onpageshow = function(event) {
-						/*if(event.persisted) { 
-							// BFCache
-						}else { 
-
-						}*/
-						setResult(); // result 값 변경 
-						if(typeof callback === 'function') {
-							callback(result);
-						}
-					};
-				}else if(typeof callback === 'function') {
-					callback(result);
-				}
-
-				return result;
-			}
+			"navigation": getNavigation,
+			"callback": setCallback
 		};
-		/*var callback = {
-			'NAVIGATENEXT': {},
-			'RELOAD': {},
-			'BACK_FORWARD': {},
-			'NONE': {} // 아무설정도 안한 history에 따른 콜백 
-		};
-		var setCallbackAppend = function(key, options) {
-			if(key) {
-				if(typeof options === 'object' && options !== null && options.state in callback && typeof options.callback === 'function') {
-					callback[options.state][key] = options.callback;
-				}else if(typeof options === 'function') {
-					callback['NONE'][key] = options;
-				}
-			}
-		};
-		var setCallbackRemove = function(key) {
-			var tmp;
-			if(key) {
-				for(tmp in callback) {
-					if(key in callback[tmp]) {
-						delete callback[tmp][key];
-					}
-				}
-			}
-		};*/
 
 		// IE10이상 사용가능
 		// 브라우저 버전 이슈로 불가능 할 경우 로컬스토리지 사용
@@ -2990,7 +3293,7 @@ http://www.quirksmode.org/js/detect.html
 					history.replaceState(state, "", options.url || location.href); // IE에서는 세번째 파라미터값 필수 (세번째 파라미터 값으로 브라우저 URL변경됨)
 				}
 			};
-		}else if(global.localStorage) {
+		}else if(global.sessionStorage) { // IE8 이상 지원
 			// 히스토리 저장 스토리지 
 			result.storage = 'session';
 			// 히스토리 값 불러오기 
@@ -3016,8 +3319,7 @@ http://www.quirksmode.org/js/detect.html
 
 	// public return
 	global.api.dom = DOM;
-	global.api.hash = locationHash;
-	global.api.params = locationSearch;
+	global.api.location = browserLocation;
 	global.api.storage = browserStorage;
 	global.api.history = browserHistory;
 

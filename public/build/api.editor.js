@@ -71,8 +71,8 @@ FileReader: IE10 이상
 	}
 
 	// 모듈 (private)
-	var module = (function() {
-		function EditModule() {
+	var bundle = (function() {
+		function EditBundle() {
 			var that = this;
 
 			// key가 있는 인스턴스
@@ -93,8 +93,8 @@ FileReader: IE10 이상
 				that.composition = false;
 			});
 		}
-		EditModule.prototype = {
-			init: function() {
+		EditBundle.prototype = {
+			initialize: function() {
 				var fragment;
 
 				if(document.body) {
@@ -186,7 +186,7 @@ FileReader: IE10 이상
 				return range;
 			},
 			// 현재 node 상위(parentNode)를 검색하며, condition 결과에 따른 callback 실행
-			// 상위노드 탐색을 실행을 얼마나 줄이느냐가 관건
+			// 상위노드 탐색을 얼마나 줄이느냐가 관건
 			getParent: function(current, last, condition, callback) {
 				var result;
 				if(typeof current !== 'object' || current === null || !current.nodeType) {
@@ -323,7 +323,7 @@ FileReader: IE10 이상
 				return String(value).replace(/[^+-\.\d]|,/g, '');
 			}
 		};
-		return new EditModule();
+		return new EditBundle();
 	})();
 
 	// 텍스트 에디터
@@ -344,12 +344,12 @@ FileReader: IE10 이상
 			event.preventDefault(); // 현재 이벤트의 기본 동작을 중단한다.
 			event.stopPropagation(); // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
 
-			if(module.getRange()) {
+			if(bundle.getRange()) {
 				//console.log('에디터 기능 적용');
 				switch(command) {
 					case 'bold':
-						if(module.selection.anchorNode && !module.getParent(
-							module.selection.anchorNode,
+						if(bundle.selection.anchorNode && !bundle.getParent(
+							bundle.selection.anchorNode,
 							null,
 							function(node) { // condition (검사)
 								return /^(h1|h2|h3)$/i.test(node.nodeName.toLowerCase()); // h1, h2, h3 태그는 진한색의 글자이므로 제외
@@ -373,8 +373,8 @@ FileReader: IE10 이상
 					case "h1":
 					case "h2":
 					case "h3":
-						if(module.selection.focusNode && !module.getParent(
-							module.selection.focusNode,
+						if(bundle.selection.focusNode && !bundle.getParent(
+							bundle.selection.focusNode,
 							null,
 							function(node) { // condition (검사)
 								return /^(b|strong)$/i.test(node.nodeName.toLowerCase()); 
@@ -383,18 +383,18 @@ FileReader: IE10 이상
 								return true;
 							}
 						)) {
-							module.setFormatBlock(command);
+							bundle.setFormatBlock(command);
 						}
 						break;
 					case "blockquote": // 인용문 (들여쓰기)
-						module.setFormatBlock(command);
+						bundle.setFormatBlock(command);
 						break;
 					case 'createLink':
 						// url 입력박스 보이기
 						that.elements.other.link.wrap.style.display = 'block';
 						setTimeout(function() {
-							var url = module.getParent(
-								module.selection.focusNode,
+							var url = bundle.getParent(
+								bundle.selection.focusNode,
 								null,
 								function(node) {
 									return typeof node.href !== 'undefined';
@@ -412,7 +412,7 @@ FileReader: IE10 이상
 							}
 							// 위 a 태그의 위치를 기억한다.
 							// execCommand 로 createLink 생성된 위치를 기억한다.
-							that.range = module.selection.getRangeAt(0); 
+							that.range = bundle.selection.getRangeAt(0); 
 							that.elements.other.link.input.focus();
 						}, 100);
 						break;
@@ -465,11 +465,11 @@ FileReader: IE10 이상
 				// http://stackoverflow.com/questions/3997659/replace-selected-text-in-contenteditable-div
 				that.range.deleteContents();
 				that.range.insertNode(node);
-				module.selection.removeAllRanges();
-				module.selection.addRange(that.range);
+				bundle.selection.removeAllRanges();
+				bundle.selection.addRange(that.range);
 			}else {
-				module.selection.removeAllRanges();
-				module.selection.addRange(that.range);
+				bundle.selection.removeAllRanges();
+				bundle.selection.addRange(that.range);
 				document.execCommand('unlink', false);
 				//node = document.createTextNode(that.range.toString());
 			}
@@ -504,7 +504,7 @@ FileReader: IE10 이상
 					'link': 'editor-text-link' // a 태그에 적용될 class 속성값
 				},
 				'listeners': {
-					'init': null
+					'initialize': null
 				}
 			};
 			that.elements = {
@@ -523,7 +523,7 @@ FileReader: IE10 이상
 			// settings
 			that.change(settings);
 
-			// init 
+			// initialize 
 			(function() {
 				// element 생성
 				var fragment = document.createDocumentFragment();
@@ -646,7 +646,7 @@ FileReader: IE10 이상
 			var that = this;
 			
 			// settings
-			that.settings = module.setSettings(that.settings, settings);
+			that.settings = bundle.setSettings(that.settings, settings);
 
 			// target
 			that.settings.target = (typeof that.settings.target === 'string' && /^[a-z]+/i.test(that.settings.target) ? '#' + that.settings.target : that.settings.target);
@@ -664,7 +664,7 @@ FileReader: IE10 이상
 			*/
 			var that = this;
 			var key;
-			if(module.isSelection() && module.getRange()) {
+			if(bundle.isSelection() && bundle.getRange()) {
 				for(key in that.elements.command) { // 버튼 선택 효과 초기화
 					if(key === 'wrap') {
 						continue;
@@ -674,8 +674,8 @@ FileReader: IE10 이상
 					that.elements.command[key].style.background = 'none';
 				}
 				// 현재노드 상위 검색
-				module.getParent(
-					module.selection.focusNode,
+				bundle.getParent(
+					bundle.selection.focusNode,
 					null,
 					function(node) {
 						return typeof node.nodeName !== 'undefined' && typeof node.style !== 'undefined';
@@ -750,16 +750,16 @@ FileReader: IE10 이상
 			var tooltip_width, tooltip_height;
 			var top = 0, left = 0;
 
-			if(module.isCollapsed() || typeof module.selection !== 'object' || toggle === 'hide') {
+			if(bundle.isCollapsed() || typeof bundle.selection !== 'object' || toggle === 'hide') {
 				// 툴바숨기기
 				that.elements.tooltip.style.display = "none";
-			}else if(module.getRange()) {
+			}else if(bundle.getRange()) {
 				that.elements.tooltip.style.display = "block"; // 렌더링 상태에서 offsetWidth, offsetHeight 측정
 				// 툴팁 크기
 				tooltip_width = that.elements.tooltip.offsetWidth;
 				tooltip_height = that.elements.tooltip.offsetHeight;
 				// top / left
-				clientRectBounds = module.selection.getRangeAt(0).getBoundingClientRect();
+				clientRectBounds = bundle.selection.getRangeAt(0).getBoundingClientRect();
 				top = (clientRectBounds.top - tooltip_height) - 5;
 				if(top < 0) {
 					top = clientRectBounds.bottom + 5; // 툴팁 하단에 출력되도록 변경
@@ -788,20 +788,20 @@ FileReader: IE10 이상
 			var that = this;
 
 			// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
-			module.setSelection();
+			bundle.setSelection();
 			if(that.settings.tooltip === true) {
-				if(module.isSelection() && (!that.elements.target.contains(module.selection.focusNode) || (module.selection.focusNode.nodeType === 1 && /figure|img/.test(module.selection.focusNode.nodeName.toLowerCase())))) {
+				if(bundle.isSelection() && (!that.elements.target.contains(bundle.selection.focusNode) || (bundle.selection.focusNode.nodeType === 1 && /figure|img/.test(bundle.selection.focusNode.nodeName.toLowerCase())))) {
 					/*
 					console.log('----------');
-					console.dir(module.selection);
+					console.dir(bundle.selection);
 					// 시작노드
-					console.log('anchorNode.nodeName: ' + module.selection.anchorNode.nodeName);
-					console.log('anchorNode.nodeValue: ' + module.selection.anchorNode.nodeValue);
-					console.log('anchorNode.nodeType: ' + module.selection.anchorNode.nodeType);
+					console.log('anchorNode.nodeName: ' + bundle.selection.anchorNode.nodeName);
+					console.log('anchorNode.nodeValue: ' + bundle.selection.anchorNode.nodeValue);
+					console.log('anchorNode.nodeType: ' + bundle.selection.anchorNode.nodeType);
 					// 끝노드
-					console.log('focusNode.nodeName: ' + module.selection.focusNode.nodeName);
-					console.log('focusNode.nodeValue: ' + module.selection.focusNode.nodeValue);
-					console.log('focusNode.nodeType: ' + module.selection.focusNode.nodeType);
+					console.log('focusNode.nodeName: ' + bundle.selection.focusNode.nodeName);
+					console.log('focusNode.nodeValue: ' + bundle.selection.focusNode.nodeValue);
+					console.log('focusNode.nodeType: ' + bundle.selection.focusNode.nodeType);
 					*/
 					that.setTextTooltipMenuPostion({'toggle': 'hide'});
 				}else {
@@ -832,7 +832,7 @@ FileReader: IE10 이상
 				var self = event && event.currentTarget; // event listener element
 				var target = event && (event.target || event.srcElement); // event 가 발생한 element
 
-				module.setSelection();
+				bundle.setSelection();
 				that.setTooltipToggle();
 			});
 			$(document).on(env.event.up + '.EVENT_MOUSEUP_TEXTEDIT', function(e) {
@@ -840,7 +840,7 @@ FileReader: IE10 이상
 				var self = event && event.currentTarget; // event listener element
 				var target = event && (event.target || event.srcElement); // event 가 발생한 element
 
-				module.setSelection();
+				bundle.setSelection();
 				that.setTooltipToggle();
 			});
 			
@@ -850,14 +850,14 @@ FileReader: IE10 이상
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
 				//console.log('keydown');
-				module.setSelection();
+				bundle.setSelection();
 
 				// getSelection 선택된 node
-				if(module.isSelection()) {
+				if(bundle.isSelection()) {
 					/*if(event.keyCode === 13) { // keyCode 13: enter
 						// 현재노드 상위 검색
-						module.getParent( 
-							module.selection.anchorNode,
+						bundle.getParent( 
+							bundle.selection.anchorNode,
 							that.elements.target,
 							function(node) {
 								switch(node.nodeName.toLowerCase()) {
@@ -882,16 +882,16 @@ FileReader: IE10 이상
 				var insertedNode, unwrap, node, parent;
 
 				//console.log('keyup');
-				module.setSelection();
+				bundle.setSelection();
 
 				// getSelection 선택된 node
-				if(module.isSelection()) {
+				if(bundle.isSelection()) {
 					if(event.keyCode === 13) { // keyCode 13: enter
 						// DIV 내부에서 엔터를 눌렀을 경우 div 내부에서 br로 처리되므로 p 태그로 변경되도록 처리한다.
-						if(module.selection.anchorNode.nodeType !== 1 || module.selection.anchorNode.nodeName.toLowerCase() !== 'p' || !(/block|inline-block/i.test(module.getDisplay(module.selection.anchorNode)))) {
+						if(bundle.selection.anchorNode.nodeType !== 1 || bundle.selection.anchorNode.nodeName.toLowerCase() !== 'p' || !(/block|inline-block/i.test(bundle.getDisplay(bundle.selection.anchorNode)))) {
 							// 현재노드 상위 검색
-							if(module.getParent( 
-								module.selection.anchorNode,
+							if(bundle.getParent( 
+								bundle.selection.anchorNode,
 								that.elements.target,
 								function(node) {
 									if(/code|pre/.test(node.nodeName.toLowerCase())) {
@@ -902,7 +902,7 @@ FileReader: IE10 이상
 									return result;
 								}
 							) !== true) {
-								module.setFormatBlock("p");
+								bundle.setFormatBlock("p");
 							}
 						}
 					}
@@ -910,15 +910,15 @@ FileReader: IE10 이상
 					// -, *, 1. 입력에 따른 목록태그 변환
 					// isCollapsed: 셀렉션의 시작지점과 끝지점이 동일한지의 여부
 					// nodeValue: Text와 Comment 노드에서 실제 텍스트 문자열 추출
-					/*if(module.selection.isCollapsed && module.selection.anchorNode.nodeValue && module.selection.anchorNode.parentNode.nodeName !== "LI") { 
-						//console.log('module.selection.isCollapsed: ' + module.selection.isCollapsed);
+					/*if(bundle.selection.isCollapsed && bundle.selection.anchorNode.nodeValue && bundle.selection.anchorNode.parentNode.nodeName !== "LI") { 
+						//console.log('bundle.selection.isCollapsed: ' + bundle.selection.isCollapsed);
 						
-						if(module.selection.anchorNode.nodeValue.match(/^[-*]\s/)) { 
+						if(bundle.selection.anchorNode.nodeValue.match(/^[-*]\s/)) { 
 							// "- 텍스트작성" 또는 "* 텍스트작성" 행태로 글을 작성했을 경우 목록태그로 변경
 							document.execCommand('insertUnorderedList'); // ul 태그 생성
-							module.selection.anchorNode.nodeValue = module.selection.anchorNode.nodeValue.substring(2);
-							insertedNode = module.getParent( // 현재노드 상위로 존재하는 ul 태그 반환
-								module.selection.anchorNode,
+							bundle.selection.anchorNode.nodeValue = bundle.selection.anchorNode.nodeValue.substring(2);
+							insertedNode = bundle.getParent( // 현재노드 상위로 존재하는 ul 태그 반환
+								bundle.selection.anchorNode,
 								null,
 								function(node) {
 									return node.nodeName.toLowerCase() === 'ul';
@@ -927,12 +927,12 @@ FileReader: IE10 이상
 									return node;
 								}
 							);
-						}else if(module.selection.anchorNode.nodeValue.match(/^1\.\s/)) { 
+						}else if(bundle.selection.anchorNode.nodeValue.match(/^1\.\s/)) { 
 							// "1. 텍스트작성" 형태로 글을 작성했을 경우 목록태그로 변경
 							document.execCommand('insertOrderedList'); // ol 태그 생성
-							module.selection.anchorNode.nodeValue = module.selection.anchorNode.nodeValue.substring(3);
-							insertedNode = module.getParent( // 현재노드 상위로 존재하는 ol 태그 반환
-								module.selection.anchorNode,
+							bundle.selection.anchorNode.nodeValue = bundle.selection.anchorNode.nodeValue.substring(3);
+							insertedNode = bundle.getParent( // 현재노드 상위로 존재하는 ol 태그 반환
+								bundle.selection.anchorNode,
 								null,
 								function(node) {
 									return node.nodeName.toLowerCase() === 'ol';
@@ -947,12 +947,12 @@ FileReader: IE10 이상
 						// p 또는 div 내부에 목록태그가 존재하지 않도록, 해당위치를 목록태그로 대체한다.
 						unwrap = insertedNode && ["ul", "ol"].indexOf(insertedNode.nodeName.toLocaleLowerCase()) >= 0 && ["p", "div"].indexOf(insertedNode.parentNode.nodeName.toLocaleLowerCase()) >= 0;
 						if(unwrap) {
-							node = module.selection.anchorNode;
+							node = bundle.selection.anchorNode;
 							parent = insertedNode.parentNode;
 							parent.parentNode.insertBefore(insertedNode, parent);
 							parent.parentNode.removeChild(parent);
 							// 포커스(커서) 이동
-							module.setCusor(node);
+							bundle.setCusor(node);
 						}
 					}*/
 
@@ -980,8 +980,8 @@ FileReader: IE10 이상
 				}
 				
 				// 현재노드 상위 검색
-				if(module.getParent( 
-					module.selection.anchorNode,
+				if(bundle.getParent( 
+					bundle.selection.anchorNode,
 					that.elements.target,
 					function(node) {
 						if(/code|pre/.test(node.nodeName.toLowerCase())) {
@@ -1004,7 +1004,7 @@ FileReader: IE10 이상
 						line = document.createTextNode(' '); // \u00a0
 						fragment.appendChild(line);
 
-						range = module.selection.getRangeAt(0);
+						range = bundle.selection.getRangeAt(0);
 						range.deleteContents();
 						range.insertNode(fragment);
 
@@ -1012,8 +1012,8 @@ FileReader: IE10 이상
 						range.setStartAfter(line);
 						range.collapse(true);
 
-						module.selection.removeAllRanges();
-						module.selection.addRange(range);
+						bundle.selection.removeAllRanges();
+						bundle.selection.addRange(range);
 					})();
 				}else if(document.queryCommandSupported('insertText')) {
 					document.execCommand('insertText', false, text);
@@ -1035,7 +1035,7 @@ FileReader: IE10 이상
 				if(!that.elements.tooltip.contains(event.target)) {
 					console.log('document mouseup');
 					setTimeout(function() {
-						module.setSelection();
+						bundle.setSelection();
 						that.setTooltipToggle();
 					}, 1);
 				}
@@ -1064,6 +1064,8 @@ FileReader: IE10 이상
 
 		return EditText;
 	})();
+
+
 
 	// 텍스트를 제외한 여러 기능 (이미지, 동영상, 코드 등)
 	var EditMulti = (function() {
@@ -1100,12 +1102,12 @@ FileReader: IE10 이상
 				};
 			}else {
 				// Server Submit
-				return function(e, form, input) {
+				return function(e, form, input, id, wrap) {
 					var that = this;
 					var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					var self = event && event.currentTarget; // event listener element
 					var target = event && (event.target || event.srcElement); // event 가 발생한 element
-					var name = module.getKey();
+					var name = bundle.getKey();
 					var iframe = document.createElement('iframe');
 
 					// iframe 생성
@@ -1120,6 +1122,20 @@ FileReader: IE10 이상
 					form.submit();
 					iframe.onload = function() {
 						try {
+							// 이미지 삽입 - server 쪽에서 iframe 을 판단하여, JavaScript 코드를 반환하여 put을 실행한다.
+							//that.put({'type': 'image', 'id': id, 'data': ''});
+							/*
+							'\
+								<script type="text/javascript">\
+								try {\
+									if(window.top && window.top.api && window.top.api.editor && window.top.api.editor.put) {\
+										window.top.api.editor.put("' + key + '", {"type": "image", "id": "' + id + '", "data": ["' + result.join(", ") + '"]});\
+									}\
+								}catch(e) {};\
+								</script>\
+							';
+							*/
+
 							// 생성된 tag 삭제
 							form.parentNode.removeChild(form);
 							iframe.parentNode.removeChild(iframe);
@@ -1136,10 +1152,10 @@ FileReader: IE10 이상
 			var target = event && (event.target || event.srcElement); // event 가 발생한 element
 			var fragment = document.createDocumentFragment();
 			var wrap, id; // 이미지를 감싸는 div
-			var form = document.createElement('form');
+			var form = document.createElement('form'); // 서버로 이미지파일 전송을 위한 form - FileReader 를 지원하지 않는 브라우저
 			var input = document.createElement('input'); // file input
-			var hidden1 = document.createElement('input'); // 에디터 key (key에 해당하는 에디터)
-			var hidden2 = document.createElement('input'); // file 넣을 위치 id
+			var hidden1 = document.createElement('input'); // <input type="hidden" name="" value="" /> 에디터 key (key에 해당하는 에디터)
+			var hidden2 = document.createElement('input'); // <input type="hidden" name="" value="" /> file 넣을 위치 id
 			var setInsertBeforeWrap = function(position) { // position 기준 이전에 삽입
 				var div = document.createElement("div");
 				position.parentNode.insertBefore(div, position);
@@ -1167,9 +1183,9 @@ FileReader: IE10 이상
 			event.stopPropagation(); // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
 
 			// 이미지를 넣을 위치 설정
-			if(module.isSelection()) {
-				wrap = module.getParent(
-					module.selection.anchorNode,
+			if(bundle.isSelection()) {
+				wrap = bundle.getParent(
+					bundle.selection.anchorNode,
 					null,
 					function(node) { // condition (검사)
 						/*
@@ -1180,7 +1196,7 @@ FileReader: IE10 이상
 						if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
 							//console.log('setAppendWrap(that.elements.target)');
 							return setAppendWrap(that.elements.target);
-						}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(module.getDisplay(node.parentNode))))) {
+						}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(bundle.getDisplay(node.parentNode))))) {
 							//console.log('setInsertBeforeWrap(node)');
 							return setInsertBeforeWrap(node);
 						}/*else if(node.nodeType === 1 && (node.getAttribute('data-type') || (node.storage && node.storage.type))) {
@@ -1203,12 +1219,12 @@ FileReader: IE10 이상
 			/*
 			console.log('wrap');
 			console.log(wrap);
-			console.log(module.selection.anchorNode);
-			console.log(module.selection.focusNode);
+			console.log(bundle.selection.anchorNode);
+			console.log(bundle.selection.focusNode);
 			return;
 			*/
 			// 이미지를 넣을 위치를 위해 id 속성 설정
-			id = module.getKey();
+			id = bundle.getKey();
 			wrap.className = that.settings.classes.image.wrap;
 			wrap.setAttribute("id", id);
 			wrap.setAttribute("data-type", "image");
@@ -1223,14 +1239,14 @@ FileReader: IE10 이상
 			fragment.appendChild(form);
 
 			form.style.cssText = 'position: absolute; left: -9999px; top: -9999px;';
-			form.setAttribute('action', that.settings.submit.image);
+			form.setAttribute('action', that.settings.submit.image); 
 			form.setAttribute('method', 'post');
 			form.setAttribute('enctype', 'multipart/form-data');
 
 			hidden2.style.cssText = '';
 			hidden2.setAttribute('type', 'hidden');
 			hidden2.setAttribute('name', 'id');
-			hidden2.setAttribute('value', id);
+			hidden2.setAttribute('value', id); 
 
 			hidden1.style.cssText = '';
 			hidden1.setAttribute('type', 'hidden');
@@ -1243,6 +1259,7 @@ FileReader: IE10 이상
 			input.setAttribute('accept', 'image/*');
 			input.setAttribute('multiple', 'multiple');
 
+			// 이미지 선택 
 			input.onchange = function(e) {
 				// 이미지 첨부 (이미지를 선택했을 경우 실행된다.)
 				setImageInputChange.call(that, e, form, input, id, wrap);				
@@ -1279,13 +1296,13 @@ FileReader: IE10 이상
 			pre.appendChild(code);
 			code.innerHTML = '<br />';
 			p.innerHTML = '<br />';
-			module.getParent(
-				module.selection.anchorNode,
+			bundle.getParent(
+				bundle.selection.anchorNode,
 				null,
 				function(node) { // condition (검사)
 					if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
 						return that.elements.target.appendChild(fragment);
-					}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(module.getDisplay(node.parentNode))))) {
+					}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(bundle.getDisplay(node.parentNode))))) {
 						return node.parentNode.insertBefore(fragment, node);
 					}
 				}, 
@@ -1297,7 +1314,7 @@ FileReader: IE10 이상
 			);
 
 			// 포커스(커서) 이동
-			module.setCusor(code);
+			bundle.setCusor(code);
 		};
 		var setLineTooltipMousedown = function(e) {
 			var that = this;
@@ -1325,13 +1342,13 @@ FileReader: IE10 이상
 			fragment.appendChild(div);
 			fragment.appendChild(p);
 			p.innerHTML = '<br />';
-			module.getParent(
-				module.selection.anchorNode,
+			bundle.getParent(
+				bundle.selection.anchorNode,
 				null,
 				function(node) { // condition (검사)
 					if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
 						return that.elements.target.appendChild(fragment);
-					}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(module.getDisplay(node.parentNode))))) {
+					}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(bundle.getDisplay(node.parentNode))))) {
 						return node.parentNode.insertBefore(fragment, node);
 					}
 				}, 
@@ -1343,7 +1360,7 @@ FileReader: IE10 이상
 			);
 
 			// 포커스(커서) 이동
-			module.setCusor(p);
+			bundle.setCusor(p);
 		};
 
 		// public
@@ -1410,7 +1427,7 @@ FileReader: IE10 이상
 					}
 				},
 				'listeners': {
-					'init': null
+					'initialize': null
 				}
 			};
 			that.elements = {
@@ -1427,7 +1444,7 @@ FileReader: IE10 이상
 			// settings
 			that.change(settings);
 
-			// init
+			// initialize
 			(function() {
 				// element 생성
 				var fragment = document.createDocumentFragment();
@@ -1498,7 +1515,7 @@ FileReader: IE10 이상
 			var that = this;
 			
 			// settings
-			that.settings = module.setSettings(that.settings, settings);
+			that.settings = bundle.setSettings(that.settings, settings);
 
 			// target
 			that.settings.target = (typeof that.settings.target === 'string' && /^[a-z]+/i.test(that.settings.target) ? '#' + that.settings.target : that.settings.target);
@@ -1520,10 +1537,10 @@ FileReader: IE10 이상
 			var height = 0;
 			var gap = 10; // 커서가 위치한 라인과의 거리
 
-			if(!module.isCollapsed() || typeof module.selection !== 'object' || toggle === 'hide') {
+			if(!bundle.isCollapsed() || typeof bundle.selection !== 'object' || toggle === 'hide') {
 				// 숨기기
 				that.elements.tooltip.style.display = "none";
-			}else if(module.isSelection()) {
+			}else if(bundle.isSelection()) {
 				that.elements.tooltip.style.display = "block"; // 렌더링 상태에서 offsetWidth, offsetHeight 측정
 				// 툴팁 크기
 				tooltip_width = that.elements.tooltip.offsetWidth;
@@ -1537,12 +1554,12 @@ FileReader: IE10 이상
 				left += window.pageXOffset; // scroll
 				// top
 				// #text node 는 getBoundingClientRect 없음
-				if(module.selection.anchorNode && 'getBoundingClientRect' in module.selection.anchorNode) {
-					clientRectBounds = module.selection.anchorNode.getBoundingClientRect();
-				}else if(module.selection.focusNode && 'getBoundingClientRect' in module.selection.focusNode) {
-					clientRectBounds = module.selection.focusNode.getBoundingClientRect();
+				if(bundle.selection.anchorNode && 'getBoundingClientRect' in bundle.selection.anchorNode) {
+					clientRectBounds = bundle.selection.anchorNode.getBoundingClientRect();
+				}else if(bundle.selection.focusNode && 'getBoundingClientRect' in bundle.selection.focusNode) {
+					clientRectBounds = bundle.selection.focusNode.getBoundingClientRect();
 				}else {
-					clientRectBounds = module.selection.getRangeAt(0).getBoundingClientRect();
+					clientRectBounds = bundle.selection.getRangeAt(0).getBoundingClientRect();
 				}
 				if(clientRectBounds.top > 0) {
 					height = clientRectBounds.height || clientRectBounds.bottom - clientRectBounds.top;
@@ -1558,9 +1575,13 @@ FileReader: IE10 이상
 				that.elements.tooltip.style.left = left + "px";
 			}
 		};
-		// 이미지 에디터 툴바 위치 설정
+		// 이미지 에디터 툴바 위치 설정 (이미지를 선택했을 때)
 		EditMulti.prototype.setImageTooltipMenuPostion = function(parameter) {
 			var that = this;
+
+			var parameter = parameter || {};
+			var toggle = parameter['toggle'];
+
 
 		};
 		// 툴팁 보이기
@@ -1568,24 +1589,24 @@ FileReader: IE10 이상
 			var that = this;
 
 			// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
-			module.setSelection();
-			if(module.isSelection() && that.elements.target.contains(module.selection.anchorNode)/* && module.selection.focusNode.nodeType === 1*/) {
+			bundle.setSelection();
+			if(bundle.isSelection() && that.elements.target.contains(bundle.selection.anchorNode)/* && bundle.selection.focusNode.nodeType === 1*/) {
 				/*
 				console.log('----------');
-				console.dir(module.selection);
+				console.dir(bundle.selection);
 				// 시작노드
-				console.log('anchorNode.nodeName: ' + module.selection.anchorNode.nodeName);
-				console.log('anchorNode.nodeValue: ' + module.selection.anchorNode.nodeValue);
-				console.log('anchorNode.nodeType: ' + module.selection.anchorNode.nodeType);
+				console.log('anchorNode.nodeName: ' + bundle.selection.anchorNode.nodeName);
+				console.log('anchorNode.nodeValue: ' + bundle.selection.anchorNode.nodeValue);
+				console.log('anchorNode.nodeType: ' + bundle.selection.anchorNode.nodeType);
 				// 끝노드
-				console.log('focusNode.nodeName: ' + module.selection.focusNode.nodeName);
-				console.log('focusNode.nodeValue: ' + module.selection.focusNode.nodeValue);
-				console.log('focusNode.nodeType: ' + module.selection.focusNode.nodeType);
+				console.log('focusNode.nodeName: ' + bundle.selection.focusNode.nodeName);
+				console.log('focusNode.nodeValue: ' + bundle.selection.focusNode.nodeValue);
+				console.log('focusNode.nodeType: ' + bundle.selection.focusNode.nodeType);
 				*/
 
 				// 현재노드 상위 검색
-				if(module.getParent( 
-					module.selection.anchorNode,
+				if(bundle.getParent( 
+					bundle.selection.anchorNode,
 					that.elements.target,
 					function(node) {
 						if(/code|pre|figcaption|figure/.test(node.nodeName.toLowerCase())) {
@@ -1598,7 +1619,7 @@ FileReader: IE10 이상
 				) === true) {
 					that.setImageTooltipMenuPostion({'toggle': 'hide'}); // 이미지 관련 툴바
 					that.setMultiTooltipMenuPostion({'toggle': 'hide'});
-				}else if(/img/.test(module.selection.focusNode.nodeName.toLowerCase())) {
+				}else if(/img/.test(bundle.selection.focusNode.nodeName.toLowerCase())) {
 					that.setImageTooltipMenuPostion({'toggle': 'show'}); // 이미지 관련 툴바
 					that.setMultiTooltipMenuPostion({'toggle': 'hide'});
 				}else {
@@ -1621,8 +1642,8 @@ FileReader: IE10 이상
 
 			// element 의 id 기준으로 데이터를 넣는다.
 			if(!id) {
-				if(module.isSelection()) {
-					id = module.selection.anchorNode;
+				if(bundle.isSelection()) {
+					id = bundle.selection.anchorNode;
 				}else {
 					id = that.elements.target;
 				}
@@ -1694,7 +1715,7 @@ FileReader: IE10 이상
 								id.appendChild(figure);
 
 								// 포커스(커서) 이동
-								module.setCusor(figcaption);
+								bundle.setCusor(figcaption);
 							};
 						};
 
@@ -1732,10 +1753,10 @@ FileReader: IE10 이상
 				//console.log('mousedown');
 				//console.log(target);
 
-				module.setSelection();
+				bundle.setSelection();
 				if(that.elements.target.contains(target)) {
 					// 현재노드 상위 검색
-					module.getParent( 
+					bundle.getParent( 
 						target,
 						that.elements.target,
 						function(node) {
@@ -1746,7 +1767,7 @@ FileReader: IE10 이상
 										// 기본 이벤트 중지
 										event.preventDefault();
 										// 포커스(커서) 이동
-										module.setCusor(node.nextSibling);
+										bundle.setCusor(node.nextSibling);
 										break;
 								}
 							}
@@ -1766,9 +1787,17 @@ FileReader: IE10 이상
 				//console.log('mouseup');
 				//console.log(target);
 
-				module.setSelection();
+				bundle.setSelection();
 				that.setTooltipToggle();
 			});
+
+			// 이미지 선택 (이미지 에디터) - 이벤트 델리게이션 방식
+			/*$(document).on('click.EVENT_CLICK_MULTIEDIT', function(e) {
+				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+				var self = event && event.currentTarget; // event listener element
+				var target = event && (event.target || event.srcElement); // event 가 발생한 element
+				
+			});*/
 			
 			// 키보드 이벤트
 			$(that.elements.target).on('keydown.EVENT_KEYDOWN_MULTIEDIT', function(e) {
@@ -1777,17 +1806,17 @@ FileReader: IE10 이상
 				var target = event && (event.target || event.srcElement); // event 가 발생한 element
 
 				//console.log('keydown');
-				//console.log(module.selection.anchorNode);
+				//console.log(bundle.selection.anchorNode);
 
 				// getSelection 선택된 node
-				module.setSelection();
-				if(module.isSelection()) {
+				bundle.setSelection();
+				if(bundle.isSelection()) {
 					switch(event.keyCode) {
 						// keyCode 13: enter
 						case 13: 
 							// 현재노드 상위 검색
-							module.getParent( 
-								module.selection.anchorNode,
+							bundle.getParent( 
+								bundle.selection.anchorNode,
 								that.elements.target,
 								function(node) {
 									switch(node.nodeName.toLowerCase()) {
@@ -1812,7 +1841,7 @@ FileReader: IE10 이상
 												fragment.appendChild(line);
 
 												// 2. make the br replace selection
-												range = module.selection.getRangeAt(0);
+												range = bundle.selection.getRangeAt(0);
 												range.deleteContents();
 												range.insertNode(fragment);
 												
@@ -1824,8 +1853,8 @@ FileReader: IE10 이상
 												range.collapse(true);
 
 												// 4. make the cursor there
-												module.selection.removeAllRanges();
-												module.selection.addRange(range);
+												bundle.selection.removeAllRanges();
+												bundle.selection.addRange(range);
 											})();
 											break;
 										default:
@@ -1842,8 +1871,8 @@ FileReader: IE10 이상
 						// keyCode 9: tab
 						case 9:
 							// 현재노드 상위 검색
-							module.getParent( 
-								module.selection.anchorNode,
+							bundle.getParent( 
+								bundle.selection.anchorNode,
 								that.elements.target,
 								function(node) {
 									switch(node.nodeName.toLowerCase()) {
@@ -1861,13 +1890,13 @@ FileReader: IE10 이상
 												//tab = document.createTextNode("\u00a0\u00a0\u00a0\u00a0"); // \u00a0: space
 												
 												// 선택위치에 삽입
-												range = module.selection.getRangeAt(0);
+												range = bundle.selection.getRangeAt(0);
 												range.insertNode(tab);
 												range.setStartAfter(tab);
 												range.setEndAfter(tab); 
 
-												module.selection.removeAllRanges();
-												module.selection.addRange(range);
+												bundle.selection.removeAllRanges();
+												bundle.selection.addRange(range);
 											})();
 											break;
 										default:
@@ -1884,8 +1913,8 @@ FileReader: IE10 이상
 						// keyCode 8: backspace
 						case 8:
 							// 현재노드 상위 검색
-							module.getParent( 
-								module.selection.anchorNode,
+							bundle.getParent( 
+								bundle.selection.anchorNode,
 								that.elements.target,
 								function(node) {
 									if(typeof node.storage === 'object' && node.storage.type) {
@@ -1908,13 +1937,13 @@ FileReader: IE10 이상
 											case 'img':
 											case 'figure':
 												// 상위로 전파 중지
-												//module.preventDefault(event);
+												//bundle.preventDefault(event);
 												/*
-												console.log(module.selection.focusNode);
-												console.log(module.selection.focusNode.parentNode);
+												console.log(bundle.selection.focusNode);
+												console.log(bundle.selection.focusNode.parentNode);
 												*/
 												// 삭제
-												//module.selection.focusNode.parentNode.removeChild(module.selection.focusNode);
+												//bundle.selection.focusNode.parentNode.removeChild(bundle.selection.focusNode);
 												break;
 											default:
 												
@@ -1936,17 +1965,17 @@ FileReader: IE10 이상
 				var target = event && (event.target || event.srcElement); // event 가 발생한 element
 
 				//console.log('keyup');
-				//console.log(module.selection.anchorNode);
+				//console.log(bundle.selection.anchorNode);
 
 				// getSelection 선택된 node
-				module.setSelection();
-				if(module.isSelection()) {
+				bundle.setSelection();
+				if(bundle.isSelection()) {
 					switch(event.keyCode) {
 						// keyCode 13: enter
 						case 13: 
 							// 현재노드 상위 검색
-							module.getParent( 
-								module.selection.anchorNode,
+							bundle.getParent( 
+								bundle.selection.anchorNode,
 								that.elements.target,
 								function(node) {
 									switch(node.nodeName.toLowerCase()) {
@@ -1969,8 +1998,8 @@ FileReader: IE10 이상
 						// keyCode 8: backspace
 						case 8:
 							// 현재노드 상위 검색
-							module.getParent( 
-								module.selection.anchorNode,
+							bundle.getParent( 
+								bundle.selection.anchorNode,
 								that.elements.target,
 								function(node) {
 									if(typeof node.storage === 'object' && node.storage.type) {
@@ -1981,7 +2010,7 @@ FileReader: IE10 이상
 													var code = node.querySelector('code');
 													if(!pre || !code || !(code.textContent || code.innerText)) {
 														// 포커스(커서) 이동
-														module.setCusor(node.previousSibling || node.nextSibling);
+														bundle.setCusor(node.previousSibling || node.nextSibling);
 														// 삭제
 														node.parentNode.removeChild(node);
 													}
@@ -2003,8 +2032,8 @@ FileReader: IE10 이상
 						case 39:
 						case 40:
 							// 현재노드 상위 검색
-							module.getParent( 
-								module.selection.anchorNode,
+							bundle.getParent( 
+								bundle.selection.anchorNode,
 								that.elements.target,
 								function(node) {
 									// 해당노드 확인 (line, img, figure 등)
@@ -2013,9 +2042,9 @@ FileReader: IE10 이상
 											case 'line':
 												// 포커스(커서) 이동
 												if(event.keyCode === 37 || event.keyCode === 38) {
-													module.setCusor(node.previousSibling || node.nextSibling);
+													bundle.setCusor(node.previousSibling || node.nextSibling);
 												}else if(event.keyCode === 39 || event.keyCode === 40) {
-													module.setCusor(node.nextSibling || node.previousSibling);
+													bundle.setCusor(node.nextSibling || node.previousSibling);
 												}
 												break;
 										}
@@ -2056,6 +2085,8 @@ FileReader: IE10 이상
 		return EditMulti;
 	})();
 
+
+
 	// 오픈그래프
 	var OpenGraph = function(settings) {
 		var that = this;
@@ -2072,7 +2103,7 @@ FileReader: IE10 이상
 				'author': 'opengraph-author'
 			},
 			'listeners': {
-				'init': null
+				'initialize': null
 			}
 		};
 		that.elements = {};
@@ -2084,7 +2115,7 @@ FileReader: IE10 이상
 		var that = this;
 
 		// settings
-		that.settings = module.setSettings(that.settings, settings);
+		that.settings = bundle.setSettings(that.settings, settings);
 
 		// target
 		that.settings.target = (typeof that.settings.target === 'string' && /^[a-z]+/i.test(that.settings.target) ? '#' + that.settings.target : that.settings.target);
@@ -2101,7 +2132,7 @@ FileReader: IE10 이상
 		var fragment;
 		var a, div, p, comment;
 
-		if(typeof node === 'object' && node !== null && node.nodeType && (url && regexp.url.test(url) || module.isNodeCheck(node, 'url'))) {
+		if(typeof node === 'object' && node !== null && node.nodeType && (url && regexp.url.test(url) || bundle.isNodeCheck(node, 'url'))) {
 			url = url || node.nodeValue;
 			//console.log('url: ' + url);
 
@@ -2149,13 +2180,13 @@ FileReader: IE10 이상
 
 				// insertAdjacentHTML
 				//node.parentNode.replaceChild(fragment, node);
-				inserted = module.getParent(
+				inserted = bundle.getParent(
 					node,
 					null,
 					function(node) { // condition (검사)						
 						if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
 							return node;
-						}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(module.getDisplay(node.parentNode))))) {
+						}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(bundle.getDisplay(node.parentNode))))) {
 							return node;
 						}
 					}, 
@@ -2171,7 +2202,7 @@ FileReader: IE10 이상
 				//if(inserted.parentNode.insertBefore(fragment, inserted)) { // 링크 이전 요소에 삽입
 				if(inserted.parentNode.insertBefore(fragment, inserted.nextSibling)) { // 링크 다음 요소에 삽입
 					// 포커스(커서) 이동
-					module.setCusor(p);
+					bundle.setCusor(p);
 
 					// 오픈그래프 정보 불러오기
 					$.ajax({
@@ -2187,7 +2218,7 @@ FileReader: IE10 이상
 								//console.log(div);
 								result = json.result;
 								if(result.image) {
-									image = '<div class="' + that.settings.classes.image + '" style="background-image: url(' + result.image + ');"><br /></div>';
+									image = '<div class="' + that.settings.classes.image + '" style="background-image: url(' + (result.image).replace(/(<([^>]+)>)/ig,"") + ');"><br /></div>';
 								}else {
 									image = '<div class="' + that.settings.classes.image + '"></div>';
 								}
@@ -2195,9 +2226,9 @@ FileReader: IE10 이상
 									<a href="' + url + '" target="_blank" class="opengraph-wrap" style="display: block;">\
 										' + image + '\
 										<div class="' + that.settings.classes.text + '">\
-											<strong class="' + that.settings.classes.title + '">' + result.title + '</strong>\
-											<p class="' + that.settings.classes.description + '">' + result.description + '</p>\
-											<p class="' + that.settings.classes.author + '">' + (result.author || url) + '</p>\
+											<strong class="' + that.settings.classes.title + '">' + (result.title || '').replace(/(<([^>]+)>)/ig,"") + '</strong>\
+											<p class="' + that.settings.classes.description + '">' + (result.description || '').replace(/(<([^>]+)>)/ig,"") + '</p>\
+											<p class="' + that.settings.classes.author + '">' + (result.author || url).replace(/(<([^>]+)>)/ig,"") + '</p>\
 										</div>\
 										<div style="clear: both;"></div>\
 									</a>\
@@ -2236,29 +2267,29 @@ FileReader: IE10 이상
 		$(that.elements.target).on('keydown.EVENT_KEYDOWN_OPENGRAPH', function(e) {
 			var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
-			module.setSelection();
-			if(module.isCollapsed()) {
-				if(event.keyCode === 13 && module.isNodeCheck(module.selection.anchorNode, 'url')) { // keyCode 13: enter
+			bundle.setSelection();
+			if(bundle.isCollapsed()) {
+				if(event.keyCode === 13 && bundle.isNodeCheck(bundle.selection.anchorNode, 'url')) { // keyCode 13: enter
 					// url 이 존재하면, event 를 정지한다.
-					module.preventDefault(event);
+					bundle.preventDefault(event);
 					/*
 					console.log(last);
-					console.log(module.selection.anchorNode);
-					console.log(module.selection.anchorNode.nodeType);
-					console.log(module.selection.anchorNode.nodeValue);
-					console.log(module.selection.focusNode.nodeValue);
+					console.log(bundle.selection.anchorNode);
+					console.log(bundle.selection.anchorNode.nodeType);
+					console.log(bundle.selection.anchorNode.nodeValue);
+					console.log(bundle.selection.focusNode.nodeValue);
 					*/
 					// 삽입
-					that.put({'node': module.selection.anchorNode});
-				}else if(event.keyCode === 8 && module.isNodeCheck(module.selection.focusNode, 'opengraph')) { // keyCode 8: backspace
+					that.put({'node': bundle.selection.anchorNode});
+				}else if(event.keyCode === 8 && bundle.isNodeCheck(bundle.selection.focusNode, 'opengraph')) { // keyCode 8: backspace
 					// 상위로 전파 중지
-					module.preventDefault(event);
+					bundle.preventDefault(event);
 					/*
-					console.log(module.selection.focusNode);
-					console.log(module.selection.focusNode.parentNode);
+					console.log(bundle.selection.focusNode);
+					console.log(bundle.selection.focusNode.parentNode);
 					*/
 					// 삭제
-					module.selection.focusNode.parentNode.removeChild(module.selection.focusNode);
+					bundle.selection.focusNode.parentNode.removeChild(bundle.selection.focusNode);
 				}
 			}
 		});
@@ -2273,7 +2304,7 @@ FileReader: IE10 이상
 	// public return
 	return {
 		search: function(key) {
-			return module.instance[key] || false;
+			return bundle.instance[key] || false;
 		},
 		setup: function(settings) {
 			var instance;
@@ -2297,7 +2328,7 @@ FileReader: IE10 이상
 						break;
 				}
 				if(settings['key'] && instance) {
-					module.instance[settings['key']] = instance;
+					bundle.instance[settings['key']] = instance;
 				}
 			};
 			return instance;
@@ -2311,7 +2342,7 @@ FileReader: IE10 이상
 		remove: function() { // 인스턴스까지 모두 제거 (event off 포함)
 			
 		},
-		put: function(key, data) {
+		put: function(key, data) { // image 서버 전송 후 iframe 에서 JavaScript 에 의해 실행되거나, 외부에서 리소스를 도큐먼트에 삽입하고자 할 때 사용
 			if(this.search(key)) {
 				this.search(key).put(data);
 			}

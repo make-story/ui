@@ -81,6 +81,11 @@ api.xhr({
 		}
 		if(typeof settings.async !== 'boolean') { // 동기/비동기 
 			//console.log(settings.async);
+			/*
+			동기(settings.async = false)로 처리할 경우, 크롬에서 경고 문구 노출
+			[Deprecation] Synchronous XMLHttpRequest on the main thread is deprecated because of its detrimental effects to the end user's experience. For more help, check https://xhr.spec.whatwg.org/.
+			Ajax 비동기 방식은 비효율적 관련 내용이다. Promise 를 활용하여 코드를 수정하는 방법을 고민해야 한다.
+			*/
 			return false;
 		}
 		if(isNaN(parseFloat(settings.timeout)) || !isFinite(settings.timeout)) { // timeout
@@ -156,6 +161,7 @@ api.xhr({
 		}else {
 			// 2.
 			// AJAX
+			// https://xhr.spec.whatwg.org/
 			/*
 			CORS를 사용하기 위해서 클라이언트와 서버는 몇 가지 추가 정보를 주고 받아야 한다. 
 			클라이언트는 CORS 요청을 위해 새로운 HTTP 헤더를 추가한다. 
@@ -172,11 +178,19 @@ api.xhr({
 			// BLOB는 전형적으로 이미지, 오디오 또는 다른 멀티미디어 객체를 말합니다.
 			instance = new XMLHttpRequest();
 			if(typeof instance.withCredentials === 'undefined') {
+				/*
+				표준 CORS는 기본적으로 요청을 보낼 때 쿠키를 전송하지 않는다. 쿠키를 요청에 포함하고 싶다면 XMLHttpRequest 객체의 withCredentials 프로퍼티 값을 true로 설정해준다. (instance.withCredentials = true;)
+				
+				XHR객체의 withCredentials 프로퍼티를 확인해서 이 프로퍼티가 없으면 CORS를 지원하지 않는 브라우저로 판단해서 XDomainRequest 객체가 있는지 확인한다. XDomainRequest 객체가 있으면 이를 이용해서 xhr 인스턴스를 만들어 돌려준다. (instance = new XDomainRequest();)
+				한 가지 주의할 점이 있는데 XDomainRequest는 status 프로퍼티를 가지고 있지 않다. 따라서 서버 측 응답결과 코드를 확인할 수 있는 방법이 없다.
+				*/
 				return false;
 			}
 			/*if(global.XDomainRequest) { 
 				// IE8, IE9
 				// IE의 경우 XDomainRequest 객체를 사용 (cross-origin 기능만 제공)
+				// XDomainRequest(XDR)는 W3C 표준이 아니며, IE 8, 9에서 비동기 CORS 통신을 위해 Microsoft에서 만든 객체다.
+				// XDR은 setRequestHeader가 없다.
 				instance = new XDomainRequest();
 			}else if(global.XMLHttpRequest) { 
 				instance = new XMLHttpRequest();
@@ -213,11 +227,13 @@ api.xhr({
 			}
 			
 			// dataType
-			// responseType XMLHttpRequest 레벨2 에서 중요함: http://www.html5rocks.com/en/tutorials/file/xhr2/?redirect_from_locale=ko 
-			//instance.responseType = "arraybuffer";
-			//instance.responseType = 'text'; // 파이어폭스 파이어버그에서 응답이 null 로 출력될 경우, responseType 을 text로 해야 responseText 로 정상 출력된다. (이는 XMLHttpRequest 레벨 2 지원문제)
-			instance.responseType = !settings.dataType || /json|text/i.test(settings.dataType.toLowerCase()) ? 'text' : settings.dataType; // text(default) || arraybuffer || blob || document(xml)
-
+			// https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseType
+			if(settings.async !== false) { // 동기 방식이 아닌 경우
+				// responseType XMLHttpRequest 레벨2 에서 중요함: http://www.html5rocks.com/en/tutorials/file/xhr2/?redirect_from_locale=ko 
+				//instance.responseType = "arraybuffer";
+				//instance.responseType = 'text'; // 파이어폭스 파이어버그에서 응답이 null 로 출력될 경우, responseType 을 text로 해야 responseText 로 정상 출력된다. (이는 XMLHttpRequest 레벨 2 지원문제)
+				instance.responseType = !settings.dataType || /json|text/i.test(settings.dataType.toLowerCase()) ? 'text' : settings.dataType; // text(default) || arraybuffer || blob || document(xml)
+			}
 			//instance.onloadstart
 			//instance.onabort
 			//instance.ontimeout
@@ -267,12 +283,13 @@ api.xhr({
 			};
 			// 완료
 			instance.onload = function(event) { 
+				var data;
 				//console.dir(this);
 				//console.dir(instance);
 				//this.getResponseHeader("Last-Modified")
 				//this.getResponseHeader("Content-Type")
 				if(instance.status == 200) {
-					var data = instance.response || instance.responseText || instance.responseXML; // XMLHttpRequest Level 2
+					data = instance.response || instance.responseText || instance.responseXML; // XMLHttpRequest Level 2
 					if(typeof data === 'string' && settings.dataType.toLowerCase() === 'json') {
 						data = JSON.parse(data);
 					}
