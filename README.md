@@ -411,6 +411,8 @@ api.history.navigation()
 
 api.history.callback(function() {})
 - 네비게이션(URL진입, 앞으로/뒤로가기, 새로고침 등)/해쉬변경 콜백 
+
+````javascript
 api.history.callback(function(navigation) {
 	console.log(['BACK_FORWARD'].join(' '), navigation);
 }, 'BACK_FORWARD');
@@ -434,7 +436,7 @@ api.history.navigation({
 	'key': 'test2',
 	'state': 'RELOAD'
 });
-
+````
 
 api.touch.on(selector, handlers)
 - 더블터치, 딜레이터치, 원터치 이벤트 설정
