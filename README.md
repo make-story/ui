@@ -322,17 +322,20 @@ api.fn.extend({name: value})
 - api.dom 객체 또는 prototype 에 기능추가
 
 
-api.hash.get(key)
+api.location.hash.get(key)
 - 해쉬 값 불러오기 
 
-api.hash.set(key, value)
+api.location.hash.set(key, value)
 - 해쉬 값 추가 
 
-api.hash.del(key)
+api.location.hash.del(key)
 - 해쉬 값 제거 
 
-api.hash.is(key)
+api.location.hash.has(key)
 - 해쉬 값 존재여부 
+
+api.location.params.get(url)
+- URL 파라미터 값 불러오기 {key: value, key: value, ...}
 
 
 api.storage.clear(type)
@@ -406,6 +409,32 @@ api.history.del(key)
 api.history.navigation()
 - 사용자 브라우저 네비게이션 조작상태 NONE/NAVIGATENEXT/RELOAD/BACK_FORWARD/UNDEFINED
 
+api.history.callback(function() {})
+- 네비게이션(URL진입, 앞으로/뒤로가기, 새로고침 등)/해쉬변경 콜백 
+api.history.callback(function(navigation) {
+	console.log(['BACK_FORWARD'].join(' '), navigation);
+}, 'BACK_FORWARD');
+api.history.callback(function(navigation) {
+	console.log(['BACK_FORWARD', 'RELOAD'].join(' '), navigation);
+}, ['BACK_FORWARD', 'RELOAD']);
+api.history.callback(function(navigation) {
+	console.log(['RELOAD', 'HASHCHANGE'].join(' '), navigation);
+}, ['RELOAD', 'HASHCHANGE']);
+var test = function() {
+	api.history.callback(function(navigation) {
+		console.log([navigation.state, 'test1'].join(' '));
+		test(); // 반복실행 테스트 
+	}, {'key': 'test1', 'state': ['NAVIGATENEXT', 'RELOAD']});
+};
+test();
+api.history.navigation({
+	'callback': function(navigation) {
+		console.log([navigation.state, 'test2'].join(' '));
+	},
+	'key': 'test2',
+	'state': 'RELOAD'
+});
+
 
 api.touch.on(selector, handlers)
 - 더블터치, 딜레이터치, 원터치 이벤트 설정
@@ -431,6 +460,157 @@ api.touch.off(selector, eventkey);
 
 ````javascript
 api.touch.off('#ysm', 'one'); // eventkey: one, two, delay, all
+````
+
+
+----
+
+### api.player.js
+
+비디오 플레이어 (오디오 작업중)
+
+````javascript
+// 플레이어 생성
+api.player.setup({
+	'target': document.querySelector('#video'),
+	'source': '리소스 URL'
+});
+
+// setup options 값 참고
+/*
+	'key': '', // 비디오 작동 고유키
+	'target': '', // container, 비디오를 넣을 타겟 
+	'attributes': {}, // 비디오 태그 사용자 속성 
+
+	// 외부 오버레이 또는 video 태그와 오버레이를 포함한 템플릿 
+	'overlay': '', // 내부에서 생성하는 것이 아닌 외부에서 만든 오버레이, element target 또는 html string
+	'template': '', // video 태그를 포함한 템플릿, element target 또는 html string
+
+	// poster 이미지 
+	'poster': '', 
+
+	// source
+	'source': '', // string 이면 src, {'src': '', 'type': ''} 또는 {} 여러개 엤는 [{...}, {...}, ...] 배열형태
+
+	// 기본 기능 설정
+	'crossorigin': '', // anonymous, use-credentials
+	'autoplay': false, // 로드시 미디어 자동 재생
+	'muted': false, // 초기 음소거 모드여부 
+	'loop': false, // loop="" 속성은 미디어가 종료되는 시점에 처음으로 돌아가게 합니다.
+	'autoHideControls': true, // 비디오 컨트롤을 자동으로 숨깁니다. // hideControls
+	'swipeRewindForward': true, // 마우스/터치 되감기/빨리감기 
+	'swipeVolume': true, // 마우스/터치 볼륨
+	'seekTime': 10, // 빨리 감기 또는 되감기를 할 때 시간
+	'volume': 10, // 초기 볼륨 (1~10)
+	'volumeMin': 0, // 불륨 최소 제한
+	'volumeMax': 10, // 볼륨 최대 제한
+	'volumeStep': 1, // 불륨 조절 간격
+
+	// 컨트롤러 버튼 사용유무
+	'controls': {
+		'reset': false, // 초기화 
+		'rewind': false, // 되돌리기 버튼 노출여부
+		'forward': false, // 빨리감기 버튼 노출여부
+		'progress': true, // played, buffer
+		'currentTime': true, // 현재 재생시간 표시 사용여부
+		'duration': true, // 지속시간 표시 사용여부
+		'mute': true, // 음소거 사요여부
+		'volume': true, // 볼륨 사용여부
+		//'captions': false, // 자막 사용여부
+		'fullscreen': true, // 풀스크린 사용여부 (native 또는 fallback(프레임) 방식)
+		'pip': true, // PIP (Picture-in-Picture)
+		'tooltip': true // 각 버튼의 말풍선 사용여부 (예: 재생버튼에 마우스를 올리면, 설명 말풍선을 보여줌)
+	},
+
+	// 설렉터 (요소 이벤트 설정)
+	'selectors': {
+		'controlsWrapper': '[data-player="controls-wrapper"]',
+		'playerWrapper': '[data-player="player-wrapper"]',
+		'player': '[data-player="player"]',
+		'poster': '[data-player="player-poster"]',
+		'buttons': {
+			'playOverlay': '[data-player="play-overlay"]', // 화면 중앙에 위치한 play 버튼 
+			'pauseOverlay': '[data-player="pause-overlay"]',
+			'reset': '[data-player="reset"]',
+			'play': '[data-player="play"]',
+			'pause': '[data-player="pause"]',
+			'rewind': '[data-player="rewind"]',
+			'forward': '[data-player="forward"]',
+			'mute': '[data-player="mute"]', 
+			'fullscreen': '[data-player="fullscreen"]', 
+			'pip': '[data-player="pip"]'
+		},
+		'seek': {
+			'container': '[data-player="seek"]',
+			'range': '[data-player="seekRange"]', // <input type="range" min="0" max="100" step="0.1" value="0" />
+			'progressPlayed': '[data-player="seekProgressPlayed"]',
+			'progressBuffer': '[data-player="seekProgressBuffer"]',
+			'tooltip': '[data-player="seekTooltip"]'
+		},
+		'volume': {
+			'container': '[data-player="volume"]',
+			'range': '[data-player="volumeRange"]', // <input type="range" min="0" max="10" value="10" />, 0~10 볼륨 조절
+			'progress': '[data-player="volumeProgress"]' // <progress max="10" value="4"></progress>
+		},
+		'currentTime': '[data-player="current-time"]', // 현재 재생시간
+		'duration': '[data-player="duration"]' // 전체 재생시간
+	},
+
+	// class (요소 스타일 설정)
+	'classes': {
+		'loading': 'player-loading', // 로딩중 (container 에 클래스 삽입)
+		'fullscreen': 'player-fullscreen', // 풀스크린 상태 (container 에 클래스 삽입)
+
+		'hidden': 'player-hidden', // 감추기 (display: none;)
+
+		'container': 'player-container',
+		'controlsWrapper': 'player-controls-wrapper',
+		'playerWrapper': 'player-player-wrapper',
+		'player': 'player-player',
+		'poster': 'player-poster',
+		'buttons': {
+			'playOverlay': 'player-button-play-overlay',
+			'pauseOverlay': 'player-button-pause-overlay',
+			'reset': 'player-button-reset',
+			'play': 'player-button-play',
+			'pause': 'player-button-pause',
+			'rewind': 'player-button-rewind',
+			'forward': 'player-button-forward',
+			'mute': 'player-button-mute',
+			//'captions': 'player-button-captions',
+			'fullscreen': 'player-button-fullscreen',
+			'pip': 'player-button-pip'
+		},
+		'seek': {
+			'container': 'player-seek-container',
+			'range': 'player-seek-range',
+			'progressPlayed': 'player-seek-progress-played',
+			'progressBuffer': 'player-seek-progress-buffer',
+			'tooltip': 'player-seek-tooltip'
+		},
+		'volume': {
+			'container': 'player-volume-container',
+			'range': 'player-volume-range',
+			'progress': 'player-volume-progress'
+		},
+		'currentTime': 'player-time', 
+		'duration': 'player-duration'
+	},
+
+	// 사용자 콜백 
+	'listeners': {
+		'reset': null,
+		'seek': null,
+		'play': null,
+		'pause': null,
+		'rewind': null,
+		'forward': null,
+		'mute': null,
+		'volume': null,
+		'fullscreen': null,
+		'pip': null
+	}
+*/
 ````
 
 
