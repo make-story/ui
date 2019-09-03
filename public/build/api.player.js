@@ -511,7 +511,7 @@ video.addEventListener('leavepictureinpicture', () => {
 				'volume': true, // 볼륨 사용여부
 				//'captions': false, // 자막 사용여부
 				'fullscreen': true, // 풀스크린 사용여부 (native 또는 fallback(프레임) 방식)
-				'pip': false, // PIP (Picture-in-Picture)
+				'pip': true, // PIP (Picture-in-Picture)
 				'tooltip': true // 각 버튼의 말풍선 사용여부 (예: 재생버튼에 마우스를 올리면, 설명 말풍선을 보여줌)
 			},
 
@@ -636,6 +636,9 @@ video.addEventListener('leavepictureinpicture', () => {
 			/*if(!bundle.fullscreen.supportsFullScreen) {
 				that.settings.controls.fullscreen = false;
 			}*/
+			if(!document.pictureInPictureEnabled) {
+				that.settings.controls.pip = false;
+			}
 
 			// render
 			that.setRender();
@@ -1505,6 +1508,18 @@ video.addEventListener('leavepictureinpicture', () => {
 				that.setToggleLoading(event.type === 'waiting');
 			});
 
+			// Picture-in-Picture Events
+			eventListener(that.player, 'enterpictureinpicture', function(event) {
+				console.log('enterpictureinpicture', event);
+				// Exit Picture-in-Picture
+
+			});
+			eventListener(that.player, 'leavepictureinpicture', function(event) {
+				console.log('leavepictureinpicture', event);
+				// Enter Picture-in-Picture
+
+			});
+
 			// 컨트롤러 보이기 / 숨기기 
 			// Toggle controls visibility based on mouse movement
 			/*if(that.settings.autoHideControls) {
@@ -1772,6 +1787,15 @@ video.addEventListener('leavepictureinpicture', () => {
 				// Show/hide the tooltip
 				if(event && bundle.inArray(['mouseenter', 'mouseleave', 'mousemove'], event.type)) {
 					that.setToggleSeekTooltip(event.type === 'mouseleave');
+				}
+			});
+
+			// pip
+			eventListener(that.elements.buttons.pip, 'click', function(event) {
+				if(document.pictureInPictureElement) {
+					document.exitPictureInPicture();
+				}else {
+					that.player.requestPictureInPicture();
 				}
 			});
 		},

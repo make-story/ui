@@ -39,10 +39,6 @@ http://www.quirksmode.org/js/detect.html
 	var getKey = function() {
 		/*
 		-
-		ES6
-		심볼(Symbol)은 프로그램이 이름 충돌의 위험 없이 속성(property)의 키(key)로 쓰기 위해 생성하고 사용할 수 있는 값입니다.
-		Symbol()을 호출하면 새로운 심볼 값이 생성됩니다. 이 값은 다른 어떤 값과도 다릅니다.
-		-
 		랜덤, 날짜 결합
 		var arr = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
 		var date = new Date();
@@ -2175,9 +2171,12 @@ http://www.quirksmode.org/js/detect.html
 
 			/*
 			! 주의
-			data-* 속성값에서 -(hyphen) 다음의 첫글자는 무조건 대문자로 들어가야 한다.
+			data-* 속성값에서 두번째 -(hyphen) 다음의 첫글자는 무조건 대문자로 들어가야 한다.
 			https://developer.mozilla.org/ko/docs/Learn/HTML/Howto/%EB%8D%B0%EC%9D%B4%ED%84%B0_%EC%86%8D%EC%84%B1_%EC%82%AC%EC%9A%A9%ED%95%98%EA%B8%B0
+			
 			[data-index-number="12314"] 속성을 JavaScript 에서 접근할 경우 element.dataset.indexNumber; // "12314"
+			[data-columns="3"] -> element.dataset.columns // "3"
+			[data-parent="cars"] -> element.dataset.parent // "cars"
 			*/
 			var setTheFirstLetter = function(value) {
 				if(typeof value === 'string') {
@@ -3012,6 +3011,7 @@ http://www.quirksmode.org/js/detect.html
 	var browserHistory = (function() {
 		// 상태 (주소입력, 새로고침, 뒤로가기/앞으로, 구분없음 등 사용자 인지의 문자열 형태 값) 
 		var STATE = {
+			'NONE': 'NONE',
 			'NAVIGATENEXT': 'NAVIGATENEXT',
 			'RELOAD': 'RELOAD',
 			'BACK_FORWARD': 'BACK_FORWARD',
@@ -3022,12 +3022,13 @@ http://www.quirksmode.org/js/detect.html
 		// 네비게이션 정보 
 		var navigation = {
 			'type': null,
-			'state': STATE.UNDEFINED, // navigation type의 숫자값을 문자값 형태로 출력 
+			'state': STATE.NONE, // navigation type의 숫자값을 문자값 형태로 출력 
 			'persisted': null
 		};
 
 		// 상태별 콜백 리스트 
 		var callstack = {}; // 각 상태(state) 별 callback 리스트 
+		callstack[STATE.NONE] = {};
 		callstack[STATE.NAVIGATENEXT] = {};
 		callstack[STATE.RELOAD] = {};
 		callstack[STATE.BACK_FORWARD] = {};
@@ -3175,7 +3176,9 @@ http://www.quirksmode.org/js/detect.html
 
 			// 콜백 실행 
 			setCallstack(navigation.state);
-			//setCallstack(STATE.UNDEFINED);
+			if(navigation.state !== STATE.NONE) {
+				setCallstack(STATE.NONE); // state 를 구분하지 않은 콜백 실행
+			}
 		}
 
 		// IOS에서 뒤로가기/앞으로 형태로 재접속시 BF캐시여부를 구분할 수 있도록 onpageshow 이벤트 등록 
@@ -3199,7 +3202,9 @@ http://www.quirksmode.org/js/detect.html
 
 				// 콜백 실행 
 				setCallstack(navigation.state);
-				//setCallstack(STATE.UNDEFINED);
+				if(navigation.state !== STATE.NONE) {
+					setCallstack(STATE.NONE); // state 를 구분하지 않은 콜백 실행
+				}
 			};
 		}
 
@@ -3211,6 +3216,9 @@ http://www.quirksmode.org/js/detect.html
 
 				// 콜백 실행 
 				setCallstack(STATE.HASHCHANGE, event);
+				//if(navigation.state !== STATE.NONE) {
+					//setCallstack(STATE.NONE); // state 를 구분하지 않은 콜백 실행
+				//}
 			};
 		}
 
