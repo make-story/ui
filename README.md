@@ -618,6 +618,28 @@ api.player.setup({
 
 ----
 
+### api.state.js
+
+상태관리
+
+````javascript
+var state = api.state();
+
+// key 로 설정된 event.action 값이 true 로 설정될 경우, handler 실행 
+state.on({
+	'key': 'event.action',
+	'value': true,
+	'handler': function() {
+		that.setBlockMoveOn();
+	}
+});
+state.get('event.action');
+state.set({'key': 'event.action', 'value': true});
+````
+
+
+----
+
 ### api.editor.js
 
 에디터
