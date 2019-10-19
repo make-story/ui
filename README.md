@@ -718,7 +718,7 @@ api.editor.setup({
 
 // 서버측 오픈그래프 return json 구조
 {
-	'msg': 'success', 
+	'status': 'success', 
 	'result': {
 		'title': '페이지 제목',
 		'description': '페이지 요약',
