@@ -470,6 +470,7 @@ api.touch.off('#ysm', 'one'); // eventkey: one, two, delay, all
 ### api.player.js
 
 비디오 플레이어 (오디오 작업중)
+<http://makeapi.net/test/media.html>
 
 ````javascript
 // 플레이어 생성
@@ -643,6 +644,7 @@ state.set({'key': 'event.action', 'value': true});
 ### api.editor.js
 
 에디터
+<http://makeapi.net/test/editor.html>
 
 ````javascript
 // 텍스트 에디터
@@ -938,6 +940,7 @@ instance = api.modal.search(key);
 ### api.socket.js
 
 WebSocket
+<http://makeapi.net/test/websocket.html>
 
 ````javascript
 var socket = api.socket({
