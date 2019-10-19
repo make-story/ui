@@ -990,7 +990,7 @@ worker.close(); // 워커 종료
 
 ----
 
-### api.template.js
+### api.template.js (템플릿 엘리먼트, 템플릿 리터럴 등 표준사용 권장)
 
 템플릿 {{tag}}
 
@@ -1286,6 +1286,7 @@ api.util.lastday(년도, 월);
 ### api.animate.js
 
 자바스크립트 애니메이션프레임, 애니메이션, 트랜지션
+<http://makeapi.net/test/animate.html>
 
 api.animate.frame({})
 - requestAnimationFrame 애니메이션 리스트 실행
@@ -1388,7 +1389,7 @@ api.animate.animation([
 
 ----
 
-### api.script.js (작업 중 보류상태)
+### api.script.js (IE하위버전 일부오류, 개발보류, 표준사용권장)
 
 js 파일 동적로딩, 의존성관리, 모듈화
 
