@@ -413,15 +413,22 @@ api.history.callback(function() {})
 - 네비게이션(URL진입, 앞으로/뒤로가기, 새로고침 등)/해쉬변경 콜백 
 
 ````javascript
+// 뒤로가기 접근
 api.history.callback(function(navigation) {
 	console.log(['BACK_FORWARD'].join(' '), navigation);
 }, 'BACK_FORWARD');
+
+// 뒤로가기 / 새로고침 접근
 api.history.callback(function(navigation) {
 	console.log(['BACK_FORWARD', 'RELOAD'].join(' '), navigation);
 }, ['BACK_FORWARD', 'RELOAD']);
+
+// 새로고침 / 해시값 변경 접근
 api.history.callback(function(navigation) {
 	console.log(['RELOAD', 'HASHCHANGE'].join(' '), navigation);
 }, ['RELOAD', 'HASHCHANGE']);
+
+// 한페이지에서 여러번 호출 경우
 var test = function() {
 	api.history.callback(function(navigation) {
 		console.log([navigation.state, 'test1'].join(' '));
@@ -429,6 +436,8 @@ var test = function() {
 	}, {'key': 'test1', 'state': ['NAVIGATENEXT', 'RELOAD']});
 };
 test();
+
+// 네비게이션에서 바로 이벤트 설정 
 api.history.navigation({
 	'callback': function(navigation) {
 		console.log([navigation.state, 'test2'].join(' '));
@@ -619,28 +628,6 @@ api.player.setup({
 
 ----
 
-### api.state.js
-
-상태관리
-
-````javascript
-var state = api.state();
-
-// key 로 설정된 event.action 값이 true 로 설정될 경우, handler 실행 
-state.on({
-	'key': 'event.action',
-	'value': true,
-	'handler': function() {
-		that.setBlockMoveOn();
-	}
-});
-state.get('event.action');
-state.set({'key': 'event.action', 'value': true});
-````
-
-
-----
-
 ### api.editor.js
 
 에디터
@@ -748,53 +735,197 @@ api.editor.search('에디터키').off();
 
 ----
 
-### api.flicking.js
+### api.animate.js
 
-플리킹
+자바스크립트 애니메이션프레임, 애니메이션, 트랜지션
+<http://makeapi.net/test/animate.html>
+
+api.animate.frame({})
+- requestAnimationFrame 애니메이션 리스트 실행
 
 ````javascript
-// 방법1
-var instance = api.flicking.setup({
-	'key': '', // 플리킹 작동 고유키 (선택)
-	'target': null, // 슬라이드 wrap (셀렉터 또는 element 값)
-	'flow': 'horizontal', // 플리킹 방향 (horizontal, vertical)
-	'width': 'auto', // 슬라이드 width 값 설정 (auto: 슬라이드가 target 가운데 위치하도록 wrap width 값에 따라 자동설정)
-	'height': 'auto', // 슬라이드 height 값 설정
-	'speed': 300, // 슬라이드 속도
-	'touch': true, // 클릭 또는 터치 슬라이드 작동여부
-	'auto': 0, // 자동 슬라이드 작동여부 (0 이상의 값이 입력되면 작동합니다.)
-	'wheel': false, // 마우스 휠 이벤트 작동여부
-	'listeners': { // 플리킹 작동 callback (선택)
-		'init': null,
-		'next': null,
-		'prev': null,
-		'slidechange': null,
-		'prepend': null,
-		'append': null,
-		'remove': null
+// 단일 실행
+api.animate.frame({
+	'element': '.h2', 
+	'style': {
+		'left': '100px', 
+		'top': '100px', 
+		'width': '100px', 
+		'height': '100px'
+	}, 
+	'duration': 3
+});
+
+// 여러개 실행
+api.animate.frame([
+{
+	'element': api.dom('#h2'), 
+	'style': {
+		'left': '100px', 
+		'top': '100px'
+	}, 
+	'duration': 3, 
+	'complete': function() {  }
+}, 
+{
+	'element': api.dom('#h2'), 
+	'style': {
+		'left': '200px', 
+		'top': '200px'
+	}, 
+	'duration': 3, 
+	'complete': function() {  }
+}
+]);
+````
+
+api.animate.transition({})
+- 트랜지션 리스트 실행
+
+````javascript
+// 단일 실행
+api.animate.transition({
+	'element': api.dom('#view'), 
+	'style': {
+		'left': '100px', 
+		'top': '100px'
+	}, 
+	'duration': 3
+});
+
+// 여러개 실행
+api.animate.transition([
+{
+	'element': api.dom('#view'), 
+	'style': {
+		'left': '100px', 
+		'top': '100px'
+	}, 
+	'duration': 3, 
+	'complete': function() { }
+},
+{
+	'element': api.dom('#view'), 
+	'style': {
+		'left': '200px', 
+		'top': '200px'
+	}, 
+	'duration': 3, 
+	'complete': function() { }
+} 
+]);
+````
+
+api.animate.animation({})
+- 애니메이션 리스트 실행 (class 값으로 제어)
+
+````javascript
+// 단일 실행
+api.animate.animation({
+	'element': api.dom('#view'), 
+	'class': 'pt-page-moveToLeft', 
+	'complete': function() { }
+});
+
+// 여러개 실행
+api.animate.animation([
+{
+	'element': api.dom('#view'), 
+	'class': 'pt-page-moveToRight'
+}, 
+{
+	'element': api.dom('#list'), 
+	'class': 'pt-page-moveToRight'}
+]);
+````
+
+
+----
+
+### api.xhr.js
+
+XMLHttpRequest (레벨2)
+
+````javascript
+api.xhr({
+	'contentType': 'application/x-www-form-urlencoded',
+	'type': 'GET', // GET, POST, DELETE, PUT 같은 HTTP 메서드 타입
+	'url': '', // 요청할 URL 주소
+	'async': true, // 동기/비동기 방식
+	'timeout': 0, // timeout
+
+	'data': {}, // 서버에 보낼 문자열 값이나 자바스크립트 데이터 객체
+	'context': global, // 콜백함수 내부에서 this 키워드로 사용할 객체
+	'dataType': 'text', // 서버 측에서 응답받을 데이터의 형식을 문자열로 지정 (json, text, jsonp)
+
+	'progressUpload': undefined, // 업로드 진행률 콜백 함수
+	'progressDownload': undefined, // 다운로드 진행률 콜백 함수
+	'beforeSend': undefined, // 요청하기 전 실행할 콜백 함수
+	'complete': undefined, // 요청이 끝난 후 실행할 콜백 함수
+	'success': undefined, // 요청이 성공했을 때 실행할 콜백 함수
+	'error': undefined // 에러 콜백 함수 (timeout 포함)
+});
+
+// 파일전송
+var from = new FormData(api.dom('#form').get(0));
+api.xhr({
+	'type': 'POST', 
+	'url': '', 
+	'data': from 
+});
+````
+
+
+----
+
+### api.socket.js
+
+WebSocket
+<http://makeapi.net/test/websocket.html>
+
+````javascript
+var socket = api.socket({
+	'url': 'ws://', // 필수
+	'listeners': {
+		'open': function() {
+			console.log('open 콜백');
+		},
+		'message': function(data) {
+			console.log('서버로 부터 받은 메시지 콜백');
+		},
+		'close': function(event) {
+			console.log('종료 콜백');
+		},
+		'error': function() {
+			console.log('에러 콜백');
+		}
 	}
 });
-instance.on(); // 플리킹 터치(또는 클릭) 이벤트 On
-instance.off(); // 플리킹 터치(또는 클릭) 이벤트 Off
-instance.append({'index': '해당 슬라이드 위치에 추가(last, first, 숫자)', 'html': 'html code'}); // 슬라이드 추가
-instance.remove({'index': '해당 슬라이드 위치 삭제(current, last, 숫자)'}); // 슬라이드 삭제
-instance.slide({
-	'index': '', // 슬라이드 이동(숫자값: 해당슬라이드 index 이동, 문자값: 'next' 다음슬라이드 이동 'prev' 이전슬라이드 이동)
-});
+socket.send('서버로 전송 데이터');
+socket.close(); // 소켓 연결 종료
+````
 
-// 방법2 (key로 제어)
-api.flicking.setup({
-	'key': '키값',
-	'target': null // 슬라이드 wrap (셀렉터 또는 element 값)
-});
-api.flicking.search('키값').on();
-api.flicking.search('키값').off();
-api.flicking.search('키값').slide({'index': '', 'duration': '슬라이드 이동 속도'});
 
-// 기존 설정된 플리킹 인스턴스 검색
-if(api.flicking.search('key값')) {
-	api.flicking.search('key값').off();
-}
+----
+
+### api.worker.js
+
+Worker
+
+````javascript
+var worker = api.worker({
+	'url': 'js파일위치', // 필수
+	'listeners': {
+		'message': function(data) {
+			console.log('워커로 부터 받은 메시지 콜백');
+		},
+		'error': function() {
+			console.log('에러 콜백');
+		}
+	}
+});
+worker.send('워커로 전송 데이터');
+worker.close(); // 워커 종료
 ````
 
 
@@ -803,6 +934,7 @@ if(api.flicking.search('key값')) {
 ### api.modal.js
 
 레이어
+<http://makeapi.net/test/modal.html>
 
 ````javascript
 // 레이어
@@ -937,54 +1069,76 @@ instance = api.modal.search(key);
 
 ----
 
-### api.socket.js
+### api.flicking.js
 
-WebSocket
-<http://makeapi.net/test/websocket.html>
+플리킹
+<http://makeapi.net/test/flicking.html>
 
 ````javascript
-var socket = api.socket({
-	'url': 'ws://', // 필수
-	'listeners': {
-		'open': function() {
-			console.log('open 콜백');
-		},
-		'message': function(data) {
-			console.log('서버로 부터 받은 메시지 콜백');
-		},
-		'close': function(event) {
-			console.log('종료 콜백');
-		},
-		'error': function() {
-			console.log('에러 콜백');
-		}
+// 방법1
+var instance = api.flicking.setup({
+	'key': '', // 플리킹 작동 고유키 (선택)
+	'target': null, // 슬라이드 wrap (셀렉터 또는 element 값)
+	'flow': 'horizontal', // 플리킹 방향 (horizontal, vertical)
+	'width': 'auto', // 슬라이드 width 값 설정 (auto: 슬라이드가 target 가운데 위치하도록 wrap width 값에 따라 자동설정)
+	'height': 'auto', // 슬라이드 height 값 설정
+	'speed': 300, // 슬라이드 속도
+	'touch': true, // 클릭 또는 터치 슬라이드 작동여부
+	'auto': 0, // 자동 슬라이드 작동여부 (0 이상의 값이 입력되면 작동합니다.)
+	'wheel': false, // 마우스 휠 이벤트 작동여부
+	'listeners': { // 플리킹 작동 callback (선택)
+		'init': null,
+		'next': null,
+		'prev': null,
+		'slidechange': null,
+		'prepend': null,
+		'append': null,
+		'remove': null
 	}
 });
-socket.send('서버로 전송 데이터');
-socket.close(); // 소켓 연결 종료
+instance.on(); // 플리킹 터치(또는 클릭) 이벤트 On
+instance.off(); // 플리킹 터치(또는 클릭) 이벤트 Off
+instance.append({'index': '해당 슬라이드 위치에 추가(last, first, 숫자)', 'html': 'html code'}); // 슬라이드 추가
+instance.remove({'index': '해당 슬라이드 위치 삭제(current, last, 숫자)'}); // 슬라이드 삭제
+instance.slide({
+	'index': '', // 슬라이드 이동(숫자값: 해당슬라이드 index 이동, 문자값: 'next' 다음슬라이드 이동 'prev' 이전슬라이드 이동)
+});
+
+// 방법2 (key로 제어)
+api.flicking.setup({
+	'key': '키값',
+	'target': null // 슬라이드 wrap (셀렉터 또는 element 값)
+});
+api.flicking.search('키값').on();
+api.flicking.search('키값').off();
+api.flicking.search('키값').slide({'index': '', 'duration': '슬라이드 이동 속도'});
+
+// 기존 설정된 플리킹 인스턴스 검색
+if(api.flicking.search('key값')) {
+	api.flicking.search('key값').off();
+}
 ````
 
 
 ----
 
-### api.worker.js
+### api.state.js
 
-Worker
+상태관리
 
 ````javascript
-var worker = api.worker({
-	'url': 'js파일위치', // 필수
-	'listeners': {
-		'message': function(data) {
-			console.log('워커로 부터 받은 메시지 콜백');
-		},
-		'error': function() {
-			console.log('에러 콜백');
-		}
+var state = api.state();
+
+// key 로 설정된 event.action 값이 true 로 설정될 경우, handler 실행 
+state.on({
+	'key': 'event.action',
+	'value': true,
+	'handler': function() {
+		that.setBlockMoveOn();
 	}
 });
-worker.send('워커로 전송 데이터');
-worker.close(); // 워커 종료
+state.get('event.action');
+state.set({'key': 'event.action', 'value': true});
 ````
 
 
@@ -1086,42 +1240,6 @@ api.validate.isSelect(element)
 
 api.validate.isCheck(element)
 - checkbox, radio 등 검사
-
-
-----
-
-### api.xhr.js
-
-XMLHttpRequest (레벨2)
-
-````javascript
-api.xhr({
-	'contentType': 'application/x-www-form-urlencoded',
-	'type': 'GET', // GET, POST, DELETE, PUT 같은 HTTP 메서드 타입
-	'url': '', // 요청할 URL 주소
-	'async': true, // 동기/비동기 방식
-	'timeout': 0, // timeout
-
-	'data': {}, // 서버에 보낼 문자열 값이나 자바스크립트 데이터 객체
-	'context': global, // 콜백함수 내부에서 this 키워드로 사용할 객체
-	'dataType': 'text', // 서버 측에서 응답받을 데이터의 형식을 문자열로 지정 (json, text, jsonp)
-
-	'progressUpload': undefined, // 업로드 진행률 콜백 함수
-	'progressDownload': undefined, // 다운로드 진행률 콜백 함수
-	'beforeSend': undefined, // 요청하기 전 실행할 콜백 함수
-	'complete': undefined, // 요청이 끝난 후 실행할 콜백 함수
-	'success': undefined, // 요청이 성공했을 때 실행할 콜백 함수
-	'error': undefined // 에러 콜백 함수 (timeout 포함)
-});
-
-// 파일전송
-var from = new FormData(api.dom('#form').get(0));
-api.xhr({
-	'type': 'POST', 
-	'url': '', 
-	'data': from 
-});
-````
 
 
 ----
@@ -1280,112 +1398,6 @@ api.util.dateBetween(시작일2015-10-27, 종료일2015-12-27)
 api.util.lastday(년도, 월);
 - 해당 년월의 마지막 날짜
 
-
-----
-
-### api.animate.js
-
-자바스크립트 애니메이션프레임, 애니메이션, 트랜지션
-<http://makeapi.net/test/animate.html>
-
-api.animate.frame({})
-- requestAnimationFrame 애니메이션 리스트 실행
-
-````javascript
-// 단일 실행
-api.animate.frame({
-	'element': '.h2', 
-	'style': {
-		'left': '100px', 
-		'top': '100px', 
-		'width': '100px', 
-		'height': '100px'
-	}, 
-	'duration': 3
-});
-
-// 여러개 실행
-api.animate.frame([
-{
-	'element': api.dom('#h2'), 
-	'style': {
-		'left': '100px', 
-		'top': '100px'
-	}, 
-	'duration': 3, 
-	'complete': function() {  }
-}, 
-{
-	'element': api.dom('#h2'), 
-	'style': {
-		'left': '200px', 
-		'top': '200px'
-	}, 
-	'duration': 3, 
-	'complete': function() {  }
-}
-]);
-````
-
-api.animate.transition({})
-- 트랜지션 리스트 실행
-
-````javascript
-// 단일 실행
-api.animate.transition({
-	'element': api.dom('#view'), 
-	'style': {
-		'left': '100px', 
-		'top': '100px'
-	}, 
-	'duration': 3
-});
-
-// 여러개 실행
-api.animate.transition([
-{
-	'element': api.dom('#view'), 
-	'style': {
-		'left': '100px', 
-		'top': '100px'
-	}, 
-	'duration': 3, 
-	'complete': function() { }
-},
-{
-	'element': api.dom('#view'), 
-	'style': {
-		'left': '200px', 
-		'top': '200px'
-	}, 
-	'duration': 3, 
-	'complete': function() { }
-} 
-]);
-````
-
-api.animate.animation({})
-- 애니메이션 리스트 실행 (class 값으로 제어)
-
-````javascript
-// 단일 실행
-api.animate.animation({
-	'element': api.dom('#view'), 
-	'class': 'pt-page-moveToLeft', 
-	'complete': function() { }
-});
-
-// 여러개 실행
-api.animate.animation([
-{
-	'element': api.dom('#view'), 
-	'class': 'pt-page-moveToRight'
-}, 
-{
-	'element': api.dom('#list'), 
-	'class': 'pt-page-moveToRight'}
-]);
-````
 
 ----
 
