@@ -735,9 +735,17 @@ Dual licensed under the MIT and GPL licenses.
 		isObject: function(value) {
 			return value !== null && typeof value === 'object';
 		},
-		isArray: function(value) {
-			return value !== null && (typeof value === 'object' && value.constructor === Array);
-		},
+		isArray: (function() {
+			if(Array.isArray) {
+				return function(value) {
+					return Array.isArray(value);
+				};
+			}else {
+				return function(value) {
+					return value !== null && (typeof value === 'object' && value.constructor === Array);
+				};
+			}
+		})(),
 		isNumber: function(value) {
 			return value !== null && (typeof value === 'number' && !isNaN(value - 0) || (typeof value === 'object' && value.constructor === Number));
 		},

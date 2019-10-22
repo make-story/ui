@@ -164,9 +164,17 @@ video.addEventListener('leavepictureinpicture', () => {
 			object: function(input) {
 				return input !== null && typeof(input) === 'object';
 			},
-			array: function(input) {
-				return input !== null && (typeof(input) === 'object' && input.constructor === Array);
-			},
+			array: (function() {
+				if(Array.isArray) {
+					return function(input) {
+						return Array.isArray(input);
+					};
+				}else {
+					return function(input) {
+						return input !== null && (typeof(input) === 'object' && input.constructor === Array);
+					};
+				}
+			})(),
 			number: function(input) {
 				return input !== null && (typeof(input) === 'number' && !isNaN(input - 0) || (typeof input === 'object' && input.constructor === Number));
 			},
@@ -858,6 +866,21 @@ video.addEventListener('leavepictureinpicture', () => {
 					'.player-volume-range { box-sizing: border-box; position: relative; z-index: 2; display: block; height: 20px; width: 100%; margin: 0; padding: 0; vertical-align: middle; -webkit-appearance: none; -moz-appearance: none; appearance: none; border: none; background: 0 0; }',
 					'.player-volume-progress { box-sizing: border-box; z-index: 1; color: rgb(231, 68, 78); background: rgba(255,255,255,.25); position: absolute; left: 0; top: 50%; width: 100%; height: 8px; margin: -4px 0 0; padding: 0; vertical-align: top; -webkit-appearance: none; -moz-appearance: none; appearance: none; border: none; border-radius: 3px; }',
 
+					'.player-container input[type=range] { display: block; height: 20px; width: 100%; margin: 0; padding: 0; vertical-align: middle; -webkit-appearance: none; -moz-appearance: none; appearance: none; cursor: pointer; border: none; background: 0 0; }',
+					'.player-container input[type=range]::-webkit-slider-runnable-track { height: 8px; background: 0 0; border: 0; border-radius: 4px; -webkit-user-select: none; user-select: none; }',
+					'.player-container input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; margin-top: -4px; position: relative; height: 16px; width: 16px; background: #fff; border: 2px solid transparent; border-radius: 100%; box-shadow: 0 1px 1px rgba(0, 0, 0, .15), 0 0 0 1px rgba(0, 0, 0, .15); box-sizing: border-box; }',
+					'.player-container input[type=range]::-moz-range-track { height: 8px; background: 0 0; border: 0; border-radius: 4px; -moz-user-select: none; user-select: none; }',
+					'.player-container input[type=range]::-moz-range-thumb { position: relative; height: 16px; width: 16px; background: #fff; border: 2px solid transparent; border-radius: 100%;  box-shadow: 0 1px 1px rgba(0, 0, 0, .15), 0 0 0 1px rgba(0, 0, 0, .15); box-sizing: border-box; }',
+					'.player-container input[type=range]::-ms-track { height: 8px; background: 0 0; border: 0; color: transparent; }',
+					'.player-container input[type=range]::-ms-fill-upper { height: 8px; background: 0 0; border: 0; border-radius: 4px; -ms-user-select: none; user-select: none; }',
+					'.player-container input[type=range]::-ms-fill-lower { height: 8px; border: 0; border-radius: 4px; -ms-user-select: none; user-select: none; background: rgb(231, 68, 78); }',
+					'.player-container input[type=range]::-ms-thumb { position: relative; height: 16px; width: 16px; background: #fff; border: 2px solid transparent; border-radius: 100%; box-shadow: 0 1px 1px rgba(0, 0, 0, .15), 0 0 0 1px rgba(0, 0, 0, .15); box-sizing: border-box; margin-top: 0;}',
+					'.player-container input[type=range]::-ms-tooltip { display: none; }',
+					'.player-container input[type=range]::-moz-focus-outer { border: 0; }',
+					'.player-container input[type=range]:active::-webkit-slider-thumb { background: rgb(231, 68, 78); border-color: #fff; transform: scale(1.25); }',
+					'.player-container input[type=range]:active::-moz-range-thumb { background: rgb(231, 68, 78); border-color: #fff; transform: scale(1.25); }',
+					'.player-container input[type=range]:active::-ms-thumb { background: rgb(231, 68, 78); border-color: #fff; transform: scale(1.25); }',
+
 					'.player-seek-progress-played::-webkit-progress-bar, .player-seek-progress-buffer::-webkit-progress-bar, .player-volume-progress::-webkit-progress-bar { background: 0 0; }',
 					'.player-seek-progress-played::-webkit-progress-value, .player-volume-progress::-webkit-progress-value { min-width: 8px; max-width: 99%; border-top-right-radius: 0; border-bottom-right-radius: 0; transition: none; transition: none; }',
 					'.player-seek-progress-played::-webkit-progress-value, .player-seek-progress-buffer::-webkit-progress-value, .player-volume-progress::-webkit-progress-value { background: currentColor; min-width: 8px; border-radius: 3px; }',
@@ -1317,7 +1340,7 @@ video.addEventListener('leavepictureinpicture', () => {
 						that.setToggleFullscreen();
 					}
 				}else if(isIOSSupport) {
-					if(event && event.type === 'webkitbeginfullscreen') { // 풀스크린 상태 변경 이벤트 
+					if(event && (event.type === 'webkitfullscreenchange' || event.type === 'webkitbeginfullscreen')) { // 풀스크린 상태 변경 이벤트 
 						that.setToggleFullscreen(that.player.webkitDisplayingFullscreen);
 					}else {
 						that.setToggleFullscreen();
@@ -1620,7 +1643,7 @@ video.addEventListener('leavepictureinpicture', () => {
 
 								// 볼륨조절
 								if(that.settings.swipeVolume === true && radius.volume < Math.abs(start.y - end.y) && bundle.is.number(volume)) {
-									//event.preventDefault();
+									event.preventDefault();
 									event.stopPropagation(); // 전파중단 
 									event.stopImmediatePropagation(); // 현재 레벨 다른 이벤트 중단 
 									(function() {
@@ -1660,7 +1683,7 @@ video.addEventListener('leavepictureinpicture', () => {
 									}
 								}else if(that.settings.swipeRewindForward === true/*터치 되감기/빨리감기 기능 사용여부*/ && radius.rewindforward < Math.abs(start.x - end.x)/*설정된 기준 값보다 터치 이동이 더 발생했을 경우*/) {
 									// 되감기 / 빨리감기
-									//event.preventDefault();
+									event.preventDefault();
 									event.stopPropagation(); // 전파중단 
 									event.stopImmediatePropagation(); // 현재 레벨 다른 이벤트 중단 
 									if(start.x < end.x) { // 빨리감기
@@ -1762,7 +1785,7 @@ video.addEventListener('leavepictureinpicture', () => {
 			}else if(that.player.webkitSupportsFullscreen) {
 				// OS X: webkitfullscreenchange, iOS: webkitbeginfullscreen/webkitendfullscreen
 				// https://developer.apple.com/library/content/documentation/AudioVideo/Conceptual/Using_HTML5_Audio_Video/ControllingMediaWithJavaScript/ControllingMediaWithJavaScript.html
-				eventListener(that.player, 'webkitbeginfullscreen', toggleFullscreen);
+				eventListener(that.player, 'webkitfullscreenchange webkitbeginfullscreen', toggleFullscreen);
 			}
 
 			// Captions

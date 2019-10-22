@@ -18,8 +18,8 @@ var state = api.state();
 
 // key 로 설정된 event.action 값이 true 로 설정될 경우, handler 실행 
 state.on({
-	'key': 'event.action',
-	'value': true,
+	'key': 'event.action', // .(마침표) 프로퍼티 깊이가 된다.
+	'value': true, // 해당 key의 value 값에 따라 handler 실행된다. 
 	'handler': function() {
 		that.setBlockMoveOn();
 	}

@@ -40,7 +40,7 @@ script 삽입: 동적로딩, 의존성관리, 모듈화
 		//var elements = document.scripts;
 		var scripts = [];
 		var src;
-		if(typeof elements === 'object') {
+		if(elements && typeof elements === 'object') {
 			for(var i=elements.length-1; i>=0; i-=1) {
 				if(typeof elements[i].src !== 'undefined' && elements[i].src !== '') {
 					//src = elements[i].src; // 상대경로가 자동 절대경로로 변경
@@ -54,13 +54,29 @@ script 삽입: 동적로딩, 의존성관리, 모듈화
 	};
 
 	// script element 생성
-	var setScriptCreate = function() {
+	var setScriptCreate = function(options) {
 		//var element = config.xhtml ? document.createElementNS('http://www.w3.org/1999/xhtml', 'html:script') : document.createElement('script'); // 참고
 		var element = document.createElement("script");
-		element.type = 'text/javascript';
-		//element.charset = 'utf-8';
-		element.async = true;
 
+		if(!options || typeof options !== 'object') {
+			options = {};
+		}
+
+		element.type = 'text/javascript';
+		if(options.charset) {
+			//element.charset = 'utf-8';
+		}
+		if(options.async) {
+			//element.async = true; // HTML 구문 분석과 병행하여 스크립트를 가져온 후 스크립트가 준비 될 때마다 즉시 실행
+		}else if(options.defer) {
+			//element.defer = true; // HTML 구문 분석이 완료되기 전에 스크립트 다운로드가 완료 되더라도 구문 분석이 완료 될 때까지 스크립트는 실행되지 않는다
+		}
+		if(options.attributes && typeof options.attributes === 'object') {
+			for(key in options.attributes) {
+				element.setAttribute(key, options.attributes[key]);
+			}
+		}
+		
 		return element;
 	};
 

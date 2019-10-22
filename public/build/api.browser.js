@@ -3012,10 +3012,12 @@ http://www.quirksmode.org/js/detect.html
 		// 상태 (주소입력, 새로고침, 뒤로가기/앞으로, 구분없음 등 사용자 인지의 문자열 형태 값) 
 		var STATE = {
 			'NONE': 'NONE',
+			// window.performance.navigation.type 반환값
 			'NAVIGATENEXT': 'NAVIGATENEXT',
 			'RELOAD': 'RELOAD',
 			'BACK_FORWARD': 'BACK_FORWARD',
 			'UNDEFINED': 'UNDEFINED',
+			// hash 이벤트 
 			'HASHCHANGE': 'HASHCHANGE'
 		};
 
@@ -3033,7 +3035,7 @@ http://www.quirksmode.org/js/detect.html
 		callstack[STATE.RELOAD] = {};
 		callstack[STATE.BACK_FORWARD] = {};
 		callstack[STATE.UNDEFINED] = {}; // 아무설정도 안한 history에 따른 콜백 (네비게이션)
-		callstack[STATE.HASHCHANGE] = []; // hash 변경 이벤트 콜백 
+		callstack[STATE.HASHCHANGE] = []; // hash 변경 이벤트 콜백 (hash는 페이지 이동 형태가 아니므로, 중복실행 방지 등을 위한 key: value 구조가 아닌, 배열형태로 한다.) 
 
 		// navigation 값 설정  
 		function setNavigation() {

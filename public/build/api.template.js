@@ -118,6 +118,7 @@ https://mustache.github.io/mustache.5.html
 	};
 
 	// 1. 파싱 - template 에서 html code와 {{tag}} code 분리
+	// tree : {type: 'code || context || variable'}
 	var Parse = function Parse(template, context, parent) {
 		this.template = template || '';
 		this.context = context || 'global';
