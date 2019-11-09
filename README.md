@@ -1442,6 +1442,7 @@ api.box([종속된 객체 리스트], function(종속된 객체) {
 ### jquery.olivemarker.js (현재 개발버전)
 
 이미지 등 마커 올리기 
+<http://makeapi.net/test/marker.html>
 
 ````javascript
 $('#markerTarget').oliveMarker({
