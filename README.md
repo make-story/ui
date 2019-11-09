@@ -1437,6 +1437,63 @@ api.box([종속된 객체 리스트], function(종속된 객체) {
 
 ````
 
+----
+
+### jquery.olivemarker.js (현재 개발버전)
+
+이미지 등 마커 올리기 
+
+````javascript
+$('#markerTarget').oliveMarker({
+    mode: 'display', // admin, display
+    target: '', // 셀렉터
+    prior: '', // percent, pixel (% 우선적용 또는 px 우선적용 설정)
+    markerWidth: 10, // 마커 크기 
+    markerHeight: 10, // 마커 크기 
+    isTooltipVisibility: false, // 툴팁을 처음부터 보이도록 할 것인가 설정 
+    isTooltipToggle: true, // 툴팁 toggle 사용여부
+    isResizeEvent: false, // 윈도우 리사이즈에 따른 이벤트 설정여부
+    submit: { // 마커정보 submit 여부
+        action: '', // url
+        method: 'get' // form method
+    },
+    // 마커 템플릿 (Admin 사용)
+    template: '\
+        <div data-marker="marker">\
+            <div data-marker="mark"></div>\
+            <div data-marker="tooltip">\
+                \
+            </div>\
+        </div>\
+    ',
+    // target 내부 설정된 값으로 element 를 찾는다. 
+    selectors: {
+        image: '[data-marker="image"]',
+        marker: '[data-marker="marker"]',
+        mark: '[data-marker="mark"]',
+        tooltip: '[data-marker="tooltip"]',
+        tooltipShowButton: '[data-marker="tooltipShow"]',
+        tooltipHideButton: '[data-marker="tooltipHide"]',
+        submit: '[data-marker="submit"]'
+    },
+    // style class
+    classes: {
+        image: 'marker-image',
+        marker: 'marker-marker',
+        mark: 'marker-mark',
+        tooltip: 'marker-tooltip'
+    },
+    // 콜백 
+    listeners: {
+        initialize: null,
+        append: null,
+        remove: null,
+        tooltip: null, // show / hide 
+        submit: null
+    }
+});
+````
+
 
 ----
 
