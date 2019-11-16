@@ -1,5 +1,7 @@
 /**
  * jQuery plugin / oliveMarker
+ * 
+ * IE9 이상 
  */
 (function() {
 	'use strict';
@@ -11,36 +13,46 @@
 		var imageWidth = 0, imageHeight = 0; // px
 		var targetWidth = 0, targetHeight = 0; // px
 		var changeWidth = 0, changeHeight = 0; // %
+		var count = 0;
 
 		// 이미지가 있다면 이미지 정보를 확인하여 위치를 조정한다.
 		if($image.length) {
 			// 화면에 그려진 이미지 크기
 			targetWidth = Number($image.width());
 			targetHeight = Number($image.height());
-			console.log('노출 이미지 사이즈 (targetWidth/targetHeight)', [targetWidth, targetHeight].join('/'));
+			//console.log('노출 이미지 사이즈 (targetWidth/targetHeight)', [targetWidth, targetHeight].join('/'));
 			
 			// 이미지 원본 크기
 			imageWidth = Number($image.prop('naturalWidth')); 
 			imageHeight = Number($image.prop('naturalHeight'));
-			console.log('원본 이미지 사이즈 (imageWidth/imageHeight)', [imageWidth, imageHeight].join('/'));
+			//console.log('원본 이미지 사이즈 (imageWidth/imageHeight)', [imageWidth, imageHeight].join('/'));
 
 			// 원본대비 화면 그려진 크기 %
 			changeWidth = ((targetWidth - imageWidth) / imageWidth) * 100; 
 			changeHeight = ((targetHeight - imageHeight) / imageHeight) * 100;
 			changeWidth = parseFloat(changeWidth.toFixed(2));
 			changeHeight = parseFloat(changeHeight.toFixed(2));
-			console.log('원본과 노출 이미지 사이즈 차이 (changeWidth/changeHeight)', [changeWidth + '%', changeHeight + '%'].join('/'));
+			//console.log('원본과 노출 이미지 사이즈 차이 (changeWidth/changeHeight)', [changeWidth + '%', changeHeight + '%'].join('/'));
 		}else {
 			// 화면에 그려진 target 크기
 			targetWidth = Number($target.width());
 			targetHeight = Number($target.height());
-			console.log('노출 타겟 사이즈 (targetWidth/targetHeight)', [targetWidth, targetHeight].join('/'));
+			//console.log('노출 타겟 사이즈 (targetWidth/targetHeight)', [targetWidth, targetHeight].join('/'));
 		}
 		
 		// marker 세팅 
-		$target.find(options.selectors.marker).each(function() {
+		$target.find(options.selectors.marker).each(function(index) {
 			var rect = {};
 			var $marker = $(this);
+
+			// 최대 출력 마커수 확인 
+			if(0 < options.markerMax && options.markerMax <= count) {
+				if(typeof options.listeners.markerMax === 'function') {
+					options.listeners.markerMax.call($target, $marker, options);
+				}
+				$marker.css({'display': 'none'});
+				return true; // continue
+			}
 
 			// 좌표정보 
 			rect.x = $marker.attr('data-x');
@@ -54,7 +66,7 @@
 
 			// 좌표적용 
 			if((!options.prior || options.prior === 'percent') && rect.x && rect.y) { // %
-				console.log('적용 좌표 (x/y)', [rect.x + '%', rect.y + '%'].join('/'));
+				//console.log('적용 좌표 (x/y)', [rect.x + '%', rect.y + '%'].join('/'));
 				$marker.css({
 					'top': rect.y + '%',
 					'left': rect.x + '%'
@@ -62,7 +74,7 @@
 			}else if((!options.prior || options.prior === 'pixel') && rect.left && rect.top) { // px
 				// 이미지 마커 설정 당시의 이미지 크기와 현재 이미지 크기 비교
 				if(rect.width && rect.height) {
-					console.log('마커 설정 당시 영역 크기 (width/height)', [rect.width + 'px', rect.height + 'px'].join('/'));
+					//console.log('마커 설정 당시 영역 크기 (width/height)', [rect.width + 'px', rect.height + 'px'].join('/'));
 					(function() {
 						// 설정 당시 영역 크기 대비 현재 영역 크기 비교 (현재 target 대비 설정당시 값은 몇 % 차이인가)
 						var changeWidth = ((targetWidth - rect.width) / rect.width) * 100;
@@ -73,13 +85,13 @@
 						}else {
 							rect.correctLeft = rect.left * (1 + Math.abs(changeWidth) / 100);
 						}
-						console.log([rect.left, '값', changeWidth + '%', (changeWidth < 0 ? '감소' : '증가')].join(' '), rect.correctLeft);
+						//console.log([rect.left, '값', changeWidth + '%', (changeWidth < 0 ? '감소' : '증가')].join(' '), rect.correctLeft);
 						if(changeHeight < 0) {
 							rect.correctTop = rect.top * (1 - Math.abs(changeHeight) / 100); 	
 						}else {
 							rect.correctTop = rect.top * (1 + Math.abs(changeHeight) / 100);
 						}
-						console.log([rect.top, '값', changeHeight + '%', (changeHeight < 0 ? '감소' : '증가')].join(' '), rect.correctTop);
+						//console.log([rect.top, '값', changeHeight + '%', (changeHeight < 0 ? '감소' : '증가')].join(' '), rect.correctTop);
 					})();
 					rect.left = rect.correctLeft;
 					rect.top = rect.correctTop;
@@ -88,16 +100,17 @@
 					rect.left = Number(rect.left / imageWidth * targetWidth);
 					rect.top = Number(rect.top / imageHeight * targetHeight);
 				}
-				console.log('적용 좌표 (left/top)', [rect.left + 'px', rect.top + 'px'].join('/'));
+				//console.log('적용 좌표 (left/top)', [rect.left + 'px', rect.top + 'px'].join('/'));
 				$marker.css({
 					'top': rect.top + 'px',
 					'left': rect.left + 'px'
 				});
 			}else {
 				$marker.css({'display': 'none'});
-				// continue
-				return true;
+				return true; // continue
 			}
+
+			// 공통 style
 			$marker.css({'display': 'block'});
 			if(0 < options.markerWidth) {
 				$marker.css('width', options.markerWidth);
@@ -106,8 +119,12 @@
 				$marker.css('height', options.markerHeight);
 			}
 
+			// count
+			count = count + 1;
+
 			// 툴팁 
 			setTooltipToggle.call($target, $marker, options);
+			setTooltipRect.call($target, $marker, options);
 		});
 	}
 
@@ -186,12 +203,12 @@
 		relative.left = (event.pageX - offsetTarget.left); // 클릭 위치 값
 		relative.top = (event.pageY - offsetTarget.top); // 클릭 위치 값
 
-		console.log('event', event);
-		console.log('event pageX/pageY', [event.pageX, event.pageY].join('/'));
-		console.log('offsetTarget left/top', [offsetTarget.left, offsetTarget.top].join('/'));
-		console.log('offsetParent left/top', [offsetParent.left, offsetParent.top].join('/'));
-		console.log('relative left/top', [relative.left, relative.top].join('/'));
-		console.log('rect width/height', [rect.width, rect.height].join('/'));
+		//console.log('event', event);
+		//console.log('event pageX/pageY', [event.pageX, event.pageY].join('/'));
+		//console.log('offsetTarget left/top', [offsetTarget.left, offsetTarget.top].join('/'));
+		//console.log('offsetParent left/top', [offsetParent.left, offsetParent.top].join('/'));
+		//console.log('relative left/top', [relative.left, relative.top].join('/'));
+		//console.log('rect width/height', [rect.width, rect.height].join('/'));
 
 		// 마우스 클릭위치 보정 값 (mark 의 가운데 위치 점)
 		if(0 < options.markerWidth) {
@@ -223,7 +240,7 @@
 		rect.y = rect.y.toFixed(2);
 		rect.left = rect.left.toFixed(2);
 		rect.top = rect.top.toFixed(2);
-		console.log('rect', rect);
+		//console.log('rect', rect);
 		
 		return rect;
 	};
@@ -243,8 +260,8 @@
 		return offset;
 	}
 
-	// 마커 툴팁 보이기/숨기기
-	function setTooltipToggle($marker, options) {
+	// 마커 툴팁 위치 
+	function setTooltipRect($marker, options) {
 		var $target = $(this);
 		var $image = $target.find(options.selectors.image);
 		var $mark = $target.find(options.selectors.mark);
@@ -254,72 +271,85 @@
 		var tooltip = {};
 		var left = 0, bottom = 0;
 
-		if(options.isTooltipToggle === false || !$image.length || !$tooltip.length) {
+		if($tooltip.is(':hidden')) {
+			return false;
+		}
+
+		mark.width = $mark.width();
+		mark.height = $mark.height();
+		mark.offset = getElementOffset($mark);
+		mark.position = getElementPosition($mark);
+		if($image.length) {
+			target.width = Number($image.width());
+			target.height = Number($image.height());
+			target.offset = getElementOffset($image); 
+			target.position = getElementPosition($image);
+		}else {
+			target.width = Number($target.width());
+			target.height = Number($target.height());
+			target.offset = getElementOffset($target);
+			target.position = getElementPosition($target);
+		}
+		//console.log('target', target);
+
+		// 툴팁
+		// position: 부모(offsetParent)엘리먼트를 기준, offset: Documet를 기준
+		tooltip.width = Number($tooltip.outerWidth());
+		tooltip.height = Number($tooltip.outerHeight());
+		if(target.width < tooltip.width) {
+			tooltip.width = target.width;
+			$tooltip.width(tooltip.width + 'px');
+		}
+		if(target.height < tooltip.height) {
+			tooltip.height = target.height;
+			$tooltip.height(tooltip.height + 'px');
+		}
+		
+		// 툴팁 기본 위치 (가운데) - 위치 애니메이션이 있을 경우 오차가 발생한다.
+		left = -((tooltip.width - (mark.width / 2)) / 2);
+		$tooltip.css({'left': left, 'top': $mark.outerHeight()});
+		tooltip.offset = getElementOffset($tooltip);
+		tooltip.position = getElementPosition($tooltip);
+		//console.log('tooltip', tooltip);
+
+		// 툴팁이 이미지 밖으로 나가는지 확인	
+		//console.log('right', [target.offset.right, tooltip.offset.right].join('/'));
+		if(target.offset.right < tooltip.offset.right) {
+			left = tooltip.position.left + (target.offset.right-tooltip.offset.right);
+			$tooltip.css({'left': left, 'right': 'auto'});
+		}
+		//console.log('bottom', [target.offset.bottom, tooltip.offset.bottom].join('/'));
+		if(target.offset.bottom < tooltip.offset.bottom) {
+			$tooltip.css({'bottom': $mark.outerHeight(), 'top': 'auto'});
+		}
+	}
+
+	// 마커 툴팁 보이기/숨기기
+	function setTooltipToggle($marker, options) {
+		var $target = $(this);
+		var $tooltip = $marker.find(options.selectors.tooltip);
+
+		if(options.isTooltipToggle === false || !$tooltip.length) {
 			return;
 		}
 
 		if(options.isTooltipVisibility !== true && $tooltip.is(':visible')) {
 			$tooltip.css('display', 'none');
 		}else if(options.isTooltipVisibility !== false && $tooltip.is(':hidden')) {
-			mark.width = $mark.width();
-			mark.height = $mark.height();
-			mark.offset = getElementOffset($mark);
-			mark.position = getElementPosition($mark);
-			if($image.length) {
-				target.width = Number($image.width());
-				target.height = Number($image.height());
-				target.offset = getElementOffset($image); 
-				target.position = getElementPosition($image);
-			}else {
-				target.width = Number($target.width());
-				target.height = Number($target.height());
-				target.offset = getElementOffset($target);
-				target.position = getElementPosition($target);
-			}
-			console.log('target', target);
-
 			// 모든 툴팁 숨기기 
 			$target.find(options.selectors.tooltip).css('display', 'none');
 
 			// 해당 툴팀 보이기 
 			$tooltip.css('display', 'block'); // 정확한 offset, position 계산을 위해 화면에 노출한다.
-
-			// 툴팁
-			// position: 부모(offsetParent)엘리먼트를 기준, offset: Documet를 기준
-			tooltip.width = Number($tooltip.outerWidth());
-			tooltip.height = Number($tooltip.outerHeight());
-			if(target.width < tooltip.width) {
-				tooltip.width = target.width;
-				$tooltip.width(tooltip.width + 'px');
-			}
-			if(target.height < tooltip.height) {
-				tooltip.height = target.height;
-				$tooltip.height(tooltip.height + 'px');
-			}
-			
-			// 툴팁 기본 위치 (가운데) - 위치 애니메이션이 있을 경우 오차가 발생한다.
-			left = -((tooltip.width - (mark.width / 2)) / 2);
-			$tooltip.css({'left': left, 'top': $mark.outerHeight()});
-			tooltip.offset = getElementOffset($tooltip);
-			tooltip.position = getElementPosition($tooltip);
-			console.log('tooltip', tooltip);
-
-			// 툴팁이 이미지 밖으로 나가는지 확인	
-			console.log('right', [target.offset.right, tooltip.offset.right].join('/'));
-			if(target.offset.right < tooltip.offset.right) {
-				left = tooltip.position.left + (target.offset.right-tooltip.offset.right);
-				$tooltip.css({'left': left, 'right': 'auto'});
-			}
-			console.log('bottom', [target.offset.bottom, tooltip.offset.bottom].join('/'));
-			if(target.offset.bottom < tooltip.offset.bottom) {
-				$tooltip.css({'bottom': $mark.outerHeight(), 'top': 'auto'});
-			}
+		}else {
+			// 현재 상태 변경 없음
+			return false; 
 		}
 
 		if(typeof options.listeners.tooltipToggle === 'function') {
-			options.listeners.tooltipToggle($tooltip, $tooltip.is(':visible'));
+			options.listeners.tooltipToggle.call($target, $tooltip, $tooltip.is(':visible'), options);
 		}
-	};
+	}
 
 	// 마커 제거 (Admin)
 	function setMarkerRemove($marker, options) {
@@ -328,10 +358,13 @@
 		if(!$marker || typeof $marker !== 'object' || !$marker.length) {
 			return false;
 		}
-		if(typeof options.listeners.remove === 'function') {
-			options.listeners.remove($marker);
+		if(typeof options.listeners.removeBefore === 'function') {
+			options.listeners.removeBefore.call($target, $marker, options);
 		}
 		$marker.remove();
+		if(typeof options.listeners.removeAfter === 'function') {
+			options.listeners.removeAfter.call($target, options);
+		}
 	};
 
 	// submit (Admin)
@@ -364,16 +397,17 @@
 
 		// 콜백 실행 
 		if(typeof options.listeners.submit === 'function') {
-			options.listeners.submit(data);
+			options.listeners.submit.call($target, data, options);
 		}
 	}
 	
 	$.fn.oliveMarker = function(options) {
+		var that = this;
 		var $target = $(this);
 
 		// options
 		options = $.extend({}, $.fn.oliveMarker.defaults, options);
-		console.log('options', options);
+		//console.log('options', options);
 
 		// image class 
 		if(options.classes.image) {
@@ -381,7 +415,7 @@
 		}
 
 		// 기존 마커 위치 설정 
-		this.each(function() {
+		that.each(function() {
 			setMarkerDisplay.call($target, options);
 		});
 
@@ -403,6 +437,7 @@
 			var $marker = $(event.currentTarget).closest(options.selectors.marker);
 			options.isTooltipVisibility = true;
 			setTooltipToggle.call($target, $marker, options);
+			setTooltipRect.call($target, $marker, options);
 		});
 		$target.find(options.selectors.tooltipHideButton).off('click.EVENT_CLICK_TOOLTIPHIDE').on('click.EVENT_CLICK_TOOLTIPHIDE', function(event) {
 			var $marker = $(event.currentTarget).closest(options.selectors.marker);
@@ -481,9 +516,10 @@
 								// 툴팁
 								options.isTooltipVisibility = null;
 								setTooltipToggle.call($target, $marker, options);
+								setTooltipRect.call($target, $marker, options);
 								// 클릭 
 								if(typeof options.listeners.marker === 'function') {
-									options.listeners.marker.call(event, $marker);
+									options.listeners.marker.call($target, event, $marker, options);
 								}
 							}
 							is = false;
@@ -571,9 +607,10 @@
 								// 툴팁
 								options.isTooltipVisibility = null;
 								setTooltipToggle.call($target, $marker, options);
+								setTooltipRect.call($target, $marker, options);
 								// 클릭 
 								if(typeof options.listeners.marker === 'function') {
-									options.listeners.marker.call(event, $marker);
+									options.listeners.marker.call($target, event, $marker, options);
 								}
 							}
 							// 초기화 
@@ -591,7 +628,7 @@
 				var fragment;
 				var $marker;
 
-				console.log('image', event.type);
+				//console.log('image', event.type);
 
 				event.preventDefault();
 				event.stopPropagation();
@@ -606,7 +643,7 @@
 				count = $target.find(options.selectors.marker).length; 
 				if(0 < options.markerMax && options.markerMax <= count) { // 최대 수 제한 
 					if(typeof options.listeners.markerMax === 'function') {
-						options.listeners.markerMax($marker);
+						options.listeners.markerMax.call($target, $marker, options);
 					}
 					$marker = null;
 					fragment = null;
@@ -614,7 +651,7 @@
 				}
 				$target.append(fragment);
 				if(typeof options.listeners.append === 'function') {
-					options.listeners.append($marker, count);
+					options.listeners.append.call($target, $marker, count, options);
 				}
 			});
 
@@ -629,7 +666,13 @@
 			options.listeners.initialize.call($target, options);
 		}
 
-		return this;
+		return {
+			display: function() {
+				that.each(function() {
+					setMarkerDisplay.call($target, options);
+				});
+			}
+		};
 	};
 	
 	// Plugin defaults
@@ -676,15 +719,13 @@
 		listeners: {
 			initialize: null,
 			append: null,
-			remove: null,
+			removeBefore: null,
+			removeAfter: null,
 			tooltipToggle: null, // show / hide 
 			markerMax: null,
 			marker: null, // marker mouseup 이벤트 발생 콜백 (click)
 			submit: null,
 			error: null
 		}
-	};
-	$.fn.oliveMarker.ERROR = { // 에러 종류
-
 	};
 }(jQuery));
