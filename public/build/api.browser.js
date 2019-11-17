@@ -788,6 +788,14 @@ http://www.quirksmode.org/js/detect.html
 			}
 		})(),
 		// element return
+		eq: function(index) {
+			if(this.elements && this.elements.length > 0) {
+				if(typeof index === 'number' && this.elements[index]) {
+					this.elements = this.elements[index];
+				}
+			}
+			return this;
+		},
 		get: function(index) {
 			if(this.elements && this.elements.length > 0) {
 				if(typeof index === 'number' && this.elements[index]) {
@@ -804,6 +812,40 @@ http://www.quirksmode.org/js/detect.html
 				return DOM(selector, this.elements[0] || document);
 			}
 			return this;
+		},
+		// index
+		index: function(element) {
+			// x.previousSibling;
+			var dir = function(target, dir) { // dir 에 해당하는 element 배열에 담아서 리턴 
+				var matched = [];
+				var current = target[dir];
+				while(current && current.nodeType !== 9) {
+					if(current.nodeType === 1) {
+						matched.push(current);
+					}
+					current = current[dir];
+				}
+				return matched;
+			};
+			var inArray = function(target, elements/*this.element*/) {
+				var i, max;
+				if(elements) {
+					for(i=0, max=elements.length; i<max; i++) {
+						if(elements[i] && elements[i] === target) {
+							return i;
+						}
+					}
+				}
+				return -1;
+			};
+
+			if(!this.elements || !this.elements.length) {
+				return -1;
+			}
+			if(!element) {
+				return (this.elements[0] && this.elements[0].parentNode) ? dir(this.elements[0].firstChild, 'previousSibling').length : -1;
+			}
+			return inArray(element, this.elements);
 		},
 		// loop elements
 		each: function(callback) {
@@ -855,6 +897,8 @@ http://www.quirksmode.org/js/detect.html
 		// 자식요소 리스트
 		children: function() {
 			// x.hasChildNodes(); // 표준
+			// x.firstChild;
+			// x.lastChild;
 			// x.childNodes[1]; // IE9이상 사용가능 (IE8이하 부분지원), TextNode 까지 검색
 			// x.children[1]; // IE9이상 사용가능 (IE8이하 부분지원)
 			// getElementsByTagName('*'); // 폴리필
@@ -1713,6 +1757,7 @@ http://www.quirksmode.org/js/detect.html
 		prepend: function(parameter) {
 			// x.insertBefore(y,z); // 표준
 			// x.firstChild; // IE9이상 사용가능 (TextNode 포함)
+			// x.lastChild;
 			// x.firstElementChild // TextNode 제외
 			// x.insertAdjacentHTML('위치', '값'); // 위치: beforebegin, afterbegin, beforeend, afterend
 			var i, max = (this.elements && this.elements.length) || 0;
