@@ -868,6 +868,16 @@ http://www.quirksmode.org/js/detect.html
 			var i, max = (this.elements && this.elements.length) || 0;
 			var context = context || document.documentElement; // documentElement: <html />
 			var element, search;
+			var isEqualNode = function(search, selector) {
+				var i, max;
+				var list = search.parentNode.querySelectorAll(selector);
+				for(i=0, max=list.length; i<max; i++) {
+					if(search.isEqualNode(list[i])) {
+						return list[i];
+					}
+				}
+				return false;
+			};
 
 			/*
 			-
@@ -879,14 +889,20 @@ http://www.quirksmode.org/js/detect.html
 				//return false;
 			}else if(typeof selector === 'string') {
 				for(i=0; i<max; i++) { // this.elements[] 연관배열
-					for(search = this.elements[i].parentNode; search && search !== context; search = search.parentNode) {
-						// 현재 element 부터 검사하기 위해
-						// 현재 노드의 parentNode 를 search 초기값으로 바인딩하고
-						// search.querySelector() 로 확인 한다.
+					for(search = this.elements[i]; search && search !== context; search = search.parentNode) {
+					//for(search = this.elements[i].parentNode; search && search !== context; search = search.parentNode) {
+						// search 하위로 찾고자 하는 node 검색 
 						element = search.querySelector(selector);
 						if(element) {
 							this.elements[0] = element;
 							return this;
+						}else if(search.parentNode) {
+							// 현재 search 가 찾고자 하는 node 인지 확인 
+							element = isEqualNode(search, selector);
+							if(element) {
+								this.elements[0] = element;
+								return this;
+							}
 						}
 					}
 				}
