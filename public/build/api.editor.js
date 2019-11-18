@@ -1073,31 +1073,32 @@ FileReader: IE10 이상
 		// 각 기능별 개별 옵션
 		var editor = {
 			'swipe': {
+				// data-* 속성
 				'attribute': {
 					'layer': 'lqyer',
 					'list': 'list',
 					'item': 'item',
 					'url': 'url',
-					'sortTopButton': 'top',
-					'sortDownButton': 'down',
-					'fileButton': 'file',
-					'addButton': 'add',
-					'deleteButton': 'delete',
-					'submitButton': 'submit',
-					'closeButton': 'close'
+					'sortTop': 'top',
+					'sortDown': 'down',
+					'file': 'file',
+					'add': 'add',
+					'delete': 'delete',
+					'submit': 'submit',
+					'close': 'close'
 				},
 				'selectors': {
 					'layer': '[data-edit-swipe="lqyer"]',
 					'list': '[data-edit-swipe="list"]',
 					'item': '[data-edit-swipe="item"]',
 					'url': '[data-edit-swipe="url"]',
-					'sortTopButton': '[data-edit-swipe="top"]',
-					'sortDownButton': '[data-edit-swipe="down"]',
-					'fileButton': '[data-edit-swipe="file"]',
-					'addButton': '[data-edit-swipe="add"]',
-					'deleteButton': '[data-edit-swipe="delete"]',
-					'submitButton': '[data-edit-swipe="submit"]',
-					'closeButton': '[data-edit-swipe="close"]'
+					'sortTop': '[data-edit-swipe="top"]',
+					'sortDown': '[data-edit-swipe="down"]',
+					'file': '[data-edit-swipe="file"]',
+					'add': '[data-edit-swipe="add"]',
+					'delete': '[data-edit-swipe="delete"]',
+					'submit': '[data-edit-swipe="submit"]',
+					'close': '[data-edit-swipe="close"]'
 				}
 			}
 		};
@@ -1352,8 +1353,10 @@ FileReader: IE10 이상
 			return;
 			*/
 
-			// 이미지를 넣을 위치에 id 속성값 설정
-			wrap.className = that.settings.classes.image.wrap;
+			// 속성값 설정
+			if(typeof that.settings.classes[edit] === 'object') {
+				wrap.className = that.settings.classes[edit].wrap || '';
+			}
 			wrap.setAttribute("id", id);
 			wrap.setAttribute("data-type", edit);
 			wrap.storage = {
@@ -1482,11 +1485,11 @@ FileReader: IE10 이상
 					<div style="float: left;">\
 						<input type="radio" name="draggable" value="" />\
 						<!-- 이미지 파일이 첨부되면 하단 type="text" input 에 URL이 들어가고 readonly 된다 //-->\
-						<input type="text" name="" value="" placeholder="image file url" data-edit-swipe="' + editor.swipe.attribute.url + '" />\
-						<button data-edit-swipe="' + editor.swipe.attribute.fileButton + '">File</button>\
+						<input type="text" name="" value="" placeholder="image file url" class="' + that.settings.classes.swipe.url + '" data-edit-swipe="' + editor.swipe.attribute.url + '" />\
+						<button class="' + that.settings.classes.swipe.file + '" data-edit-swipe="' + editor.swipe.attribute.file + '">File</button>\
 					</div>\
 					<div style="float: right;">\
-						<button data-edit-swipe="' + editor.swipe.attribute.deleteButton + '">Delete</button>\
+						<button class="' + that.settings.classes.swipe.delete + '" data-edit-swipe="' + editor.swipe.attribute.delete + '">Delete</button>\
 					</div>\
 					<div style="clear: both;"></div>\
 				';
@@ -1502,11 +1505,11 @@ FileReader: IE10 이상
 				//}
 
 				// 속성
-				$(first).attr({'id': id, 'draggable': 'true', 'data-edit-swipe': editor.swipe.attribute.item});
+				$(first).attr({'id': id, 'draggable': 'true', 'class': that.settings.classes.swipe.item, 'data-edit-swipe': editor.swipe.attribute.item});
 
 				// event
-				$(first).find(editor.swipe.selectors.fileButton).on('click', setSwipeFileMousedown.bind(that));
-				$(first).find(editor.swipe.selectors.deleteButton).on('click', setDeleteList);
+				$(first).find(editor.swipe.selectors.file).on('click', setSwipeFileMousedown.bind(that));
+				$(first).find(editor.swipe.selectors.delete).on('click', setDeleteList);
 				
 				return first;
 			};
@@ -1618,19 +1621,19 @@ FileReader: IE10 이상
 			fragment.appendChild(div);
 			div.innerHTML = '\
 				<div style="float: left;">\
-					<button data-edit-swipe="' + editor.swipe.attribute.sortTopButton + '">Top</button>\
-					<button data-edit-swipe="' + editor.swipe.attribute.sortDownButton + '">Down</button>\
+					<button class="' + that.settings.classes.swipe.sortTop + '" data-edit-swipe="' + editor.swipe.attribute.sortTop + '">Top</button>\
+					<button class="' + that.settings.classes.swipe.sortDown + '" data-edit-swipe="' + editor.swipe.attribute.sortDown + '">Down</button>\
 				</div>\
 				<div style="float: right;">\
-					<button data-edit-swipe="' + editor.swipe.attribute.closeButton + '">Close</button>\
+					<button class="' + that.settings.classes.swipe.close + '" data-edit-swipe="' + editor.swipe.attribute.close + '">Close</button>\
 				</div>\
 				<div style="clear: both;"></div>\
-				<div style="padding: 10px 0;" data-edit-swipe="' + editor.swipe.attribute.list + '"></div>\
+				<div class="' + that.settings.classes.swipe.list + '" data-edit-swipe="' + editor.swipe.attribute.list + '"></div>\
 				<div style="float: left;">\
-					<button data-edit-swipe="' + editor.swipe.attribute.addButton + '">add</button>\
+					<button class="' + that.settings.classes.swipe.add + '" data-edit-swipe="' + editor.swipe.attribute.add + '">Add</button>\
 				</div>\
 				<div style="float: right;">\
-					<button data-edit-swipe="' + editor.swipe.attribute.submitButton + '">submit</button>\
+					<button class="' + that.settings.classes.swipe.submit + '" data-edit-swipe="' + editor.swipe.attribute.submit + '">Submit</button>\
 				</div>\
 				<div style="clear: both;"></div>\
 			';
@@ -1646,28 +1649,28 @@ FileReader: IE10 이상
 			//}
 
 			// 속성
-			$(first).attr({'contenteditable': 'false', 'data-edit-swipe': editor.swipe.attribute.layer});
-			$(first).css({'position': 'fixed', 'left': 0, 'bottom': 0, 'padding': '10px', 'width': '300px', 'height': '300px', 'background-color': 'rgba(255, 255, 255, .8)', 'border': '1px solid', 'box-sizing': 'border-box', 'overflow-y': 'auto'});
+			$(first).attr({'contenteditable': 'false', 'class': that.settings.classes.swipe.layer, 'data-edit-swipe': editor.swipe.attribute.layer});
+			//$(first).css({'position': 'fixed', 'left': 0, 'bottom': 0, 'padding': '10px', 'width': '300px', 'height': '300px', 'background-color': 'rgba(255, 255, 255, .8)', 'border': '1px solid', 'box-sizing': 'border-box', 'overflow-y': 'auto'});
 			
 			// 기본 1개 항목 추가 
 			$(first).find(editor.swipe.selectors.list).append(setAddList());
 		
 			// event 
 			setDraggable(first);
-			$(first).find(editor.swipe.selectors.sortTopButton).on('click', function() {
+			$(first).find(editor.swipe.selectors.sortTop).on('click', function() {
 				setItemMove('top')
 			});
-			$(first).find(editor.swipe.selectors.sortDownButton).on('click', function() {
+			$(first).find(editor.swipe.selectors.sortDown).on('click', function() {
 				setItemMove('down')
 			});
-			$(first).find(editor.swipe.selectors.closeButton).on('click', function() {
+			$(first).find(editor.swipe.selectors.close).on('click', function() {
 				setClose();
 			});
-			$(first).find(editor.swipe.selectors.addButton).on('click', function() {
+			$(first).find(editor.swipe.selectors.add).on('click', function() {
 				$(first).find(editor.swipe.selectors.list).append(setAddList());
 				setDraggable(first);
 			});
-			$(first).find(editor.swipe.selectors.submitButton).on('click', function() {
+			$(first).find(editor.swipe.selectors.submit).on('click', function() {
 				setSwipeSubmit.call(that);
 				setClose();
 			});
@@ -1889,7 +1892,18 @@ FileReader: IE10 이상
 						'wrap': 'editor-video-wrap'
 					},
 					'swipe': {
-						'wrap': 'editor-swipe-wrap'
+						'wrap': 'editor-swipe-wrap',
+						'layer': 'editor-swipe-lqyer',
+						'list': 'editor-swipe-list',
+						'item': 'editor-swipe-item',
+						'url': 'editor-swipe-url',
+						'sortTop': 'editor-swipe-top',
+						'sortDown': 'editor-swipe-down',
+						'file': 'editor-swipe-file',
+						'add': 'editor-swipe-add',
+						'delete': 'editor-swipe-delete',
+						'submit': 'editor-swipe-submit',
+						'close': 'editor-swipe-close'
 					}
 				},
 				// 상태에 따른 콜백
