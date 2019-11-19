@@ -3,8 +3,12 @@
  * 
  * IE9 이상 
  */
-(function() {
+(function($) {
 	'use strict';
+
+	if($.fn.oliveMarker) {
+		return;
+	}
 
 	// 기존 마커 위치를 설정
 	function setMarkerDisplay(options) {
@@ -248,15 +252,15 @@
 	function getElementPosition($element) {
 		var position = {};
 		position = $element.position();
-		position.right = position.left + $element.width();
-		position.bottom = position.top + $element.height();
+		position.right = position.left + $element.outerWidth();
+		position.bottom = position.top + $element.outerHeight();
 		return position;
 	}
 	function getElementOffset($element) {
 		var offset = {};
 		offset = $element.offset();
-		offset.right = offset.left + $element.width();
-		offset.bottom = offset.top + $element.height();
+		offset.right = offset.left + $element.outerWidth();
+		offset.bottom = offset.top + $element.outerHeight();
 		return offset;
 	}
 
@@ -307,19 +311,19 @@
 		
 		// 툴팁 기본 위치 (가운데) - 위치 애니메이션이 있을 경우 오차가 발생한다.
 		left = -((tooltip.width - (mark.width / 2)) / 2);
-		$tooltip.css({'left': left, 'top': $mark.outerHeight()});
+		$tooltip.css({'left': left, 'right': 'auto', 'top': $mark.outerHeight(), 'bottom': 'auto'}); // 기본 노출 위치 
 		tooltip.offset = getElementOffset($tooltip);
 		tooltip.position = getElementPosition($tooltip);
 		//console.log('tooltip', tooltip);
 
 		// 툴팁이 이미지 밖으로 나가는지 확인	
 		//console.log('right', [target.offset.right, tooltip.offset.right].join('/'));
-		if(target.offset.right < tooltip.offset.right) {
+		if(target.offset.right <= tooltip.offset.right) {
 			left = tooltip.position.left + (target.offset.right-tooltip.offset.right);
 			$tooltip.css({'left': left, 'right': 'auto'});
 		}
 		//console.log('bottom', [target.offset.bottom, tooltip.offset.bottom].join('/'));
-		if(target.offset.bottom < tooltip.offset.bottom) {
+		if(target.offset.bottom <= tooltip.offset.bottom) {
 			$tooltip.css({'bottom': $mark.outerHeight(), 'top': 'auto'});
 		}
 	}
@@ -416,7 +420,7 @@
 
 		// 기존 마커 위치 설정 
 		that.each(function() {
-			setMarkerDisplay.call($target, options);
+			setMarkerDisplay.call($(this), options);
 		});
 
 		// 이벤트 
@@ -426,7 +430,9 @@
 				$(window).resize(function() {
 					window.clearTimeout(timeResize);
 					timeResize = window.setTimeout(function() {
-						setMarkerDisplay.call($target, options);	
+						that.each(function() {
+							setMarkerDisplay.call($(this), options);
+						});
 					}, 500);
 				});
 			})();
@@ -461,7 +467,7 @@
 					left: 0,
 					top: 0
 				};
-				$target.find(options.selectors.mark).on('mousedown mousemove mouseup touchstart touchmove touchend touchcancel', function(event) {
+				$target.find(options.selectors.mark).off('mousedown mousemove mouseup touchstart touchmove touchend touchcancel').on('mousedown mousemove mouseup touchstart touchmove touchend touchcancel', function(event) {
 					var touch;
 
 					//console.log('marker event', event.type);
@@ -541,7 +547,7 @@
 					left: 0,
 					top: 0
 				};
-				$target.on('mousedown mousemove mouseup touchstart touchmove touchend touchcancel', options.selectors.mark, function(event) {
+				$target.off('mousedown mousemove mouseup touchstart touchmove touchend touchcancel').on('mousedown mousemove mouseup touchstart touchmove touchend touchcancel', options.selectors.mark, function(event) {
 					var touch;
 
 					//console.log('marker event', event.type);
