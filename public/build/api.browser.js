@@ -791,7 +791,7 @@ http://www.quirksmode.org/js/detect.html
 		eq: function(index) {
 			if(this.elements && this.elements.length > 0) {
 				if(typeof index === 'number' && this.elements[index]) {
-					this.elements = this.elements[index];
+					return DOM(this.elements[index]);
 				}
 			}
 			return this;
@@ -827,7 +827,7 @@ http://www.quirksmode.org/js/detect.html
 				}
 				return matched;
 			};
-			var inArray = function(target, elements/*this.element*/) {
+			var inArray = function(target, elements/*this.elements*/) {
 				var i, max;
 				if(elements) {
 					for(i=0, max=elements.length; i<max; i++) {
@@ -844,6 +844,9 @@ http://www.quirksmode.org/js/detect.html
 			}
 			if(!element) {
 				return (this.elements[0] && this.elements[0].parentNode) ? dir(this.elements[0].firstChild, 'previousSibling').length : -1;
+			}
+			if(typeof element === 'object' && !element.nodeType && element[0]) {
+				element = element[0];
 			}
 			return inArray(element, this.elements);
 		},
