@@ -310,8 +310,8 @@ jQuery 또는 api.dom 에 종속적 실행
 			'target': null, // 슬라이드 wrap (셀렉터 또는 element 값)
 			'flow': 'horizontal', // 플리킹 방향 (가로:horizontal, 세로:vertical)
 			'width': 'auto', // 슬라이드 width 값 설정 (auto: 슬라이드가 target 가운데 위치하도록 wrap width 값에 따라 자동설정)
-			'height': 'auto', // 슬라이드 height 값 설정
-			'centered': false, // true / false / margin / padding 
+			'height': 'auto', // 슬라이드 height 값 설정 (숫자, auto, min, max) - css height 값이 auto 경우 wrap height 값이 0으로 보이는 경우가 있다. 이 경우 wrap css 값 overflow: auto; 또는 :after { content: ""; display: block; clear: both; } 해결가능하다.
+			'centered': '', // auto / margin / padding 
 			'speed': 300, // 슬라이드 속도
 			'touch': true, // 클릭 또는 터치 슬라이드 작동여부
 			'auto': 0, // 자동 슬라이드 작동여부 (0 이상의 값이 입력되면 작동합니다.)
@@ -338,17 +338,13 @@ jQuery 또는 api.dom 에 종속적 실행
 			'auto': 0, // 자동슬라이드 time key
 			'resize': 0	
 		}; 
-		if(typeof that.settings.centered !== 'boolean' && !/margin|padding/i.test(that.settings.centered)) {
-			that.settings.centered = false;
-		}else if(that.settings.centered === true) {
+		if(that.settings.centered && (typeof that.settings.centered !== 'string' || !/margin|padding/i.test(that.settings.centered) || that.settings.centered.toLowerCase() === 'auto')) {
 			that.settings.centered = 'margin';
 		}
 
 		// target
 		that.settings.target = (typeof that.settings.target === 'string' && /^[a-z]+/i.test(that.settings.target) ? '#' + that.settings.target : that.settings.target);
 		that.elements.target = (typeof that.settings.target === 'object' && that.settings.target.nodeType ? that.settings.target : $(that.settings.target).get(0));
-		that.elements.children = that.elements.target.children; // 슬라이드 elements (IE8 이하 사용 불가능)
-		that.total = that.elements.children.length || 0;
 
 		// initialize
 		that.initialize();
@@ -360,7 +356,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 		// resize event 
 		$(window).off('resize.EVENT_RESIZE_FLICKING_' + that['settings']['key']);
-		if(that.settings.width === 'auto' && that.settings.height === 'auto') {
+		if((typeof that.settings.width === 'string' && /auto|min|max/ig.test(that.settings.width)) || (typeof that.settings.height === 'string' && /auto|min|max/ig.test(that.settings.height))) {
 			$(window).on('resize.EVENT_RESIZE_FLICKING_' + that['settings']['key'], function(e) {
 				console.log('[플리킹 정보] resize event');
 				window.clearTimeout(that.time.resize);
@@ -475,6 +471,10 @@ jQuery 또는 api.dom 에 종속적 실행
 				that.settings.height = that.settings.height.toLowerCase();
 			}
 
+			// slide
+			that.elements.children = that.elements.target.children; // 슬라이드 elements (IE8 이하 사용 불가능)
+			that.total = that.elements.children.length || 0;
+
 			// width / height 초기값
 			that.width = {
 				'value': 0,
@@ -513,7 +513,7 @@ jQuery 또는 api.dom 에 종속적 실행
 
 			// wrap 크기 정보
 			// auto (parent element의 width / height 를 구함)
-			if(that.settings.width === 'auto' || that.settings.height === 'auto') {
+			if((typeof that.settings.width === 'string' && /auto|min|max/ig.test(that.settings.width)) || (typeof that.settings.height === 'string' && /auto|min|max/ig.test(that.settings.height))) {
 				// display
 				// flow, flow-root, table, flex, ruby, grid, list-item
 				// !/flow|table|flex|ruby|grid|list/ig.test(display)
@@ -578,16 +578,27 @@ jQuery 또는 api.dom 에 종속적 실행
 				var centered = that.settings.centered;
 				var width = 0, height = 0;
 				var rect = {};
-				var past = {}; // 기존 element 에 설정된 style 값
-				var style = {}; // 슬라이드 기본 style 설정 값
+				var past = { // 기존 element 에 설정된 style 값
+					'min-width': '',
+					'max-width': '',
+					'min-height': '',
+					'max-height': '',
+					'display': ''
+				}; 
+				var style = { // 슬라이드 기본 style 설정 값
+					'min-width': '0', // default value 0
+					'max-width': 'none', // default value none
+					'min-height': '0', // default value 0
+					'max-height': 'none', // default value none
+					'display': 'block'
+				}; 
 				var tmp;
 
 				if(element) {
 					parent = element.parentNode;
 					element = $(element);
 
-					// 기존 element 값 
-					// auto의 경우 정확한 margin 판단을 위해 값 초기화
+					// 가운데 정렬을 위한 초기화 
 					if(centered) {
 						tmp = {};
 						if(that.settings.flow === 'vertical') {
@@ -598,25 +609,9 @@ jQuery 또는 api.dom 에 종속적 실행
 							tmp[centered + '-right'] = '0px';
 						}
 						element.css(tmp);
-						/*if(that.settings.width !== 'auto') {
-							past[centered + '-left'] = element.css(centered + '-left');
-							past[centered + '-right'] = element.css(centered + '-right');
-						}else {
-							tmp = {};
-							tmp[centered + '-left'] = '0px';
-							tmp[centered + '-right'] = '0px';
-							element.css(tmp);
-						}
-						if(that.settings.height !== 'auto') {
-							past[centered + '-top'] = element.css(centered + '-top');
-							past[centered + '-bottom'] = element.css(centered + '-bottom');
-						}else {
-							tmp = {};
-							tmp[centered + '-top'] = '0px';
-							tmp[centered + '-bottom'] = '0px';
-							element.css(tmp);
-						}*/
 					}
+
+					// 기존 style 값 저장 
 					past['min-width'] = element.css('min-width');
 					past['max-width'] = element.css('max-width');
 					past['min-height'] = element.css('min-height');
@@ -632,6 +627,7 @@ jQuery 또는 api.dom 에 종속적 실행
 						element.css({'min-width': '0', 'max-width': 'none', 'min-height': '0', 'max-height': 'none', 'position': 'relative', 'float': 'left'}); 
 					}
 
+					// 슬라이드 내부 이미지의 경우 정확한 width/height 값을 구하기 어려움!
 					// border 값을 포함한 width / height 값
 					// 중앙정렬 조건이 padding 경우 width, height 값 확인 다시!
 					width = Number(bundle.numberReturn(element.outerWidth()) || 0); 
@@ -653,19 +649,16 @@ jQuery 또는 api.dom 에 종속적 실행
 						style[centered + '-top'] = past[centered + '-top'] || '0px';
 						style[centered + '-bottom'] = past[centered + '-bottom'] || '0px';
 					}*/
-					style['min-width'] = past['min-width'] || '0'; // default value 0
-					style['max-width'] = past['max-width'] || 'none'; // default value none
-					style['min-height'] = past['min-height'] || '0'; // default value 0
-					style['max-height'] = past['max-height'] || 'none'; // default value none
-					style['display'] = past['display'] || 'block';
 
 					// width
 					//console.log('[플리킹 정보] width', width); 
-					if(0 < that.width.value && (width <= 0 || that.width.value < width)) {
+					if(0 < that.width.value/* && that.width.value < width*/) {
 						// 슬라이드 width 크기가 플리킹 wrap width 보다 클경우 강제 width 설정
 						style['max-width'] = that.width.value + 'px';
-					}else if(centered) {
+					}
+					if(centered) {
 						// 양쪽 여백값 (슬라이드를 가운데 위치시키기 위함)
+						style['min-width'] = width + 'px';
 						style[centered + '-left'] = style[centered + '-right'] = ((that.width.value - width) / 2) + 'px'; 
 					}else {
 						// 최소 가로 크기 (슬라이드 가로 크기)
@@ -675,11 +668,16 @@ jQuery 또는 api.dom 에 종속적 실행
 					// height 
 					//console.log('[플리킹 정보] height', height);
 					if(that.settings.flow === 'vertical') {
-						if(0 < that.height.value && (height <= 0 || that.height.value < height)) {
+						if(0 < that.height.value/* && that.height.value < height*/) {
+							// 슬라이드 height 크기가 플리킹 wrap height 보다 클경우 강제 height 설정 
 							style['max-height'] = that.height.value + 'px';
-						}else if(centered) {
+						}
+						if(centered) {
+							// 위아래 여백값 (슬라이드 가운데 위치시키기 위함)
+							style['min-height'] = height + 'px';
 							style[centered + '-top'] = style[centered + '-bottom'] = ((that.height.value - height) / 2) + 'px'; 	
 						}else {
+							// 최소 세로 크기 (슬라이드 세로 크기)
 							style['min-height'] = that.height.value + 'px';
 						}
 					}
