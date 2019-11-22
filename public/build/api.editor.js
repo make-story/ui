@@ -154,7 +154,7 @@ FileReader: IE10 이상
 			setSelection: function() {
 				this.selection = window.getSelection();
 			},
-			// anchorNode, focusNode 선택여부
+			// anchorNode(선택된 글자의 시작노드), focusNode(현재 포커스가 위치한 끝노드) 선택여부
 			isSelection: function() {
 				var is = false;
 				if(typeof this.selection === 'object' && this.selection !== null && this.selection.anchorNode && this.selection.focusNode) {
@@ -187,7 +187,7 @@ FileReader: IE10 이상
 			},
 			// 현재 node 상위(parentNode)를 검색하며, condition 결과에 따른 callback 실행
 			// 상위노드 탐색을 얼마나 줄이느냐가 관건
-			getParent: function(current, last, condition, callback) {
+			getParent: function(current/*노드검색 시작점*/, last/*노드검색 끝점*/, condition/*노드를 확인하며, 참/거짓 리턴을 위한 실행함수*/, callback/*최종 반환값 리턴을 위한 실행함수*/) {
 				var result;
 				if(typeof current !== 'object' || current === null || !current.nodeType) {
 					return;
@@ -203,7 +203,7 @@ FileReader: IE10 이상
 						// 2. callback 실행 (return 값이 있을 경우 반환)
 						result = callback(current, result);
 						if(typeof result !== 'undefined') {
-							// callback 리턴값이 있을 경우 break
+							// 3. callback 리턴값이 있을 경우 break
 							return result;
 						}
 					}
@@ -215,10 +215,47 @@ FileReader: IE10 이상
 					current = current.parentNode;
 				}
 			},
+			// 노드 정보 
+			getNodeInfo: function(node) {
+				var result = {
+					'node': null, 
+					'type': '', // nodeType
+					'name': '', // nodeName
+					'edit': '', // code, line, image, swipe, video 등 종류 
+					'value': '' // nodeValue || data-value
+				};
+
+				if(!node || typeof node !== 'object' || !node.nodeType) {
+					return result;
+				}
+				result.node = node;
+				result.type = node.nodeType;
+				result.value = node.nodeValue;
+				if(typeof node.nodeName === 'string') {
+					result.name = node.nodeName.toLowerCase();
+				}
+				if(node.nodeType === 1) {
+					result.edit = node.getAttribute('data-edit');
+					if(!result.edit && node.storage && typeof node.storage === 'object' && node.storage.edit) {
+						result.edit = node.storage.edit;
+					}
+					if(result.edit) {
+						result.value = node.getAttribute('data-value') || result.value;
+					}
+				}
+
+				return result;
+			},
+			// node 종류 check
 			isNodeCheck: function(node, check) { 
+				var edit;
 				var is = false;
 
-				if(typeof node === 'object' && node !== null && node.nodeType) {
+				if(node && typeof node === 'object' && node.nodeType) {
+					edit = typeof node.storage === 'object' && typeof node.storage.edit === 'string' ? node.storage.edit.toLowerCase() : '';
+					if(node && node.nodeType === 1 && !edit) {
+						edit = node.getAttribute('data-edit');
+					}
 					switch(check) {
 						case 'url':
 							if(node.nodeType === 3 && node.parentNode.nodeName.toLowerCase() !== 'a' && node.nodeValue && regexp.url.test(node.nodeValue)) { // nodeType 3: textnode
@@ -226,7 +263,7 @@ FileReader: IE10 이상
 							}
 							break;
 						case 'opengraph':
-							if((typeof node.storage === 'object' && node.storage.type === 'opengraph') || (node.nodeType === 3 && typeof node.parentNode.storage === 'object' && node.parentNode.storage.type === 'opengraph')) { // nodeType 3: textnode
+							if(edit === 'opengraph' || (node.nodeType === 3 && typeof node.parentNode.storage === 'object' && node.parentNode.storage.edit === 'opengraph')) { // nodeType 3: textnode
 								is = true;	
 							}
 							break;
@@ -235,12 +272,23 @@ FileReader: IE10 이상
 
 				return is;
 			},
+			// node 지정 저장소 
+			setNodeStorage: function(node, data) {
+				if(node && typeof node === 'object' && node.nodeType) {
+
+				}
+			},
+			getNodeStorage: function(node, data) {
+				if(node && typeof node === 'object' && node.nodeType) {
+
+				}
+			},
 			// 커서
 			setCusor: function(node) {
 				var that = this;
 				var range, position;
 
-				if(typeof node === 'object' && node !== null && node.nodeType) {
+				if(node && typeof node === 'object' && node.nodeType) {
 					//console.log('커서');
 					//console.log(node);
 
@@ -257,7 +305,7 @@ FileReader: IE10 이상
 			setFormatBlock: function(tag) {
 				var that = this;
 				if(typeof tag === 'string') {
-					if(that.isSelection() && that.getRange() && that.getParent( // 추가하려는 tag가 상위에 존재하는지 확인
+					if(that.isSelection() && that.getRange() && that.getParent( // 추가하려는 tag가 현재 포커스노드 부모(상위)에 존재하는지 확인
 						that.selection.focusNode,
 						null,
 						function(node) {
@@ -457,7 +505,7 @@ FileReader: IE10 이상
 				node.target = '_blank';
 				node.textContent = node.innerText = that.range.toString() || url;
 				node.storage = {
-					'type': 'text'
+					'edit': 'text'
 				};
 
 				// 기억해둔 위치(range)의 값을 변경한다.
@@ -746,8 +794,11 @@ FileReader: IE10 이상
 			var parameter = parameter || {};
 			var toggle = parameter['toggle'];
 
-			var clientRectBounds;
-			var tooltip_width, tooltip_height;
+			var rect;
+			var tooltip = {
+				'width': 0,
+				'height': 0
+			};
 			var top = 0, left = 0;
 
 			if(bundle.isCollapsed() || typeof bundle.selection !== 'object' || toggle === 'hide') {
@@ -756,13 +807,13 @@ FileReader: IE10 이상
 			}else if(bundle.getRange()) {
 				that.elements.tooltip.style.display = "block"; // 렌더링 상태에서 offsetWidth, offsetHeight 측정
 				// 툴팁 크기
-				tooltip_width = that.elements.tooltip.offsetWidth;
-				tooltip_height = that.elements.tooltip.offsetHeight;
+				tooltip.width = that.elements.tooltip.offsetWidth;
+				tooltip.height = that.elements.tooltip.offsetHeight;
 				// top / left
-				clientRectBounds = bundle.selection.getRangeAt(0).getBoundingClientRect();
-				top = (clientRectBounds.top - tooltip_height) - 5;
+				rect = bundle.selection.getRangeAt(0).getBoundingClientRect();
+				top = (rect.top - tooltip.height) - 5;
 				if(top < 0) {
-					top = clientRectBounds.bottom + 5; // 툴팁 하단에 출력되도록 변경
+					top = rect.bottom + 5; // 툴팁 하단에 출력되도록 변경
 					that.elements.tooltip.style.borderTop = '1px solid rgba(231, 68, 78, .86)';
 					that.elements.tooltip.style.borderBottom = 'none';
 				}else {
@@ -770,12 +821,12 @@ FileReader: IE10 이상
 					that.elements.tooltip.style.borderTop = 'none';
 				}
 				top += window.pageYOffset; // scroll
-				left = Math.round((clientRectBounds.left + clientRectBounds.right) / 2);
-				left -= Math.floor(tooltip_width / 2);
+				left = Math.round((rect.left + rect.right) / 2);
+				left -= Math.floor(tooltip.width / 2);
 				if(left < 0) {
 					left = 0;
-				}else if((left + tooltip_width) > Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth)) {
-					left = left - ((left + tooltip_width) - Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth));
+				}else if((left + tooltip.width) > Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth)) {
+					left = left - ((left + tooltip.width) - Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth));
 				}
 				left += window.pageXOffset; // scroll
 				//
@@ -784,15 +835,32 @@ FileReader: IE10 이상
 			}
 		};
 		// 툴팁 보이기
-		EditText.prototype.setTooltipToggle = function() {
+		EditText.prototype.setTooltipToggle = function(parameter) {
 			var that = this;
+
+			var parameter = parameter || {};
+			var node = parameter['node'];
+			var nodeInfo = parameter['nodeInfo'];
 
 			// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
 			bundle.setSelection();
+			if(!node || typeof node !== 'object' || !node.nodeType) {
+				if(nodeInfo && typeof nodeInfo === 'object' && nodeInfo.node) {
+					node = nodeInfo.node;
+				}else {
+					//node = bundle.selection.anchorNode; // 선택된 글자의 시작노드
+					node = bundle.selection.focusNode; // 현재 포커스가 위치한 끝노드
+				}
+			}
+			if(node && (!nodeInfo || typeof nodeInfo !== 'object')) {
+				nodeInfo = bundle.getNodeInfo(node);
+			}
 			if(that.settings.tooltip === true) {
-				if(bundle.isSelection() && (!that.elements.target.contains(bundle.selection.focusNode) || (bundle.selection.focusNode.nodeType === 1 && /figure|img/.test(bundle.selection.focusNode.nodeName.toLowerCase())))) {
-					/*
-					console.log('----------');
+				if(bundle.isSelection() && (!that.elements.target.contains(node) || /figure|img/.test(nodeInfo.name))) {
+					console.log('node', node);
+					console.log('nodeInfo', nodeInfo);
+
+					/*console.log('----------');
 					console.dir(bundle.selection);
 					// 시작노드
 					console.log('anchorNode.nodeName: ' + bundle.selection.anchorNode.nodeName);
@@ -801,8 +869,8 @@ FileReader: IE10 이상
 					// 끝노드
 					console.log('focusNode.nodeName: ' + bundle.selection.focusNode.nodeName);
 					console.log('focusNode.nodeValue: ' + bundle.selection.focusNode.nodeValue);
-					console.log('focusNode.nodeType: ' + bundle.selection.focusNode.nodeType);
-					*/
+					console.log('focusNode.nodeType: ' + bundle.selection.focusNode.nodeType);*/
+					
 					that.setTextTooltipMenuPostion({'toggle': 'hide'});
 				}else {
 					that.setTextTooltipMenuPostion();
@@ -1068,7 +1136,7 @@ FileReader: IE10 이상
 
 
 	// 텍스트를 제외한 여러 기능 (이미지, 동영상, 코드 등)
-	// 공통적으로 선언되는 속성: data-type="에디터 종류" data-edit="{에디터 설정에 필요한 값들}"
+	// 공통적으로 선언되는 속성: data-edit="에디터 종류" data-value="{에디터 설정에 필요한 값들}"
 	var EditMulti = (function() {
 		// 각 기능별 개별 옵션
 		var editor = {
@@ -1131,7 +1199,7 @@ FileReader: IE10 이상
 					reader.readAsDataURL(file); // base64
 					reader.onload = function(e) {
 						// 이미지 삽입
-						that.put({'type': edit ? edit : 'image', 'id': id, 'data': e.target.result});
+						that.put({'edit': edit ? edit : 'image', 'id': id, 'data': e.target.result});
 					};
 				})(files[i]);
 			}
@@ -1187,13 +1255,13 @@ FileReader: IE10 이상
 						try {
 							// 이미지 파일 서버 전송
 							// 서버 응답 값으로, JavaScript 코드를 반환(실행)한다. - put
-							//that.put({'type': 'image 또는 swipe', 'id': 'id 속성값', 'data': ''});
+							//that.put({'edit': 'image 또는 swipe', 'id': 'id 속성값', 'data': ''});
 							/*
 							'\
 								<script type="text/javascript">\
 								try {\
 									if(window.top && window.top.api && window.top.api.editor && window.top.api.editor.put) {\
-										window.top.api.editor.put("' + key + '", {"type": "image 또는 swipe", "id": "' + id + '", "data": ["' + result.join(", ") + '"]});\
+										window.top.api.editor.put("' + key + '", {"edit": "image 또는 swipe", "id": "' + id + '", "data": ["' + result.join(", ") + '"]});\
 									}\
 								}catch(e) {};\
 								</script>\
@@ -1286,6 +1354,7 @@ FileReader: IE10 이상
 			var parameter = parameter || {};
 			var edit = parameter['edit'] || 'image'; // 툴팁 종류: image, swipe
 			var id = parameter['id'] || bundle.getKey();
+			var data = parameter['data'] || {};
 			var html = parameter['html'] || '';
 			
 			var wrap;
@@ -1312,35 +1381,42 @@ FileReader: IE10 이상
 				return div;
 			};
 
-			if(bundle.isSelection()) {
-				wrap = bundle.getParent(
-					bundle.selection.anchorNode,
-					null,
-					function(node) { // condition (검사)
-						/*
-						console.log('node');
-						console.log(node);
-						console.log(node.parentNode);
-						*/
-						if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
-							//console.log('setAppendWrap(that.elements.target)');
-							return setAppendWrap(that.elements.target);
-						}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(bundle.getDisplay(node.parentNode))))) {
-							//console.log('setInsertBeforeWrap(node)');
-							return setInsertBeforeWrap(node);
-						}/*else if(node.nodeType === 1 && (node.getAttribute('data-type') || (node.storage && node.storage.type))) {
-							//console.log('setInsertAfterWrap(node)');
-							return setInsertAfterWrap(node);
-						}*/
-					}, 
-					function(node, result) { // callback (검사결과가 true의 경우)
-						if(node) {
-							return result;
+			// wrap 찾기 또는 생성
+			if(id) {
+				wrap = document.getElementById(id);
+			}
+			if(!wrap) {		
+				if(bundle.isSelection()) {
+					wrap = bundle.getParent(
+						bundle.selection.anchorNode,
+						null,
+						function(node) { // condition (검사)
+							/*
+							console.log('node');
+							console.log(node);
+							console.log(node.parentNode);
+							*/
+							var nodeInfo = bundle.getNodeInfo(node);
+							if(!that.elements.target.contains(node) || that.elements.target.isEqualNode(node)) {
+								//console.log('setAppendWrap(that.elements.target)');
+								return setAppendWrap(that.elements.target);
+							}else if(node.parentNode && (node.parentNode.isEqualNode(that.elements.target) || (node.parentNode.nodeType === 1 && node.parentNode.nodeName.toLowerCase() !== 'p' && /block|inline-block/i.test(bundle.getDisplay(node.parentNode))))) {
+								//console.log('setInsertBeforeWrap(node)');
+								return setInsertBeforeWrap(node);
+							}/*else if(nodeInfo.edit) {
+								//console.log('setInsertAfterWrap(node)');
+								return setInsertAfterWrap(node);
+							}*/
+						}, 
+						function(node, result) { // callback (검사결과가 true의 경우)
+							if(node) {
+								return result;
+							}
 						}
-					}
-				);
-			}else {
-				wrap = setAppendWrap(that.elements.target);
+					);
+				}else {
+					wrap = setAppendWrap(that.elements.target);
+				}
 			}
 			if(!wrap || typeof wrap !== 'object' || !wrap.nodeName) {
 				return false;
@@ -1353,15 +1429,26 @@ FileReader: IE10 이상
 			return;
 			*/
 
+			// data
+			if(data && typeof data === 'object') {
+				data.id = id;
+				data.edit = edit;
+			}
+
 			// 속성값 설정
 			if(typeof that.settings.classes[edit] === 'object') {
 				wrap.className = that.settings.classes[edit].wrap || '';
 			}
 			wrap.setAttribute("id", id);
-			wrap.setAttribute("data-type", edit);
-			wrap.storage = {
-				'type': edit
-			};
+			wrap.setAttribute("data-edit", edit);
+			wrap.setAttribute("data-value", JSON.stringify(data));
+			if(wrap.storage) {
+				wrap.storage.edit = edit;
+			}else{
+				wrap.storage = {
+					'edit': edit
+				};
+			}
 			wrap.innerHTML = html;
 
 			return wrap;
@@ -1390,6 +1477,9 @@ FileReader: IE10 이상
 			var id = parameter['id']; // 수정 또는 생성 
 
 			var wrap;
+			var data = {
+				'url': []
+			};
 			var html = [];
 
 			if(!api || !api.flicking) {
@@ -1406,9 +1496,12 @@ FileReader: IE10 이상
 					return true;
 				}
 
+				// data
+				data.url.push(url);
+
 				// 템플릿 생성 
-				html.push('<div>');
-					html.push('<img src="' + url + '">');
+				html.push('<div class="' + that.settings.classes.swipe.slide + '" style="text-align: center;">');
+					html.push('<div style="display: inline-block;"><img src="' + url + '" style="max-width: 100%;"></div>');
 				html.push('</div>');
 			});
 			if(!html.length) {
@@ -1416,14 +1509,8 @@ FileReader: IE10 이상
 			}
 
 			// wrap 찾기 또는 생성
-			if(id) {
-				wrap = document.getElementById(id);
-			}
-			if(!wrap) {
-				id = bundle.getKey();
-				wrap = setAppendWrapElement.call(that, {'edit': 'swipe', 'id': id, 'html': html.join('')});
-			}
-
+			wrap = setAppendWrapElement.call(that, {'edit': 'swipe', 'id': id, 'data': data, 'html': html.join('')});
+			
 			// 스와이프 적용 실행 
 			if(api.flicking.search(id)) {
 				api.flicking.search(id).wrap();
@@ -1433,6 +1520,7 @@ FileReader: IE10 이상
 					'key': id,
 					'target': wrap,
 					//'auto': 1000,
+					//'centered': 'margin',
 					'width': 'auto',
 					'height': 'auto',
 					'listeners': {
@@ -1473,7 +1561,10 @@ FileReader: IE10 이상
 		
 				$(target).closest(editor.swipe.selectors.item).remove();
 			};
-			var setAddList = function() {
+			var setAddList = function(parameter) {
+				var parameter = parameter || {};
+				var url = parameter['url'] || '';
+
 				var id = bundle.getKey();
 				var fragment = document.createDocumentFragment();
 				var first;
@@ -1484,8 +1575,10 @@ FileReader: IE10 이상
 				div.innerHTML = '\
 					<div style="float: left;">\
 						<input type="radio" name="draggable" value="" />\
+					</div>\
+					<div style="float: left;">\
 						<!-- 이미지 파일이 첨부되면 하단 type="text" input 에 URL이 들어가고 readonly 된다 //-->\
-						<input type="text" name="" value="" placeholder="image file url" class="' + that.settings.classes.swipe.url + '" data-edit-swipe="' + editor.swipe.attribute.url + '" />\
+						<input type="text" name="" value="' + url + '" placeholder="image file url" class="' + that.settings.classes.swipe.url + '" data-edit-swipe="' + editor.swipe.attribute.url + '" ' + (url ? 'readonly="readonly"' : '') + ' />\
 						<button class="' + that.settings.classes.swipe.file + '" data-edit-swipe="' + editor.swipe.attribute.file + '">File</button>\
 					</div>\
 					<div style="float: right;">\
@@ -1514,20 +1607,23 @@ FileReader: IE10 이상
 				return first;
 			};
 			// 버튼으로 상/하 이동
-			var setItemMove = function(type) {
+			var setItemMove = function(target, type) {
 				// type: top, down
 				// 라디오 버튼 element 상위 [draggable="true"] 속성 검색
 				// 검색된 element 의 type(top, down) 위치의 element 기준 이동
 				//var $target = $('[data-edit-swipe="list"]');
-				var $list = $(div).find(editor.swipe.selectors.list);
+				var $list = $(target).find(editor.swipe.selectors.list);
 				var $draggable = $list.find('[draggable="true"]');
 				var $radio = $list.find('[name="draggable"]');
-				var $checked = $radio.filter(':checked');
+				var $checked = $list.find('input:checked');
 				var index = $radio.index($checked);
 				var count = $radio.length;
 				var item;
 		
-				console.log('index/count', [index, count].join('/'));
+				//console.log('index/count', [index, count].join('/'));
+				if(index === -1) {
+					return;
+				}
 				if(type === 'top' && 0 < index) {
 					item = $draggable.eq(index-1).get(0);
 					// brfore
@@ -1616,6 +1712,14 @@ FileReader: IE10 이상
 					console.log('dragexit : 더 이상 드래그의 직접적인 대상이 아닐 때 발생', e);
 				});
 			};
+			var id = '', url = [];
+
+			// data
+			console.log('data', data);
+			if(data && typeof data === 'object') {
+				id = data.id || '';
+				url = Array.isArray(data.url) ? data.url : [];
+			}
 		
 			// html
 			fragment.appendChild(div);
@@ -1652,16 +1756,26 @@ FileReader: IE10 이상
 			$(first).attr({'contenteditable': 'false', 'class': that.settings.classes.swipe.layer, 'data-edit-swipe': editor.swipe.attribute.layer});
 			//$(first).css({'position': 'fixed', 'left': 0, 'bottom': 0, 'padding': '10px', 'width': '300px', 'height': '300px', 'background-color': 'rgba(255, 255, 255, .8)', 'border': '1px solid', 'box-sizing': 'border-box', 'overflow-y': 'auto'});
 			
-			// 기본 1개 항목 추가 
-			$(first).find(editor.swipe.selectors.list).append(setAddList());
-		
+			// 항목
+			if(Array.isArray(url) && url.length) {
+				(function() {
+					var i, max;
+					for(i=0, max=url.length; i<max; i++) {
+						$(first).find(editor.swipe.selectors.list).append(setAddList({'url': url[i]}));
+					}
+				})();
+			}else {
+				// 기본 1개 항목 추가 
+				$(first).find(editor.swipe.selectors.list).append(setAddList());
+			}
+			
 			// event 
 			setDraggable(first);
 			$(first).find(editor.swipe.selectors.sortTop).on('click', function() {
-				setItemMove('top')
+				setItemMove(first, 'top')
 			});
 			$(first).find(editor.swipe.selectors.sortDown).on('click', function() {
-				setItemMove('down')
+				setItemMove(first, 'down')
 			});
 			$(first).find(editor.swipe.selectors.close).on('click', function() {
 				setClose();
@@ -1671,7 +1785,7 @@ FileReader: IE10 이상
 				setDraggable(first);
 			});
 			$(first).find(editor.swipe.selectors.submit).on('click', function() {
-				setSwipeSubmit.call(that);
+				setSwipeSubmit.call(that, {'id': id});
 				setClose();
 			});
 		
@@ -1714,9 +1828,10 @@ FileReader: IE10 이상
 
 			// 정보 구성
 			div.className = that.settings.classes.video.wrap;
-			div.setAttribute("data-type", "video");
+			div.setAttribute("data-edit", "video");
+			div.setAttribute("data-value", JSON.stringify({}));
 			div.storage = {
-				'type': 'video'
+				'edit': 'video'
 			};
 		};
 
@@ -1737,9 +1852,10 @@ FileReader: IE10 이상
 
 			// 정보 구성
 			div.className = that.settings.classes.code.wrap;
-			div.setAttribute("data-type", "code");
+			div.setAttribute("data-edit", "code");
+			div.setAttribute("data-value", JSON.stringify({}));
 			div.storage = {
-				'type': 'code'
+				'edit': 'code'
 			};
 
 			// element 삽입
@@ -1786,9 +1902,10 @@ FileReader: IE10 이상
 
 			// 정보 구성
 			div.className = that.settings.classes.line.wrap;
-			div.setAttribute("data-type", "line");
+			div.setAttribute("data-edit", "line");
+			div.setAttribute("data-value", JSON.stringify({}));
 			div.storage = {
-				'type': 'line'
+				'edit': 'line'
 			};
 			hr.className = that.settings.classes.line.hr;
 
@@ -1826,9 +1943,9 @@ FileReader: IE10 이상
 				'target': null,
 				// 각각의 에디터 (추후 비동기 import 형태로 변경)
 				'image': true, // 이미지 사용여부
-				'code': true, // 코드 사용여부
-				'video': false, // 비디오 사용여부 (외부 api.player.js 라이브러리 연동)
 				'swipe': true, // 이미지 스와이프 사용여부 (외부 api.flicking.js 라이브러리 연동) - 뷰페이지에서 스와이프 적용은 따로 코드를 실행시켜줘야 한다.
+				'video': false, // 비디오 사용여부 (외부 api.player.js 라이브러리 연동)
+				'code': true, // 코드 사용여부
 				'line': true, // 구분선 사용여부
 				// 추가 툴팁 
 				'tooltip': {
@@ -1867,8 +1984,8 @@ FileReader: IE10 이상
 				},
 				// 서버 전송 정보
 				'submit': {
-					'image': '//makestory.net/files/editor', // 이미지 파일 전송 url
-					'swipe': '//makestory.net/files/editor'
+					'image': '//makestory.net/files/editor', 
+					'swipe': '//makestory.net/files/editor/000'
 				},
 				// element 에 설정할 class 속성값
 				'classes': {
@@ -1881,18 +1998,9 @@ FileReader: IE10 이상
 						'left': 'editor-image-wrap-left', // 이미지 왼쪽 글자 오른쪽 (이미지 수정 에디터에서 실행)
 						'right': 'editor-image-wrap-right' // 이미지 오른쪽 글자 왼쪽 (이미지 수정 에디터에서 실행)
 					},
-					'code': {
-						'wrap': 'editor-code-wrap'
-					},
-					'line': {
-						'wrap': 'editor-line-wrap',
-						'hr': 'editor-line-hr'
-					},
-					'video': {
-						'wrap': 'editor-video-wrap'
-					},
 					'swipe': {
 						'wrap': 'editor-swipe-wrap',
+						'slide': 'editor-swipe-slide',
 						'layer': 'editor-swipe-lqyer',
 						'list': 'editor-swipe-list',
 						'item': 'editor-swipe-item',
@@ -1904,6 +2012,16 @@ FileReader: IE10 이상
 						'delete': 'editor-swipe-delete',
 						'submit': 'editor-swipe-submit',
 						'close': 'editor-swipe-close'
+					},
+					'video': {
+						'wrap': 'editor-video-wrap'
+					},
+					'code': {
+						'wrap': 'editor-code-wrap'
+					},
+					'line': {
+						'wrap': 'editor-line-wrap',
+						'hr': 'editor-line-hr'
 					}
 				},
 				// 상태에 따른 콜백
@@ -1913,12 +2031,20 @@ FileReader: IE10 이상
 			};
 			that.elements = {
 				'target': null,
-				'tooltip': null,
-				'command': {
-					'wrap': null
+				//'tooltip': null,
+				'tooltip': {
+					'default': null,
+					'image': null,
+					'swipe': null,
+					'video': null
 				},
-				'other': {
-					'wrap': null
+				'command': { // 에디터 명령
+					'wrap': null,
+					'insertImage': null,
+					'insertSwipe': null,
+					'insertVideo': null,
+					'insertCode': null,
+					'insertLine': null
 				}
 			};
 
@@ -1932,16 +2058,16 @@ FileReader: IE10 이상
 				var label;
 
 				// 툴바
-				that.elements.tooltip = document.createElement("div");
-				that.elements.tooltip.style.cssText = 'transition: all .05s ease-out; position: absolute; color: rgb(44, 45, 46); border-radius: 3px; display: none;';
-				that.elements.tooltip.appendChild(that.elements.command.wrap = document.createElement("div"));
-				that.elements.tooltip.appendChild(that.elements.other.wrap = document.createElement("div"));
-				fragment.appendChild(that.elements.tooltip);
+				that.elements.tooltip.default = document.createElement("div");
+				that.elements.tooltip.default.style.cssText = 'transition: all .05s ease-out; position: absolute; color: rgb(44, 45, 46); border-radius: 3px; display: none;';
+				that.elements.tooltip.default.appendChild(that.elements.command.wrap = document.createElement("div"));
+				fragment.appendChild(that.elements.tooltip.default);
 
 				// 에디터 버튼
 				label = document.createElement('label'); // input file 을 실행하기 위해 label tag 사용
 				label.style.cssText = 'display: block; margin: 2px 4px; background: none; border: 0px; outline: none; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;';
 				if(that.settings.image === true) {
+					// default
 					that.elements.command.wrap.appendChild(that.elements.command.insertImage = (function(label) {
 						label['storage'] = {
 							'command': 'insertImage'
@@ -1952,6 +2078,52 @@ FileReader: IE10 이상
 						//label.textContent = '/#/';
 						return label;
 					})(label.cloneNode()));
+					// 수정 버튼 
+					that.elements.tooltip.image = document.createElement("div");
+					that.elements.tooltip.image.style.cssText = 'transition: all .05s ease-out; position: absolute; color: rgb(44, 45, 46); border-radius: 3px; display: none;';
+					fragment.appendChild(that.elements.tooltip.image);
+				}
+				if(that.settings.swipe === true) {
+					// default
+					that.elements.command.wrap.appendChild(that.elements.command.insertSwipe = (function(label) {
+						label['storage'] = {
+							'command': 'insertSwipe'
+						};
+						label.onmousedown = setSwipeTooltipMousedown.bind(that);
+						label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="22" height="22" viewBox="0 0 443.284 443.284" style="fill: rgb(44, 45, 46);" xml:space="preserve"><path d="M439.623,166.017c-4.867-11.751-13.981-20.888-25.662-25.726L386.75,129.02c-3.823-1.587-8.214,0.23-9.799,4.059c-1.586,3.827,0.231,8.214,4.059,9.799l27.211,11.271c7.979,3.306,14.21,9.559,17.544,17.607c3.334,8.05,3.35,16.877,0.045,24.856L356.926,362.91c-6.858,16.557-25.906,24.445-42.464,17.59l-41.145-17.043c-3.823-1.587-8.214,0.233-9.799,4.059c-1.586,3.827,0.231,8.214,4.059,9.799l41.145,17.043c5.822,2.412,11.947,3.617,18.084,3.617c6.174,0,12.359-1.221,18.253-3.662c11.75-4.867,20.887-13.981,25.725-25.662l68.883-166.298C444.506,190.672,444.49,177.767,439.623,166.017z"/><path d="M381.009,219.843c0.938,0.39,1.91,0.573,2.867,0.573c2.943,0,5.735-1.744,6.932-4.632l11.904-28.739c0.762-1.838,0.762-3.902,0-5.74c-0.761-1.838-2.221-3.298-4.059-4.059l-11.904-4.931c-3.823-1.589-8.215,0.232-9.799,4.059c-1.586,3.827,0.231,8.214,4.059,9.799l4.976,2.062l-9.034,21.81C375.365,213.871,377.182,218.258,381.009,219.843z"/><path d="M269.345,347.886h44.534c26.191,0,47.5-21.309,47.5-47.5v-180c0-26.191-21.309-47.5-47.5-47.5h-29.452c-4.143,0-7.5,3.357-7.5,7.5s3.357,7.5,7.5,7.5h29.452c17.921,0,32.5,14.579,32.5,32.5v180c0,17.921-14.579,32.5-32.5,32.5h-44.534c-4.143,0-7.5,3.357-7.5,7.5S265.203,347.886,269.345,347.886z"/><path d="M313.881,158.99c4.143,0,7.5-3.357,7.5-7.5v-31.105c0-4.143-3.357-7.5-7.5-7.5h-12.885c-4.143,0-7.5,3.357-7.5,7.5s3.357,7.5,7.5,7.5h5.385v23.605C306.381,155.633,309.738,158.99,313.881,158.99z"/><path d="M326.567,240.915L257.683,74.617c-7.374-17.804-24.643-29.308-43.993-29.308c-6.222,0-12.301,1.212-18.067,3.601L29.324,117.794c-11.681,4.838-20.795,13.974-25.662,25.725s-4.883,24.655-0.044,36.336l68.883,166.299c7.374,17.803,24.643,29.307,43.994,29.307c6.222,0,12.3-1.211,18.067-3.601l166.298-68.883C325.058,292.954,336.59,265.113,326.567,240.915z M128.822,358.002c-3.938,1.631-8.086,2.458-12.327,2.458c-13.263,0-25.092-7.869-30.137-20.047L17.475,174.114c-3.305-7.979-3.289-16.807,0.045-24.855s9.564-14.302,17.544-17.607l166.299-68.884c3.938-1.631,8.085-2.458,12.327-2.458c13.262,0,25.091,7.869,30.136,20.048l68.884,166.298c3.305,7.979,3.289,16.807-0.046,24.855c-3.334,8.05-9.564,14.303-17.544,17.608L128.822,358.002z"/><path d="M220.729,89.924c-0.761-1.838-2.221-3.298-4.059-4.059c-1.838-0.762-3.902-0.762-5.74,0L44.632,154.748c-1.838,0.761-3.298,2.221-4.059,4.059c-0.762,1.838-0.762,3.902,0,5.74l49.749,120.104c1.196,2.889,3.988,4.632,6.932,4.632c0.956,0,1.929-0.185,2.867-0.573l166.298-68.883c3.827-1.585,5.645-5.972,4.059-9.799L220.729,89.924z M101.309,271.983L57.3,165.736l152.441-63.143L253.75,208.84L101.309,271.983z"/></svg>';
+						//label.textContent = '[S]';
+						return label;
+					})(label.cloneNode()));
+					// 수정 버튼 
+					that.elements.tooltip.swipe = document.createElement("div");
+					that.elements.tooltip.swipe.style.cssText = 'transition: all .05s ease-out; position: absolute; color: rgb(44, 45, 46); border-radius: 3px; display: none;';
+					fragment.appendChild(that.elements.tooltip.swipe);
+					that.elements.tooltip.swipe.appendChild(that.elements.command.modifySwipe = (function(label) {
+						label['storage'] = {
+							'command': 'modifySwipe'
+						};
+						//label.onmousedown = setImageFileTooltipMousedown.bind(that);
+						//label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 368 368" style="fill: rgb(44, 45, 46);"><path d="M328,32H40C18,32,0,50,0,72v224c0,22,18,40,40,40h288c22,0,40-18,40-40V72C368,50,350,32,328,32z M352,185.6l-38-38 c-6.4-6.4-16-6.4-22.4,0L200,238.8l-0.4-0.4L153.2,192c-6-6-16.4-6-22.4,0l-39.2,39.2c-3.2,3.2-3.2,8,0,11.2 c3.2,3.2,8,3.2,11.2,0l39.2-39.2l46.4,46.4l0.4,0.4l-32.4,32.4c-3.2,3.2-3.2,8,0,11.2c1.6,1.6,3.6,2.4,5.6,2.4s4-0.8,5.6-2.4 l135.2-134.8l47.6,47.6c0.4,0.4,1.2,0.8,1.6,1.2V296c0,13.2-10.8,24-24,24H40c-13.2,0-24-10.8-24-24V72c0-13.2,10.8-24,24-24h288 c13.2,0,24,10.8,24,24V185.6z" /><path d="M72.4,250.4l-8,8c-3.2,3.2-3.2,8,0,11.2C66,271.2,68,272,70,272s4-0.8,5.6-2.4l8-8c3.2-3.2,3.2-8,0-11.2 C80.4,247.2,75.6,247.2,72.4,250.4z" /><path d="M88,80c-22,0-40,18-40,40s18,40,40,40s40-18,40-40S110,80,88,80z M88,144c-13.2,0-24-10.8-24-24s10.8-24,24-24 s24,10.8,24,24S101.2,144,88,144z" /></svg>';
+						label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="1 1 511.99999 511.99999" style="fill: rgb(44, 45, 46);"><path d="m469.332031 0h-426.664062c-23.554688.0273438-42.6406252 19.113281-42.667969 42.667969v426.664062c.0273438 23.554688 19.113281 42.640625 42.667969 42.667969h426.664062c23.554688-.027344 42.640625-19.113281 42.667969-42.667969v-426.664062c-.027344-23.554688-19.113281-42.6406252-42.667969-42.667969zm-426.664062 17.066406h426.664062c14.140625 0 25.601563 11.460938 25.601563 25.601563v25.597656h-477.867188v-25.597656c0-14.140625 11.460938-25.601563 25.601563-25.601563zm426.664062 477.867188h-426.664062c-14.140625 0-25.601563-11.460938-25.601563-25.601563v-384h477.867188v384c0 14.140625-11.460938 25.601563-25.601563 25.601563zm0 0"/><path d="m42.667969 34.132812h17.066406v17.066407h-17.066406zm0 0"/><path d="m76.800781 34.132812h17.066407v17.066407h-17.066407zm0 0"/><path d="m110.933594 34.132812h17.066406v17.066407h-17.066406zm0 0"/><path d="m170.667969 290.132812c-28.277344 0-51.203125 22.921876-51.203125 51.199219 0 28.277344 22.925781 51.203125 51.203125 51.203125 28.277343 0 51.199219-22.925781 51.199219-51.203125-.027344-28.261719-22.933594-51.171875-51.199219-51.199219zm0 85.332032c-18.851563 0-34.132813-15.28125-34.132813-34.132813 0-18.851562 15.28125-34.132812 34.132813-34.132812 18.851562 0 34.132812 15.28125 34.132812 34.132812 0 18.851563-15.28125 34.132813-34.132812 34.132813zm0 0"/><path d="m281.601562 307.199219h-28.527343l20.171875-20.171875c3.332031-3.332032 3.332031-8.734375 0-12.066406l-36.207032-36.207032c-3.332031-3.332031-8.734374-3.332031-12.066406 0l-20.171875 20.171875v-28.523437c0-4.714844-3.820312-8.535156-8.535156-8.535156h-51.199219c-4.710937 0-8.53125 3.820312-8.53125 8.535156v28.523437l-20.175781-20.171875c-3.332031-3.332031-8.734375-3.332031-12.066406 0l-36.207031 36.207032c-3.328126 3.332031-3.328126 8.734374 0 12.066406l20.175781 20.171875h-28.527344c-4.714844 0-8.535156 3.820312-8.535156 8.535156v51.199219c0 4.710937 3.820312 8.53125 8.535156 8.53125h28.527344l-20.175781 20.175781c-3.328126 3.332031-3.328126 8.734375 0 12.066406l36.207031 36.207031c3.332031 3.328126 8.734375 3.328126 12.066406 0l20.175781-20.175781v28.527344c0 4.714844 3.820313 8.535156 8.53125 8.535156h51.199219c4.714844 0 8.535156-3.820312 8.535156-8.535156v-28.527344l20.171875 20.175781c3.332032 3.328126 8.734375 3.328126 12.066406 0l36.207032-36.207031c3.332031-3.332031 3.332031-8.734375 0-12.066406l-20.171875-20.171875h28.527343c4.710938 0 8.53125-3.824219 8.53125-8.535156v-51.199219c0-4.714844-3.820312-8.535156-8.53125-8.535156zm-8.535156 51.199219h-30.054687c-3.613281 0-6.835938 2.273437-8.046875 5.675781-.800782 2.257812-1.722656 4.46875-2.753906 6.628906-1.546876 3.269531-.863282 7.160156 1.703124 9.703125l21.234376 21.265625-24.144532 24.140625-21.253906-21.265625c-2.546875-2.570313-6.441406-3.253906-9.710938-1.707031-2.15625 1.035156-4.367187 1.953125-6.621093 2.75-3.40625 1.207031-5.683594 4.425781-5.683594 8.039062v30.105469h-34.132813v-30.054687c0-3.613282-2.269531-6.835938-5.675781-8.046876-2.257812-.800781-4.46875-1.722656-6.628906-2.757812-3.269531-1.542969-7.15625-.859375-9.703125 1.707031l-21.265625 21.230469-24.140625-24.140625 21.257812-21.253906c2.570313-2.550781 3.253907-6.441407 1.703126-9.714844-1.03125-2.15625-1.949219-4.367187-2.746094-6.621094-1.210938-3.414062-4.441406-5.691406-8.0625-5.683593h-30.074219v-34.132813h30.054687c3.613282.003906 6.835938-2.269531 8.046876-5.671875.804687-2.257812 1.722656-4.472656 2.757812-6.632812 1.542969-3.269532.859375-7.15625-1.707031-9.699219l-21.230469-21.265625 24.140625-24.140625 21.257813 21.253906c2.546874 2.570313 6.4375 3.253906 9.710937 1.707031 2.15625-1.03125 4.367187-1.949218 6.621094-2.746094 3.414062-1.210937 5.691406-4.445312 5.683593-8.066406v-30.070312h34.132813v30.054687c-.003906 3.613281 2.269531 6.835938 5.671875 8.046875 2.257812.800782 4.472656 1.722656 6.632812 2.757813 3.269532 1.542969 7.15625.859375 9.703126-1.707031l21.261718-21.230469 24.144532 24.140625-21.265626 21.253906c-2.570312 2.550781-3.253906 6.441406-1.707031 9.710938 1.03125 2.160156 1.949219 4.367187 2.746094 6.625 1.207031 3.402343 4.425781 5.679687 8.039063 5.679687h30.105468zm0 0"/><path d="m452.265625 187.734375h-22.050781l-.433594-1.050781 15.589844-15.589844c3.332031-3.332031 3.332031-8.734375 0-12.066406l-24.132813-24.132813c-3.382812-3.199219-8.679687-3.199219-12.066406 0l-15.589844 15.589844-1.050781-.433594v-22.050781c0-4.714844-3.820312-8.535156-8.53125-8.535156h-34.132812c-4.714844 0-8.535157 3.824218-8.535157 8.535156v22.050781l-1.046875.433594-15.59375-15.589844c-3.332031-3.332031-8.730468-3.332031-12.066406 0l-24.128906 24.132813c-3.332032 3.332031-3.332032 8.734375 0 12.066406l15.589844 15.589844-.4375 1.050781h-22.050782c-4.710937 0-8.53125 3.820313-8.53125 8.53125v34.132813c0 4.714843 3.820313 8.535156 8.53125 8.535156h22.050782l.4375 1.050781-15.589844 15.589844c-3.332032 3.332031-3.332032 8.734375 0 12.066406l24.128906 24.132813c3.386719 3.199218 8.683594 3.199218 12.066406 0l15.59375-15.59375 1.046875.4375v22.050781c0 4.710937 3.820313 8.53125 8.535157 8.53125h34.132812c4.710938 0 8.53125-3.820313 8.53125-8.53125v-22.050781l1.050781-.4375 15.589844 15.59375c3.332031 3.328124 8.734375 3.328124 12.066406 0l24.132813-24.132813c3.332031-3.332031 3.332031-8.734375 0-12.066406l-15.589844-15.589844.433594-1.050781h22.050781c4.714844 0 8.535156-3.820313 8.535156-8.535156v-34.132813c0-4.710937-3.820312-8.53125-8.535156-8.53125zm-8.53125 34.132813h-19.578125c-3.773438 0-7.097656 2.484374-8.171875 6.101562-.996094 3.367188-2.339844 6.625-4.003906 9.71875-1.796875 3.320312-1.199219 7.425781 1.46875 10.09375l13.824219 13.824219-12.066407 12.066406-13.824219-13.824219c-2.671874-2.667968-6.777343-3.261718-10.09375-1.464844-3.09375 1.664063-6.351562 3.003907-9.722656 4-3.617187 1.078126-6.097656 4.402344-6.101562 8.175782v19.574218h-17.066406v-19.574218c0-3.773438-2.484376-7.097656-6.101563-8.175782-3.367187-.996093-6.625-2.335937-9.71875-4-3.320313-1.796874-7.425781-1.203124-10.09375 1.464844l-13.824219 13.824219-12.066406-12.066406 13.824219-13.824219c2.667969-2.667969 3.261719-6.773438 1.464843-10.09375-1.664062-3.09375-3.003906-6.351562-4-9.71875-1.078124-3.617188-4.402343-6.101562-8.175781-6.101562h-19.574219v-17.066407h19.574219c3.773438-.003906 7.097657-2.484375 8.175781-6.101562.996094-3.371094 2.335938-6.625 4-9.71875 1.796876-3.320313 1.203126-7.425781-1.464843-10.097657l-13.824219-13.824218 12.066406-12.066406 13.824219 13.824218c2.667969 2.667969 6.773437 3.265625 10.09375 1.46875 3.09375-1.664062 6.351563-3.003906 9.71875-4.003906 3.617187-1.074219 6.101563-4.398438 6.101563-8.171875v-19.578125h17.066406v19.578125c.003906 3.773437 2.484375 7.097656 6.101562 8.171875 3.371094 1 6.625 2.339844 9.722656 4.003906 3.316407 1.796875 7.421876 1.199219 10.09375-1.46875l13.824219-13.824218 12.066407 12.066406-13.824219 13.824218c-2.667969 2.671876-3.265625 6.777344-1.46875 10.097657 1.664062 3.089843 3.007812 6.347656 4.003906 9.71875 1.074219 3.617187 4.398437 6.097656 8.171875 6.101562h19.578125zm0 0"/><path d="m366.933594 179.199219c-18.851563 0-34.132813 15.28125-34.132813 34.132812 0 18.851563 15.28125 34.132813 34.132813 34.132813 18.851562 0 34.132812-15.28125 34.132812-34.132813 0-18.851562-15.28125-34.132812-34.132812-34.132812zm0 51.199219c-9.425782 0-17.066406-7.640626-17.066406-17.066407s7.640624-17.066406 17.066406-17.066406c9.425781 0 17.066406 7.640625 17.066406 17.066406s-7.640625 17.066407-17.066406 17.066407zm0 0"/></svg>';
+						//label.textContent = '{M}';
+						return label;
+					})(label.cloneNode()));
+				}
+				if(that.settings.video === true) {
+					// default
+					that.elements.command.wrap.appendChild(that.elements.command.insertVideo = (function(label) {
+						label['storage'] = {
+							'command': 'insertVideo'
+						};
+						label.onmousedown = setVideoTooltipMousedown.bind(that);
+						label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 64 64" style="fill: rgb(44, 45, 46);"><path d="M42.4472008,36.1054993l-16-8c-0.3105011-0.1542988-0.6787014-0.1396999-0.9726009,0.0439014 C25.1795998,28.3320007,25,28.6532993,25,29v16c0,0.3466988,0.1795998,0.6679993,0.4745998,0.8506012 C25.6347008,45.9501991,25.8173008,46,26,46c0.1532993,0,0.3055992-0.0351982,0.4472008-0.1054993l16-8 C42.7860985,37.7246017,43,37.3788986,43,37S42.7860985,36.2753983,42.4472008,36.1054993z M27,43.3818016V30.6182003 L39.7635994,37L27,43.3818016z" /><path d="M60,5h-56C1.7909007,5,0.0000008,6.7908001,0.0000008,9v46c0,2.2092018,1.7908999,4,3.9999998,4h56 c2.2090988,0,4-1.7907982,4-4V9C64,6.7908001,62.2090988,5,60,5z M62,9v8h-8.3283005l2.6790009-10H60 C61.1026993,7,62,7.8972001,62,9z M21.2804241,7l-2.6790009,10H9.6508007l2.6788998-10H21.2804241z M23.3507004,7h8.9297218 l-2.6789989,10h-8.9297237L23.3507004,7z M34.3507004,7h8.9297218l-2.678997,10h-8.9297256L34.3507004,7z M45.3507004,7h8.9297218 l-2.678997,10h-8.9297256L45.3507004,7z M4.0000005,7h6.2594237L7.5805006,17H2.0000007V9 C2.0000007,7.8972001,2.8972008,7,4.0000005,7z M60,57h-56c-1.1027997,0-1.9999998-0.8972015-1.9999998-2V19h60v36 C62,56.1027985,61.1026993,57,60,57z" /></svg>';
+						//label.textContent = '[V]';
+						return label;
+					})(label.cloneNode()));
+					// 수정 버튼 
+					that.elements.tooltip.video = document.createElement("div");
+					that.elements.tooltip.video.style.cssText = 'transition: all .05s ease-out; position: absolute; color: rgb(44, 45, 46); border-radius: 3px; display: none;';
+					fragment.appendChild(that.elements.tooltip.video);
 				}
 				if(that.settings.code === true) {
 					that.elements.command.wrap.appendChild(that.elements.command.insertCode = (function(label) {
@@ -1962,32 +2134,6 @@ FileReader: IE10 이상
 						//label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 511 511" style="fill: rgb(44, 45, 46);"><path d="M455.5,40h-400C24.897,40,0,64.897,0,95.5v320C0,446.103,24.897,471,55.5,471h400c30.603,0,55.5-24.897,55.5-55.5v-320 C511,64.897,486.103,40,455.5,40z M496,415.5c0,22.332-18.168,40.5-40.5,40.5h-400C33.168,456,15,437.832,15,415.5v-320 C15,73.168,33.168,55,55.5,55h400c22.332,0,40.5,18.168,40.5,40.5V415.5z" /><path d="M471.5,120h-432c-4.142,0-7.5,3.357-7.5,7.5s3.358,7.5,7.5,7.5h432c4.142,0,7.5-3.357,7.5-7.5S475.642,120,471.5,120z" /><path d="M55.5,95c1.98,0,3.91-0.8,5.3-2.2c1.4-1.39,2.2-3.32,2.2-5.3c0-1.971-0.8-3.91-2.2-5.3c-1.39-1.4-3.32-2.2-5.3-2.2 s-3.91,0.8-5.3,2.2c-1.4,1.39-2.2,3.329-2.2,5.3c0,1.979,0.8,3.91,2.2,5.3C51.59,94.2,53.52,95,55.5,95z" /><path d="M119.5,95c1.97,0,3.91-0.8,5.3-2.2c1.4-1.39,2.2-3.32,2.2-5.3c0-1.971-0.8-3.91-2.2-5.3c-1.39-1.4-3.33-2.2-5.3-2.2 c-1.98,0-3.91,0.8-5.3,2.2c-1.4,1.39-2.2,3.329-2.2,5.3c0,1.979,0.8,3.91,2.2,5.3C115.59,94.2,117.52,95,119.5,95z" /><path d="M87.5,95c1.98,0,3.91-0.8,5.3-2.2c1.4-1.39,2.2-3.32,2.2-5.3c0-1.971-0.8-3.91-2.2-5.3c-1.39-1.4-3.32-2.2-5.3-2.2 c-1.97,0-3.91,0.8-5.3,2.2c-1.4,1.39-2.2,3.329-2.2,5.3c0,1.979,0.8,3.91,2.2,5.3C83.59,94.2,85.53,95,87.5,95z" /><path d="M188.803,210.196c-2.929-2.928-7.678-2.928-10.606,0l-80,80c-2.929,2.93-2.929,7.678,0,10.607l80,80 c1.464,1.464,3.384,2.196,5.303,2.196s3.839-0.732,5.303-2.196c2.929-2.93,2.929-7.678,0-10.607L114.106,295.5l74.697-74.696 C191.732,217.874,191.732,213.126,188.803,210.196z" /><path d="M332.803,210.196c-2.929-2.928-7.678-2.928-10.606,0c-2.929,2.93-2.929,7.678,0,10.607l74.697,74.696l-74.697,74.696 c-2.929,2.93-2.929,7.678,0,10.607c1.464,1.464,3.384,2.196,5.303,2.196s3.839-0.732,5.303-2.196l80-80 c2.929-2.93,2.929-7.678,0-10.607L332.803,210.196z" /><path d="M290.063,200.451c-3.892-1.412-8.195,0.594-9.611,4.485l-64,176c-1.416,3.894,0.592,8.196,4.485,9.612 c0.846,0.308,1.711,0.453,2.563,0.453c3.064,0,5.941-1.893,7.049-4.938l64-176C295.964,206.17,293.956,201.867,290.063,200.451z" /></svg>';
 						label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 64 64" style="fill: rgb(44, 45, 46);"><path d="M39.0732994,41.3769989C39.2314987,41.7645988,39.6054993,42,40,42c0.1259995,0,0.2528992-0.0233994,0.3769989-0.0732002 l12-4.8790016C52.7509995,36.8955002,52.9960976,36.5331993,53,36.1299019 c0.0038986-0.4043007-0.2362785-0.7705002-0.607399-0.9287033l-12-5.1210995 c-0.5038795-0.2148991-1.0956993,0.0185013-1.3125,0.5273018c-0.2168007,0.5077991,0.0194969,1.0956993,0.527298,1.3125 l9.7919998,4.1786976l-9.7762985,3.9746017C39.1113014,40.2812004,38.8652,40.8652,39.0732994,41.3769989z" /><path d="M13.6231003,37.0477982l12,4.8790016C25.7471008,41.9766006,25.8740005,42,26,42 c0.3945007,0,0.7686005-0.2354012,0.9267998-0.6230011c0.2080002-0.5117989-0.0380783-1.0957985-0.549799-1.3037987 l-9.7763996-3.9746017l9.7919998-4.1786976c0.5077991-0.2168007,0.7441196-0.8047009,0.5272999-1.3125 c-0.217701-0.5088005-0.8095016-0.7431011-1.3125-0.5273018l-12,5.1210995 c-0.3711004,0.1582031-0.6113005,0.5244026-0.6073999,0.9287033 C13.0039005,36.5331993,13.2490005,36.8955002,13.6231003,37.0477982z" /><path d="M28.5937996,45.9141006C28.7255993,45.9726982,28.8633003,46,28.9990005,46 c0.3837986,0,0.7490997-0.2216988,0.9151001-0.5937996l8-18c0.2236214-0.5048008-0.0030022-1.0957012-0.5078011-1.3203011 c-0.5038986-0.2235985-1.094799,0.0049-1.3204002,0.5078011l-8,18 C27.8623009,45.0985985,28.0888996,45.6894989,28.5937996,45.9141006z" /><path d="M60,5h-56C1.7908008,5,0.0000008,6.7908001,0.0000008,9v5v2v39c0,2.2090988,1.7908,4,3.9999998,4h56 c2.209198,0,4-1.7909012,4-4V16v-2V9C64,6.7908001,62.209198,5,60,5z M62,55c0,1.1027985-0.8972015,2-2,2h-56 c-1.1027997,0-1.9999998-0.8972015-1.9999998-2V16h60V55z M62,14h-60V9c0-1.1027999,0.8972001-2,1.9999998-2h56 c1.1027985,0,2,0.8972001,2,2V14z" /><path d="M6.0000005,9c-0.9649997,0-1.75,0.7849998-1.75,1.75c0,0.9649,0.7850003,1.75,1.75,1.75s1.75-0.7851,1.75-1.75 C7.7500005,9.7849998,6.9650006,9,6.0000005,9z M6.0000005,11.5c-0.4141998,0-0.75-0.3358002-0.75-0.75s0.3358002-0.75,0.75-0.75 c0.4142003,0,0.75,0.3358002,0.75,0.75S6.4142008,11.5,6.0000005,11.5z" /><path d="M16,9c-0.9649992,0-1.75,0.7849998-1.75,1.75c0,0.9649,0.7850008,1.75,1.75,1.75s1.75-0.7851,1.75-1.75 C17.75,9.7849998,16.9650002,9,16,9z M16,11.5c-0.4141998,0-0.75-0.3358002-0.75-0.75S15.5858002,10,16,10 s0.75,0.3358002,0.75,0.75S16.4141998,11.5,16,11.5z" /><path d="M11.000001,9c-0.9650002,0-1.75,0.7849998-1.75,1.75c0,0.9649,0.7849998,1.75,1.75,1.75s1.75-0.7851,1.75-1.75 C12.750001,9.7849998,11.9650002,9,11.000001,9z M11.000001,11.5c-0.4142008,0-0.75-0.3358002-0.75-0.75s0.3357992-0.75,0.75-0.75 c0.4141998,0,0.75,0.3358002,0.75,0.75S11.4142008,11.5,11.000001,11.5z" /></svg>';
 						//label.textContent = '</>';
-						return label;
-					})(label.cloneNode()));
-				}
-				if(that.settings.video === true) {
-					that.elements.command.wrap.appendChild(that.elements.command.insertVideo = (function(label) {
-						label['storage'] = {
-							'command': 'insertVideo'
-						};
-						label.onmousedown = setVideoTooltipMousedown.bind(that);
-						label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" x="0px" y="0px" width="22" height="22" viewBox="0 0 64 64" style="fill: rgb(44, 45, 46);"><path d="M42.4472008,36.1054993l-16-8c-0.3105011-0.1542988-0.6787014-0.1396999-0.9726009,0.0439014 C25.1795998,28.3320007,25,28.6532993,25,29v16c0,0.3466988,0.1795998,0.6679993,0.4745998,0.8506012 C25.6347008,45.9501991,25.8173008,46,26,46c0.1532993,0,0.3055992-0.0351982,0.4472008-0.1054993l16-8 C42.7860985,37.7246017,43,37.3788986,43,37S42.7860985,36.2753983,42.4472008,36.1054993z M27,43.3818016V30.6182003 L39.7635994,37L27,43.3818016z" /><path d="M60,5h-56C1.7909007,5,0.0000008,6.7908001,0.0000008,9v46c0,2.2092018,1.7908999,4,3.9999998,4h56 c2.2090988,0,4-1.7907982,4-4V9C64,6.7908001,62.2090988,5,60,5z M62,9v8h-8.3283005l2.6790009-10H60 C61.1026993,7,62,7.8972001,62,9z M21.2804241,7l-2.6790009,10H9.6508007l2.6788998-10H21.2804241z M23.3507004,7h8.9297218 l-2.6789989,10h-8.9297237L23.3507004,7z M34.3507004,7h8.9297218l-2.678997,10h-8.9297256L34.3507004,7z M45.3507004,7h8.9297218 l-2.678997,10h-8.9297256L45.3507004,7z M4.0000005,7h6.2594237L7.5805006,17H2.0000007V9 C2.0000007,7.8972001,2.8972008,7,4.0000005,7z M60,57h-56c-1.1027997,0-1.9999998-0.8972015-1.9999998-2V19h60v36 C62,56.1027985,61.1026993,57,60,57z" /></svg>';
-						//label.textContent = '[V]';
-						return label;
-					})(label.cloneNode()));
-				}
-				if(that.settings.swipe === true) {
-					that.elements.command.wrap.appendChild(that.elements.command.insertSwipe = (function(label) {
-						/*
-						-
-						data-type="swipe" data-edit="{슬라이드에 들어가는 이미지 리스트 등의 정보}"
-						*/
-						label['storage'] = {
-							'command': 'insertSwipe'
-						};
-						label.onmousedown = setSwipeTooltipMousedown.bind(that);
-						label.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="22" height="22" viewBox="0 0 443.284 443.284" style="fill: rgb(44, 45, 46);" xml:space="preserve"><path d="M439.623,166.017c-4.867-11.751-13.981-20.888-25.662-25.726L386.75,129.02c-3.823-1.587-8.214,0.23-9.799,4.059c-1.586,3.827,0.231,8.214,4.059,9.799l27.211,11.271c7.979,3.306,14.21,9.559,17.544,17.607c3.334,8.05,3.35,16.877,0.045,24.856L356.926,362.91c-6.858,16.557-25.906,24.445-42.464,17.59l-41.145-17.043c-3.823-1.587-8.214,0.233-9.799,4.059c-1.586,3.827,0.231,8.214,4.059,9.799l41.145,17.043c5.822,2.412,11.947,3.617,18.084,3.617c6.174,0,12.359-1.221,18.253-3.662c11.75-4.867,20.887-13.981,25.725-25.662l68.883-166.298C444.506,190.672,444.49,177.767,439.623,166.017z"/><path d="M381.009,219.843c0.938,0.39,1.91,0.573,2.867,0.573c2.943,0,5.735-1.744,6.932-4.632l11.904-28.739c0.762-1.838,0.762-3.902,0-5.74c-0.761-1.838-2.221-3.298-4.059-4.059l-11.904-4.931c-3.823-1.589-8.215,0.232-9.799,4.059c-1.586,3.827,0.231,8.214,4.059,9.799l4.976,2.062l-9.034,21.81C375.365,213.871,377.182,218.258,381.009,219.843z"/><path d="M269.345,347.886h44.534c26.191,0,47.5-21.309,47.5-47.5v-180c0-26.191-21.309-47.5-47.5-47.5h-29.452c-4.143,0-7.5,3.357-7.5,7.5s3.357,7.5,7.5,7.5h29.452c17.921,0,32.5,14.579,32.5,32.5v180c0,17.921-14.579,32.5-32.5,32.5h-44.534c-4.143,0-7.5,3.357-7.5,7.5S265.203,347.886,269.345,347.886z"/><path d="M313.881,158.99c4.143,0,7.5-3.357,7.5-7.5v-31.105c0-4.143-3.357-7.5-7.5-7.5h-12.885c-4.143,0-7.5,3.357-7.5,7.5s3.357,7.5,7.5,7.5h5.385v23.605C306.381,155.633,309.738,158.99,313.881,158.99z"/><path d="M326.567,240.915L257.683,74.617c-7.374-17.804-24.643-29.308-43.993-29.308c-6.222,0-12.301,1.212-18.067,3.601L29.324,117.794c-11.681,4.838-20.795,13.974-25.662,25.725s-4.883,24.655-0.044,36.336l68.883,166.299c7.374,17.803,24.643,29.307,43.994,29.307c6.222,0,12.3-1.211,18.067-3.601l166.298-68.883C325.058,292.954,336.59,265.113,326.567,240.915z M128.822,358.002c-3.938,1.631-8.086,2.458-12.327,2.458c-13.263,0-25.092-7.869-30.137-20.047L17.475,174.114c-3.305-7.979-3.289-16.807,0.045-24.855s9.564-14.302,17.544-17.607l166.299-68.884c3.938-1.631,8.085-2.458,12.327-2.458c13.262,0,25.091,7.869,30.136,20.048l68.884,166.298c3.305,7.979,3.289,16.807-0.046,24.855c-3.334,8.05-9.564,14.303-17.544,17.608L128.822,358.002z"/><path d="M220.729,89.924c-0.761-1.838-2.221-3.298-4.059-4.059c-1.838-0.762-3.902-0.762-5.74,0L44.632,154.748c-1.838,0.761-3.298,2.221-4.059,4.059c-0.762,1.838-0.762,3.902,0,5.74l49.749,120.104c1.196,2.889,3.988,4.632,6.932,4.632c0.956,0,1.929-0.185,2.867-0.573l166.298-68.883c3.827-1.585,5.645-5.972,4.059-9.799L220.729,89.924z M101.309,271.983L57.3,165.736l152.441-63.143L253.75,208.84L101.309,271.983z"/></svg>';
-						//label.textContent = '[S]';
 						return label;
 					})(label.cloneNode()));
 				}
@@ -2036,49 +2182,54 @@ FileReader: IE10 이상
 			var parameter = parameter || {};
 			var toggle = parameter['toggle'];
 
-			var clientRectBounds;
-			var clientRectBounds_editor;
-			var tooltip_width, tooltip_height;
+			var rect = {
+				'node': {},
+				'editor': {}
+			};
+			var tooltip = {
+				'width': 0,
+				'height': 0
+			};
 			var top = 0, left = 0;
 			var height = 0;
 			var gap = 10; // 커서가 위치한 라인과의 거리
 
 			if(!bundle.isCollapsed() || typeof bundle.selection !== 'object' || toggle === 'hide') {
 				// 숨기기
-				that.elements.tooltip.style.display = "none";
+				that.elements.tooltip.default.style.display = "none";
 			}else if(bundle.isSelection()) {
-				that.elements.tooltip.style.display = "block"; // 렌더링 상태에서 offsetWidth, offsetHeight 측정
+				that.elements.tooltip.default.style.display = "block"; // 렌더링 상태에서 offsetWidth, offsetHeight 측정
 				// 툴팁 크기
-				tooltip_width = that.elements.tooltip.offsetWidth;
-				tooltip_height = that.elements.tooltip.offsetHeight;
+				tooltip.width = that.elements.tooltip.default.offsetWidth;
+				tooltip.height = that.elements.tooltip.default.offsetHeight;
 				// left
-				clientRectBounds_editor = that.elements.target.getBoundingClientRect();
-				left = (clientRectBounds_editor.left - tooltip_width) - gap;
+				rect.editor = that.elements.target.getBoundingClientRect();
+				left = (rect.editor.left - tooltip.width) - gap;
 				if(left < 0) {
-					left = clientRectBounds_editor.left + gap; // 툴팁 에디터 안쪽에 출력되도록 변경
+					left = rect.editor.left + gap; // 툴팁 에디터 안쪽에 출력되도록 변경
 				}
 				left += window.pageXOffset; // scroll
 				// top
 				// #text node 는 getBoundingClientRect 없음
 				if(bundle.selection.anchorNode && 'getBoundingClientRect' in bundle.selection.anchorNode) {
-					clientRectBounds = bundle.selection.anchorNode.getBoundingClientRect();
+					rect.node = bundle.selection.anchorNode.getBoundingClientRect();
 				}else if(bundle.selection.focusNode && 'getBoundingClientRect' in bundle.selection.focusNode) {
-					clientRectBounds = bundle.selection.focusNode.getBoundingClientRect();
+					rect.node = bundle.selection.focusNode.getBoundingClientRect();
 				}else {
-					clientRectBounds = bundle.selection.getRangeAt(0).getBoundingClientRect();
+					rect.node = bundle.selection.getRangeAt(0).getBoundingClientRect();
 				}
-				if(clientRectBounds.top > 0) {
-					height = clientRectBounds.height || clientRectBounds.bottom - clientRectBounds.top;
-					if(tooltip_height > height) {
-						top = clientRectBounds.top - (tooltip_height - height);
+				if(rect.node.top > 0) {
+					height = rect.node.height || rect.node.bottom - rect.node.top;
+					if(tooltip.height > height) {
+						top = rect.node.top - (tooltip.height - height);
 					}else {
-						top = clientRectBounds.top + (height - tooltip_height);
+						top = rect.node.top + (height - tooltip.height);
 					}
 				}
 				top += window.pageYOffset; // scroll
 				//
-				that.elements.tooltip.style.top = top + "px";
-				that.elements.tooltip.style.left = left + "px";
+				that.elements.tooltip.default.style.top = top + "px";
+				that.elements.tooltip.default.style.left = left + "px";
 			}
 		};
 		// 이미지 수정 에디터 툴바 위치 설정 (이미지를 선택했을 때)
@@ -2087,6 +2238,7 @@ FileReader: IE10 이상
 
 			var parameter = parameter || {};
 			var toggle = parameter['toggle'];
+			var nodeInfo = parameter['nodeInfo'];
 
 			// 선택된 이미지 위쪽에 위치 
 
@@ -2097,43 +2249,110 @@ FileReader: IE10 이상
 
 			var parameter = parameter || {};
 			var toggle = parameter['toggle'];
+			var nodeInfo = parameter['nodeInfo'];
+
+			var rect = {
+				'target': {},
+				'editor': {}
+			};
+			var tooltip = {
+				'width': 0,
+				'height': 0
+			};
+			var top = 0, left = 0;
+			var gap = 10;
 
 			// 선택된 스와이프 위쪽에 위치 
+			if(!bundle.isCollapsed() || toggle === 'hide') {
+				// 숨기기
+				that.elements.tooltip.swipe.style.display = "none";
+			}else if(bundle.isSelection()) {
+				that.elements.tooltip.swipe.style.display = "block"; // 렌더링 상태에서 offsetWidth, offsetHeight 측정
+				// 툴팁 크기
+				tooltip.width = that.elements.tooltip.swipe.offsetWidth;
+				tooltip.height = that.elements.tooltip.swipe.offsetHeight;
+				// left / top
+				rect.target = nodeInfo.node.getBoundingClientRect();
+				top = rect.target.top + window.pageYOffset; // scroll
+				rect.editor = that.elements.target.getBoundingClientRect();
+				left = (rect.editor.left - tooltip.width) - gap;
+				if(left < 0) {
+					left = rect.editor.left + gap; // 툴팁 에디터 안쪽에 출력되도록 변경
+				}
+				left += window.pageXOffset; // scroll
+				//
+				that.elements.tooltip.swipe.style.top = top + 'px';
+				that.elements.tooltip.swipe.style.left = left + 'px';
+				//
+				that.elements.command.modifySwipe.onmousedown = function() {
+					setSwipeSetupLayer.call(that, JSON.parse(nodeInfo.value));
+				};
+			}
+		};
+		// 비디오 수정 에디터 툴바 위치 설정 (비디오를 선택했을 때)
+		EditMulti.prototype.setVideoModifyTooltipMenuPostion = function(parameter) {
+			var that = this;
+
+			var parameter = parameter || {};
+			var toggle = parameter['toggle'];
+			var nodeInfo = parameter['nodeInfo'];
+
+			// 선택된 비디오 위쪽에 위치 
 
 		};
 		// 툴팁 보이기
-		EditMulti.prototype.setTooltipToggle = function() {
+		EditMulti.prototype.setTooltipToggle = function(parameter) {
 			var that = this;
-			var type = '';
+
+			var parameter = parameter || {};
+			var node = parameter['node'];
+			var nodeInfo = parameter['nodeInfo'];
+			
 			var setAllHide = function() {
 				that.setImageModifyTooltipMenuPostion({'toggle': 'hide'}); // 이미지 수정 관련 툴바
 				that.setSwipeModifyTooltipMenuPostion({'toggle': 'hide'}); // 스와이프 수정 관련 툴바
-				that.setMultiTooltipMenuPostion({'toggle': 'hide'});
+				that.setVideoModifyTooltipMenuPostion({'toggle': 'hide'}); // 비디오 수정 관련 툴바
+				that.setMultiTooltipMenuPostion({'toggle': 'hide'}); // 다양한 에디터 넣을 수 있는 기본 툴바 
 			};
 
 			// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
 			bundle.setSelection();
-			if(bundle.isSelection() && that.elements.target.contains(bundle.selection.anchorNode)/* && bundle.selection.focusNode.nodeType === 1*/) {
-				/*
-				console.log('----------');
+			if(!node || typeof node !== 'object' || !node.nodeType) {
+				if(nodeInfo && typeof nodeInfo === 'object' && nodeInfo.node) {
+					node = nodeInfo.node;
+				}else {
+					node = bundle.selection.anchorNode; // 선택된 글자의 시작노드
+					//node = bundle.selection.focusNode; // 현재 포커스가 위치한 끝노드
+				}
+			}
+			if(node && (!nodeInfo || typeof nodeInfo !== 'object')) {
+				nodeInfo = bundle.getNodeInfo(node);
+			}
+			setAllHide();
+			if(bundle.isSelection() && that.elements.target.contains(node)/* && node.nodeType === 1*/) {
+				console.log('node', node);
+				console.log('nodeInfo', nodeInfo);
+
+				/*console.log('----------');
 				console.dir(bundle.selection);
 				// 시작노드
+				console.log('anchorNode', bundle.selection.anchorNode);
 				console.log('anchorNode.nodeName: ' + bundle.selection.anchorNode.nodeName);
 				console.log('anchorNode.nodeValue: ' + bundle.selection.anchorNode.nodeValue);
 				console.log('anchorNode.nodeType: ' + bundle.selection.anchorNode.nodeType);
 				// 끝노드
+				console.log('focusNode', bundle.selection.focusNode);
 				console.log('focusNode.nodeName: ' + bundle.selection.focusNode.nodeName);
 				console.log('focusNode.nodeValue: ' + bundle.selection.focusNode.nodeValue);
-				console.log('focusNode.nodeType: ' + bundle.selection.focusNode.nodeType);
-				*/
-
+				console.log('focusNode.nodeType: ' + bundle.selection.focusNode.nodeType);*/
+				
 				// 현재노드 상위 검색
 				if(bundle.getParent( 
-					bundle.selection.anchorNode,
+					node,
 					that.elements.target,
 					function(node) {
 						// 툴팁이 보이지 않아야하는 부분 설정
-						if(/code|pre|figcaption|figure/.test(node.nodeName.toLowerCase())) {
+						if(nodeInfo.edit || /code|pre|figcaption|figure/.test(nodeInfo.name)) {
 							return true;
 						}
 					},
@@ -2141,26 +2360,25 @@ FileReader: IE10 이상
 						return result;
 					}
 				) === true) {
-					// 코드, 이미지 캡션 등 툴팁이 보이지 않아야 하는 부분
-					setAllHide();
-				}else if(/img/.test(bundle.selection.focusNode.nodeName.toLowerCase())) {
-					// 이미지 수정 
-					that.setImageModifyTooltipMenuPostion({'toggle': 'show'}); // 이미지 수정 관련 툴바
-					that.setMultiTooltipMenuPostion({'toggle': 'hide'});
+					// 전문 에디터 (이미지/스와이프/비디오 등 노출)
+					if(nodeInfo.edit === 'image' || /img/.test(nodeInfo.name) || /img/.test(bundle.selection.anchorNode.nodeName.toLowerCase()) || /img/.test(bundle.selection.focusNode.nodeName.toLowerCase())) {
+						// 이미지 수정
+						that.setImageModifyTooltipMenuPostion({'toggle': 'show', 'nodeInfo': nodeInfo});
+					}else {
+						switch(nodeInfo.edit) {
+							case 'swipe':
+								console.log('swipe 에디터 열기!!!');
+								that.setSwipeModifyTooltipMenuPostion({'toggle': 'show', 'nodeInfo': nodeInfo});
+								break;
+							case 'video':
+								that.setVideoModifyTooltipMenuPostion({'toggle': 'show', 'nodeInfo': nodeInfo});
+								break;
+						}
+					}
 				}else {
-					//type = typeof bundle.selection.focusNode.storage === 'object' ? bundle.selection.focusNode.storage.type :  bundle.selection.focusNode.getAttribute('data-type');
-					//if(type === 'swipe') {
-						// 스와이프 수정
-
-					//}else {
-						// 툴팁 보이기 
-						that.setImageModifyTooltipMenuPostion({'toggle': 'hide'}); // 이미지 수정 관련 툴바
-						that.setMultiTooltipMenuPostion();
-					//}
+					// 기본 툴팁
+					that.setMultiTooltipMenuPostion();
 				}
-			}else {
-				// 텍스트 수정 작업중에는 모두 숨김처리 
-				setAllHide();
 			}
 		};
 		// 에디터에 데이터 넣기
@@ -2291,80 +2509,69 @@ FileReader: IE10 이상
 		};
 		EditMulti.prototype.on = function() {
 			var that = this;
-
-			// reset
-			that.off();
-			
-			// contentEditable
-			//console.log(that.elements.target);
-			//console.log(that.elements.target.contentEditable);
-			//console.log(that.elements.target.isContentEditable);
-			if(!that.elements.target.isContentEditable) {
-				that.elements.target.contentEditable = true; // 해당 element 내부 수정가능하도록 설정
-			}
-
-			// 마우스 이벤트
-			$(document).on(env.event.down + '.EVENT_MOUSEDOWN_MULTIEDIT', function(e) {
+			var setMouseEvent = function(e) {
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 				var self = event && event.currentTarget; // event listener element
 				var target = event && (event.target || event.srcElement); // event 가 발생한 element
 
-				//console.log('mousedown');
-				//console.log(target);
+				var nodeInfo = {};
+				console.log('event.type', event.type);
 
 				bundle.setSelection();
 				if(that.elements.target.contains(target)) {
 					// 현재노드 상위 검색
-					bundle.getParent( 
+					nodeInfo = bundle.getParent( 
 						target,
 						that.elements.target,
 						function(node) {
+							var result = false;
+
+							//console.log('up', node);
+							nodeInfo = bundle.getNodeInfo(node);
+
 							// 해당노드 확인 (line, img, figure 등)
-							if(typeof node.storage === 'object' && node.storage.type) {
-								switch(node.storage.type.toLowerCase()) {
-									case 'line':
-										// 기본 이벤트 중지
-										event.preventDefault();
-										// 포커스(커서) 이동
-										bundle.setCusor(node.nextSibling);
-										break;
-								}
+							switch(nodeInfo.edit) {
+								case 'opengraph':
+
+									break;
+								case 'image':
+
+									break;
+								case 'code':
+
+									break;
+								case 'swipe':
+									console.log('swipe!', node);
+									node.focus({preventScroll: true});
+									result = nodeInfo;
+									break;
+								case 'video':
+
+									break;
+								case 'line':
+									// 기본 이벤트 중지
+									event.preventDefault();
+									// 포커스(커서) 이동
+									bundle.setCusor(node.nextSibling);
+									result = bundle.getNodeInfo(node.nextSibling);
+									break;
 							}
+
+							return result;
 						},
 						function(node, result) {
-							return node;
+							return result;
 						}
 					);
 				}
-				that.setTooltipToggle();			
-			});
-			$(document).on(env.event.up + '.EVENT_MOUSEUP_MULTIEDIT', function(e) {
+				that.setTooltipToggle({'nodeInfo': nodeInfo});
+			};
+			var setKeyboardEvent = function(e) {
 				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 				var self = event && event.currentTarget; // event listener element
 				var target = event && (event.target || event.srcElement); // event 가 발생한 element
 
-				//console.log('mouseup');
-				//console.log(target);
-
-				bundle.setSelection();
-				that.setTooltipToggle();
-			});
-
-			// 이미지 선택 (이미지 에디터) - 이벤트 델리게이션 방식
-			/*$(document).on('click.EVENT_CLICK_MULTIEDIT', function(e) {
-				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				var self = event && event.currentTarget; // event listener element
-				var target = event && (event.target || event.srcElement); // event 가 발생한 element
-				
-			});*/
-			
-			// 키보드 이벤트
-			$(that.elements.target).on('keydown.EVENT_KEYDOWN_MULTIEDIT', function(e) {
-				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				var self = event && event.currentTarget; // event listener element
-				var target = event && (event.target || event.srcElement); // event 가 발생한 element
-
-				//console.log('keydown');
+				console.log('event.type', event.type);
 				//console.log(bundle.selection.anchorNode);
 
 				// getSelection 선택된 node
@@ -2373,115 +2580,145 @@ FileReader: IE10 이상
 					switch(event.keyCode) {
 						// keyCode 13: enter
 						case 13: 
-							// 현재노드 상위 검색
-							bundle.getParent( 
-								bundle.selection.anchorNode,
-								that.elements.target,
-								function(node) {
-									switch(node.nodeName.toLowerCase()) {
-										case 'figure':
-											// 기본 이벤트 중지
-											event.preventDefault();
-											break;
-										// 한개의 실행코드에 case 문을 2개 이상 여러개 줄 경우 여러번 중복 실행될 수 있다. (node 상위검색 반복문 때문)
-										case 'code':
-										//case 'pre':
-											// 기본 이벤트 중지
-											event.preventDefault();
-											(function() {
-												var fragment, line;
-												var range;
+							if(event.type === 'keydown') {
+								// 현재노드 상위 검색
+								bundle.getParent( 
+									bundle.selection.anchorNode,
+									that.elements.target,
+									function(node) {
+										var nodeInfo = bundle.getNodeInfo(node);
+										switch(nodeInfo.name) {
+											case 'figure':
+												// 기본 이벤트 중지
+												event.preventDefault();
+												break;
+											// 한개의 실행코드에 case 문을 2개 이상 여러개 줄 경우 여러번 중복 실행될 수 있다. (node 상위검색 반복문 때문)
+											case 'code':
+											//case 'pre':
+												// 기본 이벤트 중지
+												event.preventDefault();
+												(function() {
+													var fragment, line;
+													var range;
 
-												// 1. add a new line
-												// 개행문자: \r(캐럿이 그 줄 맨 앞으로), \n(캐럿이 다음 줄)
-												fragment = document.createDocumentFragment();
-												fragment.appendChild(document.createTextNode('\r'));
-												line = document.createTextNode('\n');
-												fragment.appendChild(line);
+													// 1. add a new line
+													// 개행문자: \r(캐럿이 그 줄 맨 앞으로), \n(캐럿이 다음 줄)
+													fragment = document.createDocumentFragment();
+													fragment.appendChild(document.createTextNode('\r'));
+													line = document.createTextNode('\n');
+													fragment.appendChild(line);
 
-												// 2. make the br replace selection
-												range = bundle.selection.getRangeAt(0);
-												range.deleteContents();
-												range.insertNode(fragment);
+													// 2. make the br replace selection
+													range = bundle.selection.getRangeAt(0);
+													range.deleteContents();
+													range.insertNode(fragment);
+													
+													// 3. create a new range
+													range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
+													//range.setStart(line, 0);
+													//range.setEnd(line, 0);
+													range.setStartAfter(line);
+													range.collapse(true);
+
+													// 4. make the cursor there
+													bundle.selection.removeAllRanges();
+													bundle.selection.addRange(range);
+												})();
+												break;
+											default:
 												
-												// 3. create a new range
-												range = document.createRange(); // 크로스 브라우저 대응 작업해야 한다.
-												//range.setStart(line, 0);
-												//range.setEnd(line, 0);
-												range.setStartAfter(line);
-												range.collapse(true);
-
-												// 4. make the cursor there
-												bundle.selection.removeAllRanges();
-												bundle.selection.addRange(range);
-											})();
-											break;
-										default:
-											
-											break;
+												break;
+										}
+									},
+									function(node, result) {
+										return node;
 									}
-								},
-								function(node, result) {
-									return node;
-								}
-							);
+								);
+							}else if(event.type === 'keyup') {
+								// 현재노드 상위 검색
+								bundle.getParent( 
+									bundle.selection.anchorNode,
+									that.elements.target,
+									function(node) {
+										var nodeInfo = bundle.getNodeInfo(node);
+										switch(nodeInfo.name) {
+											case 'figure':
+												// 기본 이벤트 중지
+												//event.preventDefault();
+
+												break;
+											default:
+												
+												break;
+										}
+									},
+									function(node, result) {
+										return node;
+									}
+								);
+							}
 							break;
 
 						// keyCode 9: tab
 						case 9:
-							// 현재노드 상위 검색
-							bundle.getParent( 
-								bundle.selection.anchorNode,
-								that.elements.target,
-								function(node) {
-									switch(node.nodeName.toLowerCase()) {
-										// 한개의 실행코드에 case 문을 2개 이상 여러개 줄 경우 여러번 중복 실행될 수 있다. (node 상위검색 반복문 때문)
-										case 'code':
-										//case 'pre':
-											// 기본 이벤트 중지
-											event.preventDefault();
-											//document.execCommand('indent', false, null); // 들여쓰기
-											(function() {
-												var tab;
-												var	range;									
+							if(event.type === 'keydown') {
+								// 현재노드 상위 검색
+								bundle.getParent( 
+									bundle.selection.anchorNode,
+									that.elements.target,
+									function(node) {
+										var nodeInfo = bundle.getNodeInfo(node);
+										switch(nodeInfo.name) {
+											// 한개의 실행코드에 case 문을 2개 이상 여러개 줄 경우 여러번 중복 실행될 수 있다. (node 상위검색 반복문 때문)
+											case 'code':
+											//case 'pre':
+												// 기본 이벤트 중지
+												event.preventDefault();
+												//document.execCommand('indent', false, null); // 들여쓰기
+												(function() {
+													var tab;
+													var	range;									
 
-												tab = document.createTextNode("\u0009"); // \u0009: tap
-												//tab = document.createTextNode("\u00a0\u00a0\u00a0\u00a0"); // \u00a0: space
+													tab = document.createTextNode("\u0009"); // \u0009: tap
+													//tab = document.createTextNode("\u00a0\u00a0\u00a0\u00a0"); // \u00a0: space
+													
+													// 선택위치에 삽입
+													range = bundle.selection.getRangeAt(0);
+													range.insertNode(tab);
+													range.setStartAfter(tab);
+													range.setEndAfter(tab); 
+
+													bundle.selection.removeAllRanges();
+													bundle.selection.addRange(range);
+												})();
+												break;
+											default:
 												
-												// 선택위치에 삽입
-												range = bundle.selection.getRangeAt(0);
-												range.insertNode(tab);
-												range.setStartAfter(tab);
-												range.setEndAfter(tab); 
-
-												bundle.selection.removeAllRanges();
-												bundle.selection.addRange(range);
-											})();
-											break;
-										default:
-											
-											break;
+												break;
+										}
+									},
+									function(node, result) {
+										return node;
 									}
-								},
-								function(node, result) {
-									return node;
-								}
-							);
+								);
+							}else if(event.type === 'keyup') {
+								
+							}
 							break;
 
 						// keyCode 8: backspace
 						case 8:
-							// 현재노드 상위 검색
-							bundle.getParent( 
-								bundle.selection.anchorNode,
-								that.elements.target,
-								function(node) {
-									if(typeof node.storage === 'object' && node.storage.type) {
-										/*switch(node.storage.type.toLowerCase()) {
-											
+							if(event.type === 'keydown') {
+								// 현재노드 상위 검색
+								bundle.getParent( 
+									bundle.selection.anchorNode,
+									that.elements.target,
+									function(node) {
+										var nodeInfo = bundle.getNodeInfo(node);
+										/*switch(nodeInfo.edit) {
+												
 										}*/
-									}else {
-										switch(node.nodeName.toLowerCase()) {
+										switch(nodeInfo.name) {
 											case 'code':
 											case 'figcaption':
 												(function() {
@@ -2508,61 +2745,20 @@ FileReader: IE10 이상
 												
 												break;
 										}
-									}	
-								},
-								function(node, result) {
-									return node;
-								}
-							);
-							break;
-					}
-				}
-			});
-			$(that.elements.target).on('keyup.EVENT_KEYUP_MULTIEDIT', function(e) {
-				var event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				var self = event && event.currentTarget; // event listener element
-				var target = event && (event.target || event.srcElement); // event 가 발생한 element
-
-				//console.log('keyup');
-				//console.log(bundle.selection.anchorNode);
-
-				// getSelection 선택된 node
-				bundle.setSelection();
-				if(bundle.isSelection()) {
-					switch(event.keyCode) {
-						// keyCode 13: enter
-						case 13: 
-							// 현재노드 상위 검색
-							bundle.getParent( 
-								bundle.selection.anchorNode,
-								that.elements.target,
-								function(node) {
-									switch(node.nodeName.toLowerCase()) {
-										case 'figure':
-											// 기본 이벤트 중지
-											//event.preventDefault();
-
-											break;
-										default:
-											
-											break;
+									},
+									function(node, result) {
+										return node;
 									}
-								},
-								function(node, result) {
-									return node;
-								}
-							);
-							break;
-
-						// keyCode 8: backspace
-						case 8:
-							// 현재노드 상위 검색
-							bundle.getParent( 
-								bundle.selection.anchorNode,
-								that.elements.target,
-								function(node) {
-									if(typeof node.storage === 'object' && node.storage.type) {
-										switch(node.storage.type.toLowerCase()) {
+								);
+							}else if(event.type === 'keyup') {
+								// 현재노드 상위 검색
+								bundle.getParent( 
+									bundle.selection.anchorNode,
+									that.elements.target,
+									function(node) {
+										var nodeInfo = bundle.getNodeInfo(node);
+										// 해당노드 확인 (line, img, figure 등)
+										switch(nodeInfo.edit) {
 											case 'code':
 												(function() {
 													var pre = node.querySelector('pre');
@@ -2576,12 +2772,12 @@ FileReader: IE10 이상
 												})();
 												break;
 										}
+									},
+									function(node, result) {
+										return node;
 									}
-								},
-								function(node, result) {
-									return node;
-								}
-							);
+								);
+							}
 							break;
 
 						// keyCode: 37(left), 38(up)
@@ -2590,14 +2786,15 @@ FileReader: IE10 이상
 						// keyCode: 39(right), 40(down)
 						case 39:
 						case 40:
-							// 현재노드 상위 검색
-							bundle.getParent( 
-								bundle.selection.anchorNode,
-								that.elements.target,
-								function(node) {
-									// 해당노드 확인 (line, img, figure 등)
-									if(typeof node.storage === 'object' && node.storage.type) {
-										switch(node.storage.type.toLowerCase()) {
+							if(event.type === 'keyup') {
+								// 현재노드 상위 검색
+								bundle.getParent( 
+									bundle.selection.anchorNode,
+									that.elements.target,
+									function(node) {
+										var nodeInfo = bundle.getNodeInfo(node);
+										// 해당노드 확인 (line, img, figure 등)
+										switch(nodeInfo.edit) {
 											case 'line':
 												// 포커스(커서) 이동
 												if(event.keyCode === 37 || event.keyCode === 38) {
@@ -2607,17 +2804,36 @@ FileReader: IE10 이상
 												}
 												break;
 										}
+									},
+									function(node, result) {
+										return node;
 									}
-								},
-								function(node, result) {
-									return node;
-								}
-							);
+								);
+							}
 							break;
-					};
+					}
 					that.setTooltipToggle();
 				}
-			});
+			};
+
+			// reset
+			that.off();
+			
+			// contentEditable
+			//console.log(that.elements.target);
+			//console.log(that.elements.target.contentEditable);
+			//console.log(that.elements.target.isContentEditable);
+			if(!that.elements.target.isContentEditable) {
+				that.elements.target.contentEditable = true; // 해당 element 내부 수정가능하도록 설정
+			}
+
+			// 마우스 이벤트
+			$(document).on(env.event.down + '.EVENT_MOUSEDOWN_MULTIEDIT', setMouseEvent);
+			$(document).on(env.event.up + '.EVENT_MOUSEUP_MULTIEDIT', setMouseEvent);
+			
+			// 키보드 이벤트
+			$(that.elements.target).on('keydown.EVENT_KEYDOWN_MULTIEDIT', setKeyboardEvent);
+			$(that.elements.target).on('keyup.EVENT_KEYUP_MULTIEDIT', setKeyboardEvent);
 
 			// 커서 (focus)
 			$(that.elements.target).on('blur.EVENT_BLUR_MULTIEDIT', function(e) {
@@ -2691,7 +2907,7 @@ FileReader: IE10 이상
 		var fragment;
 		var a, div, p, comment;
 
-		if(typeof node === 'object' && node !== null && node.nodeType && (url && regexp.url.test(url) || bundle.isNodeCheck(node, 'url'))) {
+		if(node && typeof node === 'object' && node.nodeType && (url && regexp.url.test(url) || bundle.isNodeCheck(node, 'url'))) {
 			url = url || node.nodeValue;
 			//console.log('url: ' + url);
 
@@ -2728,9 +2944,10 @@ FileReader: IE10 이상
 				p = document.createElement("p");
 				fragment.appendChild(div);
 				fragment.appendChild(p);
-				div.setAttribute("data-type", "opengraph");
+				div.setAttribute("data-edit", "opengraph");
+				div.setAttribute("data-value", JSON.stringify({}));
 				div.storage = {
-					'type': 'opengraph'
+					'edit': 'opengraph'
 				};
 
 				// 빈공간, 하단영역 태그 내부 기본값 (크롬 등 일부 브라우저)
