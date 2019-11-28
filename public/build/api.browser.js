@@ -758,7 +758,7 @@ http://www.quirksmode.org/js/detect.html
 
 	// DOM prototype
 	DOM.fn = DOM.prototype = {
-		constructor: DOM, // constructor 를 Object 가 아닌 DOM 으로 변경 - instanceof 활용이 가능
+		constructor: DOM, // constructor 
 		// document ready
 		ready: (function() {
 			// readyState: IE8에서는 Only supports 'complete'
