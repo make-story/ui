@@ -1,7 +1,16 @@
+# Web Components
+Template / ShadowDOM / CustomElements / Module
+<http://makeapi.net/test/webcomponents.html>
+
+# PWA (Progressive Web App)
+Push / Service Worker / Web App Manifest / Background Sync
+<https://makeapi.net/test/pwa.html>
+
+----
 
 # UI 컴포넌트
 
-javascript
+JavaScript (Vanilla JS)
 
 ----
 
