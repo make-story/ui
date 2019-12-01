@@ -120,6 +120,9 @@ api.xhr({
 		if(typeof settings.dataType === 'string' && settings.dataType.toLowerCase() === 'jsonp') {
 			// 1.
 			// JSONP
+			// 이 방식은 <script> 태그가 동일 출처 정책의 제약을 받지 않는 특성을 이용
+			// JSONP 방식은 callback 파라미터로 넘어온 콜백 함수를 호출하면서 응답결과를 호출 인자로 전달하는 스크립트 코드를 만들어 클라이언트로 전송 (script 실행 코드, 함수)
+			// JSONP 요청은 GET 메소드만 이용할 수 있다
 			/*
 			XMLHttpRequest level2 사용하여 CORS(Cross Origin Resource Sharing) 가능하나
 			서버측 header 설정부분(Access-Control-Allow-Credentials 응답 헤더를 true로 설정, PHP예: header("Access-Control-Allow-Origin: http://foo.example");)도 있어 
@@ -162,13 +165,6 @@ api.xhr({
 			// 2.
 			// AJAX
 			// https://xhr.spec.whatwg.org/
-			/*
-			CORS를 사용하기 위해서 클라이언트와 서버는 몇 가지 추가 정보를 주고 받아야 한다. 
-			클라이언트는 CORS 요청을 위해 새로운 HTTP 헤더를 추가한다. 
-			서버는 클라이언트가 전송한 헤더를 확인해서 요청을 허용할지 말지를 결정한다. 
-			데이터에 사이드 이펙트를 일으킬 수 있는 HTTP 메소드를 사용할 때는 먼저 preflight 요청을 서버로 전송해서 
-			서버가 허용하는 메소드 목록을 HTTP OPTIONS 헤더로 획득한 다음에 실제 요청을 전송한다.			
-			*/
 			
 			// XMLHttpRequest 인스턴스
 			// https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
@@ -179,13 +175,16 @@ api.xhr({
 			instance = new XMLHttpRequest();
 			if(typeof instance.withCredentials === 'undefined') {
 				/*
-				표준 CORS는 기본적으로 요청을 보낼 때 쿠키를 전송하지 않는다. 쿠키를 요청에 포함하고 싶다면 XMLHttpRequest 객체의 withCredentials 프로퍼티 값을 true로 설정해준다. (instance.withCredentials = true;)
+				표준 CORS는 기본적으로 요청을 보낼 때 쿠키를 전송하지 않는다. 
+				쿠키를 요청에 포함하고 싶다면 XMLHttpRequest 객체의 withCredentials 프로퍼티 값을 true로 설정해준다. (instance.withCredentials = true;)
 				
-				XHR객체의 withCredentials 프로퍼티를 확인해서 이 프로퍼티가 없으면 CORS를 지원하지 않는 브라우저로 판단해서 XDomainRequest 객체가 있는지 확인한다. XDomainRequest 객체가 있으면 이를 이용해서 xhr 인스턴스를 만들어 돌려준다. (instance = new XDomainRequest();)
+				XHR객체의 withCredentials 프로퍼티를 확인해서 이 프로퍼티가 없으면 CORS를 지원하지 않는 브라우저로 판단해서 XDomainRequest 객체가 있는지 확인한다.  (IE)
+				XDomainRequest 객체가 있으면 이를 이용해서 xhr 인스턴스를 만들어 돌려준다. instance = new XDomainRequest();
 				한 가지 주의할 점이 있는데 XDomainRequest는 status 프로퍼티를 가지고 있지 않다. 따라서 서버 측 응답결과 코드를 확인할 수 있는 방법이 없다.
 				*/
 				return false;
 			}
+			// IE9 이하 버전은 HTML 스펙상의 CORS를 지원하지 않기 때문에 XDomainRequest 객체를 이용
 			/*if(global.XDomainRequest) { 
 				// IE8, IE9
 				// IE의 경우 XDomainRequest 객체를 사용 (cross-origin 기능만 제공)
