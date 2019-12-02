@@ -249,26 +249,29 @@
 		return rect;
 	};
 
-	function getElementPosition($element) {
-		var position = {};
-		position = $element.position();
-		position.right = position.left + $element.outerWidth();
-		position.bottom = position.top + $element.outerHeight();
-		return position;
-	}
+	// offset - Documet 기준 엘리먼트의 위치
 	function getElementOffset($element) {
-		var offset = {};
+		var offset = {}; // top, right, bottom, left
 		offset = $element.offset();
 		offset.right = offset.left + $element.outerWidth();
 		offset.bottom = offset.top + $element.outerHeight();
 		return offset;
 	}
 
+	// position - 부모(offsetParent)엘리먼트 기준 엘리먼트의 위치
+	function getElementPosition($element) {
+		var position = {}; // top, right, bottom, left
+		position = $element.position();
+		position.right = position.left + $element.outerWidth();
+		position.bottom = position.top + $element.outerHeight();
+		return position;
+	}
+
 	// 마커 툴팁 위치 
 	function setTooltipRect($marker, options) {
 		var $target = $(this);
 		var $image = $target.find(options.selectors.image);
-		var $mark = $target.find(options.selectors.mark);
+		var $mark = $marker.find(options.selectors.mark);
 		var $tooltip = $marker.find(options.selectors.tooltip);
 		var target = {};
 		var mark = {};
@@ -279,6 +282,7 @@
 			return false;
 		}
 
+		// mark, imgae 또는 target 정보
 		mark.width = $mark.width();
 		mark.height = $mark.height();
 		mark.offset = getElementOffset($mark);
@@ -296,8 +300,7 @@
 		}
 		//console.log('target', target);
 
-		// 툴팁
-		// position: 부모(offsetParent)엘리먼트를 기준, offset: Documet를 기준
+		// tooltip 정보
 		tooltip.width = Number($tooltip.outerWidth());
 		tooltip.height = Number($tooltip.outerHeight());
 		if(target.width < tooltip.width) {
@@ -317,13 +320,19 @@
 		//console.log('tooltip', tooltip);
 
 		// 툴팁이 이미지 밖으로 나가는지 확인	
-		//console.log('right', [target.offset.right, tooltip.offset.right].join('/'));
-		if(target.offset.right <= tooltip.offset.right) {
+		//console.log('offset right (target/tooltip)', [target.offset.right, tooltip.offset.right].join('/'));
+		//console.log('offset left (target/tooltip)', [target.offset.left, tooltip.offset.left].join('/'));
+		//console.log('position right (target/tooltip)', [target.position.right, tooltip.position.right].join('/'));
+		//console.log('position left (target/tooltip)', [target.position.left, tooltip.position.left].join('/'));
+		if(target.offset.right <= tooltip.offset.right) { // 오른쪽
 			left = tooltip.position.left + (target.offset.right-tooltip.offset.right);
 			$tooltip.css({'left': left, 'right': 'auto'});
+		}else if(tooltip.offset.left <= target.offset.left) { // 왼쪽
+			left = tooltip.position.left + (target.offset.left-tooltip.offset.left);
+			$tooltip.css({'left': left, 'right': 'auto'});
 		}
-		//console.log('bottom', [target.offset.bottom, tooltip.offset.bottom].join('/'));
-		if(target.offset.bottom <= tooltip.offset.bottom) {
+		//console.log('offset bottom (target/tooltip)', [target.offset.bottom, tooltip.offset.bottom].join('/'));
+		if(target.offset.bottom <= tooltip.offset.bottom) { // 하단
 			$tooltip.css({'bottom': $mark.outerHeight(), 'top': 'auto'});
 		}
 	}
@@ -333,10 +342,12 @@
 		var $target = $(this);
 		var $tooltip = $marker.find(options.selectors.tooltip);
 
+		// 유효성 검사 
 		if(options.isTooltipToggle === false || !$tooltip.length) {
 			return;
 		}
 
+		// show / hide
 		if(options.isTooltipVisibility !== true && $tooltip.is(':visible')) {
 			$tooltip.css('display', 'none');
 		}else if(options.isTooltipVisibility !== false && $tooltip.is(':hidden')) {
@@ -350,6 +361,7 @@
 			return false; 
 		}
 
+		// callback
 		if(typeof options.listeners.tooltipToggle === 'function') {
 			options.listeners.tooltipToggle.call($target, $tooltip, $tooltip.is(':visible'), options);
 		}
@@ -359,13 +371,20 @@
 	function setMarkerRemove($marker, options) {
 		var $target = $(this);
 
+		// 유효성 검사 
 		if(!$marker || typeof $marker !== 'object' || !$marker.length) {
 			return false;
 		}
+
+		// callback
 		if(typeof options.listeners.removeBefore === 'function') {
 			options.listeners.removeBefore.call($target, $marker, options);
 		}
+
+		// remove
 		$marker.remove();
+
+		// callback
 		if(typeof options.listeners.removeAfter === 'function') {
 			options.listeners.removeAfter.call($target, options);
 		}
@@ -399,7 +418,7 @@
 			
 		}*/
 
-		// 콜백 실행 
+		// callback
 		if(typeof options.listeners.submit === 'function') {
 			options.listeners.submit.call($target, data, options);
 		}
@@ -639,10 +658,13 @@
 				event.preventDefault();
 				event.stopPropagation();
 
-				rect = getMarkerRect.call($target, event, options); // 좌표 정보 구하기 
+				// 좌표 정보 구하기 
+				rect = getMarkerRect.call($target, event, options); 
 				if(!rect) {
 					return;
 				}
+
+				// element
 				fragment = setMarkerRender.call($target, rect, options);
 				//$marker = $(fragment.children[0]); // text node 제외 첫번째 (IE 에러)
 				$marker = $(fragment).children().first();
@@ -656,6 +678,8 @@
 					return;
 				}
 				$target.append(fragment);
+
+				// callback
 				if(typeof options.listeners.append === 'function') {
 					options.listeners.append.call($target, $marker, count, options);
 				}
@@ -721,7 +745,7 @@
 			mark: 'marker-mark',
 			tooltip: 'marker-tooltip'
 		},
-		// 콜백 
+		// callback 
 		listeners: {
 			initialize: null,
 			append: null,
