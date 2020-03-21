@@ -267,6 +267,19 @@ video.addEventListener('leavepictureinpicture', () => {
 			}
 			return ((current / max) * 100).toFixed(2);
 		},
+		// 동영상 비율 
+		getAspectRatio: function(width, height) { 
+			function gcd(a, b) {
+				return (b == 0) ? a : gcd(b, a % b);
+			}
+			var result = {};
+			result.width = width;
+			result.height = height;
+			result.gcd = gcd(width, height);
+			result.aspect = [width/result.gcd, height/result.gcd].join(':');
+			
+			return result;
+		},
 		// Element exists in an array
 		inArray: function(haystack, needle) {
 			return Array.prototype.indexOf && (haystack.indexOf(needle) !== -1);
@@ -2024,6 +2037,27 @@ video.addEventListener('leavepictureinpicture', () => {
 				}
 			}
 		},
+		// 시간기준 progress
+		// 플레이어 초기에서 타이머 인터벌 필요
+		/*setTimeProgress: function(startDate, endDate) {
+			// startDate: "20200313102500" 데이터 -> new Date()
+			// endDate: "20200313113500" 데이터 -> new Date()
+			var that = this;
+			var progress = that.elements.seek.progressPlayed;
+			var percent = 0;
+
+			// 시간기준 프로그래스바 
+			if(bundle.is.object(startDate) && bundle.is.object(endDate)) {
+				// 현재 시간 기준
+				percent = ((Number(new Date()) - startDate.getTime()) / (endDate.getTime() - startDate.getTime())) * 100;
+				that.progress(progress, percent);
+			}
+			
+			// 프로그래스바 종료
+			if(!bundle.is.number(percent) || 100 <= percent) {
+				// 타이머 인터벌 종료 
+			}
+		},*/
 		// 시간에 따른 재생 구간 설정 (seek 는 현재 재생중인 동그라미아이콘 위치)
 		// 즉, 보고싶은 재생시점으로 변경할 수 있다.
 		setSeek: function(targetTime) {

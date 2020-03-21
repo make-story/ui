@@ -35,6 +35,18 @@ http://www.quirksmode.org/js/detect.html
 		global.api = {};
 	}
 
+	// 모듈화
+	/*if(typeof exports === 'object' && typeof module === 'object') {
+		// CommonJS
+		module.exports = factory();
+	}else if(typeof define === 'function' && define.amd) {
+		// AMD
+		define([], factory);
+	}else {
+		// global(window)
+		factory(global);
+	}*/
+
 	// 일반적인 고유키 생성 (id="" 속성의 경우 첫글자가 문자로 시작해야 한다.)
 	var getKey = function() {
 		/*
@@ -705,12 +717,21 @@ http://www.quirksmode.org/js/detect.html
 					}
 				}else { // search element
 					/*
+					-
 					getElementById()
 					getElementsByClassName()
 					getElementsByTagName()
 					getElementsByTagNameNS()
 					querySelector()
 					querySelectorAll()
+
+					-
+					const arr = [...document.querySelectorAll('p')];
+					arr.find(element => {...});  // .find() now works
+					const $ = document.querySelector.bind(document);
+					$('#container');
+					const $$ = document.querySelectorAll.bind(document);
+					$$('p');
 					*/
 					try {
 						// document.querySelectorAll(x); // IE8의 경우 CSS 2.1 Selector (https://www.w3.org/TR/CSS2/selector.html) 제한적으로 지원
@@ -868,6 +889,25 @@ http://www.quirksmode.org/js/detect.html
 		closest: function(selector, context) {
 			// document.querySelector(x); // IE8이상 사용가능 ('.testClass + p' selector 형태는 IE9이상 사용가능)
 			// x.parentNode; // 표준
+			// document.querySelector('p').closest('div'); // IE 미지원
+			/*
+			// IE9 이상 폴리필
+			// https://developer.mozilla.org/ko/docs/Web/API/Element/closest
+			if(!Element.prototype.matches) {
+				Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
+			}
+
+			if(!Element.prototype.closest) {
+				Element.prototype.closest = function(s) {
+					var el = this;
+					do {
+						if(el.matches(s)) return el;
+						el = el.parentElement || el.parentNode;
+					}while (el !== null && el.nodeType === 1);
+					return null;
+				};
+			}
+			*/
 			var i, max = (this.elements && this.elements.length) || 0;
 			var context = context || document.documentElement; // documentElement: <html />
 			var element, search;
@@ -1178,6 +1218,12 @@ http://www.quirksmode.org/js/detect.html
 		html: function(value) {
 			// x.outerHTML; // IE4이상 사용가능, IE외 다른 브라우저 사용가능여부 체크필요
 			// x.innerHTML; // 표준
+			/*
+			// DomParser: HTML 또는 XML 소스 코드를 DOM 문서로 구문 분석하는 기능을 제공
+			// parseFromString: 요소가 하나만있는 문서를 만들고 해당 요소 반환
+			const createElement = domString => new DOMParser().parseFromString(domString, 'text/html').body.firstChild;
+			const a = createElement('<a href="/home" class="active">Home</a>');
+			*/
 			var i, max = (this.elements && this.elements.length) || 0;
 			var dummy;
 
@@ -1739,6 +1785,7 @@ http://www.quirksmode.org/js/detect.html
 		remove: function() {
 			// x.removeChild(y); // 표준
 			// x.parentNode; // 표준
+			// x.remove(); // IE 미지원 
 			var i, max = (this.elements && this.elements.length) || 0;
 
 			if(!max) {
@@ -1778,7 +1825,17 @@ http://www.quirksmode.org/js/detect.html
 			// x.firstChild; // IE9이상 사용가능 (TextNode 포함)
 			// x.lastChild;
 			// x.firstElementChild // TextNode 제외
-			// x.insertAdjacentHTML('위치', '값'); // 위치: beforebegin, afterbegin, beforeend, afterend
+			/*
+			// x.insertAdjacentHTML('위치', '값'); 
+			// 위치: 'beforebegin' (요소 앞에), 'afterbegin' (요소 내부 첫 번째 자식 앞에), 'beforeend' (요소 내부 마지막 자식 이후), 'afterend' (요소 뒤)
+			<!-- beforebegin -->
+			<p>
+				<!-- afterbegin -->
+				foo
+				<!-- beforeend -->
+			</p>
+			<!-- afterend -->
+			*/
 			var i, max = (this.elements && this.elements.length) || 0;
 			var element;
 
@@ -1810,7 +1867,17 @@ http://www.quirksmode.org/js/detect.html
 		},
 		append: function(parameter) {
 			// x.appendChild(y); // 표준
-			// x.insertAdjacentHTML('위치', '값'); // 위치: beforebegin, afterbegin, beforeend, afterend
+			/*
+			// x.insertAdjacentHTML('위치', '값'); 
+			// 위치: 'beforebegin' (요소 앞에), 'afterbegin' (요소 내부 첫 번째 자식 앞에), 'beforeend' (요소 내부 마지막 자식 이후), 'afterend' (요소 뒤)
+			<!-- beforebegin -->
+			<p>
+				<!-- afterbegin -->
+				foo
+				<!-- beforeend -->
+			</p>
+			<!-- afterend -->
+			*/
 			var i, max = (this.elements && this.elements.length) || 0;
 			var element;
 
@@ -1845,7 +1912,17 @@ http://www.quirksmode.org/js/detect.html
 			// x.insertBefore(y,z); // 표준
 			// x.parentNode; // 표준
 			// x.nextSibling; // IE9이상 사용가능
-			// x.insertAdjacentHTML('위치', '값'); // 위치: beforebegin, afterbegin, beforeend, afterend
+			/*
+			// x.insertAdjacentHTML('위치', '값'); 
+			// 위치: 'beforebegin' (요소 앞에), 'afterbegin' (요소 내부 첫 번째 자식 앞에), 'beforeend' (요소 내부 마지막 자식 이후), 'afterend' (요소 뒤)
+			<!-- beforebegin -->
+			<p>
+				<!-- afterbegin -->
+				foo
+				<!-- beforeend -->
+			</p>
+			<!-- afterend -->
+			*/
 
 			// api.dom(기준 요소).before(이동할 요소);
 			// 이동(또는 삽입)시킬 element 가 기준 element 바로 뒤로 이동(또는 삽입)한다.
@@ -1877,7 +1954,17 @@ http://www.quirksmode.org/js/detect.html
 		before: function(parameter) {
 			// x.insertBefore(y,z); // 표준
 			// x.parentNode; // 표준
-			// x.insertAdjacentHTML('위치', '값'); // 위치: beforebegin, afterbegin, beforeend, afterend
+			/*
+			// x.insertAdjacentHTML('위치', '값'); 
+			// 위치: 'beforebegin' (요소 앞에), 'afterbegin' (요소 내부 첫 번째 자식 앞에), 'beforeend' (요소 내부 마지막 자식 이후), 'afterend' (요소 뒤)
+			<!-- beforebegin -->
+			<p>
+				<!-- afterbegin -->
+				foo
+				<!-- beforeend -->
+			</p>
+			<!-- afterend -->
+			*/
 
 			// api.dom(기준 요소).before(이동할 요소);
 			// 이동(또는 삽입)시킬 element 가 기준 element 바로 전으로 이동(또는 삽입)한다.
@@ -1910,7 +1997,17 @@ http://www.quirksmode.org/js/detect.html
 		insertBefore: function(parameter) {
 			// x.insertBefore(y,z); // 표준
 			// x.parentNode; // 표준
-			// x.insertAdjacentHTML('위치', '값'); // 위치: beforebegin, afterbegin, beforeend, afterend
+			/*
+			// x.insertAdjacentHTML('위치', '값'); 
+			// 위치: 'beforebegin' (요소 앞에), 'afterbegin' (요소 내부 첫 번째 자식 앞에), 'beforeend' (요소 내부 마지막 자식 이후), 'afterend' (요소 뒤)
+			<!-- beforebegin -->
+			<p>
+				<!-- afterbegin -->
+				foo
+				<!-- beforeend -->
+			</p>
+			<!-- afterend -->
+			*/
 
 			// api.dom(이동할 요소).insertBefore(기준 요소);
 			// 이동(또는 삽입)시킬 element 가 기준 element 바로 전으로 이동(또는 삽입)한다.
@@ -1944,6 +2041,7 @@ http://www.quirksmode.org/js/detect.html
 		replaceWith: function(parameter) {
 			// x.replaceChild(y,z); // 표준
 			// x.parentNode; // 표준
+			// x.replaceWith(y); // IE 미지원 
 			var i, max = (this.elements && this.elements.length) || 0;
 			var element;
 
@@ -2391,6 +2489,7 @@ http://www.quirksmode.org/js/detect.html
 		// 사용예: api.dom('#test').contains(event.target)
 		contains: function(parameter) {
 			// x.contains(y); // 표준
+			// x.compareDocumentPosition(y); // IE9이상 사용가능
 			var i, max = (this.elements && this.elements.length) || 0;
 			var element;
 
@@ -2419,8 +2518,15 @@ http://www.quirksmode.org/js/detect.html
 		// 조건 반환
 		// $(element).is('.my-class');
 		is: function(selector) {
+			/*
 			// https://developer.mozilla.org/en-US/docs/Web/API/Element/matches
 			// x.matches() // IE9이상 사용가능
+			<p class="foo">Hello world</p>
+			const p = document.querySelector('p');
+			p.matches('p');     // true
+			p.matches('.foo');  // true
+			p.matches('.bar');  // false, does not have class "bar"
+			*/
 			var matches;
 
 			if(this.elements && this.elements.length > 0 && this.elements[0].nodeType) {

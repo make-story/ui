@@ -10,7 +10,56 @@
 		return;
 	}
 
-	// 기존 마커 위치를 설정
+	// 마커 그리기 (Admin)
+	function setMarkerRender(rect, options) {
+		var fragment = document.createDocumentFragment();
+		var div = document.createElement('div');
+		var $target = $(this);
+		var $marker, $mark, $tooltip;
+
+		// template
+		div.innerHTML = options.template;
+		while(div.firstChild) { // firstChild: IE9 이상 
+			fragment.appendChild(div.firstChild);
+		}
+
+		// 셀렉터 
+		$marker = $(fragment).find(options.selectors.marker);
+		$mark = $marker.find(options.selectors.mark);
+		$tooltip = $marker.find(options.selectors.tooltip);
+		
+		// style class
+		$marker.addClass(options.classes.marker);
+		$mark.addClass(options.classes.mark);
+		$tooltip.addClass(options.classes.tooltip);
+		if(options.isTooltipVisibility === false) {
+			$tooltip.css('display', 'none');
+		}
+
+		// 속성 설정
+		$marker.attr({
+			'data-x': rect.x, 
+			'data-y': rect.y, 
+			'data-left': rect.left, 
+			'data-top': rect.top,
+			'data-width': rect.width,
+			'data-height': rect.height
+		});
+		if(0 < options.markerWidth) {
+			$marker.css('width', options.markerWidth);
+		}
+		if(0 < options.markerHeight) {
+			$marker.css('height', options.markerHeight);
+		}
+		$marker.css({
+			'left': rect.x + '%', 
+			'top': rect.y + '%'
+		});
+
+		return fragment;
+	};
+
+	// 기존 마커 위치/최대 노출 설정 (Rect)
 	function setMarkerDisplay(options) {
 		var $target = $(this);
 		var $image = $target.find(options.selectors.image);
@@ -44,7 +93,7 @@
 			//console.log('노출 타겟 사이즈 (targetWidth/targetHeight)', [targetWidth, targetHeight].join('/'));
 		}
 		
-		// marker 세팅 
+		// marker 위치 세팅 
 		$target.find(options.selectors.marker).each(function(index) {
 			var rect = {};
 			var $marker = $(this);
@@ -126,60 +175,10 @@
 			// count
 			count = count + 1;
 
-			// 툴팁 
-			setTooltipToggle.call($target, $marker, options);
+			// 툴팁 위치 조정 
 			setTooltipRect.call($target, $marker, options);
 		});
 	}
-
-	// 마커 그리기 (Admin)
-	function setMarkerRender(rect, options) {
-		var fragment = document.createDocumentFragment();
-		var div = document.createElement('div');
-		var $target = $(this);
-		var $marker, $mark, $tooltip;
-
-		// template
-		div.innerHTML = options.template;
-		while(div.firstChild) { // firstChild: IE9 이상 
-			fragment.appendChild(div.firstChild);
-		}
-
-		// 셀렉터 
-		$marker = $(fragment).find(options.selectors.marker);
-		$mark = $marker.find(options.selectors.mark);
-		$tooltip = $marker.find(options.selectors.tooltip);
-		
-		// style class
-		$marker.addClass(options.classes.marker);
-		$mark.addClass(options.classes.mark);
-		$tooltip.addClass(options.classes.tooltip);
-		if(options.isTooltipVisibility === false) {
-			$tooltip.css('display', 'none');
-		}
-
-		// 속성 설정
-		$marker.attr({
-			'data-x': rect.x, 
-			'data-y': rect.y, 
-			'data-left': rect.left, 
-			'data-top': rect.top,
-			'data-width': rect.width,
-			'data-height': rect.height
-		});
-		if(0 < options.markerWidth) {
-			$marker.css('width', options.markerWidth);
-		}
-		if(0 < options.markerHeight) {
-			$marker.css('height', options.markerHeight);
-		}
-		$marker.css({
-			'left': rect.x + '%', 
-			'top': rect.y + '%'
-		});
-
-		return fragment;
-	};
 
 	// 마커 위치정보 (Admin)
 	function getMarkerRect(event, options) {
@@ -267,7 +266,7 @@
 		return position;
 	}
 
-	// 마커 툴팁 위치 
+	// 마커의 툴팁 위치 설정
 	function setTooltipRect($marker, options) {
 		var $target = $(this);
 		var $image = $target.find(options.selectors.image);
@@ -276,7 +275,8 @@
 		var target = {};
 		var mark = {};
 		var tooltip = {};
-		var left = 0, bottom = 0;
+		var top = 0, bottom = 0
+		var left = 0, right = 0;
 
 		if($tooltip.is(':hidden')) {
 			return false;
@@ -314,7 +314,10 @@
 		
 		// 툴팁 기본 위치 (가운데) - 위치 애니메이션이 있을 경우 오차가 발생한다.
 		left = -((tooltip.width - (mark.width / 2)) / 2);
-		$tooltip.css({'left': left, 'right': 'auto', 'top': $mark.outerHeight(), 'bottom': 'auto'}); // 기본 노출 위치 
+		right = 'auto';
+		top = $mark.outerHeight();
+		bottom = 'auto';
+		$tooltip.css({'left': left, 'right': right, 'top': top, 'bottom': bottom}); // 기본 노출 위치 
 		tooltip.offset = getElementOffset($tooltip);
 		tooltip.position = getElementPosition($tooltip);
 		//console.log('tooltip', tooltip);
@@ -324,16 +327,47 @@
 		//console.log('offset left (target/tooltip)', [target.offset.left, tooltip.offset.left].join('/'));
 		//console.log('position right (target/tooltip)', [target.position.right, tooltip.position.right].join('/'));
 		//console.log('position left (target/tooltip)', [target.position.left, tooltip.position.left].join('/'));
+		//console.log('offset bottom (target/tooltip)', [target.offset.bottom, tooltip.offset.bottom].join('/'));
 		if(target.offset.right <= tooltip.offset.right) { // 오른쪽
 			left = tooltip.position.left + (target.offset.right-tooltip.offset.right);
-			$tooltip.css({'left': left, 'right': 'auto'});
+			right = 'auto';
+			$tooltip.css({'left': left, 'right': right});
 		}else if(tooltip.offset.left <= target.offset.left) { // 왼쪽
 			left = tooltip.position.left + (target.offset.left-tooltip.offset.left);
-			$tooltip.css({'left': left, 'right': 'auto'});
+			right = 'auto';
+			$tooltip.css({'left': left, 'right': right});
 		}
-		//console.log('offset bottom (target/tooltip)', [target.offset.bottom, tooltip.offset.bottom].join('/'));
 		if(target.offset.bottom <= tooltip.offset.bottom) { // 하단
-			$tooltip.css({'bottom': $mark.outerHeight(), 'top': 'auto'});
+			top = 'auto';
+			if($mark.css('position') === 'absolute') {
+				bottom = 0;
+				$tooltip.css({'bottom': bottom, 'top': top});
+			}else {
+				bottom = $mark.outerHeight();
+				$tooltip.css({'bottom': bottom, 'top': top});
+			}
+		}
+
+		// 여백조정
+		// target.offset
+		tooltip.offset = getElementOffset($tooltip); // 정보 최신화
+		console.log('target.offset', target.offset);
+		console.log('tooltip.offset', tooltip.offset);
+		/*if(options.padding.top && top !== 'auto' && tooltip.offset.top <= target.offset.top && (target.offset.top-tooltip.offset.top) < options.padding.top) { // 상단 
+			//console.log('여백 위치조정 top', (options.padding.top - (target.offset.top-tooltip.offset.top)));
+			$tooltip.css('top', '+=' + (options.padding.top - (target.offset.top-tooltip.offset.top)));
+		}*/
+		if(options.padding.bottom && bottom !== 'auto' && tooltip.offset.bottom <= target.offset.bottom && (target.offset.bottom-tooltip.offset.bottom) < options.padding.bottom) { // 하단
+			//console.log('여백 위치조정 bottom', (options.padding.bottom - (target.offset.bottom-tooltip.offset.bottom)));
+			$tooltip.css('bottom', '+=' + (options.padding.bottom - (target.offset.bottom-tooltip.offset.bottom)));
+		}
+		if(options.padding.left && tooltip.offset.left <= target.offset.left && (target.offset.left-tooltip.offset.left) < options.padding.left) { // 왼쪽 
+			//console.log('여백 위치조정 left', (options.padding.left - (target.offset.left-tooltip.offset.left)));
+			$tooltip.css('left', '+=' + (options.padding.left - (target.offset.left-tooltip.offset.left)));
+		}
+		if(options.padding.right && tooltip.offset.right <= target.offset.right && (target.offset.right-tooltip.offset.right) < options.padding.right) { // 오른쪽
+			//console.log('여백 위치조정 right', (options.padding.right - (target.offset.right-tooltip.offset.right)));
+			$tooltip.css('left', '-=' + (options.padding.right - (target.offset.right-tooltip.offset.right)));
 		}
 	}
 
@@ -444,13 +478,13 @@
 	}
 	function setEventMarkDisplay(options) {
 		var $target = $(this);
-		var $marker = null;
-		var is = false;
 		var start = {
+			marker: null,
 			left: 0,
 			top: 0
 		};
 		var end = {
+			marker: null,
 			left: 0,
 			top: 0
 		};
@@ -458,87 +492,7 @@
 		.off('mousedown mousemove mouseup touchstart touchmove touchend touchcancel')
 		.on('mousedown mousemove mouseup touchstart touchmove touchend touchcancel', function(event) {
 			var touch;
-
-			//console.log('marker event', event.type);
-			event.preventDefault();
-			event.stopPropagation();
-
-			// jQuery 이벤트가 아닌 originalEvent 내부를 사용할 경우, that 이 event.currentTarget 으로 잡힌다.
-			//event = event.originalEvent || event; // originalEvent: jQuery Event
-			touch = event.originalEvent ? event.originalEvent.touches || event.originalEvent.changedTouches : event.touches || event.changedTouches;
-			switch(event.type) {
-				case 'mousedown':
-				case 'touchstart':
-					// 마커 element
-					$marker = $(event.currentTarget).closest(options.selectors.marker);
-					if(!$marker.length) {
-						return;
-					}
-					// 터치좌표
-					if(touch) {
-						start.left = touch[0].screenX;
-						start.top = touch[0].screenY;
-						end.left = touch[0].screenX;
-						end.top = touch[0].screenY;
-					}else if(event) {
-						start.left = event.screenX;
-						start.top = event.screenY;
-						end.left = event.screenX;
-						end.top = event.screenY;
-					}
-					is = true;
-					break;
-				case 'mousemove':
-				case 'touchmove':
-					// 터치좌표 
-					if(touch) {
-						end.left = touch[0].screenX;
-						end.top = touch[0].screenY;
-					}else if(event) {
-						end.left = event.screenX;
-						end.top = event.screenY;
-					}
-					// 이동이 발생하면 초기화 
-					if(Math.abs(start.left - end.left) > 6 || Math.abs(start.top - end.top) > 6) {
-						is = false;
-					}
-					break;
-				case 'mouseup':
-				case 'touchend':
-				//case 'touchcancel':
-					// 설정 화면 보이기/숨기기 
-					if(is === true) {
-						// 툴팁
-						options.isTooltipVisibility = null;
-						setTooltipToggle.call($target, $marker, options);
-						setTooltipRect.call($target, $marker, options);
-						// 클릭 
-						if(typeof options.listeners.marker === 'function') {
-							options.listeners.marker.call($target, event, $marker, options);
-						}
-					}
-					is = false;
-					$marker = null;
-					break;
-			}
-		});
-	}
-	function setEventMarkAdmin(options) {
-		var $target = $(this);
-		var $marker = null;
-		var timeTouchDelay = null;
-		var start = {
-			left: 0,
-			top: 0
-		};
-		var end = {
-			left: 0,
-			top: 0
-		};
-		$target
-		.off('mousedown mousemove mouseup touchstart touchmove touchend touchcancel')
-		.on('mousedown mousemove mouseup touchstart touchmove touchend touchcancel', options.selectors.mark, function(event) {
-			var touch;
+			var $marker = null;
 
 			//console.log('marker event', event.type);
 			event.preventDefault();
@@ -547,16 +501,15 @@
 			// jQuery 이벤트가 아닌 originalEvent 내부를 사용할 경우, $target 이 event.currentTarget 으로 잡힌다.
 			//event = event.originalEvent || event; // originalEvent: jQuery Event
 			touch = event.originalEvent ? event.originalEvent.touches || event.originalEvent.changedTouches : event.touches || event.changedTouches;
+
 			switch(event.type) {
 				case 'mousedown':
 				case 'touchstart':
 					// 마커 element
-					$marker = $(event.currentTarget).closest(options.selectors.marker);
-					if(!$marker.length) {
-						return;
-					}
+					$marker = $(event.target).closest(options.selectors.marker);
+					start.marker = $marker.length === 1 ? $marker.get(0) : null;
 					// 터치좌표
-					if(touch) {
+					/*if(touch) {
 						start.left = touch[0].screenX;
 						start.top = touch[0].screenY;
 						end.left = touch[0].screenX;
@@ -566,59 +519,142 @@
 						start.top = event.screenY;
 						end.left = event.screenX;
 						end.top = event.screenY;
-					}
-					// 삭제 여부 판단 
-					(function($marker) {
-						window.clearTimeout(timeTouchDelay);
-						timeTouchDelay = window.setTimeout(function() {
-							window.clearTimeout(timeTouchDelay);
-							if(!confirm('마커를 삭제하시겠습니까?')) {
-								return;
-							}
-							setMarkerRemove.call($target, $marker, options);
-						}, 1200);
-					})($marker);
+					}*/
 					break;
 				case 'mousemove':
 				case 'touchmove':
 					// 터치좌표 
-					if(touch) {
+					/*if(touch) {
 						end.left = touch[0].screenX;
 						end.top = touch[0].screenY;
 					}else if(event) {
 						end.left = event.screenX;
 						end.top = event.screenY;
-					}
-					// 이동이 발생하면 초기화 
-					if(Math.abs(start.left - end.left) > 6 || Math.abs(start.top - end.top) > 6) {
-						window.clearTimeout(timeTouchDelay);
-						$marker = null;
-					}
+					}*/
 					break;
 				case 'mouseup':
 				case 'touchend':
 				//case 'touchcancel':
+					// 마커 element
+					$marker = $(event.target).closest(options.selectors.marker);
+					end.marker = $marker.length === 1 ? $marker.get(0) : null;
 					// 설정 화면 보이기/숨기기 
-					if(timeTouchDelay && $marker && $marker.length) {
+					if(start.marker && end.marker && start.marker.isEqualNode(end.marker)) {
 						// 툴팁
 						options.isTooltipVisibility = null;
 						setTooltipToggle.call($target, $marker, options);
 						setTooltipRect.call($target, $marker, options);
-						// 클릭 
-						if(typeof options.listeners.marker === 'function') {
-							options.listeners.marker.call($target, event, $marker, options);
-						}
 					}
-					// 초기화 
-					window.clearTimeout(timeTouchDelay);
-					$marker = null;
+					// 초기화
+					start.marker = null;
+					end.marker = null;
 					break;
+			}
+
+			// callback
+			if(typeof options.listeners.markerEvent === 'function') {
+				options.listeners.markerEvent.call($target, event, $marker, options);
 			}
 		});
 	}
-	function setEventMarkAppend(options) {
+	function setEventMarkAdmin(options) {
 		var $target = $(this);
-		$target.find(options.selectors.image).off('click.EVENT_CLICK_IMAGE').on('click.EVENT_CLICK_IMAGE', function(event) {
+		var start = {
+			marker: null,
+			left: 0,
+			top: 0
+		};
+		var end = {
+			marker: null,
+			left: 0,
+			top: 0
+		};
+		var timeTouchDelay = null;
+		$target
+		.off('mousedown mousemove mouseup touchstart touchmove touchend touchcancel')
+		.on('mousedown mousemove mouseup touchstart touchmove touchend touchcancel', options.selectors.mark, function(event) {
+			var touch;
+			var $marker = null;
+
+			//console.log('marker event', event.type);
+			event.preventDefault();
+			event.stopPropagation();
+
+			// jQuery 이벤트가 아닌 originalEvent 내부를 사용할 경우, $target 이 event.currentTarget 으로 잡힌다.
+			//event = event.originalEvent || event; // originalEvent: jQuery Event
+			touch = event.originalEvent ? event.originalEvent.touches || event.originalEvent.changedTouches : event.touches || event.changedTouches;
+
+			switch(event.type) {
+				case 'mousedown':
+				case 'touchstart':
+					// 마커 element
+					$marker = $(event.target).closest(options.selectors.marker);
+					start.marker = $marker.length === 1 ? $marker.get(0) : null;
+					// 삭제 여부 판단 
+					window.clearTimeout(timeTouchDelay);
+					timeTouchDelay = window.setTimeout(function() {
+						var $marker;
+						if(!start.marker) {
+							return;
+						}
+						$marker = $(start.marker);
+						if(confirm('마커를 삭제하시겠습니까?')) {
+							setMarkerRemove.call($target, $marker, options);	
+						}
+						start.marker = null;
+						end.marker = null;
+					}, 1200);
+					break;
+				case 'mousemove':
+				case 'touchmove':
+					
+					break;
+				case 'mouseup':
+				case 'touchend':
+				//case 'touchcancel':
+					// 마커 element
+					$marker = $(event.target).closest(options.selectors.marker);
+					end.marker = $marker.length === 1 ? $marker.get(0) : null;
+					// 설정 화면 보이기/숨기기 
+					if(timeTouchDelay && start.marker && end.marker && start.marker.isEqualNode(end.marker)) {
+						// 툴팁
+						options.isTooltipVisibility = null;
+						setTooltipToggle.call($target, $marker, options);
+						setTooltipRect.call($target, $marker, options);
+					}
+					// 초기화 
+					window.clearTimeout(timeTouchDelay);
+					start.marker = null;
+					end.marker = null;
+					break;
+			}
+
+			// callback
+			if(typeof options.listeners.markerEvent === 'function') {
+				options.listeners.markerEvent.call($target, event, $marker, options);
+			}
+		});
+	}
+	function setEventTarget(options) {
+		var $target = $(this);
+		$target.off('click.EVENT_CLICK_TARGET').on('click.EVENT_CLICK_TARGET', function(event) {
+			// 마커 element
+			var $marker = $(event.target).closest(options.selectors.marker);
+
+			if(!$marker.length) {
+				// 툴팁 전체 닫기 
+				options.isTooltipVisibility = false;
+				$target.find(options.selectors.marker).each(function(index) {
+					var $marker = $(this);
+
+					setTooltipToggle.call($target, $marker, options);
+				});
+			}
+		});
+	}
+	function setEventMarkerAppend(options) { // admin
+		var $target = $(this);
+		$target.off('click.EVENT_CLICK_MARKAPPEND').on('click.EVENT_CLICK_MARKAPPEND', function(event) {
 			var count = 0;
 			var rect = {};
 			var fragment;
@@ -628,6 +664,11 @@
 
 			event.preventDefault();
 			event.stopPropagation();
+
+			// 마커내부 이벤트의 경우 정지 
+			if($(event.target).closest(options.selectors.marker, $target).length) {
+				return;
+			}
 
 			// 좌표 정보 구하기 
 			rect = getMarkerRect.call($target, event, options); 
@@ -658,6 +699,7 @@
 	}
 	function setEventSubmit(options) {
 		var $target = $(this);
+
 		$target.find(options.selectors.submit).off('click.EVENT_CLICK_SUBMIT').on('click.EVENT_CLICK_SUBMIT', function() {
 			setSubmit.call($target, options);
 		});
@@ -666,12 +708,13 @@
 	// oliveMarker jQuery 추가 
 	$.fn.oliveMarker = function(options) {
 		var that = this;
+		var result = {}; // public return api
 
 		// options
 		options = $.extend({}, $.fn.oliveMarker.defaults, options);
 		//console.log('options', options);
 
-		// .selector 여러개 적용 
+		// 초기 설정 - .selector 여러개 적용 
 		that.each(function() {
 			var $target = $(this);
 
@@ -681,31 +724,60 @@
 			// 기존 마커 위치 설정 
 			setMarkerDisplay.call($target, options);
 
-			// 툴팁 보이기/숨기기 이벤트  
+			// 초기 툴팁 보이기/숨기기 
+			$target.find(options.selectors.marker).each(function(index) {
+				var $marker = $(this);
+
+				setTooltipToggle.call($target, $marker, options);
+			});
 			setEventTooltipShow.call($target, options);
 			setEventTooltipHide.call($target, options);
 
-			// mode (admin/display) 구분된 이벤트 설정 
+			// 이벤트 설정 
+			setEventTarget.call($target, options);
 			if(options.mode !== 'admin') {
 				setEventMarkDisplay.call($target, options);
 			}else {
 				setEventMarkAdmin.call($target, options);
-				setEventMarkAppend.call($target, options);
+				setEventMarkerAppend.call($target, options);
 				setEventSubmit.call($target, options);
 			}
 		});
+
+		// result
+		result.options = options;
+		result.display = function() {
+			that.each(function() {
+				var $target = $(this);
+
+				// 기존 마커 / 툴팁위치 설정 
+				setMarkerDisplay.call($target, options);	
+			});
+		};
+		result.event = function() {
+			that.each(function() {
+				var $target = $(this);
+
+				// 이벤트 설정 
+				setEventTarget.call($target, options);
+				if(options.mode !== 'admin') {
+					setEventMarkDisplay.call($target, options);
+				}else {
+					setEventMarkAdmin.call($target, options);
+					setEventMarkerAppend.call($target, options);
+					setEventSubmit.call($target, options);
+				}
+			});
+		};
 
 		// resize
 		if(options.isResizeEvent) {
 			(function() {
 				var timeResize;
+
 				$(window).resize(function() {
 					window.clearTimeout(timeResize);
-					timeResize = window.setTimeout(function() {
-						that.each(function() {
-							setMarkerDisplay.call($(this), options);
-						});
-					}, 500);
+					timeResize = window.setTimeout(result.display, 500);
 				});
 			})();
 		}
@@ -716,13 +788,7 @@
 		}
 
 		// return
-		return {
-			display: function() {
-				that.each(function() {
-					setMarkerDisplay.call($(that), options);
-				});
-			}
-		};
+		return result;
 	};
 	
 	// Plugin defaults
@@ -739,6 +805,13 @@
 			action: '', // url
 			method: 'get' // form method
 		},*/
+		// 여백 
+		padding: {
+			top: 0,
+			bottom: 30,
+			left: 15,
+			right: 15
+		},
 		// 마커 템플릿 (Admin 사용)
 		template: '\
 			<div data-marker="marker">\
@@ -773,7 +846,7 @@
 			removeAfter: null,
 			tooltipToggle: null, // show / hide 
 			markerMax: null,
-			marker: null, // marker mouseup 이벤트 발생 콜백 (click)
+			markerEvent: null, // marker 이벤트 발생 콜백
 			submit: null,
 			error: null
 		}
