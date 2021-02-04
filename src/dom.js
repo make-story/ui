@@ -199,7 +199,7 @@ const getElementWidthHeight = (instance/*DOM 인스턴스 값*/, property="", ex
 };
 
 // dom, svg 컨트롤
-class DOM {
+export class DOM {
 	constructor(selector, context) {
 		let match1, match2, elements, i, count;
 
