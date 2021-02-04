@@ -1,6 +1,9 @@
 /**
  * 브라우저 정보
  */
+import browserHistory from './browser/history';
+import browserLocation from './browser/location';
+import browserStorage from './browser/storage';
 
 const global = window;
 const div = document.createElement('div');
@@ -295,3 +298,4 @@ if(browser.is.touch === true) {
 }
 
 export default browser;
+export { browserHistory, browserLocation, browserStorage, };

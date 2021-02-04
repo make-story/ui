@@ -300,7 +300,7 @@ class DOM {
 				// document.querySelectorAll(x); // IE8의 경우 CSS 2.1 Selector (https://www.w3.org/TR/CSS2/selector.html) 제한적으로 지원
 				elements = (context || document).querySelectorAll(selector); // querySelectorAll: length 있음, querySelector: length 없음
 				if(elements instanceof NodeList || elements instanceof HTMLCollection) {
-					this.elements = [ ...elements ];
+					this.elements = Array.from(elements);
 					/*for(i=0, count=elements.length; i<count; i++) {
 						this.elements[i] = elements[i];
 					}*/

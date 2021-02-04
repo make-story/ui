@@ -1,5 +1,29 @@
-import browser from './browser';
-import dom from './dom';
+import {
+	testAnimate,
+	testBrowser,
+	testDOM,
+	testEditor,
+	testFlicking,
+	testModal,
+	testPlayer,
+	testTouch,
+	testUtil,
+	testValidate,
+	testWebSocket,
+	testWebWorker,
+	testXHR,
+} from './test';
 
-console.log(browser);
-console.log(dom('.container'));
+testAnimate();
+testBrowser();
+testDOM();
+testEditor();
+testFlicking();
+testModal();
+testPlayer();
+testTouch();
+testUtil();
+testValidate();
+testWebSocket();
+testWebWorker();
+testXHR();

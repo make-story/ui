@@ -1,6 +1,6 @@
-import browser from './browser';
+import animationQueue from './animate/animationQueue';
+import frameQueue from './animate/frameQueue';
+import transitionQueue from './animate/transitionQueue';
+import transform from './animate/transform';
 
-export const frameQueue = () => null;
-export const transitionQueue = () => null;
-export const animationQueue = () => null;
-export const transform = () => null;
+export { animationQueue, frameQueue, transitionQueue, transform, };
