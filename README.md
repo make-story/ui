@@ -8,11 +8,7 @@ https://github.com/make-story/webcomponent
 Push / Service Worker / Web App Manifest / Background Sync  
 https://github.com/make-story/test-pwa  
 
-----
-
-# UI 컴포넌트
-JavaScript (Vanilla JS)
-
+## 도구
 > JavaScript 프로젝트 관리 도구(패키지 관리)  
 https://github.com/lerna/lerna  
 
@@ -30,6 +26,11 @@ https://karma-runner.github.io/latest/index.html
 
 > E2E 테스트   
 https://devexpress.github.io/testcafe/
+
+----
+
+# UI 컴포넌트
+JavaScript (Vanilla JS)
 
 ----
 
