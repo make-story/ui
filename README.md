@@ -1,16 +1,35 @@
-# Web Components
-Template / ShadowDOM / CustomElements / Module
-<http://makeapi.net/test/webcomponents.html>
+# 참고
 
-# PWA (Progressive Web App)
-Push / Service Worker / Web App Manifest / Background Sync
-<https://makeapi.net/test/pwa.html>
+## Web Components
+Template / ShadowDOM / CustomElements / Module  
+https://github.com/make-story/webcomponent  
+
+## PWA (Progressive Web App)
+Push / Service Worker / Web App Manifest / Background Sync  
+https://github.com/make-story/test-pwa  
 
 ----
 
 # UI 컴포넌트
-
 JavaScript (Vanilla JS)
+
+> JavaScript 프로젝트 관리 도구(패키지 관리)  
+https://github.com/lerna/lerna  
+
+> 바벨(Babel) 옵션   
+https://babeljs.io/docs/en/options  
+
+> JavaScript 코드(문법) 검사   
+https://eslint.org/
+
+> 코드 스타일 검사  
+https://prettier.io/
+
+> 테스트 러너(test runner)   
+https://karma-runner.github.io/latest/index.html
+
+> E2E 테스트   
+https://devexpress.github.io/testcafe/
 
 ----
 
