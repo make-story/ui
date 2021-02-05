@@ -6,13 +6,16 @@
 
 // 모듈 조합
 // https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Statements/export
+//export * from './app';
 export * from './array';
 export * from './css';
 export * from './date';
+export * from './element';
 export * from './html';
 export { default as is } from './is';
 export * from './number';
 export * from './object';
+export * from './observe';
 export { default as regexp } from './regexp';
 export * from './string';
 
