@@ -7,7 +7,7 @@ import browser from '../browser';
 import $ from '../dom';
 import { 
 	regexp,
-	getNumberUnit,
+	numberUnit,
 } from '../util';
 
 export default (queue) => {

@@ -10,31 +10,28 @@ export * from './array';
 export * from './css';
 export * from './date';
 export * from './html';
+export { default as is } from './is';
 export * from './number';
 export * from './object';
 export { default as regexp } from './regexp';
 export * from './string';
 
-// extend (deep copy)
-// extend({}, objA, objB);
-export const extend = (out={}) => {
-	let i, key;
-
-	for(i=1; i<arguments.length; i++) {
-		if(!arguments[i]) {
-			continue;
-		}
-		for(key in arguments[i]) {
-			if(arguments[i].hasOwnProperty(key)) {
-				out[key] = arguments[i][key];
-			}
-		}
-	}
-
-	return out;
-}
-
 // key (일반적인 고유값)
+/*
+-
+랜덤, 날짜 결합
+var arr = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
+var date = new Date();
+return [arr[Math.floor(Math.random() * arr.length)], Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1), date.getFullYear(), (Number(date.getMonth()) + 1), date.getDate(), date.getHours(), date.getMinutes()].join('');
+-
+페이스북 참고
+	1. 'f' + : 'f' 문자열에 뒤의 것을 더할 건데, // f
+	2. Math.random() : 0~1 사이의 랜덤한 수 생성에 // 0.13190673617646098
+	3. * (1 << 30) : 2의 30승을 곱하고, // 0.13190673617646098 * 1073741824 = 141633779.5
+	4. .toString(16) : 16진수로 문자열로 표현한 후에, // Number(141633779.9).toString(16) = 87128f3.8
+	5. .replace('.', '') : 문자열에서 닷(소수점)을 제거한다. // 'f' + 87128f38 = f87128f38
+return 'f' + (Math.random() * (1 << 30)).toString(16).replace('.', '');
+*/
 export const getKey = () => ['key', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
 
 // 대기 - 예: sleep(10000);

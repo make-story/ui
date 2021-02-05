@@ -28,7 +28,7 @@ export default {
 		// 해쉬값 불러오기 
 		get(key) {
 			let hash = window.location.hash;
-			let tmp;
+			let temp;
 			let criteria = {};
 			let result;
 
@@ -42,9 +42,9 @@ export default {
 				hash = hash.replace('#', '');
 				
 				// hash 에서 json 형태 추출 
-				tmp = /([{|%7B].*[}|%7D])/.exec(hash);
-				if(tmp && tmp[0]) {
-					hash = tmp[0];
+				temp = /([{|%7B].*[}|%7D])/.exec(hash);
+				if(temp && temp[0]) {
+					hash = temp[0];
 				}
 
 				try {
@@ -130,7 +130,7 @@ export default {
 			let result = {};
 			let arr = [];
 			let i, max;
-			let tmp;
+			let temp;
 			let index; // 파라미터가 배열형태 a[]=1&a[]=2&b[0]=1&b[1]=a 의 경우 해당 배열 인덱스  
 			let key, value; // key=value&key=value
 	
@@ -140,17 +140,17 @@ export default {
 				// & 기준 분리
 				arr = queryString.split('&');
 				for(i=0, max=arr.length; i<max; i++) {
-					tmp = arr[i].split('='); // key, value
+					temp = arr[i].split('='); // key, value
 					index = '';
 	
 					// key / value
-					key = tmp[0].replace(/\[\d*\]/, function(value) { // arr[]=1&arr[]=2 또는 arr[0]=1&arr[1]=2 등 배열형태 파라미터 
+					key = temp[0].replace(/\[\d*\]/, function(value) { // arr[]=1&arr[]=2 또는 arr[0]=1&arr[1]=2 등 배열형태 파라미터 
 						index = value.slice(1, -1);
 						return '';
 					});
 					key = key.toLowerCase();
-					if(tmp[1] && typeof tmp[1] === 'string') {
-						value = tmp[1];
+					if(temp[1] && typeof temp[1] === 'string') {
+						value = temp[1];
 						value = value.toLowerCase();
 					}else {
 						value = true;

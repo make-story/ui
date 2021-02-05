@@ -52,3 +52,12 @@ export const parseHTML = (html='') => {
 	temp.body.innerHTML = html;
 	return temp.body.children;
 }
+
+// Remove HTML from a string
+export const stripHTML = (source) => {
+	const fragment = document.createDocumentFragment();
+	const element = document.createElement('div');
+	fragment.appendChild(element);
+	element.innerHTML = source;
+	return fragment.firstChild.innerText;
+}

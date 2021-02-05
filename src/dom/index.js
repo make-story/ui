@@ -1,64 +1,8 @@
 /**
  * DOM 제어 
  */
-
-// 정규식
-const regexp = {
-	pixel_unit_list: /width$|height$|top|right|bottom|left|fontSize|letterSpacing|lineHeight|^margin*|^padding*/i, // 단위 px 해당되는 것
-	time_unit_list: /.+(-duration|-delay)$/i, // seconds (s) or milliseconds (ms)
-	position_list: /^(top|right|bottom|left)$/, // css 위치
-	display_list: /^(display|visibility|opacity|)$/i,
-	text: /^(\D+)$/i, // 텍스트
-	num_unit: /^([0-9]+)(\D+)$/i, // 단위
-	num: /^[+-]?\d+(\.\d+)?$/, // 숫자
-	source_num: /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source, // +=, -= 숫자와 연산자 분리
-	trim: /(^\s*)|(\s*$)/g // 양쪽 여백
-};
-
-// 일반적인 고유값
-const getKey = () => {
-	/*
-	-
-	랜덤, 날짜 결합
-	var arr = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
-	var date = new Date();
-	return [arr[Math.floor(Math.random() * arr.length)], Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1), date.getFullYear(), (Number(date.getMonth()) + 1), date.getDate(), date.getHours(), date.getMinutes()].join('');
-	-
-	페이스북 참고
-		1. 'f' + : 'f' 문자열에 뒤의 것을 더할 건데, // f
-		2. Math.random() : 0~1 사이의 랜덤한 수 생성에 // 0.13190673617646098
-		3. * (1 << 30) : 2의 30승을 곱하고, // 0.13190673617646098 * 1073741824 = 141633779.5
-		4. .toString(16) : 16진수로 문자열로 표현한 후에, // Number(141633779.9).toString(16) = 87128f3.8
-		5. .replace('.', '') : 문자열에서 닷(소수점)을 제거한다. // 'f' + 87128f38 = f87128f38
-	return 'f' + (Math.random() * (1 << 30)).toString(16).replace('.', '');
-	*/
-	return ['dom', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24); // MongoDB _id 24자 길이
-};
-
-// parseHTML
-const getParseHTML = htmlString => {
-	// IE9+
-	let tmp = document.implementation.createHTMLDocument();
-	tmp.body.innerHTML = htmlString;
-	return tmp.body.children;
-};
-
-// type
-const type = value => Object.prototype.toString.call(value).replace(/^\[object (.+)\]$/, '$1').toLowerCase();
-
-// 숫자여부
-const isNumeric = value => !isNaN(parseFloat(value)) && isFinite(value);
-
-// 숫자 분리
-const getNumber = value => isNumeric(value) ? value : String(value).replace(/[^+-\.\d]|,/g, '') || 0;
-
-// 숫자/단위 분리 (예: 10px -> [0]=>10px, [1]=>10, [2]=>'px')
-const getNumberUnit = value => {
-	//const regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source;
-	const regexp_number = new RegExp("^(" + regexp.source_num + ")(.*)$", "i");
-	const matches = regexp_number.exec(value);
-	return matches ? matches : [value];
-};
+import regexp from '../util/regexp';
+import { isNumeric, numberUnit, numberReturn, } from '../util/number';
 
 // inner, outer 관련
 const getAugmentWidthHeight = (instance/*DOM 인스턴스 값*/, property="") => {
@@ -67,7 +11,7 @@ const getAugmentWidthHeight = (instance/*DOM 인스턴스 값*/, property="") =>
 		'border': 0,
 		'margin': 0
 	};
-	let arr = [], i, max, tmp;
+	let arr = [], i, max, temp;
 
 	// 유효성 검사
 	if(!instance || typeof property !== 'string' || !(/^(width|height)$/i.test(property))) {
@@ -85,14 +29,14 @@ const getAugmentWidthHeight = (instance/*DOM 인스턴스 값*/, property="") =>
 	}
 	for(i=0, max=arr.length; i<max; i++) {
 		// padding
-		tmp = getNumberUnit(instance.css('padding' + arr[i]));
-		value['padding'] += (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
+		temp = numberUnit(instance.css('padding' + arr[i]));
+		value['padding'] += (temp && temp[1] && isNumeric(temp[1])) ? Number(temp[1]) : 0;
 		// border
-		tmp = getNumberUnit(instance.css('border' + arr[i] + 'Width'));
-		value['border'] += (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
+		temp = numberUnit(instance.css('border' + arr[i] + 'Width'));
+		value['border'] += (temp && temp[1] && isNumeric(temp[1])) ? Number(temp[1]) : 0;
 		// margin
-		tmp = getNumberUnit(instance.css('margin' + arr[i]));
-		value['margin'] += (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
+		temp = numberUnit(instance.css('margin' + arr[i]));
+		value['margin'] += (temp && temp[1] && isNumeric(temp[1])) ? Number(temp[1]) : 0;
 	}
 
 	return value;
@@ -123,7 +67,7 @@ const getElementWidthHeight = (instance/*DOM 인스턴스 값*/, property="", ex
 	};
 	let value = 0;
 	let rect = {};
-	let key, tmp;
+	let key, temp;
 
 	// 소문자 변환
 	property = property.toLowerCase();
@@ -132,15 +76,15 @@ const getElementWidthHeight = (instance/*DOM 인스턴스 값*/, property="", ex
 	if(is_display === true) {
 		// 현재 설정된 css 값 확인
 		for(key in queue) {
-			if(tmp = instance.css(key)) {
-				if(queue[key].test(tmp)) {
+			if(temp = instance.css(key)) {
+				if(queue[key].test(temp)) {
 					// 현재 element에 설정된 style의 값이 queue 목록에 지정된 기본값(style property default value)과 동일하거나 없으므로
 					// 작업 후 해당 property 초기화(삭제)
 					queue[key] = null;
 				}else {
 					// 현재 element에 설정된 style의 값이 queue 목록에 지정된 기본값(style property default value)이 아니므로
 					// 현재 설정된 값을 저장(종료 후 현재값으로 재설정)
-					queue[key] = tmp;
+					queue[key] = temp;
 				}
 			}
 		}
@@ -163,29 +107,29 @@ const getElementWidthHeight = (instance/*DOM 인스턴스 값*/, property="", ex
 
 	if(value <= 0 || value === null) {
 		// 방법1: css로 값을 구한다.
-		tmp = getNumberUnit(instance.css(property));
-		value = (tmp && tmp[1] && isNumeric(tmp[1])) ? Number(tmp[1]) : 0;
+		temp = numberUnit(instance.css(property));
+		value = (temp && temp[1] && isNumeric(temp[1])) ? Number(temp[1]) : 0;
 		if(extra) {
 			// inner, outer 추가
-			tmp = getAugmentWidthHeight(instance, property);
-			value += tmp['padding'];
+			temp = getAugmentWidthHeight(instance, property);
+			value += temp['padding'];
 			if(extra === 'outer') {
-				value += tmp['border'];
+				value += temp['border'];
 				if(is === true) {
-					value += tmp['margin'];
+					value += temp['margin'];
 				}
 			}
 		}
 	}else {
 		// 방법2: offset 값 가공 (margin, border, padding)
-		tmp = getAugmentWidthHeight(instance, property);
+		temp = getAugmentWidthHeight(instance, property);
 		if(extra === 'inner') {
-			value -= tmp['border'];
+			value -= temp['border'];
 		}else if(extra === 'outer' && is === true) {
-			value += tmp['margin'];
+			value += temp['margin'];
 		}else {
-			value -= tmp['border'];
-			value -= tmp['padding'];
+			value -= temp['border'];
+			value -= temp['padding'];
 		}
 	}
 
@@ -799,7 +743,7 @@ export class DOM {
 		let i, max = (this.elements && this.elements.length) || 0;
 		let value;
 		let property, current, unit;
-		let tmp1, tmp2;
+		let temp1, temp2;
 		const getStyleProperty = (style=""/*자바스크립트(js) 방식 또는 스타일(css) 방식 구분*/, property) => {
 			let i, max;
 			let converted = '';
@@ -862,21 +806,21 @@ export class DOM {
 					}
 
 					// +=, -= 연산자 분리
-					if(tmp1 = new RegExp("^([+-])=(" + regexp.source_num + ")", "i").exec(parameter[property])) {
-						// tmp1[1]: 연산자
-						// tmp1[2]: 값
+					if(temp1 = new RegExp("^([+-])=(" + regexp.source_num + ")", "i").exec(parameter[property])) {
+						// temp1[1]: 연산자
+						// temp1[2]: 값
 						current = new DOM(this.elements[i]).css(property);
 						unit = '';
 						// 단위값 존재 확인
 						if(regexp.text.test(current)) { // 기존 설정값이 단어로 되어 있는 것 (예: auto, none 등)
 							unit = 0;
-						}else if(tmp2 = regexp.num_unit.exec(current)) { // 단위 분리
-							// tmp2[1]: 값
-							// tmp2[2]: 단위 (예: px, em, %, s)
-							current = tmp2[1];
-							unit = tmp2[2];
+						}else if(temp2 = regexp.num_unit.exec(current)) { // 단위 분리
+							// temp2[1]: 값
+							// temp2[2]: 단위 (예: px, em, %, s)
+							current = temp2[1];
+							unit = temp2[2];
 						}
-						parameter[property] = ((tmp1[1] + 1) * tmp1[2] + parseFloat(current)) + unit; // ( '연산자' + 1 ) * 값 + 현재css속성값
+						parameter[property] = ((temp1[1] + 1) * temp1[2] + parseFloat(current)) + unit; // ( '연산자' + 1 ) * 값 + 현재css속성값
 					}
 
 					// trim
@@ -1085,13 +1029,13 @@ export class DOM {
 				if(!(offsetParent[0].nodeName && offsetParent[0].nodeName.toLowerCase() === 'html')) {
 					parentOffset = offsetParent.offset();
 				}
-				parentOffset.top += getNumber(offsetParent.css('borderTopWidth'));
-				parentOffset.left += getNumber(offsetParent.css('borderLeftWidth'));
+				parentOffset.top += numberReturn(offsetParent.css('borderTopWidth'));
+				parentOffset.left += numberReturn(offsetParent.css('borderLeftWidth'));
 			}
 
 			return {
-				'top': offset.top - parentOffset.top - getNumber(this.css('marginTop')),
-				'left': offset.left - parentOffset.left - getNumber(this.css('marginLeft'))
+				'top': offset.top - parentOffset.top - numberReturn(this.css('marginTop')),
+				'left': offset.left - parentOffset.left - numberReturn(this.css('marginLeft'))
 			};
 		}
 	}
@@ -1981,20 +1925,16 @@ export class DOM {
 
 	// event one
 	// addEventListener 함수의 세번째 파라미터에 'one' 설정으로 사용가능하다.
-	/*one(events, handler, capture) {
+	// target.addEventListener(type, listener, { once: true, });
+	one(events, handler, capture) {
 		let that = this;
-		let key = getKey();
-		let callback = function() {
-			// off
-			that.off('.' + key);
-			// handler
-			handler.apply(this, Array.prototype.slice.call(arguments));
-		};
-		// on
-		that.on(events + '.' + key, callback, capture);
+		
+		capture = capture && typeof capture === 'object' ? capture : {};
+		capture = Object.assign({}, capture, { once: true, });
+		that.on(events, handler, capture);
 
 		return this;
-	}*/
+	}
 
 	// event trigger
 	trigger = (function() {

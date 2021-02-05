@@ -39,18 +39,9 @@ export default {
 
 		return instance;
 	},
-	on: function(key='') { // 전체 또는 해당 key
-		
-	},
-	off: function(key='') { // 전체 또는 해당 key
-		
-	},
-	remove: function() { // 인스턴스까지 모두 제거 (event off 포함)
-		
-	},
 	put: function(key='', data) { // image 서버 전송 후 iframe 에서 JavaScript 에 의해 실행되거나, 외부에서 리소스를 도큐먼트에 삽입하고자 할 때 사용
 		if(this.search(key)) {
 			this.search(key).put(data);
 		}
-	}
+	},
 };

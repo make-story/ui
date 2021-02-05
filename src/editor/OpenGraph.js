@@ -57,7 +57,7 @@ export default class OpenGraph extends EditState {
 	put({ node, url='', }={}) { // 오픈그래프 삽입
 		let fragment;
 		let a, div, p, comment;
-		let tmp;
+		let temp;
 		let inserted;
 
 		if(node && typeof node === 'object' && node.nodeType && (url && regexp.url.test(url) || isNodeCheck(node, 'url'))) {
@@ -78,9 +78,9 @@ export default class OpenGraph extends EditState {
 			a.href = url;
 			a.target = '_blank';
 			a.textContent = a.innerText = url;
-			if(tmp = node.parentNode.insertBefore(a, node)) {
+			if(temp = node.parentNode.insertBefore(a, node)) {
 				node.parentNode.removeChild(node);
-				node = tmp;
+				node = temp;
 			}else {
 				return false;
 			}

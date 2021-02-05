@@ -3,6 +3,7 @@ import browser, { browserHistory, browserLocation, browserStorage, } from './bro
 import $ from './dom';
 import editor from './editor';
 import touch from './touch';
+import player from './player';
 
 console.log(browser);
 console.log($('.container'));
@@ -350,8 +351,13 @@ export const testModal = (target='#modal') => {
  */
 export const testPlayer = (target='#player') => {
 	$(target).html(`
-	
+		<div id="player"></div>
 	`);
+
+	player.setup(document.querySelector('#player'), 'video', {
+		'source': 'https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-576p.mp4'
+		//'source': 'https://video.cjmall.net/public/confirm/assets/201908/20190827/A000650/308b294ee469f04d677d3ac826847a33a0d3aa67.mp4?px-time=1567578578&px-hash=02e7117bc8d4da627663efd6596a8726'
+	});
 };
 
 

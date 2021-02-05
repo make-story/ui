@@ -31,7 +31,6 @@ touch.off('#ysm', 'all'); // 전체 해제
 import browser from '../browser';
 import $ from '../dom';
 
-const global = window;
 const events = ['delay', 'one', 'two'];
 const EVENT_DOM_TOUCH = `EVENT_DOM_TOUCH`;
 const [ EVENT_DOM_TOUCH_DELAY, EVENT_DOM_TOUCH_ONE, EVENT_DOM_TOUCH_TWO ] = (() => {
@@ -99,8 +98,8 @@ const setTouchHandler = function(event, element) { // 내부 this 사용 (화살
 	};
 
 	// delay check
-	global.clearTimeout(that.timeoutCount);
-	that.timeoutDelay = global.setTimeout(function() {
+	window.clearTimeout(that.timeoutCount);
+	that.timeoutDelay = window.setTimeout(function() {
 		if(that.storage[EVENT_DOM_TOUCH_DELAY] && typeof that.storage[EVENT_DOM_TOUCH_DELAY] === 'function') {
 			that.storage[EVENT_DOM_TOUCH_DELAY].call(that, event);
 		}
@@ -123,7 +122,7 @@ const setTouchHandler = function(event, element) { // 내부 this 사용 (화살
 
 		// delay 정지
 		if(!isCheck || Math.abs(that.touchMove[0].start.top - that.touchMove[that.touchCount].end.top) > radius || Math.abs(that.touchMove[0].start.left - that.touchMove[that.touchCount].end.left) > radius) {
-			global.clearTimeout(that.timeoutDelay);
+			window.clearTimeout(that.timeoutDelay);
 		}
 	});
 
@@ -143,9 +142,9 @@ const setTouchHandler = function(event, element) { // 내부 this 사용 (화살
 		that.touchTime.end = new Date().getTime();
 
 		// click check: 지정된 시간까지 다음 클릭이 발생하지 않는다면, count 값을 확인하여 해당 콜백을 실행한다.
-		global.clearTimeout(that.timeoutDelay);
+		window.clearTimeout(that.timeoutDelay);
 		if(typeof that.touchMove === 'object' && that.touchMove[that.touchCount-1]) {
-			that.timeoutCount = global.setTimeout(function() {
+			that.timeoutCount = window.setTimeout(function() {
 				let start = that.touchMove[0].start;
 				let end = that.touchMove[that.touchCount-1].end;
 				let time = Number(that.touchTime.end) - Number(that.touchTime.start);

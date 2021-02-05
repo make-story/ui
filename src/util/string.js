@@ -2,6 +2,11 @@
  * 문자열
  */
 
+// Replace all occurances of a string in a string
+export const replaceAll = (value='', find='', replace='') => {
+	return value.replace(new RegExp(find.toString().replace(/([.*+?^=!:${}()|[\]/\\])/g, '\\$1'), 'g'), replace.toString());
+}
+
 // 글자 Byte 수 출력
 export const stringByteLength = (value='') => {
 	return (typeof value === 'string') ? value.replace(/[\0-\x7f]|([0-\u07ff]|(.))/g,"$&$1$2").length : 0;

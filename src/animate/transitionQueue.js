@@ -5,7 +5,7 @@ import browser from '../browser';
 import $ from '../dom';
 import { 
 	regexp,
-	getNumberUnit,
+	numberUnit,
 } from '../util';
 
 export default (queue) => {
@@ -67,7 +67,7 @@ export default (queue) => {
 		let element = $element.get();
 		let properties = {}; // css 적용 프로퍼티 
 		let transitionend = {}; // transitionend 이벤트 실행된 것 (true)
-		let i, max, key, tmp;
+		let i, max, key, temp;
 
 		// transition 값 확인
 		for(key in transition) {
@@ -89,12 +89,12 @@ export default (queue) => {
 			if(typeof element[i].storage.transition !== 'object') {
 				element[i].storage.transition = {};
 				for(key in state) {
-					//tmp = element[i].style[key];
-					tmp = $(element[i]).css(key);
-					if(tmp && !state[key].test(tmp)) { 
+					//temp = element[i].style[key];
+					temp = $(element[i]).css(key);
+					if(temp && !state[key].test(temp)) { 
 						// 현재 element에 설정된 style의 값이 state 목록에 지정된 기본값(style property default value)이 아니므로 
 						// 현재 설정된 값을 저장(종료 후 현재값으로 재설정)
-						element[i].storage.transition[key] = tmp;
+						element[i].storage.transition[key] = temp;
 					}else { 
 						// 현재 element에 설정된 style의 값이 state 목록에 지정된 기본값(style property default value)과 동일하거나 없으므로 
 						// 작업 후 해당 property 초기화(삭제)

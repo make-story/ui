@@ -5,7 +5,7 @@ import browser from '../browser';
 import $ from '../dom';
 import { 
 	regexp,
-	getNumberUnit,
+	numberUnit,
 } from '../util';
 
 // 이론적으로 60fps로 호출되지만, 실제로는 인터벌 없이 다음에 사용 가능한 기회에 애니메이션 드로잉(drawing)을 요청
@@ -53,7 +53,7 @@ export default (queue) => {
 			let $element = $(this);
 			let start; // 애니메이션 시작값 (기존 css등 설정값)
 			let end; // 애니메이션 종료값 (사용자 설정값)
-			let key, tmp;
+			let key, temp;
 
 			let properties = {};
 			let current = 0;
@@ -67,21 +67,21 @@ export default (queue) => {
 				end = style[key]; // 사용자 설정값
 				properties[key] = {}; // 설정할 스타일값 생성
 				if(start) {
-					tmp = getNumberUnit(start); // 단위 분리
-					if(Array.isArray(tmp)) { 
-						// tmp[0]: 원본
-						// tmp[1]: 숫자
-						// tmp[2]: 단위 (예: px, em, %, s)
-						properties[key].start = start = Number(tmp[1] || 0);
-						properties[key].start_unit = tmp[2];
+					temp = numberUnit(start); // 단위 분리
+					if(Array.isArray(temp)) { 
+						// temp[0]: 원본
+						// temp[1]: 숫자
+						// temp[2]: 단위 (예: px, em, %, s)
+						properties[key].start = start = Number(temp[1] || 0);
+						properties[key].start_unit = temp[2];
 					}
-					tmp = getNumberUnit(end); // 단위 분리
-					if(Array.isArray(tmp)) { 
-						// tmp[0]: 원본
-						// tmp[1]: 숫자
-						// tmp[2]: 단위 (예: px, em, %, s)
-						properties[key].end = end = Number(tmp[1] || 0);
-						properties[key].end_unit = tmp[2];
+					temp = numberUnit(end); // 단위 분리
+					if(Array.isArray(temp)) { 
+						// temp[0]: 원본
+						// temp[1]: 숫자
+						// temp[2]: 단위 (예: px, em, %, s)
+						properties[key].end = end = Number(temp[1] || 0);
+						properties[key].end_unit = temp[2];
 					}
 					// 변경 스타일값 - 시작 스타일값
 					properties[key].change = end - start;
@@ -90,7 +90,7 @@ export default (queue) => {
 	
 			// 애니메이션 프레임 함수 (반복실행)
 			setFrame = function frame() {
-				let key, tmp;
+				let key, temp;
 				let val, unit;
 				
 				// increment the time
@@ -119,9 +119,9 @@ export default (queue) => {
 							}
 						}
 						// style 적용 
-						tmp = {};
-						tmp[key] = val + unit;
-						$element.css(tmp);
+						temp = {};
+						temp[key] = val + unit;
+						$element.css(temp);
 					}
 				}
 				// frame

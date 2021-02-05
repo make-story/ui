@@ -6,7 +6,7 @@ import browser from '../browser';
 import $ from '../dom';
 import { 
 	regexp,
-	getNumberUnit,
+	numberUnit,
 } from '../util';
 
 export default ({ element, transform, box/*transform-box*/, origin/*transform-origin*/, style/*transform-style*/, duration=0/*transform: translate 경우 */, complete }) => {

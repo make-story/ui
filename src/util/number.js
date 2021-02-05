@@ -3,19 +3,6 @@
  */
 import regexp from './regexp';
 
-// 숫자/단위 분리 (예: 10px -> [0]=>10px, [1]=>10, [2]=>'px')
-export const getNumberUnit = (value) => {
-	//let regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source;
-	let regexp_number = new RegExp(`^(${regexp.source_num})(.*)$`, "i");
-	let matches = regexp_number.exec(value);
-
-	if(matches) {
-		return matches;
-	}else {
-		return [value];
-	}
-}
-
 // 숫자 랜덤값
 export const numberRandom = (max=1, min=0) => {
 	if(min >= max) {
@@ -30,6 +17,13 @@ export const numberUnit = (value) => {
 	// [2]: 단위
 	return /^([0-9]+)(\D+)$/i.exec(value);
 }
+// 숫자/단위 분리 (예: 10px -> [0]=>10px, [1]=>10, [2]=>'px')
+/*export const numberUnit = (value) => {
+	//const regexp_source_num = /[+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|)/.source;
+	const regexp_number = new RegExp("^(" + regexp.source_num + ")(.*)$", "i");
+	const matches = regexp_number.exec(value);
+	return matches ? matches : [value];
+}*/
 
 // 숫자여부 확인
 export const isNumeric = (value) => {
@@ -38,7 +32,7 @@ export const isNumeric = (value) => {
 
 // 숫자만 추출
 export const numberReturn = (value) => { 
-	return String(value).replace(/[^+-\.\d]|,/g, '');
+	return isNumeric(value) ?  value : String(value).replace(/[^+-\.\d]|,/g, '');
 }
 
 // 금액
