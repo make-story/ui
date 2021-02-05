@@ -1,9 +1,9 @@
 /**
  * 에디터
  */
-import EditText from './editor/EditText';
-import EditMulti from './editor/EditMulti';
-import OpenGraph from './editor/OpenGraph';
+import EditText from './EditText';
+import EditMulti from './EditMulti';
+import OpenGraph from './OpenGraph';
 
 const editors = {};
 export default {

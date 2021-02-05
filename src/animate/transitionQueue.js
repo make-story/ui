@@ -6,7 +6,7 @@ import $ from '../dom';
 import { 
 	regexp,
 	getNumberUnit,
-} from './util';
+} from '../util';
 
 export default (queue) => {
 	if(typeof queue !== 'object') {

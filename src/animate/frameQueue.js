@@ -6,7 +6,7 @@ import $ from '../dom';
 import { 
 	regexp,
 	getNumberUnit,
-} from './util';
+} from '../util';
 
 // 이론적으로 60fps로 호출되지만, 실제로는 인터벌 없이 다음에 사용 가능한 기회에 애니메이션 드로잉(drawing)을 요청
 export const setRequestAnimationFrame = (function() { 

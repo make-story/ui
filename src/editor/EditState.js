@@ -4,15 +4,14 @@
 import $ from '../dom';
 import {
 	setSettings,
-	getKey,
 	getDisplay,
-	numberUnit,
-	isNumeric,
-	numberReturn,
 	getParent,
 	getNodeInfo,
 	isNodeCheck,
 } from './util';
+import {
+	getKey,
+} from '../util';
 
 // 싱글톤 패턴
 export default class EditState {

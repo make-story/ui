@@ -32,7 +32,7 @@
 
 // window.performance.navigation 스팩아웃 (Level 2 스팩 사용 권장)
 // https://www.w3.org/TR/navigation-timing-2/#sec-performance-navigation-types
-export const history = (() => {
+export default (() => {
 	console.log(performance.getEntriesByType("navigation"));
 	return {
 		state: null,

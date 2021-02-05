@@ -1,3 +1,10 @@
+/**
+ * 에디터 전용 유틸
+ */
+import {
+	regexp,
+} from '../util';
+
 // settings
 export const setSettings = (settings, options) => {
 	let key;
@@ -14,9 +21,6 @@ export const setSettings = (settings, options) => {
 	return settings;
 }
 
-// key (일반적인 고유값)
-export const getKey = () => ['editor', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
-
 // css display
 export const getDisplay = (element) => {
 	let display = '';
@@ -32,23 +36,6 @@ export const getDisplay = (element) => {
 		}
 	}
 	return display;
-}
-
-// 단위 분리
-export const numberUnit = (value) => { 
-	// [1]: 숫자값
-	// [2]: 단위
-	return /^([0-9]+)(\D+)$/i.exec(value);
-}
-
-// 숫자여부 확인
-export const isNumeric = (value) => {
-	return !isNaN(parseFloat(value)) && isFinite(value);
-}
-
-// 숫자만 추출
-export const numberReturn = (value) => { 
-	return String(value).replace(/[^+-\.\d]|,/g, '');
 }
 
 // 현재 node 상위(parentNode)를 검색하며, condition 결과에 따른 callback 실행

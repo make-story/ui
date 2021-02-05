@@ -28,8 +28,8 @@ touch.on('#ysm', function() {
 });
 touch.off('#ysm', 'all'); // 전체 해제
 */
-import browser from './browser';
-import $ from './dom';
+import browser from '../browser';
+import $ from '../dom';
 
 const global = window;
 const events = ['delay', 'one', 'two'];
