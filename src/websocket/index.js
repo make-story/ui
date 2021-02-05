@@ -18,18 +18,47 @@ const setSocketCheck = function() {
 const setConnectDelete = function(url) {
 	return url && connect[url] && delete connect[url];
 };
-class WebSocketAPI /*extends WebSocket*/ {
+
+// IOS등에서는 화면노출여부에 따라 socket이 자동 종료됨 
+document.addEventListener("visibilitychange", function(event) {
+	/*
+	-
+	document.visibilityState
+	'visible' : 페이지 내용은 적어도 부분적으로 보일 수 있습니다. 실제로 이는 페이지가 최소화 되지 않은 창(브라우저)에서의 선택된 탭 을 의미 합니다.
+	'hidden' : 페이지 내용은 사용자에게 표시되지 않습니다. 실제로 이는 document가 background-tap(다른 탭)이거나, 최소화 된 창의 일부이거나, OS 화면 잠금이 활성 상태임을 의미합니다.
+	'prerender' : 페이지 내용이 pre-rendering되어 사용자에게 보이지 않습니다 (document.hidden 목적으로 숨겨진 것으로 간주 합니다.). document는이 상태에서 시작될 수 있지만, 절대로 다른 값에서 이 값으로 전환되지는 않습니다. 참고 : 브라우저 지원은 선택 사항입니다.
+	'unloaded' : 페이지가 메모리에서 로드되지 않았습니다. 참고 : 브라우저 지원은 선택 사항입니다.
+	*/
+	//console.log('document.visibilityState', document.visibilityState);
+	if(document.visibilityState === 'visible') {
+		setSocketCheck();
+	}
+}, false);
+
+// network 여부 확인 
+const isNetwork = (event) => {
+	if(window.navigator.onLine === true) {
+		setSocketCheck();
+	}
+};
+
+// window, document, document.body
+window.addEventListener('online', isNetwork, false);
+window.addEventListener('offline', isNetwork, false);
+
+export class WebSocketAPI /*extends WebSocket*/ {
 	/**
 	 * constructor
 	 * @param {String} url 
 	 * @param {Object} options 
 	 */
 	constructor(url="", options={}) {
-		const { reconnect, listeners } = options;
-		this.URL = url; // this.open(url) 에서 값을 새로 입력할 수 있습니다.
+		const { reconnect, listeners, } = options;
 		this.options = options;
 		this.reconnect = reconnect;
 		this.listeners = listeners;
+
+		this.URL = url; // this.open(url) 에서 값을 새로 입력할 수 있습니다.
 		this.socket = null;
 		this.queue = [];
 
@@ -110,15 +139,12 @@ class WebSocketAPI /*extends WebSocket*/ {
 					this.listeners.open.apply(this, Array.prototype.slice.call(arguments));
 				}
 			};
-			this.socket.onmessage = e => { // 메시지가 도착할 시점
-				const event = (typeof e === 'object' && e) || window.event || {};
-
+			this.socket.onmessage = event => { // 메시지가 도착할 시점
 				if(typeof this.listeners.message === 'function') {
 					this.listeners.message.call(this, event.data);
 				}
 			};
-			this.socket.onclose = e => { // readyState changes to CLOSED
-				const event = (typeof e === 'object' && e) || window.event || {};
+			this.socket.onclose = event => { // readyState changes to CLOSED
 				//const { code, reason, wasClean, } = event;
 				const code = event.code; // 연결이 종료되는 이유를 가리키는 숫자 값입니다. 지정되지 않을 경우 기본값은 1000으로 간주됩니다. (일반적인 경우의 "transaction complete" 종료를 나타내는 값).
 				const reason = event.reason; // 연결이 왜 종료되는지를 사람이 읽을 수 있도록 나타내는 문자열입니다. 이 문자열은 UTF-8 포멧이며, 123 바이트를 넘을 수 없습니다.
@@ -191,31 +217,6 @@ class WebSocketAPI /*extends WebSocket*/ {
 		return this;
 	}
 }
-
-// IOS등에서는 화면노출여부에 따라 socket이 자동 종료됨 
-document.addEventListener("visibilitychange", function(event) {
-	/*
-	-
-	document.visibilityState
-	'visible' : 페이지 내용은 적어도 부분적으로 보일 수 있습니다. 실제로 이는 페이지가 최소화 되지 않은 창(브라우저)에서의 선택된 탭 을 의미 합니다.
-	'hidden' : 페이지 내용은 사용자에게 표시되지 않습니다. 실제로 이는 document가 background-tap(다른 탭)이거나, 최소화 된 창의 일부이거나, OS 화면 잠금이 활성 상태임을 의미합니다.
-	'prerender' : 페이지 내용이 pre-rendering되어 사용자에게 보이지 않습니다 (document.hidden 목적으로 숨겨진 것으로 간주 합니다.). document는이 상태에서 시작될 수 있지만, 절대로 다른 값에서 이 값으로 전환되지는 않습니다. 참고 : 브라우저 지원은 선택 사항입니다.
-	'unloaded' : 페이지가 메모리에서 로드되지 않았습니다. 참고 : 브라우저 지원은 선택 사항입니다.
-	*/
-	//console.log('document.visibilityState', document.visibilityState);
-	if(document.visibilityState === 'visible') {
-		setSocketCheck();
-	}
-}, false);
-// network 여부 확인 
-const isNetwork = (event) => {
-	if(window.navigator.onLine === true) {
-		setSocketCheck();
-	}
-};
-// window, document, document.body
-window.addEventListener('online', isNetwork, false);
-window.addEventListener('offline', isNetwork, false);
 
 export default (url="", options={}) => { 
 	options = Object.assign({}, { protocols: ''/*하나의 서버가 두 개 이상의 커뮤니케이션 방식을 가지고 싶도록 하고 싶을 때, 여러개의 웹 소켓 서브 프로토콜을 구현할 수 있도록 설정가능*/, reconnect: {}, listeners: {} }, options);
