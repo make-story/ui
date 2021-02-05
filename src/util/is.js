@@ -9,12 +9,13 @@ const type = value => Object.prototype.toString.call(value).replace(/^\[object (
 const isNull = (value) => value === null;
 const isUndefined = (value) => typeof value === 'undefined';
 const isNullOrUndefined = (value) => isNull(value) || isUndefined(value);
+const isArray = (value) => Array.isArray(value);
 const isObject = (value) => getConstructor(value) === Object || (!isNull(value) && typeof value === 'object');
+const isJSON = (value) => isObject(value) && (isArray(value) || /^{.*}$|^\[.*\]$/.test(JSON.stringify(value)));
 const isNumber = (value) => getConstructor(value) === Number && !Number.isNaN(value);
 const isString = (value) => getConstructor(value) === String;
 const isBoolean = (value) => getConstructor(value) === Boolean;
 const isFunction = (value) => getConstructor(value) === Function;
-const isArray = (value) => Array.isArray(value);
 const isWeakMap = (value) => instanceOf(value, WeakMap);
 const isNodeList = (value) => instanceOf(value, NodeList);
 const isTextNode = (value) => getConstructor(value) === Text;

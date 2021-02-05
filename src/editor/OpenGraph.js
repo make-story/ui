@@ -128,12 +128,8 @@ export default class OpenGraph extends EditState {
 				super.setCusor(p);
 
 				// 오픈그래프 정보 불러오기
-				$.ajax({
-					'url': this.settings.submit,
-					'timeout': 10000,
-					'data': {'url': encodeURIComponent(url)},
-					'dataType': 'json',
-					'success': (json) => {
+				(() => {
+					const success = (json) => {
 						let result = {}
 						let image = '';
 						if(typeof json === 'object' && json.status === 'success') {
@@ -161,13 +157,76 @@ export default class OpenGraph extends EditState {
 							div.parentNode.removeChild(div);
 							p.parentNode.removeChild(p);
 						}
-					},
-					'error': () => {
+					};
+					const error = () => {
 						// 제거
 						div.parentNode.removeChild(div);
 						p.parentNode.removeChild(p);
-					}
-				});
+					};
+
+					// XMLHttpRequest
+					const xhr = new XMLHttpRequest();
+					// 요청
+					xhr.open('GET', [(this.settings.submit.lastIndexOf('?') > -1 ? `&` : `?`), `url=${encodeURIComponent(url)}`].join(''), true);
+					xhr.setRequestHeader('Accept', '*/*');
+					xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); // X-Requested-With 헤더는, 해당 요청이 Ajax라는 걸 의미 (비표준)
+					xhr.timeout = 10000;
+					xhr.responseType = 'text';
+					// 업로드와 다운로드 진행율을 계산하는 콜백 함수를 단계적 응답 이벤트에 설정
+					xhr.upload.onprogress = (event) => {
+
+					};
+					xhr.onprogress = (event) => {
+						let total = event.total || 0;
+						let loaded = event.loaded || 0;
+						console.log(Number((100 / total) * loaded).toFixed(2));
+					};
+					// 받는중
+					xhr.onreadystatechange = () => {
+						switch(xhr.readyState) {
+							case 0: // 객체만 생성되고 아직 초기화되지 않은 상태(open 메소드가 호출되지 않음)
+								
+								break;
+							case 1: // open 메소드가 호출되고 아직 send 메소드가 불리지 않은 상태
+							case 2: // send 메소드가 불렸지만 status와 헤더는 도착하지 않은 상태
+								// 연결 진행
+								break;
+							case 3: // 데이터의 일부를 받은 상태
+								
+								break;
+							case 4: // 데이터를 전부 받은 상태
+								// xhr.status
+								// 403(접근거부), 404(페이지없음), 500(서버오류발생)
+								break;
+						}
+					};
+					// 완료
+					xhr.onload = (event) => { 
+						let data;
+						if(xhr.status == 200) {
+							data = xhr.response || xhr.responseText || xhr.responseXML; // XMLHttpRequest Level 2
+							if(typeof data === 'string') {
+								try {
+									data = JSON.parse(data);
+									typeof data === 'object' && success(data);
+								}catch(e) {
+									error();
+								}
+							}
+						}
+					};
+					// 에러
+					xhr.ontimeout = function(event) {
+						error();
+					};
+					xhr.onerror = function(event) {
+						error();
+					};
+					// 전송
+					xhr.send(null);
+					// 취소
+					//xhr.abort();
+				})();
 			}
 		}
 	}
