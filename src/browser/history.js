@@ -34,6 +34,8 @@
 // https://www.w3.org/TR/navigation-timing-2/#sec-performance-navigation-types
 export default (() => {
 	console.log(performance.getEntriesByType("navigation"));
+	// 스크롤위치를 브라우저에서 자동으로 옮겨가는 것 방지
+	//window.history.scrollRestoration = 'manual';
 	return {
 		state: null,
 		get: null,

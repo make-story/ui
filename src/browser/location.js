@@ -2,7 +2,26 @@
  * Location (URL)
  */
 /*
-// hashchange 이벤트 (url 변경에 따른 location.href 기준 history 재설정)
+-
+const url = new URL(window.location.href);
+https://developer.mozilla.org/ko/docs/Web/API/URL
+
+new URLSearchParams(window.location.href);
+https://developer.mozilla.org/ko/docs/Web/API/URLSearchParams
+url.searchParams.get('hello');
+url.searchParams.append('bye', 'test1');
+url.searchParams.has("bye");
+url.searchParams.set('bye', 'test2');
+url.searchParams.delete('bye');
+url.search; 
+
+const url = new URL("http://example.com/search?query=%40");
+const searchParams = new URLSearchParams(url.search);
+searchParams.has("query") // true
+
+
+-
+hashchange 이벤트 (url 변경에 따른 location.href 기준 history 재설정)
 window.onhashchange = function(event) {
 	if(typeof event === 'object') {
 		console.log('event', event);
@@ -176,14 +195,19 @@ export default {
 	
 			return result;
 		},
-		set(key, value) {
-			
+		set(url=window.location.href, key='', value='') {
+			const urlObject = new URL(url);
+			urlObject.searchParams.has(key) ? urlObject.searchParams.append(key, value) : urlObject.searchParams.set(key, value);
+			return urlObject.href;
 		},
-		del() {
-
+		del(url=window.location.href, key='') {
+			const urlObject = new URL(url);
+			urlObject.searchParams.has(key) && urlObject.searchParams.delete(key);
+			return urlObject.href;
 		},
-		has() {
-
+		has(url=window.location.href, key='') {
+			const urlObject = new URL(url);
+			return urlObject.searchParams.has(key);
 		},
 	}
 };

@@ -61,3 +61,19 @@ export const stripHTML = (source) => {
 	element.innerHTML = source;
 	return fragment.firstChild.innerText;
 }
+
+// 개행문자 줄바꿈 <br /> 변경
+// text = text.replace(/(?:\r\n|\r|\n)/g, '<br />');
+export const lineAlignment = (text='', max=2) => {
+	let arr = [];
+	if(text && typeof text === 'string') {
+		arr = text.split('\n');
+		if(0 < max && max < arr.length) {
+			arr = arr.slice(0, max);
+		}
+		//text.replace(/(\r\n|\n|\r)/g, '<br />');
+		return arr.join('<br />');
+	}else {
+		return text;
+	}
+}
