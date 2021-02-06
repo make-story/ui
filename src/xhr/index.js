@@ -281,7 +281,9 @@ export default (options={}) => {
 		};
 		
 		// 전송
-		instance.send(data || null);
+		try {
+			instance.send(data || null);
+		}catch(e) {}
 
 		// 취소
 		//instance.abort();

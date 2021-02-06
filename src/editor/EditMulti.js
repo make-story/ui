@@ -9,15 +9,13 @@
 import browser from '../browser';
 import $ from '../dom';
 import {
+	getKey,
 	setSettings,
 	getDisplay,
 	getParent,
 	getNodeInfo,
 	isNodeCheck,
 } from './util';
-import {
-	getKey,
-} from '../util';
 import EditState from './EditState';
 
 export default class EditMulti extends EditState {
@@ -27,8 +25,8 @@ export default class EditMulti extends EditState {
 			'key': 'editor', 
 			// 각각의 에디터 (추후 비동기 import 형태로 변경)
 			'image': true, // 이미지 사용여부
-			'swipe': true, // 이미지 스와이프 사용여부 (외부 api.flicking.js 라이브러리 연동) - 뷰페이지에서 스와이프 적용은 따로 코드를 실행시켜줘야 한다.
-			'video': false, // 비디오 사용여부 (외부 api.player.js 라이브러리 연동)
+			'swipe': false, // 이미지 스와이프 사용여부 - 뷰페이지에서 스와이프 적용은 따로 코드를 실행시켜줘야 한다.
+			'video': false, // 비디오 사용여부
 			'code': true, // 코드 사용여부
 			'line': true, // 구분선 사용여부
 			// 추가 툴팁 
@@ -63,8 +61,8 @@ export default class EditMulti extends EditState {
 			},
 			// file type
 			'file': {
-				'image': 'base64',
-				'swipe': 'url'
+				'image': 'base64', // base64, url
+				'swipe': 'url' // base64, url
 			},
 			// 서버 전송 정보
 			'submit': {
@@ -290,29 +288,93 @@ export default class EditMulti extends EditState {
 	// 이미지 파일 선택 - <input type="file" /> 이미지 선택됨
 	setImageFileSubmit = (() => {
 		// Server Submit
-		/*if(window.FormData && api.xhr) { // IE10 이상
+		if(window.FormData) { // IE10 이상
 			return (event, form, input, id, edit) => {
-				api.xhr({
-					'type': 'POST', 
-					'url': this.settings.submit[edit], 
-					'async': true, 
-					'data': new FormData(form), // 서버에 보낼 문자열 값이나 자바스크립트 데이터 객체
-					'dataType': 'json',
-					'progressUpload': (loaded) => {
-						console.log('loaded', loaded);
-					},
-					'success': (data) => {
-						console.log('success', data);
-						this.put(data);
-					},
-					'error': (event) => {
-						console.error(event);
+				const success = (data) => {
+					console.log('success', data);
+					this.put(data);
+				};
+				const error = (event) => {
+					console.log(event);
+				};
+
+				// XMLHttpRequest
+				const xhr = new XMLHttpRequest();
+
+				// 요청
+				xhr.open('POST', this.settings.submit[edit], true);
+				xhr.setRequestHeader('Accept', '*/*');
+				xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); // X-Requested-With 헤더는, 해당 요청이 Ajax라는 걸 의미 (비표준)
+				//xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+				xhr.timeout = 10000;
+				xhr.responseType = 'text';
+
+				// 업로드와 다운로드 진행율을 계산하는 콜백 함수를 단계적 응답 이벤트에 설정
+				xhr.upload.onprogress = (event) => {
+
+				};
+				xhr.onprogress = (event) => {
+					let total = event.total || 0;
+					let loaded = event.loaded || 0;
+					console.log(Number((100 / total) * loaded).toFixed(2));
+				};
+
+				// 받는중
+				xhr.onreadystatechange = () => {
+					switch(xhr.readyState) {
+						case 0: // 객체만 생성되고 아직 초기화되지 않은 상태(open 메소드가 호출되지 않음)
+							
+							break;
+						case 1: // open 메소드가 호출되고 아직 send 메소드가 불리지 않은 상태
+						case 2: // send 메소드가 불렸지만 status와 헤더는 도착하지 않은 상태
+							// 연결 진행
+							break;
+						case 3: // 데이터의 일부를 받은 상태
+							
+							break;
+						case 4: // 데이터를 전부 받은 상태
+							// xhr.status
+							// 403(접근거부), 404(페이지없음), 500(서버오류발생)
+							break;
 					}
-				});
+				};
+
+				// 완료
+				xhr.onload = (event) => { 
+					let data;
+					if(xhr.status == 200) {
+						data = xhr.response || xhr.responseText || xhr.responseXML; // XMLHttpRequest Level 2
+						if(typeof data === 'string') {
+							try {
+								data = JSON.parse(data);
+								typeof data === 'object' && success(data);
+							}catch(e) {
+								error(e);
+							}
+						}
+					}
+				};
+
+				// 에러
+				xhr.ontimeout = function(event) {
+					error(event);
+				};
+				xhr.onerror = function(event) {
+					error(event);
+				};
+
+				// 전송
+				try {
+					xhr.send(new FormData(form));
+				}catch(e) {}
+
+				// 취소
+				//xhr.abort();
+
 				// 생성된 tag 삭제
 				form.parentNode.removeChild(form);
 			};
-		}else {*/
+		}else {
 			return (event, form, input, id, edit) => {
 				let self = event && event.currentTarget; // event listener element
 				let target = event && (event.target || event.srcElement); // event 가 발생한 element
@@ -352,8 +414,8 @@ export default class EditMulti extends EditState {
 					}catch(e) {}
 				};
 			};
-		//}
-	})()
+		}
+	})();
 
 	// 이미지 전송 준비 
 	setImageFileSetup({ edit='image'/*툴팁 종류: image, swipe*/, id=getKey(), }={}) {
@@ -397,7 +459,7 @@ export default class EditMulti extends EditState {
 		hidden.style.cssText = '';
 		hidden.setAttribute('type', 'hidden');
 		hidden.setAttribute('name', 'output');
-		hidden.setAttribute('value', /*window.FormData && api.xhr ? 'json' : */'iframe');
+		hidden.setAttribute('value', window.FormData ? 'json' : 'iframe');
 
 		file.style.cssText = '';
 		file.setAttribute('type', 'file');

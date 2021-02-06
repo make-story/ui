@@ -8,15 +8,13 @@
 import browser from '../browser';
 import $ from '../dom';
 import {
+	getKey,
 	setSettings,
 	getDisplay,
 	getParent,
 	getNodeInfo,
 	isNodeCheck,
 } from './util';
-import {
-	getKey,
-} from '../util';
 import EditState from './EditState';
 
 export default class EditText extends EditState {

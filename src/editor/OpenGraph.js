@@ -8,15 +8,13 @@
 import browser from '../browser';
 import $ from '../dom';
 import {
+	getKey,
 	setSettings,
 	getDisplay,
 	getParent,
 	getNodeInfo,
 	isNodeCheck,
 } from './util';
-import {
-	getKey,
-} from '../util';
 import EditState from './EditState';
 
 export default class OpenGraph extends EditState {
@@ -129,13 +127,13 @@ export default class OpenGraph extends EditState {
 
 				// 오픈그래프 정보 불러오기
 				(() => {
-					const success = (json) => {
+					const success = (data) => {
 						let result = {}
 						let image = '';
-						if(typeof json === 'object' && json.status === 'success') {
-							//console.dir(json);
+						if(typeof data === 'object' && data.status === 'success') {
+							//console.dir(data);
 							//console.log(div);
-							result = json.result;
+							result = data.result;
 							if(result.image) {
 								image = `<div class="${this.settings.classes.image}" style="background-image: url(${(result.image).replace(/(<([^>]+)>)/ig,"")});"><br /></div>`;
 							}else {
@@ -158,7 +156,8 @@ export default class OpenGraph extends EditState {
 							p.parentNode.removeChild(p);
 						}
 					};
-					const error = () => {
+					const error = (event) => {
+						console.log(event);
 						// 제거
 						div.parentNode.removeChild(div);
 						p.parentNode.removeChild(p);
@@ -166,12 +165,15 @@ export default class OpenGraph extends EditState {
 
 					// XMLHttpRequest
 					const xhr = new XMLHttpRequest();
+
 					// 요청
 					xhr.open('GET', [(this.settings.submit.lastIndexOf('?') > -1 ? `&` : `?`), `url=${encodeURIComponent(url)}`].join(''), true);
 					xhr.setRequestHeader('Accept', '*/*');
 					xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); // X-Requested-With 헤더는, 해당 요청이 Ajax라는 걸 의미 (비표준)
+					//xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 					xhr.timeout = 10000;
 					xhr.responseType = 'text';
+
 					// 업로드와 다운로드 진행율을 계산하는 콜백 함수를 단계적 응답 이벤트에 설정
 					xhr.upload.onprogress = (event) => {
 
@@ -181,6 +183,7 @@ export default class OpenGraph extends EditState {
 						let loaded = event.loaded || 0;
 						console.log(Number((100 / total) * loaded).toFixed(2));
 					};
+
 					// 받는중
 					xhr.onreadystatechange = () => {
 						switch(xhr.readyState) {
@@ -200,6 +203,7 @@ export default class OpenGraph extends EditState {
 								break;
 						}
 					};
+
 					// 완료
 					xhr.onload = (event) => { 
 						let data;
@@ -210,20 +214,25 @@ export default class OpenGraph extends EditState {
 									data = JSON.parse(data);
 									typeof data === 'object' && success(data);
 								}catch(e) {
-									error();
+									error(e);
 								}
 							}
 						}
 					};
+
 					// 에러
 					xhr.ontimeout = function(event) {
-						error();
+						error(event);
 					};
 					xhr.onerror = function(event) {
-						error();
+						error(event);
 					};
+
 					// 전송
-					xhr.send(null);
+					try {
+						xhr.send(null);
+					}catch(e) {}
+
 					// 취소
 					//xhr.abort();
 				})();

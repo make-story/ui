@@ -1,9 +1,8 @@
 /**
  * 에디터 전용 유틸
  */
-import {
-	regexp,
-} from '../util';
+import { regexp, } from '../../util';
+export * from '../../util';
 
 // settings
 export const setSettings = (settings, options) => {
