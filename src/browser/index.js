@@ -301,3 +301,50 @@ if(browser.is.touch === true) {
 }
 
 export default browser;
+
+// window, document 사이즈
+export const windowDocumentSize = () => {
+	return {
+		'window': {
+			"width": window.innerWidth || document.documentElement.clientWidth || 0,
+			"height": window.innerHeight || document.documentElement.clientHeight || 0
+		},
+		'document': {
+			"width": Math.max(
+				document.body.scrollWidth, document.documentElement.scrollWidth,
+				document.body.offsetWidth, document.documentElement.offsetWidth,
+				document.documentElement.clientWidth
+			),
+			"height": Math.max(
+				document.body.scrollHeight, document.documentElement.scrollHeight,
+				document.body.offsetHeight, document.documentElement.offsetHeight,
+				document.documentElement.clientHeight
+			)
+		}
+	};
+}
+
+// 스크롤 위치
+export const browserScroll = () => {
+	if('pageXOffset' in window && 'pageYOffset' in window) {
+		return {
+			'left': window.pageXOffset, 
+			'top': window.pageYOffset
+		};
+	}else if(document.body && ('scrollLeft' in document.body && 'scrollTop' in document.body)) {
+		return {
+			'left': document.body.scrollLeft, 
+			'top': document.body.scrollTop
+		};
+	}else if(document.documentElement && ('scrollLeft' in document.documentElement && 'scrollTop' in document.documentElement)) {
+		return {
+			'left': document.documentElement.scrollLeft, 
+			'top': document.documentElement.scrollTop
+		};
+	}else {
+		return {
+			'left': 0, 
+			'top': 0
+		};
+	}
+}

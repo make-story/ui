@@ -22,7 +22,7 @@ demoDOM();
 demoEditor();
 demoFlicking();
 demoModal();
-demoPlayer();
+//demoPlayer();
 demoTouch();
 demoUtil();
 demoWebSocket();

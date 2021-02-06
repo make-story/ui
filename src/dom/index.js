@@ -1,5 +1,8 @@
 /**
  * DOM 제어 
+ * https://developer.mozilla.org/ko/docs/Web/API
+ * http://www.quirksmode.org/js/detect.html
+ * https://modernizr.com/download/
  */
 import regexp from '../util/regexp';
 import { isNumeric, numberUnit, numberReturn, } from '../util/number';
@@ -56,7 +59,7 @@ const getElementWidthHeight = (instance/*DOM 인스턴스 값*/, property="", ex
 	let is_display = (instance.css('display') === 'none') ? true : false;
 	let queue = {
 		/*
-		css property 기본값
+		> css property 기본값
 		position: static
 		visibility: visible
 		display: inline | block
@@ -734,11 +737,19 @@ export class DOM {
 	// stylesheet
 	css(parameter) {
 		// x.style.cssText; // 표준
-		// x.currentStyle[styleProp];
+		// x.currentStyle[styleProp]; // IE 하위버전 지원
 		// document.defaultView.getComputedStyle(x, null).getPropertyValue(styleProp);
 		/*
 		IE9+
 		getComputedStyle(element)[ruleName]; // $(element).css(ruleName);
+
+		-
+		x.style 와 x.getComputedStyle 방식의 차이점
+		https://developer.mozilla.org/ko/docs/Web/API/Window/getComputedStyle#%EC%84%A4%EB%AA%85
+		메소드의 호출에서 반환되는 객체의 자료형은 요소의 style 속성에서 반환되는 객체와 동일한 CSSStyleDeclaration형입니다. 
+		그러나 두 객체는 다른 목적을 가지고 있습니다. 
+		getComputedStyle 에서 반환된 객체는 읽기 전용이며 요소의 (<style> 또는 외부 stylesheet로 설정되는 것도 포함해서) 스타일을 검사하는 데 사용할 수 있습니다. 
+		elt.style 객체는 특정한 요소에 스타일을 설정하는 데 사용해야 합니다.
 		*/
 		let i, max = (this.elements && this.elements.length) || 0;
 		let value;
