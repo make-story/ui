@@ -10,6 +10,8 @@ import {
 	numberUnit,
 } from '../util';
 
+const EVENT_ANIMATIONEND_QUEUE = 'EVENT_ANIMATIONEND_QUEUE';
+
 export default (queue) => {
 	if(typeof queue !== 'object') {
 		return false;
@@ -35,7 +37,7 @@ export default (queue) => {
 					break;
 				case "animationend":
 					$element.removeClass(animation);
-					$element.off(`${browser.event.animationend}.EVENT_ANIMATIONEND_QUEUE`);
+					$element.off(`${browser.event.animationend}.${EVENT_ANIMATIONEND_QUEUE}`);
 					$element.removeProp('animationState');
 
 					// complete 실행
@@ -58,8 +60,8 @@ export default (queue) => {
 				window.clearInterval(time);
 				$element.prop({'animationState': 'running'});
 				$element.addClass(animation);
-				//$element.one(`${browser.event.animationend}.EVENT_ANIMATIONEND_QUEUE`, handler);
-				$element.on(`${browser.event.animationend}.EVENT_ANIMATIONEND_QUEUE`, handler);
+				//$element.one(`${browser.event.animationend}.${EVENT_ANIMATIONEND_QUEUE}`, handler);
+				$element.on(`${browser.event.animationend}.${EVENT_ANIMATIONEND_QUEUE}`, handler);
 			}else {
 				// 현재 실행중인 애니메이션이 존재 (대기 후 이전 애니메이션이 종료되면 실행)
 				//console.log('[정보] 애니메이션 대기');

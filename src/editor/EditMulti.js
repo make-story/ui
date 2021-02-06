@@ -18,6 +18,12 @@ import {
 } from './util';
 import EditState from './EditState';
 
+const EVENT_MOUSEDOWN_MULTIEDIT = 'EVENT_MOUSEDOWN_MULTIEDIT';
+const EVENT_MOUSEUP_MULTIEDIT = 'EVENT_MOUSEUP_MULTIEDIT';
+const EVENT_KEYDOWN_MULTIEDIT = 'EVENT_KEYDOWN_MULTIEDIT';
+const EVENT_KEYUP_MULTIEDIT = 'EVENT_KEYUP_MULTIEDIT';
+const EVENT_BLUR_MULTIEDIT = 'EVENT_BLUR_MULTIEDIT';
+
 export default class EditMulti extends EditState {
 	constructor(target=null, settings={}) {
 		super();
@@ -1686,15 +1692,15 @@ export default class EditMulti extends EditState {
 		}
 
 		// 마우스 이벤트
-		$(document).on(`${browser.event.down}.EVENT_MOUSEDOWN_MULTIEDIT`, (e) => setMouseEvent(e));
-		$(document).on(`${browser.event.up}.EVENT_MOUSEUP_MULTIEDIT`, (e) => setMouseEvent(e));
+		$(document).on(`${browser.event.down}.${EVENT_MOUSEDOWN_MULTIEDIT}`, (e) => setMouseEvent(e));
+		$(document).on(`${browser.event.up}.${EVENT_MOUSEUP_MULTIEDIT}`, (e) => setMouseEvent(e));
 		
 		// 키보드 이벤트
-		$(this.elements.target).on('keydown.EVENT_KEYDOWN_MULTIEDIT', (e) => setKeyboardEvent(e));
-		$(this.elements.target).on('keyup.EVENT_KEYUP_MULTIEDIT', (e) => setKeyboardEvent(e));
+		$(this.elements.target).on(`keydown.${EVENT_KEYDOWN_MULTIEDIT}`, (e) => setKeyboardEvent(e));
+		$(this.elements.target).on(`keyup.${EVENT_KEYUP_MULTIEDIT}`, (e) => setKeyboardEvent(e));
 
 		// 커서 (focus)
-		$(this.elements.target).on('blur.EVENT_BLUR_MULTIEDIT', (e) => this.setTooltipToggle());
+		$(this.elements.target).on(`blur.${EVENT_BLUR_MULTIEDIT}`, (e) => this.setTooltipToggle());
 	}
 
 	off() {
@@ -1703,12 +1709,12 @@ export default class EditMulti extends EditState {
 		this.setMultiTooltipMenuPostion({'toggle': 'hide'});
 
 		// 마우스 이벤트
-		$(document).off('.EVENT_MOUSEDOWN_MULTIEDIT');
-		$(document).off('.EVENT_MOUSEUP_MULTIEDIT');
+		$(document).off(`.${EVENT_MOUSEDOWN_MULTIEDIT}`);
+		$(document).off(`.${EVENT_MOUSEUP_MULTIEDIT}`);
 
 		// 키보드 이벤트
-		$(this.elements.target).off('.EVENT_KEYDOWN_MULTIEDIT');
-		$(this.elements.target).off('.EVENT_KEYUP_MULTIEDIT');
-		$(this.elements.target).off('.EVENT_BLUR_MULTIEDIT');
+		$(this.elements.target).off(`.${EVENT_KEYDOWN_MULTIEDIT}`);
+		$(this.elements.target).off(`.${EVENT_KEYUP_MULTIEDIT}`);
+		$(this.elements.target).off(`.${EVENT_BLUR_MULTIEDIT}`);
 	}
 }

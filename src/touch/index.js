@@ -166,48 +166,50 @@ const setTouchHandler = function(event, element) { // 내부 this 사용 (화살
 
 export default {
 	on: function(selector, handler) {
-		if(selector && (typeof handler === 'object' || typeof handler === 'function')) {
-			$(selector).each(function(i, element) {
-				let key;
-
-				if(element && element.nodeType) {
-					if(typeof element.storage !== 'object') {
-						element.storage = {};
-					}
-					if(typeof handler === 'object') {
-						for(key in handler) {
-							if(typeof handler[key] === 'function' && handler.hasOwnProperty(key)/* && [EVENT_DOM_TOUCH_DELAY, EVENT_DOM_TOUCH_ONE, EVENT_DOM_TOUCH_TWO].includes(`${EVENT_DOM_TOUCH}_${key.toUpperCase()}`)*/) {
-								element.storage[`${EVENT_DOM_TOUCH}_${key.toUpperCase()}`] = handler[key];
-							}
-						}
-					}else {
-						element.storage[EVENT_DOM_TOUCH_ONE] = handler;
-					}
-					if(!element.storage[EVENT_DOM_TOUCH]) {
-						$(element).on(`${browser.event.down}.${EVENT_DOM_TOUCH}`, setTouchHandler);
-					}
-				}
-			});
+		if(!selector || !handler || (typeof handler !== 'object' && typeof handler !== 'function')) {
+			return false;
 		}
+		$(selector).each(function(i, element) {
+			let key;
+
+			if(element && element.nodeType) {
+				if(typeof element.storage !== 'object') {
+					element.storage = {};
+				}
+				if(typeof handler === 'object') {
+					for(key in handler) {
+						if(typeof handler[key] === 'function' && handler.hasOwnProperty(key)/* && [EVENT_DOM_TOUCH_DELAY, EVENT_DOM_TOUCH_ONE, EVENT_DOM_TOUCH_TWO].includes(`${EVENT_DOM_TOUCH}_${key.toUpperCase()}`)*/) {
+							element.storage[`${EVENT_DOM_TOUCH}_${key.toUpperCase()}`] = handler[key];
+						}
+					}
+				}else {
+					element.storage[EVENT_DOM_TOUCH_ONE] = handler;
+				}
+				if(!element.storage[EVENT_DOM_TOUCH]) {
+					$(element).on(`${browser.event.down}.${EVENT_DOM_TOUCH}`, setTouchHandler);
+				}
+			}
+		});
 	},
 	off: function(selector, eventkey='all') { // eventkey: one, two, delay, all
-		if(selector) {
-			$(selector).each(function(i, element) {
-				let key = (typeof eventkey === 'string' && eventkey) || 'all';
-
-				if(element && element.nodeType && typeof element.storage === 'object') {
-					switch(key.toLowerCase()) {
-						case 'one':
-						case 'two':
-						case 'delay':
-							delete element.storage[`${EVENT_DOM_TOUCH}_${key.toUpperCase()}`];
-							break;
-						case 'all':
-							$(element).off(`.${EVENT_DOM_TOUCH}`);
-							break;
-					}
-				}
-			});
+		if(!selector) {
+			return false;
 		}
+		$(selector).each(function(i, element) {
+			let key = (typeof eventkey === 'string' && eventkey) || 'all';
+
+			if(element && element.nodeType && typeof element.storage === 'object') {
+				switch(key.toLowerCase()) {
+					case 'one':
+					case 'two':
+					case 'delay':
+						delete element.storage[`${EVENT_DOM_TOUCH}_${key.toUpperCase()}`];
+						break;
+					case 'all':
+						$(element).off(`.${EVENT_DOM_TOUCH}`);
+						break;
+				}
+			}
+		});
 	}
 };

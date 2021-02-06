@@ -17,6 +17,8 @@ import {
 } from './util';
 import EditState from './EditState';
 
+const EVENT_KEYDOWN_OPENGRAPH = 'EVENT_KEYDOWN_OPENGRAPH';
+
 export default class OpenGraph extends EditState {
 	constructor(target=null, settings={}) {
 		super();
@@ -253,7 +255,7 @@ export default class OpenGraph extends EditState {
 		}
 
 		// 키보드 이벤트
-		$(this.elements.target).on('keydown.EVENT_KEYDOWN_OPENGRAPH', (e) => {
+		$(this.elements.target).on(`keydown.${EVENT_KEYDOWN_OPENGRAPH}`, (e) => {
 			let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
 			super.setSelection();
@@ -286,6 +288,6 @@ export default class OpenGraph extends EditState {
 
 	off() {
 		// event
-		$(this.elements.target).off('.EVENT_KEYDOWN_OPENGRAPH');
+		$(this.elements.target).off(`.${EVENT_KEYDOWN_OPENGRAPH}`);
 	}
 }

@@ -8,6 +8,8 @@ import {
 	numberUnit,
 } from '../util';
 
+const EVENT_TRANSITION_QUEUE = 'EVENT_TRANSITION_QUEUE';
+
 export default (queue) => {
 	if(typeof queue !== 'object') {
 		return false;
@@ -116,7 +118,7 @@ export default (queue) => {
 		// 트랜지션 (하위 자식 노드의 transition 전파에 따라 실행될 수 있다. 자식의 transition 전파를 막으려면 해당 자식 이벤트에 stopPropagation 실행)
 		// 또는 addEventListener 를 사용하여, event.target 를 검사하여, 해당되는 element의 경우에만 콜백을 실행해야 한다.
 		// transition 값이 여러개의 경우 각각의 프로퍼티별로 콜백이 실행된다. (left/top 두개 트랜지션이 설정되었을 경우, left/top 각각 콜백이 두번 실행된다.)
-		$element.on(`${browser.event.transitionend}.EVENT_TRANSITION_QUEUE`, function(e) {
+		$element.on(`${browser.event.transitionend}.${EVENT_TRANSITION_QUEUE}`, function(e) {
 			let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 			let currentTarget = event.currentTarget;
 			let target = event.target || event.srcElement;
@@ -135,7 +137,7 @@ export default (queue) => {
 
 				// 모든 transitionend 실행되었는지 여부 확인
 				if(Object.keys(properties).length === Object.keys(transitionend).length) {
-					$element.off(`${browser.event.transitionend}.EVENT_TRANSITION_QUEUE`);
+					$element.off(`${browser.event.transitionend}.${EVENT_TRANSITION_QUEUE}`);
 
 					// transition 설정 초기화
 					for(i=0, max=element.length; i<max; i++) {

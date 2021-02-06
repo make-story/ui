@@ -2,6 +2,9 @@
  * 브라우저 정보
  */
 // 모듈 조합
+export * from './history';
+export * from './location';
+export * from './storage';
 export { default as browserHistory } from './history';
 export { default as browserLocation } from './location';
 export { default as browserStorage } from './storage';

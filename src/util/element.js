@@ -1,6 +1,9 @@
 /**
  * element
  */
+import is from './is';
+
+const FIND_ZWB = /\u200B/g;
 
 // element 가 스크롤 되는 영역 반환
 export const scrollParent = (element, includeHidden) => {
@@ -32,3 +35,33 @@ export const scrollParent = (element, includeHidden) => {
 
 	return document.body;
 }
+
+// node name
+export const nodeName = function(node) {
+	if(is.element(node)) {
+		return node.tagName;
+	}
+	return 'TEXT';
+};
+
+// text length
+export const textLength = function(node) {
+	let length;
+	if(is.element(node)) {
+		length = node.textContent.replace(FIND_ZWB, '').length;
+	}else if(is.textNode(node)) {
+		length = node.nodeValue.replace(FIND_ZWB, '').length;
+	}
+	return length;
+};
+
+// offset length
+export const offsetLength = function(node) {
+	let length;
+	if(is.element(node)) {
+		length = node.childNodes.length;
+	}else if (is.textNode(node)) {
+		length = node.nodeValue.replace(FIND_ZWB, '').length;
+	}  
+	return length;
+};

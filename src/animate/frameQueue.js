@@ -9,11 +9,11 @@ import {
 } from '../util';
 
 // 이론적으로 60fps로 호출되지만, 실제로는 인터벌 없이 다음에 사용 가능한 기회에 애니메이션 드로잉(drawing)을 요청
-export const setRequestAnimationFrame = (function() { 
+export const requestAnimationFrame = (function() { 
 	// https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame
 	return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback) { return window.setTimeout(callback, 1000 / 60); /* 60 FPS (1 / 0.06) */ };
 })();
-export const setCancelAnimationFrame = (function() {
+export const cancelAnimationFrame = (function() {
 	// https://developer.mozilla.org/en-US/docs/Web/API/Window/cancelAnimationFrame
 	return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function(time) { return window.clearTimeout(time); };
 })();
@@ -126,9 +126,9 @@ export default (queue) => {
 				}
 				// frame
 				if(current < duration) {
-					request = setRequestAnimationFrame(frame);
+					request = requestAnimationFrame(frame);
 				}else {
-					setCancelAnimationFrame(request);
+					cancelAnimationFrame(request);
 					// last loop
 					if(index === (total-1)) {
 						// complete 실행
@@ -144,7 +144,7 @@ export default (queue) => {
 				}
 			};
 			
-			setCancelAnimationFrame(request);
+			cancelAnimationFrame(request);
 			setFrame();
 		});
 	})(queue);

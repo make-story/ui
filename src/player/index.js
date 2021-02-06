@@ -2,7 +2,7 @@
  * 플레이어
  * 비디오, 오디오
  */
-import Video from './Video';
+import PlayVideo from './PlayVideo';
 
 // Default codecs for checking mimetype support
 const defaultCodecs = {
@@ -49,7 +49,7 @@ export default {
 		return key && players[key] || false;
 	},
 	setup: function(target=null, type='', settings={}) {
-		var instance;
+		let instance;
 		let { key=type, } = settings;		
 		
 		if(key && this.search(key)) {
@@ -58,10 +58,10 @@ export default {
 		}else if(type) {
 			switch(type) {
 				case 'video':
-					instance = new Video(target, settings);
+					instance = new PlayVideo(target, settings);
 					break;
 				case 'audio':
-					//instance = new Audio(target, settings);
+					//instance = new PlayAudio(target, settings);
 					break;
 			}
 			if(key && instance) {

@@ -17,6 +17,15 @@ import {
 } from './util';
 import EditState from './EditState';
 
+const EVENT_MOUSEDOWN_TEXTEDIT = 'EVENT_MOUSEDOWN_TEXTEDIT';
+const EVENT_MOUSEUP_TEXTEDIT = 'EVENT_MOUSEUP_TEXTEDIT';
+const EVENT_KEYDOWN_TEXTEDIT = 'EVENT_KEYDOWN_TEXTEDIT';
+const EVENT_KEYUP_TEXTEDIT = 'EVENT_KEYUP_TEXTEDIT';
+const EVENT_BLUR_TEXTEDIT = 'EVENT_BLUR_TEXTEDIT';
+const EVENT_PASTE_TEXTEDIT = 'EVENT_PASTE_TEXTEDIT';
+const EVENT_RESIZE_TEXTEDIT_DOCUMENT = 'EVENT_RESIZE_TEXTEDIT_DOCUMENT';
+const EVENT_MOUSEUP_TEXTEDIT_DOCUMENT = 'EVENT_MOUSEUP_TEXTEDIT_DOCUMENT';
+
 export default class EditText extends EditState {
 	constructor(target=null, settings={}) {
 		super();
@@ -524,7 +533,7 @@ export default class EditText extends EditState {
 		}
 
 		// 마우스 이벤트
-		$(document).on(`${browser.event.down}.EVENT_MOUSEDOWN_TEXTEDIT`, (e) => {
+		$(document).on(`${browser.event.down}.${EVENT_MOUSEDOWN_TEXTEDIT}`, (e) => {
 			let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 			let self = event && event.currentTarget; // event listener element
 			let target = event && (event.target || event.srcElement); // event 가 발생한 element
@@ -532,7 +541,7 @@ export default class EditText extends EditState {
 			super.setSelection();
 			this.setTooltipToggle();
 		});
-		$(document).on(`${browser.event.up}.EVENT_MOUSEUP_TEXTEDIT`, (e) => {
+		$(document).on(`${browser.event.up}.${EVENT_MOUSEUP_TEXTEDIT}`, (e) => {
 			let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 			let self = event && event.currentTarget; // event listener element
 			let target = event && (event.target || event.srcElement); // event 가 발생한 element
@@ -542,7 +551,7 @@ export default class EditText extends EditState {
 		});
 		
 		// 키보드 이벤트
-		$(this.elements.target).on('keydown.EVENT_KEYDOWN_TEXTEDIT', (e) => {
+		$(this.elements.target).on(`keydown.${EVENT_KEYDOWN_TEXTEDIT}`, (e) => {
 			//console.log('setContenteditableKeydown');
 			let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
@@ -573,7 +582,7 @@ export default class EditText extends EditState {
 				}*/
 			}
 		});
-		$(this.elements.target).on('keyup.EVENT_KEYUP_TEXTEDIT', (e) => {
+		$(this.elements.target).on(`keyup.${EVENT_KEYUP_TEXTEDIT}`, (e) => {
 			//console.log('setContenteditableKeyup');
 			let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 			let insertedNode, unwrap, node, parent;
@@ -661,13 +670,13 @@ export default class EditText extends EditState {
 		});
 
 		// 커서 (focus)
-		$(this.elements.target).on('blur.EVENT_BLUR_TEXTEDIT', (e) => {
+		$(this.elements.target).on(`blur.${EVENT_BLUR_TEXTEDIT}`, (e) => {
 			this.setTooltipToggle();
 		});
 
 		// contenteditable paste text only
 		// http://stackoverflow.com/questions/12027137/javascript-trick-for-paste-as-plain-text-in-execcommand
-		$(this.elements.target).on('paste.EVENT_PASTE_TEXTEDIT', (e) => {
+		$(this.elements.target).on(`paste.${EVENT_PASTE_TEXTEDIT}`, (e) => {
 			let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 			let text = '';
 
@@ -723,10 +732,10 @@ export default class EditText extends EditState {
 		});
 
 		// document event
-		$(document).on('resize.EVENT_RESIZE_TEXTEDIT_DOCUMENT', (e) => {
+		$(document).on(`resize.${EVENT_RESIZE_TEXTEDIT_DOCUMENT}`, (e) => {
 			this.setTooltipToggle();
 		});
-		/*$(document).on(`${browser.event.up}.EVENT_MOUSEUP_TEXTEDIT_DOCUMENT`, (e) => {
+		/*$(document).on(`${browser.event.up}.${EVENT_MOUSEUP_TEXTEDIT}_DOCUMENT`, (e) => {
 			let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 			let self = event && event.currentTarget; // event listener element
 			let target = event && (event.target || event.srcElement); // event 가 발생한 element
@@ -747,17 +756,17 @@ export default class EditText extends EditState {
 		this.setTextTooltipMenuPostion({'toggle': 'hide'});
 
 		// 마우스 이벤트
-		$(document).off('.EVENT_MOUSEDOWN_TEXTEDIT')
-		$(document).off('.EVENT_MOUSEUP_TEXTEDIT');
+		$(document).off(`.${EVENT_MOUSEDOWN_TEXTEDIT}`);
+		$(document).off(`.${EVENT_MOUSEUP_TEXTEDIT}`);
 
 		// 키보드 이벤트
-		$(this.elements.target).off('.EVENT_KEYDOWN_TEXTEDIT');
-		$(this.elements.target).off('.EVENT_KEYUP_TEXTEDIT');
-		$(this.elements.target).off('.EVENT_BLUR_TEXTEDIT');
-		$(this.elements.target).off('.EVENT_PASTE_TEXTEDIT');
+		$(this.elements.target).off(`.${EVENT_KEYDOWN_TEXTEDIT}`);
+		$(this.elements.target).off(`.${EVENT_KEYUP_TEXTEDIT}`);
+		$(this.elements.target).off(`.${EVENT_BLUR_TEXTEDIT}`);
+		$(this.elements.target).off(`.${EVENT_PASTE_TEXTEDIT}`);
 
 		// document event
-		$(document).off('.EVENT_RESIZE_TEXTEDIT_DOCUMENT');
-		//$(document).off('.EVENT_MOUSEUP_TEXTEDIT_DOCUMENT');
+		$(document).off(`.${EVENT_RESIZE_TEXTEDIT_DOCUMENT}`);
+		//$(document).off(`.${EVENT_MOUSEUP_TEXTEDIT}_DOCUMENT`);
 	};
 }
