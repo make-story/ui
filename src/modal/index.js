@@ -2,6 +2,8 @@
  * 모달
  */
 import ModalLayer from './ModalLayer';
+import ModalRect from './ModalRect';
+import ModalMessage from './ModalMessage';
 
 const flickings = {};
 export default {
@@ -10,7 +12,7 @@ export default {
 	},
 	setup: function(target=null, type='', settings={}) {
 		let instance;
-		let { key=type, } = settings;
+		let { key=type, rect, } = settings;
 
 		if(key && this.search(key)) {
 			// 중복생성 방지 key 검사
@@ -19,6 +21,12 @@ export default {
 			switch(type) {
 				case 'layer':
 					instance = new ModalLayer(target, settings);
+					break;
+				case 'rect':
+					instance = new ModalRect(target, rect, settings);
+					break;
+				case 'message':
+					instance = new ModalMessage({ message: target, ...settings});
 					break;
 			}
 			if(key && instance) {

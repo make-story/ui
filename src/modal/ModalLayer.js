@@ -3,7 +3,7 @@
  */
 import browser, { windowDocumentSize, browserScroll, } from '../browser';
 import $ from '../dom';
-import { extend, numberUnit, isNumeric, numberReturn, elementPosition, } from '../util';
+import { extend, elementPosition, } from '../util';
 import ModalState from "./ModalState";
 
 const isIOS = /(iphone|ipad|ipod)/i.test((window.navigator.userAgent || window.navigator.vendor || window.opera).toLowerCase());
@@ -44,7 +44,7 @@ export default class ModalLayer extends ModalState {
 		this.elements.target.style.position = 'static';
 
 		// render
-		this.rander();
+		this.render();
 
 		// 팝업내부 close 버튼 클릭시 닫기
 		if(this.settings.close && (typeof this.settings.close === 'string' || typeof this.settings.close === 'object')) {
@@ -65,22 +65,15 @@ export default class ModalLayer extends ModalState {
 		});
 	}
 
-	rander() {
+	render() {
 		// container
-		let container = document.querySelector('[data-modal-container]');
-		if(!container) {
-			container = document.createElement('div');
-			container.setAttribute('data-layer-container', 'container');
-			container.style.cssText = 'z-index: 2147483647;'; // z-index 최대값: 2147483647
-			document.body.appendChild(container);
-		}
-		this.elements.container = container;
+		this.elements.container = super.container();
 
 		// layer
-		let layer = document.querySelector('[data-modal-layer]');
+		let layer = document.querySelector(`[${this.attributePrefix}-layer]`);
 		if(!layer) {
 			layer = document.createElement('div');
-			layer.setAttribute('data-modal-layer', 'layer');
+			layer.setAttribute(`${this.attributePrefix}-layer`, 'layer');
 			//layer.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 			this.elements.container.appendChild(layer);
 		}
@@ -91,50 +84,24 @@ export default class ModalLayer extends ModalState {
 			this.elements.mask = this.settings.mask.nodeType ? this.settings.mask : $(this.settings.mask).get(0);
 			this.elements.mask.display = 'none';
 		}else {
-			this.elements.mask = document.createElement('div');
-			this.elements.mask.style.cssText = 'position: fixed; display: none; left: 0px; top: 0px; width: 100%; height: 100%; background: rgb(250, 251, 252) none repeat scroll 0 0; opacity: .96; -khtml-user-select: none; -ms-user-select: none; -moz-user-select: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-touch-select: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); -webkit-tap-highlight-color: transparent;';
+			this.elements.mask = super.mask();
 			this.elements.layer.appendChild(this.elements.mask);
 		}
 
 		// contents (target 에 margin 등이 설정되었을 경우 position: absolute; overflow: auto; 에 의해 여백이 적용되지 않는 것 방지)
 		this.elements.contents = document.createElement('div');
+		this.elements.contents.setAttribute(`${this.attributePrefix}-layer-contents`, 'contents');
 		this.elements.contents.style.cssText = 'position: absolute;';
 		this.elements.contents.appendChild(this.elements.target);
 
 		// container
 		this.elements.container = document.createElement('div');
+		this.elements.container.setAttribute(`${this.attributePrefix}-layer-container`, 'container');
 		this.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none; -webkit-overflow-scrolling: touch; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); -webkit-tap-highlight-color: transparent;';
 		this.elements.container.appendChild(this.elements.contents);
 		this.elements.layer.appendChild(this.elements.container);
 		if(this.elements.target.style.display === 'none') {
 			this.elements.target.style.display = 'block';
-		}
-	}
-
-	change(settings={}) {
-		let key, temp;
-
-		try {
-			for(key in settings) {
-				switch(key) {
-					case 'listeners':
-						for(temp in settings[key]) {
-							if(settings[key].hasOwnProperty(temp)) {
-								this.settings.listeners[temp] = settings[key][temp];
-							}
-						}
-						break;
-					/*
-					default:
-						this.settings[key] = settings[key];
-						break;
-					*/
-				}
-			}
-		}catch(e) {
-			if(typeof this.settings.listeners.error === 'function') {
-				this.settings.listeners.error.call(this, e);
-			}
 		}
 	}
 

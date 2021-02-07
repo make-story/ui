@@ -415,7 +415,7 @@ export const elementPositionStandard = (element, standard/*출력위치 기준�
 }
 
 // 서로 겹치지 않도록 제어
-export const elementOverlap = (element, targetList, position=''/*이동할 위치*/, { isOverflow=false/*브라우저 밖으로 나가도 되는지 여부*/, }={}) => {
+export const elementOverlap = (element, targetList, position=''/*이동할 위치*/, { isBrowserOverflow=false/*브라우저 밖으로 나가도 되는지 여부*/, }={}) => {
 	const size = {
 		'window': {
 			"width": window.innerWidth || document.documentElement.clientWidth || 0,
@@ -449,7 +449,7 @@ export const elementOverlap = (element, targetList, position=''/*이동할 위�
 	}
 
 	// position 값 확인
-	targetList = targetList.filter(target => /*target.style.position !== 'static'*/target.style.position === 'fixed');
+	targetList = targetList.filter(target => /*target.style.position !== 'static'*/target.style.position === 'fixed' && !target.isEqualNode(element));
 
 	// 위치 변경 (위 또는 아래)
 	targetList.forEach((target) => {
