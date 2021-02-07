@@ -1,6 +1,33 @@
 /**
  * 브라우저 정보
  */
+/*
+-
+브라우저의 Viewport
+> 문서의 viewport 크기
+document.documentElement.clientWidth / clientHeight
+> 브라우저 viewport 의 스크롤 포함 크기
+window.innerWidth / innerHeight
+> 브라우저 창 크기
+window.outerWidth / outerHeight
+
+> 문서의 크기
+document.documentElement.offsetWidth / offsetHeight
+> 브라우저 화면을 확대하거나, 축소할 경우 viewport 크기 변화
+document.documentElement.clientWidth 와 window.innerWidth 의 값은 변화
+
+> 스크린 크기
+screen.width 와 screen.height
+
+> css 의 vw 와 vh 는 viewport weigth 와 viewport heigth 으로 css unit 중 하나
+https://www.sitepoint.com/css-viewport-units-quick-start/
+
+> 모바일 브라우저에는 Layout viewport 와 Virsual viewport 2개의 뷰포트가 존재
+Layout viewport 는 고정된 화면으로 사용자의 액션에 영향을 받지 않는다.
+Virsual viewport 는 유동적인 화면으로 사용자의 액션에 영향을 받는다.
+https://bokand.github.io/viewport/index.html
+https://www.quirksmode.org/mobile/viewports2.html
+*/
 // 모듈 조합
 export * from './history';
 export * from './location';

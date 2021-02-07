@@ -1,6 +1,22 @@
 /**
  * CSS
  */
+/*
+-
+일반적인 CSS 문제처리
+https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/HTML_and_CSS
+https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Introduction
+
+
+-
+접두사
+> Mozilla 사용 
+	-moz-
+> Chrome / Opera / Safari 사용 
+	-webkit-
+> Microsoft는 
+	-ms-
+*/
 
 // 반응형 계산
 export const sizePercent = (target, content) => {
