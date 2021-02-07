@@ -171,14 +171,14 @@ function setDevelopConfig(config) {
 	config.devServer = {
 		inline: true,
 		host: '0.0.0.0',
-		port: 9090, // 주의! 8080 은 톰캣!
+		port: 9090, // 주의! 기본값 8080 은 톰캣과 충돌!
 		disableHostCheck: true
 	};
 	config.plugins.push(new HtmlWebpackPlugin(), new HtmlWebpackPlugin({
 		title: 'Webpack DevServer',
 		// 브라우저에서 접근할 파일명
 		// http://<devServer.host>:<devServer.port>/<output.publicPath>/<HtmlWebpackPlugin 옵션 filename>
-		// http://0.0.0.0:9090/
+		// http://0.0.0.0:8080/
 		filename: 'index.html',
 		// dev-server html 에 포함할 시용자 템플릿
 		template: 'webpack-dev-server-template.html'
