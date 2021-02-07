@@ -129,7 +129,7 @@ export default class ModalMessage extends ModalState {
 			this.position();
 
 			// 서로 겹치지 않도록 제어
-			elementOverlap(this.elements.contents, document.querySelectorAll(`[${this.attributePrefix}-message-contents]`), this.settings.position, { isBrowserOverflow: false, });
+			elementOverlap(this.elements.contents, Array.from(document.querySelectorAll(`[${this.attributePrefix}-message-contents]`)).reverse(), this.settings.position, { isBrowserOverflow: false, });
 
 			// auto hide
 			global.clearTimeout(this.time);

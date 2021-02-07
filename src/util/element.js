@@ -456,7 +456,7 @@ export const elementOverlap = (element, targetList, position=''/*이동할 위�
 		//let { style: styleTarget } = elementOuterSize(target, { width: target.offsetWidth, height: target.offsetHeight, });
 		// https://stackoverflow.com/questions/12066870/how-to-check-if-an-element-is-overlapping-other-elements
 		let rectTarget = target.getBoundingClientRect(); // padding + border 와 스크롤 위치 변화 포함 (document size 기준 위치 측정)
-		let isOverlap = !(rectElement.right < rectTarget.left || rectElement.left > rectTarget.right || rectElement.bottom < rectTarget.top || rectElement.top > rectTarget.bottom);
+		let isOverlap = !(right < rectTarget.left || left > rectTarget.right || bottom < rectTarget.top || top > rectTarget.bottom);
 		
 		// 겹치는 부분 보정
 		if(isOverlap) {
@@ -474,11 +474,12 @@ export const elementOverlap = (element, targetList, position=''/*이동할 위�
 
 					break;
 				default:
+					// position: fixed 경우 
 					if(rectTarget.height <= top) {
 						// 아래에서 위로 이동
 						target.style.removeProperty('top');
 						target.style.bottom = `${parseFloat(size.window.height - top)}px`;
-					}else if(rectTarget.height <= size.window.height - bottom) {
+					}else if(isBrowserOverflow === true || rectTarget.height <= size.window.height - bottom) {
 						// 위에서 아래로 이동
 						target.style.removeProperty('bottom');
 						target.style.top = `${bottom}px`;
