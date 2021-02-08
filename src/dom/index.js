@@ -750,6 +750,23 @@ export class DOM {
 		그러나 두 객체는 다른 목적을 가지고 있습니다. 
 		getComputedStyle 에서 반환된 객체는 읽기 전용이며 요소의 (<style> 또는 외부 stylesheet로 설정되는 것도 포함해서) 스타일을 검사하는 데 사용할 수 있습니다. 
 		elt.style 객체는 특정한 요소에 스타일을 설정하는 데 사용해야 합니다.
+
+		또한, css 조건(가상 요소의 속성에 접근)에 따라 가져올 수 있음
+		https://zellwk.com/blog/css-values-in-js/
+		CSS 코드
+			.element { background-color: red }
+			.element::before { content: "Before pseudo element"; }
+		JavaScript 코드
+			const element = document.querySelector('.element');
+			const style = getComputedStyle(element, '::before');
+			console.log(style.content) // Before element
+		
+		-
+		element.style
+			.setProperty() : 설정, 2개의 인자 (속성,값)
+			.getProperty() : 가져오기, 1개의 인자
+			.item() : 가져오려는 속성의 인덱스를 인자로 사용
+			.removeProperty() : 삭제
 		*/
 		let i, max = (this.elements && this.elements.length) || 0;
 		let value;
