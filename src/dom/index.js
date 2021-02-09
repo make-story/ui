@@ -4,6 +4,52 @@
  * http://www.quirksmode.org/js/detect.html
  * https://modernizr.com/download/
  */
+/*
+-
+이벤트 타겟
+let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+let self = event.currentTarget; // event listener element (event 실행 element)
+let target = event.target || event.srcElement; // event 가 발생한 element
+let touch = event.touches; // touchstart
+
+-
+offsetLeft/offsetTop, offsetWidth/offsetHeight, offsetParent
+패딩과 보더 포함 (일반적으로 element 크기 등을 구할 떄 사용)
+offsetWidth/offsetHeight -> display: none 되어 있는 것에 주의! (visibility: hidden 경우는 값 반환가능)
+
+-
+clientLeft/clientTop, clientWidth/clientHeight
+패딩 포함 (실제로 보여지고 있는 컨텐츠가 얼마만큼의 공간을 차지하고 있는지 확인)
+
+-
+scrollLeft/scrollTop, scrollWidth/scrollHeight
+보이는 것과 상관 없이 실제 컨텐츠 영역 (전체 스크롤바를 사용하게 되어 숨겨진 영역까지 포함)
+
+-
+렌더링된 크기
+x.getBoundingClientRect(); // top, bottom, left, right, [width, height (IE9 이상)] - 문서의 스크롤값 미포함 (정확한 계산을 위해 스크롤값 'window.pageYOffset' 또는 'window.scrollY' 을 더해줘야 한다.)
+
+대부분의 경우엔 getBoundingClientRect()은 offsetWidth, offsetHeight와 거의 같은 값을 리턴한다.
+하지만, transform이 적용되어 있다면 조금 달라진다.
+
+offsetWidth와 offsetHeight 속성은 엘리먼트의 레이아웃 크기를 리턴하는 반면,
+getBoundingClientRect()는 렌더링된 크기를 리턴한다.
+
+예를 들어, 엘리먼트에 다음과 같은 속성이 적용되어 있다고 가정해보자.
+width: 100px;
+transform: scale(0.5);
+
+이 경우, offsetWidth는 100을 리턴하지만, getBoundingClientRect()는 50을 리턴한다.
+
+offsetWidth 뿐 아니라, 위에서 언급한, clientWidth, scrollWidth 모두 tranform에 의해 변경된 값은 적용되지 않는다.
+따라서, 최종 렌더링된 값을 가져오고 싶다면, offsetWidth 대신 getBoundingClientRect()를 사용하는 것이 좋다.
+
+-
+포인터 위치값
+screenX/screenY : screen in device pixels. (모니터 화면 기준)
+pageX/pageY : <html> element in CSS pixels. (html 기준 스크롤값 포함 위치)
+clientX/clientY : viewport in CSS pixels. (브라우저 기준 스크롤값 제외 위치)
+*/
 import regexp from '../util/regexp';
 import { isNumeric, numberUnit, numberReturn, } from '../util/number';
 
@@ -372,7 +418,7 @@ export class DOM {
 		IE9+
 		function index(element) {
 			if(!element) return -1;
-			var i = 0;
+			let i = 0;
 			do {
 				i++;
 			} while(element = element.previousElementSibling);
@@ -416,7 +462,7 @@ export class DOM {
 		let i, max;
 		/*
 		IE9+
-		var elements = document.querySelectorAll(selector);
+		let elements = document.querySelectorAll(selector);
 		Array.prototype.forEach.call(elements, function(element, i) {
 
 		});
@@ -984,7 +1030,7 @@ export class DOM {
 	offset() {
 		/*
 		IE8+
-		var rect = element.getBoundingClientRect();
+		let rect = element.getBoundingClientRect();
 		{
 			top: rect.top + document.body.scrollTop,
 			left: rect.left + document.body.scrollLeft
@@ -1133,8 +1179,8 @@ export class DOM {
 
 		IE9+
 		function outerWidth(element) { // $(element).outerWidth(true);
-			var width = element.offsetWidth;
-			var style = getComputedStyle(element);
+			let width = element.offsetWidth;
+			let style = getComputedStyle(element);
 			width += parseInt(style.marginLeft) + parseInt(style.marginRight);
 			return width;
 		}
@@ -1224,8 +1270,8 @@ export class DOM {
 
 		IE9+
 		function outerHeight(element) { // $(element).outerHeight(true);
-			var height = element.offsetHeight;
-			var style = getComputedStyle(element);
+			let height = element.offsetHeight;
+			let style = getComputedStyle(element);
 			height += parseInt(style.marginTop) + parseInt(style.marginBottom);
 			return height;
 		}
@@ -1736,7 +1782,7 @@ export class DOM {
 		IE8+
 		document.addEventListener(eventName, function(e) { // $(document).on(eventName, elementSelector, handler);
 			// loop parent nodes from the target to the delegation node
-			for (var target = e.target; target && target != this; target = target.parentNode) {
+			for (let target = e.target; target && target != this; target = target.parentNode) {
 				if (target.matches(elementSelector)) {
 					handler.call(target, e);
 					break;
@@ -1969,7 +2015,7 @@ export class DOM {
 		/*
 		Trigger Custom
 		IE9+
-		var event;
+		let event;
 		if(window.CustomEvent && typeof window.CustomEvent === 'function') {
 			event = new CustomEvent('my-event', {detail: {some: 'data'}});
 		}else {
@@ -1981,7 +2027,7 @@ export class DOM {
 		Trigger Native
 		IE9+
 		// For a full list of event types: https://developer.mozilla.org/en-US/docs/Web/API/document.createEvent
-		var event = document.createEvent('HTMLEvents');
+		let event = document.createEvent('HTMLEvents');
 		event.initEvent('change', true, false);
 		element.dispatchEvent(event); // $(element).trigger('change');
 		*/
@@ -2187,7 +2233,7 @@ export class DOM {
 	is(selector) {
 		// x.matches() // IE9이상 사용가능
 		/*
-		var matches = function(element, selector) {
+		let matches = function(element, selector) {
 			return (element.matches || element.matchesSelector || element.msMatchesSelector || element.mozMatchesSelector || element.webkitMatchesSelector || element.oMatchesSelector).call(element, selector);
 		};
 		*/

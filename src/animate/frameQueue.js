@@ -2,6 +2,14 @@
  * requestAnimationFrame, cancelAnimationFrame
  * https://javascript.info/js-animation
  */
+/*
+-
+최소 시간
+minimum millisecond value of setTimeout
+10 will be the most reliable minimum in all browser,
+However, 4ms is the minimum for HTML5
+https://developer.mozilla.org/en-US/docs/Web/API/WindowTimers/setTimeout#Minimum_delay_and_timeout_nesting
+*/
 import browser from '../browser';
 import $ from '../dom';
 import { 
