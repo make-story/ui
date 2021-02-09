@@ -23,6 +23,7 @@
 // https://developer.mozilla.org/ko/docs/Web/Guide/Events/Creating_and_triggering_events
 // https://ko.javascript.info/dispatch-events
 // https://www.w3.org/TR/uievents/
+// https://jeongah-story.tistory.com/157
 export const createCustomEvent = (type='', options={}) => {
 	/*
 	-
