@@ -16,6 +16,8 @@ import demoWebSocket from './websocket/demo';
 import demoWebWorker from './webworker/demo';
 import demoXHR from './xhr/demo';
 
+import './test/index';
+
 demoAnimate();
 demoBrowser();
 demoDOM();
