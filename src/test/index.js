@@ -20,3 +20,5 @@ $buttons[1].onclick = () => {
 	b.setClick();
 	alert(b.getClick());
 };
+
+import './module.js';
