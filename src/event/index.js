@@ -2,6 +2,8 @@
  * event
  */
 
+// 인터넷 익스플로러 9 이상 (폴리필)
+// https://developer.mozilla.org/ko/docs/Web/API/CustomEvent/CustomEvent
 (function () {
 	if ( typeof window.CustomEvent === "function" ) return false;
   
@@ -24,7 +26,7 @@
 // https://ko.javascript.info/dispatch-events
 // https://www.w3.org/TR/uievents/
 // https://jeongah-story.tistory.com/157
-export const createCustomEvent = (type='', options={}) => {
+export const createCustomEvent = (type='', options={}) => { // 커스텀(사용자데이터 추가) 이벤트
 	/*
 	-
 	커스텀 이벤트 버블링 예시
@@ -60,7 +62,7 @@ export const createCustomEvent = (type='', options={}) => {
 	const event = new CustomEvent(type, options);
 };
 
-export const createEvent = (type='', options={}) => {
+export const createEvent = (type='', options={}) => { // 기본적 사용자 이벤트
 	let { detail={}, } = options;
 	/*
 	-

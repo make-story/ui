@@ -16,9 +16,11 @@ import demoWebSocket from './websocket/demo';
 import demoWebWorker from './webworker/demo';
 import demoXHR from './xhr/demo';
 
+import demoEvent from './event/demo';
+
 import './test/index';
 
-demoAnimate();
+/*demoAnimate();
 demoBrowser();
 demoDOM();
 demoEditor();
@@ -29,4 +31,5 @@ demoTouch();
 demoUtil();
 demoWebSocket();
 demoWebWorker();
-demoXHR();
+demoXHR();*/
+demoEvent();
