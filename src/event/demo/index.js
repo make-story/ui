@@ -1,7 +1,47 @@
+import $ from '../../dom';
+
+export default (target='#event', options={}) => {
+	$(target).html(`
+		<button id="dispatchEvent1">dispatchEvent1</button>
+		<button id="dispatchEvent2">dispatchEvent2</button>
+		<button id="dynamicEvent1">dynamicEvent1 add</button>
+		<button id="dynamicEvent2">dynamicEvent2 dispatch</button>
+	`);
+
+	/**
+	 * 트리거 테스트
+	 */
+	const dispatchEvent1 = document.querySelector('#dispatchEvent1');
+	const dispatchEvent2 = document.querySelector('#dispatchEvent2');
+	dispatchEvent1.onclick = (event) => {
+		// 트리거
+		document.dispatchEvent(new CustomEvent('buildData', { detail: 'dispatchEvent1!!!!!' }));
+	};
+	dispatchEvent2.onclick = (event) => {
+		// 트리거
+		document.dispatchEvent(new CustomEvent('buildData', { detail: 'dispatchEvent2!!!!!' }));
+	};
+
+	/**
+	 * 동적 이젠트 관련 테스트
+	 */
+	const dynamicEvent1 = document.querySelector('#dynamicEvent1');
+	const dynamicEvent2 = document.querySelector('#dynamicEvent2');
+
+	// 동적 이벤트 생성
+	dynamicEvent1.addEventListener('click', (event) => {
+		console.log('dynamicEvent1');
+		document.addEventListener('dynamicEvent', function(event) { 
+			console.log('dynamicEvent event', event);  
+		}, false);
+	}, { once: true });
+
+	// 동적 생성된 이벤트 트리거 
+	dynamicEvent2.addEventListener('click', (event) => {
+		document.dispatchEvent(new CustomEvent('dynamicEvent', { detail: 'dynamicEvent2!!!!!' }));
+	});
 
 
-export default () => {
-	console.log('event test');
 
 	/*
 	기본적인 커스텀 이벤트
