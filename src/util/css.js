@@ -27,3 +27,11 @@ export const sizePercent = (target, content) => {
 	content = Number(content);
 	return (target / content) * 100;
 }
+
+
+// css 
+// IE10 이상
+export const matchMedia = (mediaQueryString) => {
+	//window.matchMedia("(max-width: 570px)");
+	return window.matchMedia(mediaQueryString).matches; // true / false
+}

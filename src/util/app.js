@@ -338,20 +338,28 @@ const launchAppViaHiddenIframe = (urlScheme) => {
 	}, 100);
 }
 
+/**
+ * App <-> WebView 정보 교환
+ * 
+ * navigator.userAgent 기본적 확인가능 정보 : 브라우저정보(종류, 버전), OS정보(종류, 버전), App여부(ios && safari 또는 android && inapp || app)
+ * 앱에서 userAgent 에 추가(필요정보) : xxxApp=true,serviceversion=0.0.0,servicebuildversion=0.0.0,appname(예: naver, daum, nate)
+ * 
+ */
+/*
+const userAgent = navigator.userAgent;
+// check Mac
+const isMac = userAgent.indexOf("Mac") > -1;
+// check iOS
+const isIOS = (isMac || userAgent.indexOf("iPhone") > -1 || userAgent.indexOf("iPad") > -1) && !!navigator.maxTouchPoints && navigator.maxTouchPoints > 0;
+// check Chrome
+const isChrome = userAgent.indexOf("Chrome") > -1;  
+*/
 
 // 약속된 네이밍
 export const preset = 'abcapp';
 
-// 웹뷰 -> 앱
+// 1. 웹뷰 -> 앱
 export const appSendMessage = (name, param) => {
-	const userAgent = navigator.userAgent;
-	// check Mac
-	const isMac = userAgent.indexOf("Mac") > -1;
-	// check iOS
-	const isIOS = (isMac || userAgent.indexOf("iPhone") > -1 || userAgent.indexOf("iPad") > -1) && !!navigator.maxTouchPoints && navigator.maxTouchPoints > 0;
-	// check Chrome
-	const isChrome = userAgent.indexOf("Chrome") > -1;  
-
 	/*
 	User-Agent Client Hints 를 지원하는 브라우저의 경우
 	- navigator.userAgentData.brands: 브라우저의 이름과 메이저 버전, Chromium 정보
@@ -361,11 +369,14 @@ export const appSendMessage = (name, param) => {
 
 	try {
 		if (param) {
-			param = JSON.stringify(param);
+			param = JSON.stringify(param); // {"": ""} JSON 형태
 		}
 		
 		if (isIOS) {
-			// ios
+            /**
+             * ios
+             * abcapp://appapi/goToMain?encodeURIComponent({"":""})
+             */
 			// https://sesang06.tistory.com/170
 			const iframe = document.createElement('iframe');
 			let	scheme = `${preset}://appapi/`;
@@ -381,7 +392,10 @@ export const appSendMessage = (name, param) => {
 			iframe.parentNode.removeChild(iframe);
 			iframe = null;
 		} else { 
-			// android
+            /**
+             * android
+             * window.abcapp.goToMain(encodeURIComponent({"":""}))
+             */
 			// https://black-jin0427.tistory.com/272
 			if (window[preset] && window[preset][name]) { // window.[함수는 안드로이드 APP에서 만든다.]
 				if (param === undefined) {
@@ -394,7 +408,7 @@ export const appSendMessage = (name, param) => {
 	}catch(e) {}
 }
 
-// 맵 -> 웹뷰
+// 2. 맵 -> 웹뷰
 /*
 웹뷰에서 이벤트 대기
 document.addEventListener(window[preset].EVENT.TEST, function(event) { 
@@ -411,8 +425,9 @@ if(!window[preset] || typeof window[preset] !== 'object') {
 	window[preset] = {};
 }
 if(!window[preset].EVENT) {
+    // 앱과 약속된 이벤트 상수(키)!
 	window[preset].EVENT = {
-		TEST: 'test',
+		TEST: 'testTest',
 	};
 }
 if(typeof window[preset].appTriggerMessage !== 'function') {
