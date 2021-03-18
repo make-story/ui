@@ -376,6 +376,10 @@ export const appSendMessage = (name, param) => {
             /**
              * ios
              * abcapp://appapi/goToMain?encodeURIComponent({"":""})
+             * 
+             * 또는
+             * 
+             * webkit.messageHandlers.NAME.postMessage("");
              */
 			// https://sesang06.tistory.com/170
 			const iframe = document.createElement('iframe');
