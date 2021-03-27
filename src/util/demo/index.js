@@ -4,6 +4,7 @@
 import $ from '../../dom';
 import { elementPosition, elementOverlap, elementPositionStandard, } from '../element';
 import is from '../is';
+import { preset, appEvent, appEventOn, appEventOff } from '../app';
 
 export default (target='#util', options={}) => {
 	$(target).html(`
@@ -18,7 +19,12 @@ export default (target='#util', options={}) => {
 		</div>
 		<div id="overlapTestListWrap"></div>
 		<div id="positionStandardElement">standard</div>
+		
+		<div>
+			<button id="appWebViewEvent">앱->웹뷰 호출 테스트</button>
+		</div>
 	`);
+
 	const positionList = ['topleft', 'topcenter', 'topright', 'bottomleft', 'bottomcenter', 'bottomright', 'centerleft', 'center', 'centerright'];
 	let time = window.setInterval(() => {
 		if(positionList.length) {
@@ -55,4 +61,15 @@ export default (target='#util', options={}) => {
 	}, 3000);*/
 
 	elementPositionStandard(document.querySelector('#positionStandard'), document.querySelector('#positionStandardElement'));
+
+	//
+	const appTest = (data) => {
+		console.log(appEvent.TEST, data);
+		appEventOff(appEvent.TEST, appTest);
+	};
+	appEventOn(appEvent.TEST, appTest);
+	document.querySelector('#appWebViewEvent').addEventListener('click', (event) => {
+		// 앱에서 실행했다고 가정 
+		window[preset].appTriggerMessage(appEvent.TEST, event);
+	})
 }

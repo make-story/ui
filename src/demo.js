@@ -20,16 +20,16 @@ import demoEvent from './event/demo';
 
 import './test/index';
 
-/*demoAnimate();
-demoBrowser();
-demoDOM();
-demoEditor();
-demoFlicking();
-demoModal();
+//demoAnimate();
+//demoBrowser();
+//demoDOM();
+//demoEditor();
+//demoFlicking();
+//demoModal();
 //demoPlayer();
-demoTouch();
+//demoTouch();
 demoUtil();
-demoWebSocket();
-demoWebWorker();
-demoXHR();*/
-demoEvent();
+//demoWebSocket();
+//demoWebWorker();
+//demoXHR();
+//demoEvent();

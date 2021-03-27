@@ -357,6 +357,29 @@ const isChrome = userAgent.indexOf("Chrome") > -1;
 
 // 약속된 네이밍
 export const preset = 'abcapp';
+export const appEvent = {
+    TEST: 'testTest',
+};
+export const appEventOn = (type, listener, options=false) => {
+    //console.log('appEventOn', type);
+    //console.log(listener);
+    document.addEventListener(type, listener, options);
+};
+export const appEventOff = (type, listener, options=false) => {
+    //console.log('appEventOff', type);
+    //console.log(listener);
+    document.removeEventListener(type, listener, options);
+};
+
+if(!window[preset] || typeof window[preset] !== 'object') {
+	window[preset] = {};
+}
+if(!window[preset].EVENT) {
+    // 앱과 약속된 이벤트 상수(키)!
+	window[preset].EVENT = {
+		...appEvent
+	};
+}
 
 // 1. 웹뷰 -> 앱
 export const appSendMessage = (name, param) => {
@@ -425,17 +448,9 @@ document.dispatchEvent(new CustomEvent(window[preset].EVENT.TEST, { detail: '앱
 앱에서 호출 시 
 window[preset].appTriggerMessage(window[preset].EVENT.TEST, '{"name": "test value"}')
 */
-if(!window[preset] || typeof window[preset] !== 'object') {
-	window[preset] = {};
-}
-if(!window[preset].EVENT) {
-    // 앱과 약속된 이벤트 상수(키)!
-	window[preset].EVENT = {
-		TEST: 'testTest',
-	};
-}
 if(typeof window[preset].appTriggerMessage !== 'function') {
 	window[preset].appTriggerMessage = (name, data) => {
-		document.dispatchEvent(new CustomEvent(window[preset].EVENT[name], { detail: data }));
+        console.log('appTriggerMessage', name, data);
+		document.dispatchEvent(new CustomEvent(name, { detail: data }));
 	}
 }

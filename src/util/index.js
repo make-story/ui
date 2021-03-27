@@ -18,6 +18,7 @@ export * from './object';
 export * from './observe';
 export { default as regexp } from './regexp';
 export * from './string';
+//export * from './url';
 
 // key (일반적인 고유값)
 /*
