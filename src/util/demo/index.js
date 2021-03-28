@@ -4,7 +4,7 @@
 import $ from '../../dom';
 import { elementPosition, elementOverlap, elementPositionStandard, } from '../element';
 import is from '../is';
-import { preset, appEvent, appEventOn, appEventOff } from '../app';
+import { preset, appEventType, appEventOn, appEventOff } from '../app';
 
 export default (target='#util', options={}) => {
 	$(target).html(`
@@ -64,12 +64,12 @@ export default (target='#util', options={}) => {
 
 	//
 	const appTest = (data) => {
-		console.log(appEvent.TEST, data);
-		appEventOff(appEvent.TEST, appTest);
+		console.log(appEventType.TEST, data);
+		appEventOff(appEventType.TEST, appTest);
 	};
-	appEventOn(appEvent.TEST, appTest);
+	appEventOn(appEventType.TEST, appTest);
 	document.querySelector('#appWebViewEvent').addEventListener('click', (event) => {
 		// 앱에서 실행했다고 가정 
-		window[preset].appTriggerMessage(appEvent.TEST, event);
+		window[preset].appTriggerMessage(appEventType.TEST, event);
 	})
 }

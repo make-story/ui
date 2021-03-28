@@ -357,7 +357,7 @@ const isChrome = userAgent.indexOf("Chrome") > -1;
 
 // 약속된 네이밍
 export const preset = 'abcapp';
-export const appEvent = {
+export const appEventType = {
     TEST: 'testTest',
 };
 export const appEventOn = (type, listener, options=false) => {
