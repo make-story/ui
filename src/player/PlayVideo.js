@@ -3,6 +3,22 @@
  */
 /*
 -
+> 비디오(Video) 개발 고려사항
+오버레이 사용자 수동제어
+DURATION 데이터(% 퍼센트) 콜백 등 기능 이벤트 리스너
+자동재생 브라우저 정책 (별도 오버레이/기능)
+풀스크린
+라이브 hls
+PIP
+Gif -> Video
+웹접근성(자막)
+앱 웹뷰 브라우저 지원, PC 등 크로스브라우저
+비디오 지원 파일형태(MP4)
+뒤로가기, 브라우저 visible/hidden, BFCache 등 
+GA 코드 지원
+
+
+-
 > HTML5 비디오 
 https://developer.mozilla.org/en-US/docs/Web/Guide/Events/Media_events
 https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement
