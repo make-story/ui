@@ -55,6 +55,13 @@ export const parseHTML = (html='') => {
 
 // Remove HTML from a string
 export const stripHTML = (source) => {
+	/*
+	if(source && typeof source === 'string') {
+		return source.replace(/(<([^>]+)>)/ig, "");
+	}else {
+		return source;
+	}
+	*/
 	const fragment = document.createDocumentFragment();
 	const element = document.createElement('div');
 	fragment.appendChild(element);

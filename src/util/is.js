@@ -72,6 +72,60 @@ const isUrl = (value) => {
 	}
 };
 
+const isEmail = (value) => {
+	const pattern = /^((([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*)|((\x22)((((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(([\x01-\x08\x0b\x0c\x0e-\x1f\x7f]|\x21|[\x23-\x5b]|[\x5d-\x7e]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(\\([\x01-\x09\x0b\x0c\x0d-\x7f]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))))*(((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(\x22)))@((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))$/i;
+	return pattern.test(value);
+};
+const isPhone = (value) => { 
+	const pattern = /^\d{2,3}-\d{3,4}-\d{4}$/;
+	return pattern.test(value);
+},
+const isExtension = (value, extension) => { // 확장자
+	const extension = (this.isText(extension) && extension.replace(/(^\s*)|(\s*$)/g, "")) || 'jpg,jpeg,gif,png,pdf,hwp,exl'; // 관리자 지정 확장자
+	const index = value.lastIndexOf(".");
+	const value = value.substr(index + 1).toLowerCase(); // 첨부된 확장자
+	return extension.toLowerCase().indexOf(value) !== -1;
+};
+const isBase64 = (value) => { // base64 확인 
+	try {
+		return btoa(atob(value)) === value;
+	}catch(error) {
+		return false;
+	}
+};
+
+const isTextDate = (value) => {
+	const pattern = /^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}$/;
+	return pattern.test(value);
+};
+const isTextNumber = (value) => {
+	const pattern = /^-?(?:\d+|\d{1,3}(?:,\d{3})+)?(?:\.\d+)?$/;
+	return pattern.test(value);
+};
+const isTextMinLength = (value, number) => { // 최소글자
+	const value1 = value.replace(/<br>|\s/g, "");
+	const value2 = parseInt(number); 
+	return value1.length >= value2;
+};
+const isTextMaxLength = (value, number) => { // 최대글자
+	const value1 = value.replace(/<br>|\s/g,"");
+	const value2 = parseInt(number); 
+	return value1.length <= value2;
+};
+const isNumberMin = (value, number) => { // 최소값
+	if(isNumber(value) && isNumber(number)) {
+		return value >= number;
+	}
+	return false;
+};
+const isNumberMax = (value, number) => { // 최대값
+	if(isNumber(value) && isNumber(number)) {
+		return value <= number;
+	}
+	return false;
+};
+
+
 export default {
 	type,
 
@@ -101,4 +155,16 @@ export default {
 	track: isTrack,
 	empty: isEmpty,
 	url: isUrl,	
+
+	email: isEmail,
+	phone: isPhone,
+	extension: isExtension,
+	base64: isBase64,
+
+	textDate: isTextDate,
+	textNumber: isTextNumber,
+	textMinLength: isTextMinLength,
+	textMaxLength: isTextMaxLength,
+	numberMin: isNumberMin,
+	numberMax: isNumberMax,
 };
