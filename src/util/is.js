@@ -79,12 +79,6 @@ const isEmail = (value) => {
 const isPhone = (value) => { 
 	const pattern = /^\d{2,3}-\d{3,4}-\d{4}$/;
 	return pattern.test(value);
-},
-const isExtension = (value, extension) => { // 확장자
-	const extension = (this.isText(extension) && extension.replace(/(^\s*)|(\s*$)/g, "")) || 'jpg,jpeg,gif,png,pdf,hwp,exl'; // 관리자 지정 확장자
-	const index = value.lastIndexOf(".");
-	const value = value.substr(index + 1).toLowerCase(); // 첨부된 확장자
-	return extension.toLowerCase().indexOf(value) !== -1;
 };
 const isBase64 = (value) => { // base64 확인 
 	try {
@@ -124,7 +118,6 @@ const isNumberMax = (value, number) => { // 최대값
 	}
 	return false;
 };
-
 
 export default {
 	type,
