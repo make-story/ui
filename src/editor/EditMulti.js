@@ -4,7 +4,6 @@
  * 
  * [주의!]
  * super 키워드는 부모 constructor 호출과 부모 메소드 호출할 경우 사용
- * super 키워드는 화살표함수 활용
  */
 import browser from '../browser';
 import $ from '../dom';
@@ -16,7 +15,7 @@ import {
 	getNodeInfo,
 	isNodeCheck,
 } from './util';
-import EditState from './EditState';
+import EditState, { editState } from './EditState';
 
 const EVENT_MOUSEDOWN_MULTIEDIT = 'EVENT_MOUSEDOWN_MULTIEDIT';
 const EVENT_MOUSEUP_MULTIEDIT = 'EVENT_MOUSEUP_MULTIEDIT';
@@ -24,9 +23,9 @@ const EVENT_KEYDOWN_MULTIEDIT = 'EVENT_KEYDOWN_MULTIEDIT';
 const EVENT_KEYUP_MULTIEDIT = 'EVENT_KEYUP_MULTIEDIT';
 const EVENT_BLUR_MULTIEDIT = 'EVENT_BLUR_MULTIEDIT';
 
-export default class EditMulti extends EditState {
+export default class EditMulti {
 	constructor(target=null, settings={}) {
-		super();
+		//super();
 		this.settings = {
 			'key': 'editor', 
 			// 각각의 에디터 (추후 비동기 import 형태로 변경)
@@ -518,9 +517,9 @@ export default class EditMulti extends EditState {
 			wrap = document.getElementById(id);
 		}
 		if(!wrap) {		
-			if(super.isSelection()) {
+			if(editState.isSelection()) {
 				wrap = getParent(
-					this.selection.anchorNode,
+					editState.selection.anchorNode,
 					null,
 					(node) => { // condition (검사)
 						/*
@@ -556,8 +555,8 @@ export default class EditMulti extends EditState {
 		/*
 		console.log('wrap');
 		console.log(wrap);
-		console.log(this.selection.anchorNode);
-		console.log(this.selection.focusNode);
+		console.log(editState.selection.anchorNode);
+		console.log(editState.selection.focusNode);
 		return;
 		*/
 
@@ -1000,7 +999,7 @@ export default class EditMulti extends EditState {
 		code.innerHTML = '<br />';
 		p.innerHTML = '<br />';
 		getParent(
-			this.selection.anchorNode,
+			editState.selection.anchorNode,
 			null,
 			(node) => { // condition (검사)
 				if(!this.elements.target.contains(node) || this.elements.target.isEqualNode(node)) {
@@ -1017,7 +1016,7 @@ export default class EditMulti extends EditState {
 		);
 
 		// 포커스(커서) 이동
-		super.setCusor(code);
+		editState.setCusor(code);
 	}
 
 	// 라인(선) 넣기
@@ -1048,7 +1047,7 @@ export default class EditMulti extends EditState {
 		fragment.appendChild(p);
 		p.innerHTML = '<br />';
 		getParent(
-			this.selection.anchorNode,
+			editState.selection.anchorNode,
 			null,
 			(node) => { // condition (검사)
 				if(!this.elements.target.contains(node) || this.elements.target.isEqualNode(node)) {
@@ -1065,7 +1064,7 @@ export default class EditMulti extends EditState {
 		);
 
 		// 포커스(커서) 이동
-		super.setCusor(p);
+		editState.setCusor(p);
 	}
 
 	// 멀티미디어 에디터 툴바 위치 설정 (보이기/숨기기)
@@ -1082,10 +1081,10 @@ export default class EditMulti extends EditState {
 		let height = 0;
 		let gap = 10; // 커서가 위치한 라인과의 거리
 
-		if(!super.isCollapsed() || typeof this.selection !== 'object' || toggle === 'hide') {
+		if(!editState.isCollapsed() || typeof editState.selection !== 'object' || toggle === 'hide') {
 			// 숨기기
 			this.elements.tooltip.default.style.display = "none";
-		}else if(super.isSelection()) {
+		}else if(editState.isSelection()) {
 			this.elements.tooltip.default.style.display = "block"; // 렌더링 상태에서 offsetWidth, offsetHeight 측정
 			// 툴팁 크기
 			tooltip.width = this.elements.tooltip.default.offsetWidth;
@@ -1099,12 +1098,12 @@ export default class EditMulti extends EditState {
 			left += window.pageXOffset; // scroll
 			// top
 			// #text node 는 getBoundingClientRect 없음
-			if(this.selection.anchorNode && 'getBoundingClientRect' in this.selection.anchorNode) {
-				rect.node = this.selection.anchorNode.getBoundingClientRect();
-			}else if(this.selection.focusNode && 'getBoundingClientRect' in this.selection.focusNode) {
-				rect.node = this.selection.focusNode.getBoundingClientRect();
+			if(editState.selection.anchorNode && 'getBoundingClientRect' in editState.selection.anchorNode) {
+				rect.node = editState.selection.anchorNode.getBoundingClientRect();
+			}else if(editState.selection.focusNode && 'getBoundingClientRect' in editState.selection.focusNode) {
+				rect.node = editState.selection.focusNode.getBoundingClientRect();
 			}else {
-				rect.node = this.selection.getRangeAt(0).getBoundingClientRect();
+				rect.node = editState.selection.getRangeAt(0).getBoundingClientRect();
 			}
 			if(rect.node.top > 0) {
 				height = rect.node.height || rect.node.bottom - rect.node.top;
@@ -1141,10 +1140,10 @@ export default class EditMulti extends EditState {
 		let gap = 10;
 
 		// 선택된 스와이프 위쪽에 위치 
-		if(!super.isCollapsed() || toggle === 'hide') {
+		if(!editState.isCollapsed() || toggle === 'hide') {
 			// 숨기기
 			this.elements.tooltip.swipe.style.display = "none";
-		}else if(super.isSelection()) {
+		}else if(editState.isSelection()) {
 			this.elements.tooltip.swipe.style.display = "block"; // 렌더링 상태에서 offsetWidth, offsetHeight 측정
 			// 툴팁 크기
 			tooltip.width = this.elements.tooltip.swipe.offsetWidth;
@@ -1182,35 +1181,35 @@ export default class EditMulti extends EditState {
 		};
 
 		// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
-		super.setSelection();
+		editState.setSelection();
 		if(!node || typeof node !== 'object' || !node.nodeType) {
 			if(nodeInfo && typeof nodeInfo === 'object' && nodeInfo.node) {
 				node = nodeInfo.node;
 			}else {
-				node = this.selection.anchorNode; // 선택된 글자의 시작노드
-				//node = this.selection.focusNode; // 현재 포커스가 위치한 끝노드
+				node = editState.selection.anchorNode; // 선택된 글자의 시작노드
+				//node = editState.selection.focusNode; // 현재 포커스가 위치한 끝노드
 			}
 		}
 		if(node && (!nodeInfo || typeof nodeInfo !== 'object')) {
 			nodeInfo = getNodeInfo(node);
 		}
 		setAllHide();
-		if(super.isSelection() && this.elements.target.contains(node)/* && node.nodeType === 1*/) {
+		if(editState.isSelection() && this.elements.target.contains(node)/* && node.nodeType === 1*/) {
 			console.log('node', node);
 			console.log('nodeInfo', nodeInfo);
 
 			/*console.log('----------');
-			console.dir(this.selection);
+			console.dir(editState.selection);
 			// 시작노드
-			console.log('anchorNode', this.selection.anchorNode);
-			console.log('anchorNode.nodeName: ' + this.selection.anchorNode.nodeName);
-			console.log('anchorNode.nodeValue: ' + this.selection.anchorNode.nodeValue);
-			console.log('anchorNode.nodeType: ' + this.selection.anchorNode.nodeType);
+			console.log('anchorNode', editState.selection.anchorNode);
+			console.log('anchorNode.nodeName: ' + editState.selection.anchorNode.nodeName);
+			console.log('anchorNode.nodeValue: ' + editState.selection.anchorNode.nodeValue);
+			console.log('anchorNode.nodeType: ' + editState.selection.anchorNode.nodeType);
 			// 끝노드
-			console.log('focusNode', this.selection.focusNode);
-			console.log('focusNode.nodeName: ' + this.selection.focusNode.nodeName);
-			console.log('focusNode.nodeValue: ' + this.selection.focusNode.nodeValue);
-			console.log('focusNode.nodeType: ' + this.selection.focusNode.nodeType);*/
+			console.log('focusNode', editState.selection.focusNode);
+			console.log('focusNode.nodeName: ' + editState.selection.focusNode.nodeName);
+			console.log('focusNode.nodeValue: ' + editState.selection.focusNode.nodeValue);
+			console.log('focusNode.nodeType: ' + editState.selection.focusNode.nodeType);*/
 			
 			// 현재노드 상위 검색
 			if(getParent( 
@@ -1227,7 +1226,7 @@ export default class EditMulti extends EditState {
 				}
 			) === true) {
 				// 전문 에디터 (이미지/스와이프/비디오 등 노출)
-				if(nodeInfo.edit === 'image' || /img/.test(nodeInfo.name) || /img/.test(this.selection.anchorNode.nodeName.toLowerCase()) || /img/.test(this.selection.focusNode.nodeName.toLowerCase())) {
+				if(nodeInfo.edit === 'image' || /img/.test(nodeInfo.name) || /img/.test(editState.selection.anchorNode.nodeName.toLowerCase()) || /img/.test(editState.selection.focusNode.nodeName.toLowerCase())) {
 					// 이미지 수정
 					this.setImageModifyTooltipMenuPostion({'toggle': 'show', 'nodeInfo': nodeInfo});
 				}else {
@@ -1314,7 +1313,7 @@ export default class EditMulti extends EditState {
 					id.appendChild(figure);
 
 					// 포커스(커서) 이동
-					super.setCusor(figcaption);
+					editState.setCusor(figcaption);
 				};
 			};
 
@@ -1341,8 +1340,8 @@ export default class EditMulti extends EditState {
 			// 이미지 삽입
 			case 'image': 
 				if(!id) {
-					if(super.isSelection()) {
-						id = this.selection.anchorNode; // 현재 커서 위치
+					if(editState.isSelection()) {
+						id = editState.selection.anchorNode; // 현재 커서 위치
 					}else {
 						id = this.elements.target; // 에디터가 적용되는 부분
 					}
@@ -1379,7 +1378,7 @@ export default class EditMulti extends EditState {
 			let nodeInfo = {};
 			console.log('event.type', event.type);
 
-			super.setSelection();
+			editState.setSelection();
 			if(this.elements.target.contains(target)) {
 				// 현재노드 상위 검색
 				nodeInfo = getParent( 
@@ -1414,7 +1413,7 @@ export default class EditMulti extends EditState {
 								// 기본 이벤트 중지
 								event.preventDefault();
 								// 포커스(커서) 이동
-								super.setCusor(node.nextSibling);
+								editState.setCusor(node.nextSibling);
 								result = getNodeInfo(node.nextSibling);
 								break;
 						}
@@ -1436,18 +1435,18 @@ export default class EditMulti extends EditState {
 			let target = event && (event.target || event.srcElement); // event 가 발생한 element
 
 			console.log('event.type', event.type);
-			//console.log(this.selection.anchorNode);
+			//console.log(editState.selection.anchorNode);
 
 			// getSelection 선택된 node
-			super.setSelection();
-			if(super.isSelection()) {
+			editState.setSelection();
+			if(editState.isSelection()) {
 				switch(event.keyCode) {
 					// keyCode 13: enter
 					case 13: 
 						if(event.type === 'keydown') {
 							// 현재노드 상위 검색
 							getParent( 
-								this.selection.anchorNode,
+								editState.selection.anchorNode,
 								this.elements.target,
 								(node) => {
 									let nodeInfo = getNodeInfo(node);
@@ -1473,7 +1472,7 @@ export default class EditMulti extends EditState {
 												fragment.appendChild(line);
 
 												// 2. make the br replace selection
-												range = this.selection.getRangeAt(0);
+												range = editState.selection.getRangeAt(0);
 												range.deleteContents();
 												range.insertNode(fragment);
 												
@@ -1485,8 +1484,8 @@ export default class EditMulti extends EditState {
 												range.collapse(true);
 
 												// 4. make the cursor there
-												this.selection.removeAllRanges();
-												this.selection.addRange(range);
+												editState.selection.removeAllRanges();
+												editState.selection.addRange(range);
 											})();
 											break;
 										default:
@@ -1501,7 +1500,7 @@ export default class EditMulti extends EditState {
 						}else if(event.type === 'keyup') {
 							// 현재노드 상위 검색
 							getParent( 
-								this.selection.anchorNode,
+								editState.selection.anchorNode,
 								this.elements.target,
 								(node) => {
 									let nodeInfo = getNodeInfo(node);
@@ -1528,7 +1527,7 @@ export default class EditMulti extends EditState {
 						if(event.type === 'keydown') {
 							// 현재노드 상위 검색
 							getParent( 
-								this.selection.anchorNode,
+								editState.selection.anchorNode,
 								this.elements.target,
 								(node) => {
 									let nodeInfo = getNodeInfo(node);
@@ -1547,13 +1546,13 @@ export default class EditMulti extends EditState {
 												//tab = document.createTextNode("\u00a0\u00a0\u00a0\u00a0"); // \u00a0: space
 												
 												// 선택위치에 삽입
-												range = this.selection.getRangeAt(0);
+												range = editState.selection.getRangeAt(0);
 												range.insertNode(tab);
 												range.setStartAfter(tab);
 												range.setEndAfter(tab); 
 
-												this.selection.removeAllRanges();
-												this.selection.addRange(range);
+												editState.selection.removeAllRanges();
+												editState.selection.addRange(range);
 											})();
 											break;
 										default:
@@ -1575,7 +1574,7 @@ export default class EditMulti extends EditState {
 						if(event.type === 'keydown') {
 							// 현재노드 상위 검색
 							getParent( 
-								this.selection.anchorNode,
+								editState.selection.anchorNode,
 								this.elements.target,
 								(node) => {
 									let nodeInfo = getNodeInfo(node);
@@ -1599,11 +1598,11 @@ export default class EditMulti extends EditState {
 											// 상위로 전파 중지
 											//event.preventDefault();
 											/*
-											console.log(this.selection.focusNode);
-											console.log(this.selection.focusNode.parentNode);
+											console.log(editState.selection.focusNode);
+											console.log(editState.selection.focusNode.parentNode);
 											*/
 											// 삭제
-											//this.selection.focusNode.parentNode.removeChild(this.selection.focusNode);
+											//editState.selection.focusNode.parentNode.removeChild(editState.selection.focusNode);
 											break;
 										default:
 											
@@ -1617,7 +1616,7 @@ export default class EditMulti extends EditState {
 						}else if(event.type === 'keyup') {
 							// 현재노드 상위 검색
 							getParent( 
-								this.selection.anchorNode,
+								editState.selection.anchorNode,
 								this.elements.target,
 								(node) => {
 									let nodeInfo = getNodeInfo(node);
@@ -1629,7 +1628,7 @@ export default class EditMulti extends EditState {
 												let code = node.querySelector('code');
 												if(!pre || !code || !(code.textContent || code.innerText)) {
 													// 포커스(커서) 이동
-													super.setCusor(node.previousSibling || node.nextSibling);
+													editState.setCusor(node.previousSibling || node.nextSibling);
 													// 삭제
 													node.parentNode.removeChild(node);
 												}
@@ -1653,7 +1652,7 @@ export default class EditMulti extends EditState {
 						if(event.type === 'keyup') {
 							// 현재노드 상위 검색
 							getParent( 
-								this.selection.anchorNode,
+								editState.selection.anchorNode,
 								this.elements.target,
 								(node) => {
 									let nodeInfo = getNodeInfo(node);
@@ -1662,9 +1661,9 @@ export default class EditMulti extends EditState {
 										case 'line':
 											// 포커스(커서) 이동
 											if(event.keyCode === 37 || event.keyCode === 38) {
-												super.setCusor(node.previousSibling || node.nextSibling);
+												editState.setCusor(node.previousSibling || node.nextSibling);
 											}else if(event.keyCode === 39 || event.keyCode === 40) {
-												super.setCusor(node.nextSibling || node.previousSibling);
+												editState.setCusor(node.nextSibling || node.previousSibling);
 											}
 											break;
 									}

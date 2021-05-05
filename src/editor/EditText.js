@@ -3,7 +3,6 @@
  * 
  * [주의!]
  * super 키워드는 부모 constructor 호출과 부모 메소드 호출할 경우 사용
- * super 키워드는 화살표함수 활용
  */
 import browser from '../browser';
 import $ from '../dom';
@@ -15,7 +14,7 @@ import {
 	getNodeInfo,
 	isNodeCheck,
 } from './util';
-import EditState from './EditState';
+import EditState, { editState } from './EditState';
 
 const EVENT_MOUSEDOWN_TEXTEDIT = 'EVENT_MOUSEDOWN_TEXTEDIT';
 const EVENT_MOUSEUP_TEXTEDIT = 'EVENT_MOUSEUP_TEXTEDIT';
@@ -26,9 +25,9 @@ const EVENT_PASTE_TEXTEDIT = 'EVENT_PASTE_TEXTEDIT';
 const EVENT_RESIZE_TEXTEDIT_DOCUMENT = 'EVENT_RESIZE_TEXTEDIT_DOCUMENT';
 const EVENT_MOUSEUP_TEXTEDIT_DOCUMENT = 'EVENT_MOUSEUP_TEXTEDIT_DOCUMENT';
 
-export default class EditText extends EditState {
+export default class EditText {
 	constructor(target=null, settings={}) {
-		super();
+		//super();
 		this.settings = {
 			'key': 'editor', 
 			'tooltip': true,
@@ -205,12 +204,12 @@ export default class EditText extends EditState {
 		event.preventDefault(); // 현재 이벤트의 기본 동작을 중단한다.
 		event.stopPropagation(); // 현재 이벤트가 상위로 전파되지 않도록 중단한다.
 
-		if(super.getRange()) {
+		if(editState.getRange()) {
 			//console.log('에디터 기능 적용');
 			switch(command) {
 				case 'bold':
-					if(this.selection.anchorNode && !getParent(
-						this.selection.anchorNode,
+					if(editState.selection.anchorNode && !getParent(
+						editState.selection.anchorNode,
 						null,
 						(node) => { // condition (검사)
 							return /^(h1|h2|h3)$/i.test(node.nodeName.toLowerCase()); // h1, h2, h3 태그는 진한색의 글자이므로 제외
@@ -234,8 +233,8 @@ export default class EditText extends EditState {
 				case "h1":
 				case "h2":
 				case "h3":
-					if(this.selection.focusNode && !getParent(
-						this.selection.focusNode,
+					if(editState.selection.focusNode && !getParent(
+						editState.selection.focusNode,
 						null,
 						(node) => { // condition (검사)
 							return /^(b|strong)$/i.test(node.nodeName.toLowerCase()); 
@@ -244,18 +243,18 @@ export default class EditText extends EditState {
 							return true;
 						}
 					)) {
-						super.setFormatBlock(command);
+						editState.setFormatBlock(command);
 					}
 					break;
 				case "blockquote": // 인용문 (들여쓰기)
-					super.setFormatBlock(command);
+					editState.setFormatBlock(command);
 					break;
 				case 'createLink':
 					// url 입력박스 보이기
 					this.elements.other.link.wrap.style.display = 'block';
 					setTimeout(() => {
 						let url = getParent(
-							this.selection.focusNode,
+							editState.selection.focusNode,
 							null,
 							(node) => {
 								return typeof node.href !== 'undefined';
@@ -273,7 +272,7 @@ export default class EditText extends EditState {
 						}
 						// 위 a 태그의 위치를 기억한다.
 						// execCommand 로 createLink 생성된 위치를 기억한다.
-						this.range = this.selection.getRangeAt(0); 
+						this.range = editState.selection.getRangeAt(0); 
 						this.elements.other.link.input.focus();
 					}, 100);
 					break;
@@ -324,11 +323,11 @@ export default class EditText extends EditState {
 			// http://stackoverflow.com/questions/3997659/replace-selected-text-in-contenteditable-div
 			this.range.deleteContents();
 			this.range.insertNode(node);
-			this.selection.removeAllRanges();
-			this.selection.addRange(this.range);
+			editState.selection.removeAllRanges();
+			editState.selection.addRange(this.range);
 		}else {
-			this.selection.removeAllRanges();
-			this.selection.addRange(this.range);
+			editState.selection.removeAllRanges();
+			editState.selection.addRange(this.range);
 			document.execCommand('unlink', false);
 			//node = document.createTextNode(this.range.toString());
 		}
@@ -360,7 +359,7 @@ export default class EditText extends EditState {
 		해당 버튼에 on/off 효과를 준다.
 		*/
 		let key;
-		if(super.isSelection() && super.getRange()) {
+		if(editState.isSelection() && editState.getRange()) {
 			for(key in this.elements.command) { // 버튼 선택 효과 초기화
 				if(key === 'wrap') {
 					continue;
@@ -371,7 +370,7 @@ export default class EditText extends EditState {
 			}
 			// 현재노드 상위 검색
 			getParent(
-				this.selection.focusNode,
+				editState.selection.focusNode,
 				null,
 				(node) => {
 					return typeof node.nodeName !== 'undefined' && typeof node.style !== 'undefined';
@@ -445,16 +444,16 @@ export default class EditText extends EditState {
 		};
 		let top = 0, left = 0;
 
-		if(super.isCollapsed() || typeof this.selection !== 'object' || toggle === 'hide') {
+		if(editState.isCollapsed() || typeof editState.selection !== 'object' || toggle === 'hide') {
 			// 툴바숨기기
 			this.elements.tooltip.style.display = "none";
-		}else if(super.getRange()) {
+		}else if(editState.getRange()) {
 			this.elements.tooltip.style.display = "block"; // 렌더링 상태에서 offsetWidth, offsetHeight 측정
 			// 툴팁 크기
 			tooltip.width = this.elements.tooltip.offsetWidth;
 			tooltip.height = this.elements.tooltip.offsetHeight;
 			// top / left
-			rect = this.selection.getRangeAt(0).getBoundingClientRect();
+			rect = editState.selection.getRangeAt(0).getBoundingClientRect();
 			top = (rect.top - tooltip.height) - 5;
 			if(top < 0) {
 				top = rect.bottom + 5; // 툴팁 하단에 출력되도록 변경
@@ -482,33 +481,33 @@ export default class EditText extends EditState {
 	// 툴팁 보이기
 	setTooltipToggle({ node, nodeInfo, }={}) {
 		// 텍스트 / 멀티미디어 툴팁 중 하나만 보여야 한다.
-		super.setSelection();
+		editState.setSelection();
 		if(!node || typeof node !== 'object' || !node.nodeType) {
 			if(nodeInfo && typeof nodeInfo === 'object' && nodeInfo.node) {
 				node = nodeInfo.node;
 			}else {
-				//node = this.selection.anchorNode; // 선택된 글자의 시작노드
-				node = this.selection.focusNode; // 현재 포커스가 위치한 끝노드
+				//node = editState.selection.anchorNode; // 선택된 글자의 시작노드
+				node = editState.selection.focusNode; // 현재 포커스가 위치한 끝노드
 			}
 		}
 		if(node && (!nodeInfo || typeof nodeInfo !== 'object')) {
 			nodeInfo = getNodeInfo(node);
 		}
 		if(this.settings.tooltip === true) {
-			if(super.isSelection() && (!this.elements.target.contains(node) || /figure|img/.test(nodeInfo.name))) {
+			if(editState.isSelection() && (!this.elements.target.contains(node) || /figure|img/.test(nodeInfo.name))) {
 				console.log('node', node);
 				console.log('nodeInfo', nodeInfo);
 
 				/*console.log('----------');
-				console.dir(this.selection);
+				console.dir(editState.selection);
 				// 시작노드
-				console.log('anchorNode.nodeName: ' + this.selection.anchorNode.nodeName);
-				console.log('anchorNode.nodeValue: ' + this.selection.anchorNode.nodeValue);
-				console.log('anchorNode.nodeType: ' + this.selection.anchorNode.nodeType);
+				console.log('anchorNode.nodeName: ' + editState.selection.anchorNode.nodeName);
+				console.log('anchorNode.nodeValue: ' + editState.selection.anchorNode.nodeValue);
+				console.log('anchorNode.nodeType: ' + editState.selection.anchorNode.nodeType);
 				// 끝노드
-				console.log('focusNode.nodeName: ' + this.selection.focusNode.nodeName);
-				console.log('focusNode.nodeValue: ' + this.selection.focusNode.nodeValue);
-				console.log('focusNode.nodeType: ' + this.selection.focusNode.nodeType);*/
+				console.log('focusNode.nodeName: ' + editState.selection.focusNode.nodeName);
+				console.log('focusNode.nodeValue: ' + editState.selection.focusNode.nodeValue);
+				console.log('focusNode.nodeType: ' + editState.selection.focusNode.nodeType);*/
 				
 				this.setTextTooltipMenuPostion({'toggle': 'hide'});
 			}else {
@@ -538,7 +537,7 @@ export default class EditText extends EditState {
 			let self = event && event.currentTarget; // event listener element
 			let target = event && (event.target || event.srcElement); // event 가 발생한 element
 
-			super.setSelection();
+			editState.setSelection();
 			this.setTooltipToggle();
 		});
 		$(document).on(`${browser.event.up}.${EVENT_MOUSEUP_TEXTEDIT}`, (e) => {
@@ -546,7 +545,7 @@ export default class EditText extends EditState {
 			let self = event && event.currentTarget; // event listener element
 			let target = event && (event.target || event.srcElement); // event 가 발생한 element
 
-			super.setSelection();
+			editState.setSelection();
 			this.setTooltipToggle();
 		});
 		
@@ -556,14 +555,14 @@ export default class EditText extends EditState {
 			let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
 			//console.log('keydown');
-			super.setSelection();
+			editState.setSelection();
 
 			// getSelection 선택된 node
-			if(super.isSelection()) {
+			if(editState.isSelection()) {
 				/*if(event.keyCode === 13) { // keyCode 13: enter
 					// 현재노드 상위 검색
 					getParent( 
-						this.selection.anchorNode,
+						editState.selection.anchorNode,
 						this.elements.target,
 						(node) => {
 							switch(node.nodeName.toLowerCase()) {
@@ -588,19 +587,19 @@ export default class EditText extends EditState {
 			let insertedNode, unwrap, node, parent;
 
 			//console.log('keyup');
-			super.setSelection();
+			editState.setSelection();
 
 			// getSelection 선택된 node
-			if(super.isSelection()) {
+			if(editState.isSelection()) {
 				if(event.keyCode === 13) { // keyCode 13: enter
-					if(this.selection.anchorNode && this.elements.target.isEqualNode(this.selection.anchorNode)) {
+					if(editState.selection.anchorNode && this.elements.target.isEqualNode(editState.selection.anchorNode)) {
 						// editor
-						super.setFormatBlock("p");
-					}else if(this.selection.anchorNode.nodeType !== 1 || this.selection.anchorNode.nodeName.toLowerCase() !== 'p' || !(/block|inline-block/i.test(getDisplay(this.selection.anchorNode)))) {
+						editState.setFormatBlock("p");
+					}else if(editState.selection.anchorNode.nodeType !== 1 || editState.selection.anchorNode.nodeName.toLowerCase() !== 'p' || !(/block|inline-block/i.test(getDisplay(editState.selection.anchorNode)))) {
 						// DIV 내부에서 엔터를 눌렀을 경우 div 내부에서 br로 처리되므로 p 태그로 변경되도록 처리한다.
 						// 현재노드 상위 검색
 						if(getParent( 
-							this.selection.anchorNode,
+							editState.selection.anchorNode,
 							this.elements.target,
 							(node) => {
 								if(/code|pre/.test(node.nodeName.toLowerCase())) {
@@ -611,7 +610,7 @@ export default class EditText extends EditState {
 								return result;
 							}
 						) !== true) {
-							super.setFormatBlock("p");
+							editState.setFormatBlock("p");
 						}
 					}
 				}
@@ -619,15 +618,15 @@ export default class EditText extends EditState {
 				// -, *, 1. 입력에 따른 목록태그 변환
 				// isCollapsed: 셀렉션의 시작지점과 끝지점이 동일한지의 여부
 				// nodeValue: Text와 Comment 노드에서 실제 텍스트 문자열 추출
-				/*if(this.selection.isCollapsed && this.selection.anchorNode.nodeValue && this.selection.anchorNode.parentNode.nodeName !== "LI") { 
-					//console.log('this.selection.isCollapsed: ' + this.selection.isCollapsed);
+				/*if(editState.selection.isCollapsed && editState.selection.anchorNode.nodeValue && editState.selection.anchorNode.parentNode.nodeName !== "LI") { 
+					//console.log('editState.selection.isCollapsed: ' + editState.selection.isCollapsed);
 					
-					if(this.selection.anchorNode.nodeValue.match(/^[-*]\s/)) { 
+					if(editState.selection.anchorNode.nodeValue.match(/^[-*]\s/)) { 
 						// "- 텍스트작성" 또는 "* 텍스트작성" 행태로 글을 작성했을 경우 목록태그로 변경
 						document.execCommand('insertUnorderedList'); // ul 태그 생성
-						this.selection.anchorNode.nodeValue = this.selection.anchorNode.nodeValue.substring(2);
+						editState.selection.anchorNode.nodeValue = editState.selection.anchorNode.nodeValue.substring(2);
 						insertedNode = getParent( // 현재노드 상위로 존재하는 ul 태그 반환
-							this.selection.anchorNode,
+							editState.selection.anchorNode,
 							null,
 							(node) => {
 								return node.nodeName.toLowerCase() === 'ul';
@@ -636,12 +635,12 @@ export default class EditText extends EditState {
 								return node;
 							}
 						);
-					}else if(this.selection.anchorNode.nodeValue.match(/^1\.\s/)) { 
+					}else if(editState.selection.anchorNode.nodeValue.match(/^1\.\s/)) { 
 						// "1. 텍스트작성" 형태로 글을 작성했을 경우 목록태그로 변경
 						document.execCommand('insertOrderedList'); // ol 태그 생성
-						this.selection.anchorNode.nodeValue = this.selection.anchorNode.nodeValue.substring(3);
+						editState.selection.anchorNode.nodeValue = editState.selection.anchorNode.nodeValue.substring(3);
 						insertedNode = getParent( // 현재노드 상위로 존재하는 ol 태그 반환
-							this.selection.anchorNode,
+							editState.selection.anchorNode,
 							null,
 							(node) => {
 								return node.nodeName.toLowerCase() === 'ol';
@@ -656,12 +655,12 @@ export default class EditText extends EditState {
 					// p 또는 div 내부에 목록태그가 존재하지 않도록, 해당위치를 목록태그로 대체한다.
 					unwrap = insertedNode && ["ul", "ol"].indexOf(insertedNode.nodeName.toLocaleLowerCase()) >= 0 && ["p", "div"].indexOf(insertedNode.parentNode.nodeName.toLocaleLowerCase()) >= 0;
 					if(unwrap) {
-						node = this.selection.anchorNode;
+						node = editState.selection.anchorNode;
 						parent = insertedNode.parentNode;
 						parent.parentNode.insertBefore(insertedNode, parent);
 						parent.parentNode.removeChild(parent);
 						// 포커스(커서) 이동
-						super.setCusor(node);
+						editState.setCusor(node);
 					}
 				}*/
 
@@ -690,7 +689,7 @@ export default class EditText extends EditState {
 			
 			// 현재노드 상위 검색
 			if(getParent( 
-				this.selection.anchorNode,
+				editState.selection.anchorNode,
 				this.elements.target,
 				(node) => {
 					if(/code|pre/.test(node.nodeName.toLowerCase())) {
@@ -713,7 +712,7 @@ export default class EditText extends EditState {
 					line = document.createTextNode(' '); // \u00a0
 					fragment.appendChild(line);
 
-					range = this.selection.getRangeAt(0);
+					range = editState.selection.getRangeAt(0);
 					range.deleteContents();
 					range.insertNode(fragment);
 
@@ -721,8 +720,8 @@ export default class EditText extends EditState {
 					range.setStartAfter(line);
 					range.collapse(true);
 
-					this.selection.removeAllRanges();
-					this.selection.addRange(range);
+					editState.selection.removeAllRanges();
+					editState.selection.addRange(range);
 				})();
 			}else if(document.queryCommandSupported('insertText')) {
 				document.execCommand('insertText', false, text);
@@ -744,7 +743,7 @@ export default class EditText extends EditState {
 			if(!this.elements.tooltip.contains(event.target)) {
 				console.log('document mouseup');
 				setTimeout(() => {
-					super.setSelection();
+					editState.setSelection();
 					this.setTooltipToggle();
 				}, 1);
 			}

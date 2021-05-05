@@ -3,7 +3,6 @@
  * 
  * [주의!]
  * super 키워드는 부모 constructor 호출과 부모 메소드 호출할 경우 사용
- * super 키워드는 화살표함수 활용
  */
 import browser from '../browser';
 import $ from '../dom';
@@ -15,13 +14,13 @@ import {
 	getNodeInfo,
 	isNodeCheck,
 } from './util';
-import EditState from './EditState';
+import EditState, { editState } from './EditState';
 
 const EVENT_KEYDOWN_OPENGRAPH = 'EVENT_KEYDOWN_OPENGRAPH';
 
-export default class OpenGraph extends EditState {
+export default class OpenGraph {
 	constructor(target=null, settings={}) {
-		super();
+		//super();
 		this.settings = {
 			'key': 'editor', 
 			'submit': '//makestory.net/opengraph', // link url 정보를 받아 meta 정보를 돌려줄 서버측 url
@@ -125,7 +124,7 @@ export default class OpenGraph extends EditState {
 			//if(inserted.parentNode.insertBefore(fragment, inserted)) { // 링크 이전 요소에 삽입
 			if(inserted.parentNode.insertBefore(fragment, inserted.nextSibling)) { // 링크 다음 요소에 삽입
 				// 포커스(커서) 이동
-				super.setCusor(p);
+				editState.setCusor(p);
 
 				// 오픈그래프 정보 불러오기
 				(() => {
@@ -258,29 +257,29 @@ export default class OpenGraph extends EditState {
 		$(this.elements.target).on(`keydown.${EVENT_KEYDOWN_OPENGRAPH}`, (e) => {
 			let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 
-			super.setSelection();
-			if(super.isCollapsed()) {
-				if(event.keyCode === 13 && isNodeCheck(this.selection.anchorNode, 'url')) { // keyCode 13: enter
+			editState.setSelection();
+			if(editState.isCollapsed()) {
+				if(event.keyCode === 13 && isNodeCheck(editState.selection.anchorNode, 'url')) { // keyCode 13: enter
 					// url 이 존재하면, event 를 정지한다.
 					event.preventDefault();
 					/*
 					console.log(last);
-					console.log(this.selection.anchorNode);
-					console.log(this.selection.anchorNode.nodeType);
-					console.log(this.selection.anchorNode.nodeValue);
-					console.log(this.selection.focusNode.nodeValue);
+					console.log(editState.selection.anchorNode);
+					console.log(editState.selection.anchorNode.nodeType);
+					console.log(editState.selection.anchorNode.nodeValue);
+					console.log(editState.selection.focusNode.nodeValue);
 					*/
 					// 삽입
-					this.put({'node': this.selection.anchorNode});
-				}else if(event.keyCode === 8 && isNodeCheck(this.selection.focusNode, 'opengraph')) { // keyCode 8: backspace
+					this.put({'node': editState.selection.anchorNode});
+				}else if(event.keyCode === 8 && isNodeCheck(editState.selection.focusNode, 'opengraph')) { // keyCode 8: backspace
 					// 상위로 전파 중지
 					event.preventDefault();
 					/*
-					console.log(this.selection.focusNode);
-					console.log(this.selection.focusNode.parentNode);
+					console.log(editState.selection.focusNode);
+					console.log(editState.selection.focusNode.parentNode);
 					*/
 					// 삭제
-					this.selection.focusNode.parentNode.removeChild(this.selection.focusNode);
+					editState.selection.focusNode.parentNode.removeChild(editState.selection.focusNode);
 				}
 			}
 		});

@@ -46,3 +46,6 @@ export default class ModalState {
 		return mask;
 	}
 }
+
+const modalState = new ModalState();
+export { modalState }

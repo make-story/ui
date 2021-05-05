@@ -4,7 +4,7 @@
 import browser, { windowDocumentSize, browserScroll, } from '../browser';
 import $ from '../dom';
 import { extend, elementPositionStandard, } from '../util';
-import ModalState from "./ModalState";
+import ModalState, { modalState } from "./ModalState";
 
 const EVENT_CLICK_CLOSE = 'EVENT_CLICK_CLOSE';
 const EVENT_RESIZE = 'EVENT_RESIZE';
@@ -14,9 +14,9 @@ const EVENT_RESIZE = 'EVENT_RESIZE';
 // bottomleft, bottomcenter, bottomright
 // lefttop, leftmiddle, leftbottom
 // righttop, rightmiddle, rightbottom
-export default class ModalRect extends ModalState {
+export default class ModalRect {
 	constructor(target, rect, settings={}) {
-		super();
+		//super();
 		this.settings = {
 			'key': '',
 			'position': 'bottomcenter', // auto: 자동으로 최적화된 영역에 출력한다.
@@ -67,20 +67,20 @@ export default class ModalRect extends ModalState {
 
 	render() {
 		// container
-		this.elements.container = super.container();
+		this.elements.container = modalState.container();
 
 		// mask
 		if(this.settings.mask && typeof this.settings.mask === 'object') {
 			this.elements.mask = this.settings.mask.nodeType ? this.settings.mask : $(this.settings.mask).get(0);
 			this.elements.mask.display = 'none';
 		}else {
-			this.elements.mask = super.mask();
+			this.elements.mask = modalState.mask();
 			document.body.appendChild(this.elements.mask);
 		}
 
 		// contents
 		this.elements.contents = document.createElement('div');
-		this.elements.contents.setAttribute(`${this.attributePrefix}-rect-contents`, 'contents');
+		this.elements.contents.setAttribute(`${modalState.attributePrefix}-rect-contents`, 'contents');
 		this.elements.contents.style.cssText = (this.settings.fixed === true ? 'position: fixed;' : 'position: absolute;') + ' display: none; left: 0; top: 0; outline: none; transition: left 0s, top 0s, right 0s, bottom 0s; -webkit-overflow-scrolling: touch; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); -webkit-tap-highlight-color: transparent;';
 		this.elements.contents.appendChild(this.elements.target);
 		document.body.appendChild(this.elements.contents);
@@ -104,12 +104,12 @@ export default class ModalRect extends ModalState {
 	above({ display, }={}) {
 		try {
 			if(this.settings.mask === true || (this.settings.mask && typeof this.settings.mask === 'object' && this.settings.mask.nodeType)) {
-				this.elements.mask.style.zIndex = ++this.zindex;
+				this.elements.mask.style.zIndex = ++modalState.zindex;
 				if(display) {
 					this.elements.mask.style.display = display;
 				}
 			}
-			this.elements.contents.style.zIndex = ++this.zindex;
+			this.elements.contents.style.zIndex = ++modalState.zindex;
 			if(display) {
 				this.elements.contents.style.display = display;
 			}
@@ -123,7 +123,7 @@ export default class ModalRect extends ModalState {
 			this.position();
 
 			// focus (웹접근성)
-			this.active = document.activeElement;
+			modalState.active = document.activeElement;
 			this.elements.contents.setAttribute('tabindex', -1);
 			this.elements.contents.focus();
 
@@ -158,8 +158,8 @@ export default class ModalRect extends ModalState {
 			}
 
 			// focus (웹접근성)
-			if(this.active) {
-				this.active.focus();
+			if(modalState.active) {
+				modalState.active.focus();
 			}
 
 			// resize 이벤트 종료

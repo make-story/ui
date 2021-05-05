@@ -1,16 +1,21 @@
 
-export default class ClassSingleton {
+export default class Singleton {
+	// new Singleton()
 	constructor() {
 		// Singleton
-		if(!!ClassSingleton.instance) {
-			return ClassSingleton.instance;
+		if(!Singleton._instance) {
+			Singleton._instance = this;
 		}
-		ClassSingleton.instance = this;
-
-		// 클래스 공통적 사용 값
+		
+		// 클래스 공통적 사용 값 (테스트 값)
 		this.index = 1;
 		
-		return this;
+		return Singleton._instance;
+	}
+
+	// Singleton.getInstance()
+	static getInstance() {
+		return this._instance;
 	}
 
 	setTest() {

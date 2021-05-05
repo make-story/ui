@@ -4,13 +4,13 @@
 import browser, { windowDocumentSize, browserScroll, } from '../browser';
 import $ from '../dom';
 import { getKey, extend, elementPosition, elementOverlap, } from '../util';
-import ModalState from "./ModalState";
+import ModalState, { modalState } from "./ModalState";
 
 const EVENT_CLICK_CLOSE = 'EVENT_CLICK_CLOSE';
 
-export default class ModalMessage extends ModalState {
+export default class ModalMessage {
 	constructor(settings={}) {
-		super();
+		//super();
 		this.settings = {
 			'key': '',
 			'position': 'topright',
@@ -52,13 +52,13 @@ export default class ModalMessage extends ModalState {
 		};
 
 		// container
-		this.elements.container = super.container();
+		this.elements.container = modalState.container();
 
 		// message
-		let message = document.querySelector(`[${this.attributePrefix}-message]`);
+		let message = document.querySelector(`[${modalState.attributePrefix}-message]`);
 		if(!message) {
 			message = document.createElement('div');
-			message.setAttribute(`${this.attributePrefix}-message`, 'message');
+			message.setAttribute(`${modalState.attributePrefix}-message`, 'message');
 			//message.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 			this.elements.container.appendChild(message);
 		}
@@ -69,13 +69,13 @@ export default class ModalMessage extends ModalState {
 			this.elements.mask = this.settings.mask.nodeType ? this.settings.mask : $(this.settings.mask).get(0);
 			this.elements.mask.display = 'none';
 		}else {
-			this.elements.mask = super.mask();
+			this.elements.mask = modalState.mask();
 			this.elements.message.appendChild(this.elements.mask);
 		}
 
 		// contents
 		this.elements.contents = document.createElement('div');
-		this.elements.contents.setAttribute(`${this.attributePrefix}-message-contents`, 'contents');
+		this.elements.contents.setAttribute(`${modalState.attributePrefix}-message-contents`, 'contents');
 		this.elements.contents.style.cssText = 'position: fixed; display: none; margin: 5px; width: 290px; font-size: 12px; color: rgb(44, 45, 46); border: 1px solid rgb(230, 231, 232); background-color: rgba(253, 254, 255, .96); border-radius: 7px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); outline: none; -khtml-user-select: none; -ms-user-select: none; -moz-user-select: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-touch-select: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); -webkit-tap-highlight-color: transparent;';
 		this.elements.contents.innerHTML = `
 			<div style="padding: 15px 15px 5px 15px; font-weight: bold; color: rgb(44, 45, 46); border-radius: 7px 7px 0 0; word-wrap: break-word; word-break: break-all;">
@@ -110,12 +110,12 @@ export default class ModalMessage extends ModalState {
 	above({ display, }={}) {
 		try {
 			if(this.settings.mask === true || (this.settings.mask && typeof this.settings.mask === 'object' && this.settings.mask.nodeType)) {
-				this.elements.mask.style.zIndex = ++this.zindex;
+				this.elements.mask.style.zIndex = ++modalState.zindex;
 				if(display) {
 					this.elements.mask.style.display = display;
 				}
 			}
-			this.elements.contents.style.zIndex = ++this.zindex;
+			this.elements.contents.style.zIndex = ++modalState.zindex;
 			if(display) {
 				this.elements.contents.style.display = display;
 			}
@@ -129,7 +129,7 @@ export default class ModalMessage extends ModalState {
 			this.position();
 
 			// 서로 겹치지 않도록 제어
-			elementOverlap(this.elements.contents, Array.from(document.querySelectorAll(`[${this.attributePrefix}-message-contents]`)).reverse(), this.settings.position, { isBrowserOverflow: false, });
+			elementOverlap(this.elements.contents, Array.from(document.querySelectorAll(`[${modalState.attributePrefix}-message-contents]`)).reverse(), this.settings.position, { isBrowserOverflow: false, });
 
 			// auto hide
 			global.clearTimeout(this.time);

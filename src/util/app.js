@@ -377,7 +377,7 @@ if(!window[preset] || typeof window[preset] !== 'object') {
 if(!window[preset].EVENT) {
     // 앱과 약속된 이벤트 상수(키)!
 	window[preset].EVENT = {
-		...appEvent
+		...appEventType
 	};
 }
 

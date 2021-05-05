@@ -11,7 +11,6 @@ import {
 	isNodeCheck,
 } from './util';
 
-// 싱글톤 패턴
 export default class EditState {
 	constructor() {
 		const EVENT_COMPOSITIONSTART_TEXTEDIT = 'EVENT_COMPOSITIONSTART_TEXTEDIT';
@@ -109,3 +108,6 @@ export default class EditState {
 		}
 	}
 }
+
+const editState = new EditState();
+export { editState }

@@ -4,7 +4,7 @@
 import browser, { windowDocumentSize, browserScroll, } from '../browser';
 import $ from '../dom';
 import { extend, elementPosition, } from '../util';
-import ModalState from "./ModalState";
+import ModalState, { modalState } from "./ModalState";
 
 const isIOS = /(iphone|ipad|ipod)/i.test((window.navigator.userAgent || window.navigator.vendor || window.opera).toLowerCase());
 
@@ -12,9 +12,9 @@ const EVENT_CLICK_CLOSE = 'EVENT_CLICK_CLOSE';
 const EVENT_MOUSEDOWN_ZINDEX = 'EVENT_MOUSEDOWN_ZINDEX';
 const EVENT_RESIZE = 'EVENT_RESIZE';
 
-export default class ModalLayer extends ModalState {
+export default class ModalLayer {
 	constructor(target, settings={}) {
-		super();
+		//super();
 		this.settings = {
 			'key': '',
 			'position': 'center',
@@ -67,13 +67,13 @@ export default class ModalLayer extends ModalState {
 
 	render() {
 		// container
-		this.elements.container = super.container();
+		this.elements.container = modalState.container();
 
 		// layer
-		let layer = document.querySelector(`[${this.attributePrefix}-layer]`);
+		let layer = document.querySelector(`[${modalState.attributePrefix}-layer]`);
 		if(!layer) {
 			layer = document.createElement('div');
-			layer.setAttribute(`${this.attributePrefix}-layer`, 'layer');
+			layer.setAttribute(`${modalState.attributePrefix}-layer`, 'layer');
 			//layer.style.cssText = 'position: fixed; left: 0px; top: 0px;';
 			this.elements.container.appendChild(layer);
 		}
@@ -84,19 +84,19 @@ export default class ModalLayer extends ModalState {
 			this.elements.mask = this.settings.mask.nodeType ? this.settings.mask : $(this.settings.mask).get(0);
 			this.elements.mask.display = 'none';
 		}else {
-			this.elements.mask = super.mask();
+			this.elements.mask = modalState.mask();
 			this.elements.layer.appendChild(this.elements.mask);
 		}
 
 		// contents (target 에 margin 등이 설정되었을 경우 position: absolute; overflow: auto; 에 의해 여백이 적용되지 않는 것 방지)
 		this.elements.contents = document.createElement('div');
-		this.elements.contents.setAttribute(`${this.attributePrefix}-layer-contents`, 'contents');
+		this.elements.contents.setAttribute(`${modalState.attributePrefix}-layer-contents`, 'contents');
 		this.elements.contents.style.cssText = 'position: absolute;';
 		this.elements.contents.appendChild(this.elements.target);
 
 		// container
 		this.elements.container = document.createElement('div');
-		this.elements.container.setAttribute(`${this.attributePrefix}-layer-container`, 'container');
+		this.elements.container.setAttribute(`${modalState.attributePrefix}-layer-container`, 'container');
 		this.elements.container.style.cssText = 'position: fixed; display: none; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; outline: none; -webkit-overflow-scrolling: touch; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); -webkit-tap-highlight-color: transparent;';
 		this.elements.container.appendChild(this.elements.contents);
 		this.elements.layer.appendChild(this.elements.container);
@@ -136,12 +136,12 @@ export default class ModalLayer extends ModalState {
 	above({ display, }={}) {
 		try {
 			if(this.settings.mask === true || (this.settings.mask && typeof this.settings.mask === 'object' && this.settings.mask.nodeType)) {
-				this.elements.mask.style.zIndex = ++this.zindex;
+				this.elements.mask.style.zIndex = ++modalState.zindex;
 				if(display) {
 					this.elements.mask.style.display = display;
 				}
 			}
-			this.elements.container.style.zIndex = ++this.zindex;
+			this.elements.container.style.zIndex = ++modalState.zindex;
 			if(display) {
 				this.elements.container.style.display = display;
 			}
@@ -175,7 +175,7 @@ export default class ModalLayer extends ModalState {
 			}
 
 			// focus (웹접근성)
-			this.active = document.activeElement;
+			modalState.active = document.activeElement;
 			this.elements.container.setAttribute('tabindex', -1);
 			this.elements.container.focus();
 
@@ -204,11 +204,11 @@ export default class ModalLayer extends ModalState {
 	hide({ callback, }={}) {
 		try {
 			// 스크롤바 관련 (닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.)
-			$('html').css({'margin-right': this.defaultStyle['margin-right'], 'overflow': this.defaultStyle['overflow']});
+			$('html').css({'margin-right': modalState.defaultStyle['margin-right'], 'overflow': modalState.defaultStyle['overflow']});
 
 			// IOS
 			if(isIOS === true) {
-				$('html').css({'position': this.defaultStyle['position']});
+				$('html').css({'position': modalState.defaultStyle['position']});
 				window.scrollTo(this.before.scrollLeft, this.before.scrollTop);
 			}
 
@@ -219,8 +219,8 @@ export default class ModalLayer extends ModalState {
 			}
 
 			// focus (웹접근성)
-			if(this.active) {
-				this.active.focus();
+			if(modalState.active) {
+				modalState.active.focus();
 			}
 
 			// resize 이벤트 종료
@@ -243,11 +243,11 @@ export default class ModalLayer extends ModalState {
 	remove({ callback, }={}) {
 		try {
 			// 스크롤바 관련 (닫을 때 document 사이즈가 변경되었을 수 있기 때문에 if(조건문) 검사를 안한다.)
-			$('html').css({'margin-right': this.defaultStyle['margin-right'], 'overflow': this.defaultStyle['overflow']});
+			$('html').css({'margin-right': modalState.defaultStyle['margin-right'], 'overflow': modalState.defaultStyle['overflow']});
 
 			// IOS
 			if(isIOS === true) {
-				$('html').css({'position': this.defaultStyle['position']});
+				$('html').css({'position': modalState.defaultStyle['position']});
 				window.scrollTo(this.before.scrollLeft, this.before.scrollTop);
 			}
 
