@@ -45,3 +45,13 @@ export const stringEllipsis = (value='', length, ellipsis='...') => {
 		return value;
 	}
 }
+
+
+// 줄바꿈
+export const textareaLineFeed = (value='') => {
+	if(typeof value === 'string') {
+		return value.replace(/(?:\r\n|\r|\n)/g, '<br />');
+	}else {
+		return value;
+	}
+}
