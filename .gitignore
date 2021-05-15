@@ -3,3 +3,5 @@ dist/*
 .key/*
 *.log
 report/*
+
+.npmrc
