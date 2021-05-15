@@ -35,8 +35,10 @@ return [arr[Math.floor(Math.random() * arr.length)], Math.floor((1 + Math.random
 	4. .toString(16) : 16진수로 문자열로 표현한 후에, // Number(141633779.9).toString(16) = 87128f3.8
 	5. .replace('.', '') : 문자열에서 닷(소수점)을 제거한다. // 'f' + 87128f38 = f87128f38
 return 'f' + (Math.random() * (1 << 30)).toString(16).replace('.', '');
+-
+timestamp : new Date().getTime()
 */
-export const getKey = () => ['key', new Date().getTime(), (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
+export const getKey = () => ['key', new Date().getTime(), 'code', (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
 
 // 대기 - 예: sleep(10000);
 export const sleep = (milliSeconds) => {
