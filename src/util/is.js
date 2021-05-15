@@ -124,6 +124,13 @@
 	 }
 	 return false;
  };
+
+ const isTypeof = (type="string|object", value) => {
+	if(isArray(type)) {
+		type = type.join('|');
+	}
+	// /string|object/.test(typeof value)
+ }
  
  export default {
 	 type,
