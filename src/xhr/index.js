@@ -18,7 +18,7 @@ export default (options={}) => {
 		'contentType': 'application/x-www-form-urlencoded',
 		'type': 'GET', // GET이나 POST 같은 HTTP 메서드 타입
 		'url': '', // 요청할 URL 주소
-		'async': true, // 동기(false)/비동기(ture) 방식
+		'async': true, // 동기(false)/비동기(ture) 방식 - 대부분 브라우저에서 지원중단! https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/open
 		'timeout': 0, // timeout
 
 		//'file': {}, // xhr 전송할 파일 리스트
