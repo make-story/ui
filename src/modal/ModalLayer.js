@@ -1,10 +1,11 @@
 /**
  * 레이어
  */
-import browser, { windowDocumentSize, browserScroll, } from '../browser';
-import $ from '../dom';
-import { extend, elementPosition, } from '../util';
-import ModalState, { modalState } from "./ModalState";
+import browser, { windowDocumentSize, browserScroll, } from '@src/browser';
+import $ from '@src/dom';
+import { getKey, extend, elementPosition, } from '@src/util';
+import ModalBase from '@src/modal/ModalBase';
+import ModalState, { modalState } from "@src/modal/ModalState";
 
 const isIOS = /(iphone|ipad|ipod)/i.test((window.navigator.userAgent || window.navigator.vendor || window.opera).toLowerCase());
 
@@ -12,11 +13,12 @@ const EVENT_CLICK_CLOSE = 'EVENT_CLICK_CLOSE';
 const EVENT_MOUSEDOWN_ZINDEX = 'EVENT_MOUSEDOWN_ZINDEX';
 const EVENT_RESIZE = 'EVENT_RESIZE';
 
-export default class ModalLayer {
-	constructor(target, settings={}) {
-		//super();
+export default class ModalLayer extends ModalBase {
+	constructor(settings={}) {
+		super();
 		this.settings = {
 			'key': '',
+			'target': null,
 			'position': 'center',
 			'mask': null, // 값이 있으면 해당 mask element 를 실행한다.
 			'listeners': {
@@ -39,43 +41,25 @@ export default class ModalLayer {
 		this.time = null;
 
 		// target
-		target = (typeof target === 'string' && /^[a-z]+/i.test(target) ? `#${target}` : target);
+		let target = (typeof this.settings.target === 'string' && /^[a-z]+/i.test(this.settings.target) ? `#${this.settings.target}` : this.settings.target);
 		this.elements.target = (typeof target === 'object' && target.nodeType ? target : $(target).get(0));
 		this.elements.target.style.position = 'static';
 
 		// render
 		this.render();
 
-		// 팝업내부 close 버튼 클릭시 닫기
-		if(this.settings.close && (typeof this.settings.close === 'string' || typeof this.settings.close === 'object')) {
-			if(typeof this.settings.close === 'string' && /^[a-z]+/i.test(this.settings.close)) {
-				this.settings.close = `.${this.settings.close}`;
-			}
-			$(this.elements.target).find(this.settings.close).on(`${browser.event.click}.${EVENT_CLICK_CLOSE}_${this.settings.key}`, (e) => {
-				let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				event.preventDefault();
-				event.stopPropagation();
-				this.hide();
-			});
-		}
-
-		// 팝업내부 click 시 zindex 값 변경 (해당 layer 가장위에 보이도록함)
-		$(target).on(`${browser.event.down}.${EVENT_MOUSEDOWN_ZINDEX}_${this.settings.key}`, () => {
-			this.above();
-		});
+		// event
+		this.event();
 	}
 
 	render() {
-		// container
-		this.elements.container = modalState.container();
-
 		// layer
 		let layer = document.querySelector(`[${modalState.attributePrefix}-layer]`);
 		if(!layer) {
 			layer = document.createElement('div');
 			layer.setAttribute(`${modalState.attributePrefix}-layer`, 'layer');
 			//layer.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-			this.elements.container.appendChild(layer);
+			modalState.container().appendChild(layer);
 		}
 		this.elements.layer = layer;
 
@@ -103,6 +87,26 @@ export default class ModalLayer {
 		if(this.elements.target.style.display === 'none') {
 			this.elements.target.style.display = 'block';
 		}
+	}
+
+	event() {
+		// 팝업내부 close 버튼 클릭시 닫기
+		if(this.settings.close && (typeof this.settings.close === 'string' || typeof this.settings.close === 'object')) {
+			if(typeof this.settings.close === 'string' && /^[a-z]+/i.test(this.settings.close)) {
+				this.settings.close = `.${this.settings.close}`;
+			}
+			$(this.elements.target).find(this.settings.close).on(`${browser.event.click}.${EVENT_CLICK_CLOSE}_${this.settings.key}`, (e) => {
+				let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+				event.preventDefault();
+				event.stopPropagation();
+				this.hide();
+			});
+		}
+
+		// 팝업내부 click 시 zindex 값 변경 (해당 layer 가장위에 보이도록함)
+		$(target).on(`${browser.event.down}.${EVENT_MOUSEDOWN_ZINDEX}_${this.settings.key}`, () => {
+			this.above();
+		});
 	}
 
 	position() {
@@ -259,6 +263,9 @@ export default class ModalLayer {
 				this.elements.container.parentNode.removeChild(this.elements.container);
 			}
 			this.elements = {};
+
+			// instance
+			modalState.removeInstance(this.settings.key);
 
 			// resize 이벤트 종료
 			$(window).off(`resize.${EVENT_RESIZE}_${this.settings.key}`);

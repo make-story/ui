@@ -1,10 +1,11 @@
 /**
  * Rect (기준점 위치에 출력)
  */
-import browser, { windowDocumentSize, browserScroll, } from '../browser';
-import $ from '../dom';
-import { extend, elementPositionStandard, } from '../util';
-import ModalState, { modalState } from "./ModalState";
+import browser, { windowDocumentSize, browserScroll, } from '@src/browser';
+import $ from '@src/dom';
+import { getKey, extend, elementPosition, } from '@src/util';
+import ModalBase from '@src/modal/ModalBase';
+import ModalState, { modalState } from "@src/modal/ModalState";
 
 const EVENT_CLICK_CLOSE = 'EVENT_CLICK_CLOSE';
 const EVENT_RESIZE = 'EVENT_RESIZE';
@@ -14,9 +15,9 @@ const EVENT_RESIZE = 'EVENT_RESIZE';
 // bottomleft, bottomcenter, bottomright
 // lefttop, leftmiddle, leftbottom
 // righttop, rightmiddle, rightbottom
-export default class ModalRect {
-	constructor(target, rect, settings={}) {
-		//super();
+export default class ModalRect extends ModalBase {
+	constructor(settings={}) {
+		super();
 		this.settings = {
 			'key': '',
 			'position': 'bottomcenter', // auto: 자동으로 최적화된 영역에 출력한다.
@@ -40,35 +41,22 @@ export default class ModalRect {
 		this.time = null;
 
 		// target
-		target = (typeof target === 'string' && /^[a-z]+/i.test(target) ? `#${target}` : target);
+		let target = (typeof this.settings.target === 'string' && /^[a-z]+/i.test(this.settings.target) ? `#${this.settings.target}` : this.settings.target);
 		this.elements.target = (typeof target === 'object' && target.nodeType ? target : $(target).get(0));
 		this.elements.target.style.position = 'static';
 
 		// rect (target 의 출력위치 기준점이 될 element)
-        rect = (typeof rect === 'string' && /^[a-z]+/i.test(rect) ? `#${rect}` : rect);
+        let rect = (typeof this.settings.rect === 'string' && /^[a-z]+/i.test(this.settings.rect) ? `#${this.settings.rect}` : this.settings.rect);
         this.elements.rect = (typeof rect === 'object' && rect.nodeType ? rect : $(rect).get(0));
 		
 		// render
 		this.render();
 
-		// 팝업내부 close 버튼 클릭시 닫기
-		if(this.settings.close && (typeof this.settings.close === 'string' || typeof this.settings.close === 'object')) {
-			if(typeof this.settings.close === 'string' && /^[a-z]+/i.test(this.settings.close)) {
-				this.settings.close = `.${this.settings.close}`;
-			}
-			$(this.elements.target).find(this.settings.close).on(`${browser.event.click}.${EVENT_CLICK_CLOSE}_${this.settings.key}`, (e) => {
-				let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-				event.preventDefault();
-				event.stopPropagation();
-				this.hide();
-			});
-		}
+		// event
+		this.event();
 	}
 
 	render() {
-		// container
-		this.elements.container = modalState.container();
-
 		// mask
 		if(this.settings.mask && typeof this.settings.mask === 'object') {
 			this.elements.mask = this.settings.mask.nodeType ? this.settings.mask : $(this.settings.mask).get(0);
@@ -86,6 +74,21 @@ export default class ModalRect {
 		document.body.appendChild(this.elements.contents);
 		if(this.elements.target.style.display === 'none') {
 			this.elements.target.style.display = 'block';
+		}
+	}
+
+	event() {
+		// 팝업내부 close 버튼 클릭시 닫기
+		if(this.settings.close && (typeof this.settings.close === 'string' || typeof this.settings.close === 'object')) {
+			if(typeof this.settings.close === 'string' && /^[a-z]+/i.test(this.settings.close)) {
+				this.settings.close = `.${this.settings.close}`;
+			}
+			$(this.elements.target).find(this.settings.close).on(`${browser.event.click}.${EVENT_CLICK_CLOSE}_${this.settings.key}`, (e) => {
+				let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+				event.preventDefault();
+				event.stopPropagation();
+				this.hide();
+			});
 		}
 	}
 
@@ -189,6 +192,9 @@ export default class ModalRect {
 				this.elements.contents.parentNode.removeChild(this.elements.contents);
 			}
 			this.elements = {};
+
+			// instance
+			modalState.removeInstance(this.settings.key);
 
 			// resize 이벤트 종료
 			$(window).off(`resize.${EVENT_RESIZE}_${this.settings.key}`);

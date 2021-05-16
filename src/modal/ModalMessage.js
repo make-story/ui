@@ -1,16 +1,17 @@
 /**
  * 메시지 알림
  */
-import browser, { windowDocumentSize, browserScroll, } from '../browser';
-import $ from '../dom';
-import { getKey, extend, elementPosition, elementOverlap, } from '../util';
-import ModalState, { modalState } from "./ModalState";
+import browser, { windowDocumentSize, browserScroll, } from '@src/browser';
+import $ from '@src/dom';
+import { getKey, extend, elementPosition, } from '@src/util';
+import ModalBase from '@src/modal/ModalBase';
+import ModalState, { modalState } from "@src/modal/ModalState";
 
 const EVENT_CLICK_CLOSE = 'EVENT_CLICK_CLOSE';
 
-export default class ModalMessage {
+export default class ModalMessage extends ModalBase {
 	constructor(settings={}) {
-		//super();
+		super();
 		this.settings = {
 			'key': '',
 			'position': 'topright',
@@ -23,7 +24,7 @@ export default class ModalMessage {
 			},
 			'theme:': {}, // 테마 (스타일 변경)
 			'title': 'Message',
-			'message': '',
+			'message': '', // 출력 메시지
 			'time': 0, // 0 보다 큰 값은 자동닫기 설정
 		};
 		this.settings = extend(this.settings, settings);
@@ -34,13 +35,7 @@ export default class ModalMessage {
 		this.render();
 
 		// event
-		$(this.elements.close).on(`${browser.event.click}.${EVENT_CLICK_CLOSE}_${this.settings.key}`, (e) => {
-			let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
-			event.preventDefault();
-			event.stopPropagation();
-			//this.hide();
-			this.remove();
-		});
+		this.event();
 	}
 
 	render() {
@@ -51,16 +46,13 @@ export default class ModalMessage {
 			close: getKey(),
 		};
 
-		// container
-		this.elements.container = modalState.container();
-
 		// message
 		let message = document.querySelector(`[${modalState.attributePrefix}-message]`);
 		if(!message) {
 			message = document.createElement('div');
 			message.setAttribute(`${modalState.attributePrefix}-message`, 'message');
 			//message.style.cssText = 'position: fixed; left: 0px; top: 0px;';
-			this.elements.container.appendChild(message);
+			modalState.container().appendChild(message);
 		}
 		this.elements.message = message;
 
@@ -93,6 +85,16 @@ export default class ModalMessage {
 		this.elements.title = this.elements.contents.querySelector(`#${key.title}`);
 		this.elements.message = this.elements.contents.querySelector(`#${key.message}`);
 		this.elements.close = this.elements.contents.querySelector(`#${key.close}`);
+	}
+
+	event() {
+		$(this.elements.close).on(`${browser.event.click}.${EVENT_CLICK_CLOSE}_${this.settings.key}`, (e) => {
+			let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
+			event.preventDefault();
+			event.stopPropagation();
+			//this.hide();
+			this.remove();
+		});
 	}
 
 	position() {
@@ -185,6 +187,9 @@ export default class ModalMessage {
 				this.elements.contents.parentNode.removeChild(this.elements.contents);
 			}
 			this.elements = {};
+
+			// instance
+			modalState.removeInstance(this.settings.key);
 
 			// listeners
 			if(typeof this.settings.listeners.remove === 'function') {

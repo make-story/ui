@@ -1,38 +1,76 @@
 /**
- * 모달
+ * 모달 팩토리
  */
+import ModalAlert from './ModalAlert';
+import ModalBunch from './ModalBunch';
+import ModalConfirm from './ModalConfirm';
+import ModalFolder from './ModalFolder';
 import ModalLayer from './ModalLayer';
-import ModalRect from './ModalRect';
+import ModalMarket from './ModalMarket';
 import ModalMessage from './ModalMessage';
+import ModalRect from './ModalRect';
+import ModalStory from './ModalStory';
+import ModalState, { modalState } from "./ModalState";
 
-const flickings = {};
 export default {
 	search: function(key) {
-		return key && flickings[key] || false;
+		return key && modalState.instance[key] || false;
 	},
-	setup: function(target=null, type='', settings={}) {
+	setup: function(type='', settings={}) {
 		let instance;
-		let { key=type, rect, } = settings;
+		let { key=type, } = settings;
 
 		if(key && this.search(key)) {
 			// 중복생성 방지 key 검사
 			instance = this.search(key);
 		}else if(type) {
 			switch(type) {
-				case 'layer':
-					instance = new ModalLayer(target, settings);
+				case 'alert':
+					instance = new ModalAlert({ ...settings, /*title, message,*/ });
 					break;
-				case 'rect':
-					instance = new ModalRect(target, rect, settings);
+				case 'bunch':
+					instance = new ModalBunch(settings);
+					break;
+				case 'confirm':
+					instance = new ModalConfirm({ ...settings, /*title, message,*/ });
+					break;
+				case 'folder':
+					if(settings.all) {
+						// 전체 폴더 제목 상태 변경
+						(() => {
+							let key;
+							for(key in modalState.instance) {
+								if(modalState.instance[key].settings && modalState.instance[key].settings.type === 'folder') {
+									modalState.instance[key].titleToggle({'mode': settings.all.mode});
+								}
+							}
+						})();
+					}else {
+						instance = new ModalFolder(settings);
+					}
+					break;
+				case 'layer':
+					instance = new ModalLayer({ ...settings, /*target,*/ });
+					break;
+				case 'market':
+					instance = new ModalMarket(settings);
 					break;
 				case 'message':
-					instance = new ModalMessage({ message: target, ...settings});
+				case 'push':
+					instance = new ModalMessage({ ...settings, /*message,*/ });
+					break;
+				case 'rect':
+					instance = new ModalRect({ ...settings, /*target, rect,*/ });
+					break;
+				case 'story':
+					instance = new ModalStory(settings);
 					break;
 			}
 			if(key && instance) {
-				flickings[key] = instance;
+				modalState.instance[key] = instance;
 			}
 		}
+		console.log('instance', modalState.instance);
 
 		return instance;
 	},
@@ -40,9 +78,9 @@ export default {
 		if(key) {
 			this.search(key) && this.search(key).on();
 		}else {
-			for(key in flickings) {
-				if(flickings.hasOwnProperty(key)) {
-					flickings[key].on();
+			for(key in modalState.instance) {
+				if(modalState.instance.hasOwnProperty(key)) {
+					modalState.instance[key].on();
 				}
 			}
 		}
@@ -51,9 +89,9 @@ export default {
 		if(key) {
 			this.search(key) && this.search(key).off();
 		}else {
-			for(key in flickings) {
-				if(flickings.hasOwnProperty(key)) {
-					flickings[key].off();
+			for(key in modalState.instance) {
+				if(modalState.instance.hasOwnProperty(key)) {
+					modalState.instance[key].off();
 				}
 			}
 		}
