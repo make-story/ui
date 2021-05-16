@@ -36,7 +36,7 @@ export { default as browserHistory } from './history';
 export { default as browserLocation } from './location';
 export { default as browserStorage } from './storage';
 
-// window, document 사이즈
+// window, document, browser 사이즈
 export const windowDocumentSize = () => {
 	return {
 		'window': {
@@ -54,6 +54,10 @@ export const windowDocumentSize = () => {
 				document.body.offsetHeight, document.documentElement.offsetHeight,
 				document.documentElement.clientHeight
 			)
+		},
+		'browser': {
+			"width": window.innerWidth || document.body.clientWidth || document.documentElement.clientWidth,
+			"height": window.innerHeight || document.body.clientHeight || document.documentElement.clientHeight
 		}
 	};
 }
