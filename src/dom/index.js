@@ -201,7 +201,7 @@ export class DOM {
 		this.length = 0;
 
 		// selector
-		if(typeof selector === 'object') {
+		if(selector && typeof selector === 'object') {
 			/*
 			nodeType
 			1 : Element 노드를 의미
