@@ -38,7 +38,7 @@ return 'f' + (Math.random() * (1 << 30)).toString(16).replace('.', '');
 -
 timestamp : new Date().getTime()
 */
-export const getKey = () => ['key', new Date().getTime(), 'code', (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
+export const getKey = () => ['key', new Date().getTime(), 'T', (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
 
 // 대기 - 예: sleep(10000);
 export const sleep = (milliSeconds) => {
