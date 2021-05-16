@@ -84,3 +84,32 @@ export const lineAlignment = (text='', max=2) => {
 		return text;
 	}
 }
+
+// Transform the given string into HTML Entity string.
+export function encodeHTMLEntity(html) {
+	let entities = {
+	  '"': 'quot',
+	  '&': 'amp',
+	  '<': 'lt',
+	  '>': 'gt',
+	  '\'': '#39'
+	};
+  
+	return html.replace(/[<>&"']/g, function(m0) {
+	  return entities[m0] ? '&' + entities[m0] + ';' : m0;
+	});
+}
+export function decodeHTMLEntity(htmlEntity) {
+	let entities = {
+	  '&quot;': '"',
+	  '&amp;': '&',
+	  '&lt;': '<',
+	  '&gt;': '>',
+	  '&#39;': '\'',
+	  '&nbsp;': ' '
+	};
+  
+	return htmlEntity.replace(/&amp;|&lt;|&gt;|&quot;|&#39;|&nbsp;/g, function(m0) {
+	  return entities[m0] ? entities[m0] : m0;
+	});
+}

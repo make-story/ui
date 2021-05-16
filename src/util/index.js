@@ -104,3 +104,35 @@ export const pager = (totalCount, currentPage=1, listSize=20, pageSize=10) => {
 		nextPage,
 	};
 }
+
+
+/**
+ * debounce
+ * 
+ * function someMethodToInvokeDebounced() {}
+ *
+ * var debounced = debounce(someMethodToInvokeDebounced, 300);
+ * debounced();
+ * debounced();
+ * debounced();
+ * debounced();
+ * debounced();
+ * debounced();    // last invoke of debounced()
+ */
+export function debounce(fn, delay) {
+	let timer, args;
+  
+	/* istanbul ignore next */
+	delay = delay || 0;
+  
+	function debounced() { // eslint-disable-line require-jsdoc
+		args = Array.prototype.slice.call(arguments);
+  
+		window.clearTimeout(timer);
+		timer = window.setTimeout(function() {
+			fn.apply(null, args);
+		}, delay);
+	}
+  
+	return debounced;
+}

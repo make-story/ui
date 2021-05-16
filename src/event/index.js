@@ -1,5 +1,8 @@
 /**
  * event
+ * 
+ * CustomEvent
+ * https://github.com/nhn/tui.code-snippet/blob/master/customEvents/customEvents.js
  */
 
 // 인터넷 익스플로러 9 이상 (폴리필)

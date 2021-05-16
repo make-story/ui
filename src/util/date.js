@@ -1,5 +1,7 @@
 /**
  * 날짜
+ * 
+ * https://github.com/nhn/tui.code-snippet/blob/master/formatDate/formatDate.js
  */
 
 // date format
