@@ -18,23 +18,10 @@ const minify = process.argv.indexOf('--minify') >= 0;
 const defaultConfigs = {
 	mode: isProduction ? 'production' : 'development',
 	cache: false,
-	output: {
-		path: path.resolve(__dirname, minify ? 'dist/cdn' : 'dist'),
-		filename: `ui-[name]${minify ? '.min' : ''}.js`,
-		/*
-		// 웹팩 내부에 JavaScript 다양한 모듈화 방식 추가!
-		if(typeof exports === 'object' && typeof module === 'object')
-			module.exports = factory();
-		else if(typeof define === 'function' && define.amd)
-			define([], factory);
-		else if(typeof exports === 'object')
-			exports["ui"] = factory();
-		else
-			root["ui"] = factory();
-		*/
-		library: ['ui'],
-		libraryTarget: 'umd',
-		libraryExport: 'default',
+	resolve: {
+		alias: {
+			'@src': path.resolve(__dirname, '../src/'),
+		},
 	},
 	module: {
 		rules: [
@@ -71,6 +58,24 @@ const defaultConfigs = {
 				use: 'url-loader'
 			}
 		]
+	},
+	output: {
+		path: path.resolve(__dirname, minify ? 'dist/cdn' : 'dist'),
+		filename: `ui-[name]${minify ? '.min' : ''}.js`,
+		/*
+		// 웹팩 내부에 JavaScript 다양한 모듈화 방식 추가!
+		if(typeof exports === 'object' && typeof module === 'object')
+			module.exports = factory();
+		else if(typeof define === 'function' && define.amd)
+			define([], factory);
+		else if(typeof exports === 'object')
+			exports["ui"] = factory();
+		else
+			root["ui"] = factory();
+		*/
+		library: ['ui'],
+		libraryTarget: 'umd',
+		libraryExport: 'default',
 	},
 	plugins: [
 		new MiniCssExtractPlugin({
