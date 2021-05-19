@@ -3,7 +3,7 @@
  */
 import $ from '../../dom';
 import { elementPosition, elementOverlap, elementPositionStandard, } from '../element';
-import is from '../is';
+//import {} from '../is';
 import { preset, appEventType, appEventOn, appEventOff } from '../app';
 
 export default (target='#util', options={}) => {
