@@ -62,11 +62,17 @@ export const stripHTML = (source) => {
 		return source;
 	}
 	*/
-	const fragment = document.createDocumentFragment();
+	// 클라이언트 전용
+	/*const fragment = document.createDocumentFragment();
 	const element = document.createElement('div');
 	fragment.appendChild(element);
 	element.innerHTML = source;
-	return fragment.firstChild.innerText;
+	return fragment.firstChild.innerText;*/
+	/*let element = document.createElement("div");
+	element.innerHTML = source;
+	return element.textContent || element.innerText || "";*/
+	// NodeJS 에서도 사용가능
+	return source.replace(/<[^>]*>?/gm, '');
 }
 
 // 개행문자 줄바꿈 <br /> 변경

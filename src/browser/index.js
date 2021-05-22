@@ -129,6 +129,7 @@ const browser = {
 
 			return passiveSupported;
 		})(),
+		"network": window.navigator.onLine,
 	},
 	"os": { // android | ios | mac | window
 		"name": "",
