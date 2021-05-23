@@ -150,7 +150,7 @@ export default class ModalBunch extends ModalBase {
         (() => {
             let i, max;
             let story = document.querySelector(`[${modalState.attributePrefix}-story]`);
-            let child = story.children;
+            let child = story && story.children || [];
             let fragment = document.createDocumentFragment();
             let li;
 

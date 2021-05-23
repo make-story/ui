@@ -3,63 +3,11 @@
  */
 import browser, { windowDocumentSize, browserScroll, } from '@src/browser';
 import $ from '@src/dom';
-import { getKey, extend, elementPosition, } from '@src/util';
+import { getKey, extend, elementPosition, fragmentHtml, } from '@src/util';
+import xhr from '@src/xhr';
+import webworker from '@src/webworker';
 import ModalBase from '@src/modal/ModalBase';
 import ModalState, { modalState } from "@src/modal/ModalState";
-
-// worker
-/*function setMarketList(result) { // 리스트 생성
-    let fragment;
-    let i, max;
-
-    // html
-    if(!result.page) {
-        this.elements.list.innerHTML = result.html;
-    }else {
-        this.elements.list.appendChild(api.util.fragmentHtml(result.html));
-    }
-    // json
-    for(i=0, max=result.json.list.length; i<max; i++) {
-        (function(block, form) { // 콜바이 레퍼런트가 발생하지 않도록 값복사 한다. (스코프 체이닝)
-            $(this.elements.list.querySelector('button[data-block="' + block + '"]')).on(browser.event['down'], function() {
-                // 버튼 숨기기
-                this.style.display = 'none';
-                // block add listeners
-                this.settings.listeners.add(block, form);
-            });
-        })(result.json.list[i].block, result.json.list[i].form);
-    }
-}
-let worker = api.worker({
-    'url': "//" + window.location.host + "/js/worker.template.min.js",
-    'listeners': {
-        'message': function(data={}) {
-            let { message, result, } = data; 
-
-            //console.log('[모달 정보] template 응답', data);
-
-            // loading
-            this.elements.loading.style.display = 'none';
-
-            switch(message.call) {
-                case 'marketList': // 리스트 
-                    if(typeof result === 'object' && result.json && result.html) {
-                        setMarketList(result);
-                    }
-                    break;
-                case 'marketMore': // 자세히 보기
-
-                    break;
-                case 'marketBest': // 베스트 리스트
-
-                    break;
-            }
-
-            // 위치 재조정
-            //this.position();
-        }
-    }
-});*/
 
 const EVENT_CLICK_CLOSE = 'EVENT_CLICK_CLOSE';
 
@@ -68,6 +16,9 @@ export default class ModalMarket extends ModalBase {
         super();
         this.settings = {
             'key': '',
+            'webworker': {
+                'url': `//${window.location.host}/webworker/modal/index.js`,
+            },
             'listeners': {
                 'show': null,
                 'hide': null,
@@ -83,6 +34,9 @@ export default class ModalMarket extends ModalBase {
 
         // event
         this.event();
+
+        // webworker
+        this.worker = webworker(this.settings.webworker.url);
     }
 
     render() {
@@ -209,14 +163,17 @@ export default class ModalMarket extends ModalBase {
         return this;
     }
 
-    show({ callback, }={}) {
+    async show({ callback, }={}) {
         let size = windowDocumentSize();
 
         // loading
         this.elements.loading.style.display = 'block';
 
-        // ajax (서버에서 블록 리스트를 받아와서 템플릿을 이용해서 페인팅한다.)
-        //worker.send({'call': 'marketList', 'parameter': {}});
+        // 서버에서 블록 리스트를 받아와서 템플릿을 이용해서 페인팅한다.
+        await this.imports();
+
+        // loading
+        this.elements.loading.style.display = 'none';
 
         // 스크롤바 사이즈만큼 여백
         if(size.window.height < size.document.height) {
@@ -264,5 +221,59 @@ export default class ModalMarket extends ModalBase {
         if(typeof callback === 'function') {
             callback.call(this);
         }
+    }
+
+    async imports() { // market 내부 html 불러오기
+        const that = this;
+        const setMarketList = (result={}) => { // 리스트 생성
+            let {
+                json,
+                html,
+                page,
+            } = result;
+        
+            // html
+            if(!page) {
+                this.elements.list.innerHTML = html;
+            }else {
+                this.elements.list.appendChild(fragmentHtml(html));
+            }
+
+            // json
+            Array.isArray(json.list) && json.list.forEach((item, index) => {
+                let {
+                    block,
+                    form,
+                } = item;
+                $(this.elements.list.querySelector(`button[data-block="${block}"]`)).on(browser.event['down'], function() {
+                    // 버튼 숨기기
+                    this.style.display = 'none';
+                    // block add listeners 실행
+                    that.settings.listeners.add(block, form);
+                });
+            });
+            /*for(let i=0, max=result.json.list.length; i<max; i++) {
+                ((block, form) => { // 콜바이 레퍼런트가 발생하지 않도록 값복사 한다. (스코프 체이닝)
+                    $(this.elements.list.querySelector(`button[data-block="${block}"]`)).on(browser.event['down'], () => {
+                        // 버튼 숨기기
+                        this.style.display = 'none';
+                        // block add listeners
+                        this.settings.listeners.add(block, form);
+                    });
+                })(result.json.list[i].block, result.json.list[i].form);
+            }*/
+        };
+
+        // worker 요청 
+        let { result, } = await this.worker.message({
+            'instance': 'market',
+            'method': 'getList',
+            'parameter': { 
+                'page': 0,
+             },
+        });
+
+        // worker 응답에 따른 실행
+        setMarketList(result);
     }
 }
