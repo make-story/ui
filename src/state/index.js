@@ -12,6 +12,7 @@ state.on({
 });
 state.get('event.action');
 state.set({'key': 'event.action', 'value': true});
+state.trigger({'key': 'event.action', 'value': true}); // 현재상태값 확인 후 트리거 실행
 */
 let storage = {}; // 상태값 저장
 let dictionary = { // 상태값 변경에 따른 이벤트 핸들러
@@ -31,7 +32,7 @@ let dictionary = { // 상태값 변경에 따른 이벤트 핸들러
 }; 
 
 // namespace 해당하는 프로퍼티 (속도가 가장 빨라야하는 부분)
-let property = function(parameter) {
+const property = function(parameter) {
     let {
         key='', // namespace
         value, // 값 타입이 여러개가 올 수 있다.
@@ -77,6 +78,27 @@ let property = function(parameter) {
     return result;
 };
 
+// handler 실행
+const dispatch = function(parameter={}) {
+    let {
+        key='', // namespace
+        value, // 값 타입이 여러개가 올 수 있다.
+    } = parameter;
+    let index;
+    let i, max;
+
+    if(key in dictionary) {
+        for(i=0, max=dictionary[key].length; i<max; i++) {
+            if(dictionary[key][i]['value'] === value) {
+                for(index in dictionary[key][i]['handler']) {
+                    dictionary[key][i]['handler'][index].call(this, value);
+                }
+                break;
+            }
+        }
+    }
+};
+
 export default {
     // 값 반환
     get: function(key) {
@@ -88,22 +110,8 @@ export default {
             key='', // namespace
             value, // 값 타입이 여러개가 올 수 있다.
         } = parameter;
-        let index;
-        let i, max;
-        
         property({'key': key, 'value': value});
-
-        // handler 실행
-        if(key in dictionary) {
-            for(i=0, max=dictionary[key].length; i<max; i++) {
-                if(dictionary[key][i]['value'] === value) {
-                    for(index in dictionary[key][i]['handler']) {
-                        dictionary[key][i]['handler'][index].call(this, value);
-                    }
-                    break;
-                }
-            }
-        }
+        dispatch({'key': key, 'value': value});
     },
     // 이벤트 설정
     on: function(parameter={}) {
@@ -116,7 +124,6 @@ export default {
         let index = value && JSON.stringify(value) || 'api.state';
         let i, max;
         let is = false;
-        let tmp;
 
         if(!key) {
             return false;
@@ -137,9 +144,9 @@ export default {
         if(is === false) {
             // 기존 value에 해당하는 콜백이 하나도 없으면 새로 설정
             dictionary[key].push((function() {
-                let tmp = {'value': value, 'handler': {}};
-                tmp['handler'][index] = handler;
-                return tmp;
+                let temp = {'value': value, 'handler': {}};
+                temp['handler'][index] = handler;
+                return temp;
             })());
         }
     },
@@ -169,5 +176,15 @@ export default {
         }
 
         return is;
-    }
+    },
+    // trigger
+    trigger: function(parameter={}) {
+        let {
+            key='', // namespace
+            value, // 값 타입이 여러개가 올 수 있다.
+        } = parameter;
+        if(this.get(key) === value) {
+            dispatch({'key': key, 'value': value});
+        }
+    },
 };
