@@ -177,7 +177,7 @@ export default class ModalMarket extends ModalBase {
 
         // 스크롤바 사이즈만큼 여백
         if(size.window.height < size.document.height) {
-            $('html').css({'margin-right': browser['scrollbar'] + 'px', 'overflow': 'hidden'});
+            $('html').css({'margin-right': `${browser['scrollbar']}px`, 'overflow': 'hidden'});
         }
 
         // element
@@ -245,6 +245,8 @@ export default class ModalMarket extends ModalBase {
                     block,
                     form,
                 } = item;
+                // 이벤트 수정해야 한다.
+                // list 에서 이벤트델리게이션 방식으로 해야 한다. - 이유는 버튼의 event off 가 없다.
                 $(this.elements.list.querySelector(`button[data-block="${block}"]`)).on(browser.event['down'], function() {
                     // 버튼 숨기기
                     this.style.display = 'none';

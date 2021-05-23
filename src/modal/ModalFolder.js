@@ -85,7 +85,7 @@ export default class ModalFolder extends ModalBase {
 
         // contents
         this.elements.contents = document.createElement('div');
-        this.elements.contents.style.cssText = 'position: fixed; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; align-content: stretch; width: ' + this.min.width + 'px; height: ' + this.min.height + 'px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); border: 1px solid rgb(240, 241, 242); border-radius: 3px; outline: none; -khtml-user-select: none; -ms-user-select: none; -moz-user-select: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-touch-select: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); -webkit-tap-highlight-color: transparent;';
+        this.elements.contents.style.cssText = `position: fixed; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; align-content: stretch; width: ${this.min.width}px; height: ${this.min.height}px; box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, .05); border: 1px solid rgb(240, 241, 242); border-radius: 3px; outline: none; -khtml-user-select: none; -ms-user-select: none; -moz-user-select: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-touch-select: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); -webkit-tap-highlight-color: transparent;`;
         this.elements.contents.innerHTML = `
             <!-- header //-->
             <header id="${key.header}" style="height: 50px; background-color: rgb(253, 254, 255); border-radius: 3px 3px 0 0; -khtml-user-select: none; -ms-user-select: none; -moz-user-select: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-touch-select: none;">
@@ -131,32 +131,34 @@ export default class ModalFolder extends ModalBase {
     }
 
     event() {
-        $(this.elements.title_input).on(`blur.${EVENT_BLUR_TITLE}_${this.settings.key}`, (e) => { // 폴터 타이틀 변경 이벤트
+        const that = this;
+
+        $(this.elements.title_input).on(`blur.${EVENT_BLUR_TITLE}_${this.settings.key}`, function(e) { // 폴터 타이틀 변경 이벤트
             let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
             let value = this.value;
             event.preventDefault();
             event.stopPropagation();
             // 폴더 제목 변경
-            if(this.settings.mode === 'edit' && typeof this.settings.listeners.title === 'function') {
-                this.settings.listeners.title(encodeURIComponent(value || ''));
+            if(that.settings.mode === 'edit' && typeof that.settings.listeners.title === 'function') {
+                that.settings.listeners.title(encodeURIComponent(value || ''));
             }
         });
         (() => {
             let before; // 이전 타이틀 설정값 (계속 엔터키를 눌렀을 때 불필요한 동기화 방지)
-            $(this.elements.title_input).on(`keyup.${EVENT_KEYUP_TITLE}_${this.settings.key}`, (e) => { // 폴터 타이틀 변경 이벤트 (enter key)
+            $(this.elements.title_input).on(`keyup.${EVENT_KEYUP_TITLE}_${this.settings.key}`, function(e) { // 폴터 타이틀 변경 이벤트 (enter key)
                 let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
                 let code = event.which || event.keyCode;
                 let value = this.value;
 
-                if(this.settings.mode === 'edit') {
+                if(that.settings.mode === 'edit') {
                     if(code === 13) {
                         // 폴더 제목 변경
-                        if(before !== value && typeof this.settings.listeners.title === 'function') {
-                            this.settings.listeners.title(encodeURIComponent(value || ''));
+                        if(before !== value && typeof that.settings.listeners.title === 'function') {
+                            that.settings.listeners.title(encodeURIComponent(value || ''));
                             before = value;
                         }
-                        if(typeof this.elements.title_input.blur === 'function') {
-                            this.elements.title_input.blur();
+                        if(typeof that.elements.title_input.blur === 'function') {
+                            that.elements.title_input.blur();
                         }
                     }else {
                         // 화면 title 변경 (실시간 변경)
@@ -219,7 +221,7 @@ export default class ModalFolder extends ModalBase {
         }else if(this.max.height < height) {
             height = this.max.height;
         }
-        this.elements.contents.style.height = height + 'px';
+        this.elements.contents.style.height = `${height}px`;
     }
 
     position() {

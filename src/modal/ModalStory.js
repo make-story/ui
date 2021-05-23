@@ -514,7 +514,7 @@ export default class ModalStory extends ModalBase {
         */
         xhr({
             'type': 'get',
-            'url': "//" + window.location.host + "/data/story",
+            'url': `//${window.location.host}/data/story`,
             'data': {
                 'block': this.settings['key']
             },

@@ -161,7 +161,7 @@ export default class ModalLayer extends ModalBase {
 
 			// 스크롤바 사이즈만큼 여백
 			if(size.window.height < size.document.height) {
-				$('html').css({'margin-right': browser.scrollbar + 'px', 'overflow': 'hidden'});
+				$('html').css({'margin-right': `${browser.scrollbar}px`, 'overflow': 'hidden'});
 			}
 
 			// IOS 의 position: fixed 버그 대응
