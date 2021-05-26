@@ -201,7 +201,11 @@ export class DOM {
 		this.length = 0;
 
 		// selector
-		if(selector && typeof selector === 'object') {
+		if(!selector) {
+			// 기본 document 반환
+			//this.elements = [ window.document ];
+			return this;
+		}else if(typeof selector === 'object') {
 			/*
 			nodeType
 			1 : Element 노드를 의미
@@ -295,9 +299,6 @@ export class DOM {
 					}*/
 				}
 			}
-		}else {
-			// 기본 document 반환
-			this.elements = [ window.document ];
 		}
 
 		// 총 element 수
@@ -2057,12 +2058,12 @@ export class DOM {
 
 		/*
 		! 주의
-		'dataset' 프로퍼티를 통해 값을 설정하거나 가져올 때, '-' 다음 값은 대문자여야 한다.
-		data-index-number="12314" 속성을 JavaScript 에서 접근할 경우 element.dataset.indexNumber; 
+		data-* 속성값에서 두번째 -(hyphen) 다음의 첫글자는 무조건 대문자로 들어가야 한다.
 		https://developer.mozilla.org/ko/docs/Learn/HTML/Howto/%EB%8D%B0%EC%9D%B4%ED%84%B0_%EC%86%8D%EC%84%B1_%EC%82%AC%EC%9A%A9%ED%95%98%EA%B8%B0
 		
-		<div data-columns="3"></div>  ->  element.dataset.columns // "3"
-		<div data-parent="cars"></div>  ->  element.dataset.parent // "cars"
+		[data-index-number="12314"] 속성을 JavaScript 에서 접근할 경우 element.dataset.indexNumber; // "12314"
+		[data-columns="3"] -> element.dataset.columns // "3"
+		[data-parent="cars"] -> element.dataset.parent // "cars"
 		*/
 		const setTheFirstLetter = function(value) {
 			if(typeof value === 'string') {
