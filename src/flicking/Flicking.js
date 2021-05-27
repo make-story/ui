@@ -48,7 +48,7 @@ const setAnimate = (() => {
 				element.style.webkitTransitionDuration = element.style.MozTransitionDuration = element.style.msTransitionDuration = element.style.OTransitionDuration = element.style.transitionDuration = `${Number(duration)}s`;
 				element.style.webkitTransform = `translate(${left}px, ${top}px) translateZ(0)`; // translateZ : CSS GPU가속 사용을 위한 핵 (3d로 속여서 GPU가속 사용)
 				element.style.msTransform = element.style.MozTransform = element.style.OTransform = `translate(${left}px, ${top}px)`;
-				$(element).off(`${browser.event.transitionend}.${EVENT_TRANSITION_FLICKING}`).on(`${browser.event.transitionend}.${EVENT_TRANSITION_FLICKING}`, (e) => {
+				$(element).off(`${browser.event.transitionend}.${EVENT_TRANSITION_FLICKING}`).on(`${browser.event.transitionend}.${EVENT_TRANSITION_FLICKING}`, function(e) {
 					let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					let currentTarget = event.currentTarget;
 					let target = event.target || event.srcElement;
@@ -705,7 +705,9 @@ export default class Flicking {
 
 	// 마우스, 터치 이벤트 설정
 	on() {	
+		const that = this;
 		let rect = {}; 
+
 		/**
 		 * up
 		 */
@@ -809,6 +811,11 @@ export default class Flicking {
 			console.dir(this.start);
 			console.dir(this.end);
 			*/
+
+			// 슬라이드 이동이 예상되는 경우 기본 이벤트 정지(클릭 등 정지)
+			if(index <= this.total && (this.index < index || index > this.index)) {
+				event.preventDefault();
+			}
 
 			// 슬라이드 이동 (transitionend 이벤트 발생됨)
 			this.slide({'index': index, 'duration': duration});
@@ -969,16 +976,16 @@ export default class Flicking {
 		
 		if(this.settings.touch === true) {
 			// down 이벤트
-			$(this.elements.target).on(`${browser.event.down}.${EVENT_MOUSEDOWN_FLICKING}_${this.settings.key}`, (e) => {
+			$(this.elements.target).on(`${browser.event.down}.${EVENT_MOUSEDOWN_FLICKING}_${this.settings.key}`, function(e) {
 				setDown((typeof e === 'object' && e.originalEvent || e) || window.event); // originalEvent: jQuery Event
 
 				// move 이벤트
-				$(window).on(`${browser.event.move}.${EVENT_MOUSEMOVE_FLICKING}_${this.settings.key}`, (e) => {
+				$(window).on(`${browser.event.move}.${EVENT_MOUSEMOVE_FLICKING}_${that.settings.key}`, function(e) {
 					setMove((typeof e === 'object' && e.originalEvent || e) || window.event); // originalEvent: jQuery Event
 				});
 				
 				// up 이벤트
-				$(window).on(`${browser.event.up}.${EVENT_MOUSEUP_FLICKING}_${this.settings.key}`, (e) => {
+				$(window).on(`${browser.event.up}.${EVENT_MOUSEUP_FLICKING}_${that.settings.key}`, function(e) {
 					setUp((typeof e === 'object' && e.originalEvent || e) || window.event); // originalEvent: jQuery Event
 				});
 			});
@@ -987,7 +994,7 @@ export default class Flicking {
 			// 또는 addEventListener 를 사용하여, event.target 를 검사하여, 해당되는 element의 경우에만 콜백을 실행해야 한다.
 			// transition 값이 여러개의 경우 각각의 프로퍼티별로 콜백이 실행된다. (left/top 두개 트랜지션이 설정되었을 경우, left/top 각각 콜백이 두번 실행된다.)
 			if(typeof this.settings.listeners.transitionend === 'function') {
-				$(this.elements.target).off(`${browser.event.transitionend}.${EVENT_TRANSITION_FLICKING}_${this.settings.key}`).on(`${browser.event.transitionend}.${EVENT_TRANSITION_FLICKING}_${this.settings.key}`, (e) => {
+				$(this.elements.target).off(`${browser.event.transitionend}.${EVENT_TRANSITION_FLICKING}_${this.settings.key}`).on(`${browser.event.transitionend}.${EVENT_TRANSITION_FLICKING}_${this.settings.key}`, function(e) {
 					let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 					let currentTarget = event.currentTarget; // event listener element
 					let target =  event.target || event.srcElement; // event 가 발생한 element
@@ -997,7 +1004,7 @@ export default class Flicking {
 					console.log(currentTarget);
 					console.log(target);*/
 					if(currentTarget.isEqualNode(target)) {
-						this.settings.listeners.transitionend.call(this, this.elements.target);
+						that.settings.listeners.transitionend.call(this, that.elements.target);
 					}
 				});
 			}
@@ -1034,11 +1041,13 @@ export default class Flicking {
 
 	// 마우스 휠
 	wheel({ mode, }={}) {
+		const that = this;
+
 		mode = /^(on|off)$/i.test(mode) && mode.toLowerCase() || 'off';
 
 		$(this.elements.target).off(`.${EVENT_MOUSEWHEEL_FLICKING}_${this.settings.key}`);
 		if(mode === 'on' && this.settings.wheel === true) {
-			$(this.elements.target).on(`${browser.event.wheel}.${EVENT_MOUSEWHEEL_FLICKING}_${this.settings.key}`, (e) => {
+			$(this.elements.target).on(`${browser.event.wheel}.${EVENT_MOUSEWHEEL_FLICKING}_${this.settings.key}`, function(e) {
 				let event = (typeof e === 'object' && e.originalEvent || e) || window.event; // originalEvent: jQuery Event
 				let scroll;
 
@@ -1057,9 +1066,9 @@ export default class Flicking {
 				//
 				scroll = 1 + scroll; // Zoom factor: 0.9 / 1.1
 				if(scroll > 1) { // prev
-					this.slide({'index': 'prev'});
+					that.slide({'index': 'prev'});
 				}else if(scroll < 1) { // next
-					this.slide({'index': 'next'});
+					that.slide({'index': 'next'});
 				}else {
 					return false;
 				}
