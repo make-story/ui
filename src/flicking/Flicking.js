@@ -145,6 +145,20 @@ const setAnimate = (() => {
 	}
 })();
 
+// event passive
+let passiveSupported = false;
+try {
+	const options = {
+		get passive() {
+			passiveSupported = true;
+		}
+	};
+	window.addEventListener("test", options, options);
+	window.removeEventListener("test", options, options);
+}catch(error) {
+	passiveSupported = false;
+}
+
 export default class Flicking {
 	constructor(target=null, settings={}) {
 		this.settings = {

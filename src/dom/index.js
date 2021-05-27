@@ -1800,7 +1800,7 @@ export class DOM {
 		Chrome 에서는 기본이벤트 방지를 위해 {passive: false} 값 등이 올 수 있다.
 		target.addEventListener(type, listener, { capture: true, once: true, passive: true });
 		*/
-		capture = typeof capture !== 'boolean' && typeof capture !== 'object' ? false : capture;
+		capture = typeof capture !== 'boolean' && (!capture || typeof capture !== 'object') ? false : capture;
 
 		this.each(function(index, element) {
 			let arr = [];
