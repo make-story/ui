@@ -739,6 +739,7 @@ export default class Flicking {
 				'move': 30, // 최소/최대 이동범위
 				'size': 6 // 화면 분할 기준
 			};
+			let is = false;
 			const isChildren = (element) => {
 				let i, max;
 				for(i=0, max=this.total; i<max; i++) {
@@ -829,6 +830,7 @@ export default class Flicking {
 			// 슬라이드 이동이 예상되는 경우 기본 이벤트 정지(클릭 등 정지)
 			if(index <= this.total && (this.index < index || index > this.index)) {
 				event.preventDefault();
+				is = true;
 			}
 
 			// 슬라이드 이동 (transitionend 이벤트 발생됨)
@@ -845,6 +847,8 @@ export default class Flicking {
 
 			// initialize
 			this.reset();
+
+			return is;
 		};
 
 		/**
@@ -928,6 +932,8 @@ export default class Flicking {
 				// slide 이동
 				setAnimate(translate);
 			}
+
+			return is;
 		};
 
 		/**
