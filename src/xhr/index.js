@@ -13,6 +13,167 @@ api.xhr({
 });
 */
 
+// innerHTML 을 통해 비동기로 불러온 HTML(템플릿)을 넣었을 경우, 내부 script 는 기본적으로 실행되지 않는다.
+// document.createElement("script") 태그를 생성하고, src 등 속성을 부여해서 appendChild 해준다.
+const setScriptTag = function(node, { is=true, type="", src="", code="", }={}) {
+	let script = document.createElement("script");
+	let setRemove = (script) => {
+		script.parentNode.removeChild(script);
+	};
+
+	//console.log(code);
+	//script.text = code;
+	if(type) {
+		script.type = type;
+	}
+	if(src) {
+		// <script src=""></script>
+		script.setAttribute("src", src);
+	}else if(code) {
+		// <script>inline code</script>
+		script.appendChild(document.createTextNode(code)); 
+	}
+	// 삽입
+	node.parentNode.insertBefore(script, node);
+	// 실행 후 제거
+	if(is !== false) {
+		if(src) {
+			script.onload = (event) => {
+				console.log(event.type); // error, load
+				setRemove(script);
+			}
+		}else if(code && script.parentNode) {
+			setRemove(script);
+		}
+	}else {
+		script = null;
+	}
+};
+const setScriptCodeLoad = (node) => {
+	let instance = new XMLHttpRequest();
+	if(typeof instance !== 'object' || !('withCredentials' in instance)) {
+		return;
+	}
+	//instance.abort();
+	instance.open('GET', node.src, false); // 동기방식으로 호출
+	//instance.setRequestHeader('Accept', '*/*');
+	//instance.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); // X-Requested-With 헤더는, 해당 요청이 Ajax라는 걸 의미 (비표준)
+	//instance.timeout = 3000; // time in milliseconds
+	instance.onreadystatechange = function() {
+		switch(instance.readyState) {
+			case 0: // 객체만 생성되고 아직 초기화되지 않은 상태(open 메소드가 호출되지 않음)
+				break;
+			case 1: // open 메소드가 호출되고 아직 send 메소드가 불리지 않은 상태
+			case 2: // send 메소드가 불렸지만 status와 헤더는 도착하지 않은 상태
+				// 연결 진행
+				break;
+			case 3: // 데이터의 일부를 받은 상태
+				break;
+			case 4: // 데이터를 전부 받은 상태
+				break;
+		}
+	};
+	instance.onload = function(event) { 
+		let code;
+		if(instance.status == 200) {
+			code = instance.response || instance.responseText || instance.responseXML; // XMLHttpRequest Level 2
+			setScriptTag(node, { code, });
+		}
+	};
+	instance.ontimeout = function(event) {
+
+	};
+	instance.onerror = function(event) {
+
+	};
+	instance.send();
+};
+const setScripts = (scripts) => {
+	// 동적 html load(ajax)된 script tag 는 실행이 안된다. 아래와 같이 실행해줘야 한다.
+	for(let i=0, max=scripts.length; i<max; i++) {
+		let node = scripts[i];
+		let code;
+		//console.log(node);
+		if(node.src) { 
+			// <script src="" /> 형태 
+			// jQuery 코드 내부 호출 형태 참고
+			/*$.ajax({
+				url: node.src,
+				type: "GET",
+				dataType: "script",
+				async: false,
+				global: false,
+				"throws": true
+			});*/
+
+			// 동기 방식으로 적용해야 하므로, 아래 방식을 사용할 수 없다.
+			/*(function() {
+				let script = document.createElement("script");
+				// 해당 script 속성 
+				script.async = false;
+				//if(s.scriptCharset) {
+					//script.charset = s.scriptCharset;
+				//}
+				script.src = node.src;
+
+				script.onload = script.onreadystatechange = function(_, isAbort) {
+					if(isAbort || !script.readyState || /loaded|complete/.test( script.readyState)) {
+						// Handle memory leak in IE
+						script.onload = script.onreadystatechange = null;
+
+						// Remove the script
+						if(script.parentNode) {
+							script.parentNode.removeChild(script);
+						}
+
+						// Dereference the script
+						script = null;
+
+						// Callback if not abort
+						if(!isAbort) {
+							// 다음 스크립트를 실행시켜야 한다.
+
+							//callback(200, "success");
+						}
+					}
+				};
+
+				// Circumvent IE6 bugs with base elements (#2709 and #4378) by prepending
+				// Use native DOM manipulation to avoid our domManip AJAX trickery
+				node.parentNode.insertBefore(script, node);
+			})();*/
+
+			// xhr 동기 방식으로 호출한다.
+			setScriptCodeLoad(node);
+		}else { 
+			// <script>code...</script> 형태 
+			code = (node.text || node.textContent || node.innerHTML || "").replace(/^\s*<!(?:\[CDATA\[|--)|(?:\]\]|--)>\s*$/g, "");
+			//window["eval"].call(window, code);
+			setScriptTag(node, { code, });
+		}
+	}
+};
+/*const fragment = document.createDocumentFragment();
+const temp = document.createElement('div');
+temp.innerHTML = html; // 불러온 html 템플릿
+while(child = temp.firstChild) { // temp.firstElementChild (textnode 제외)
+	fragment.appendChild(child);
+}
+const scripts = fragment.querySelectorAll('script');
+const head = fragment.querySelector('head');
+const first = fragment.firstChild;
+if(scripts.length) {
+	//console.log(scripts);
+	setScriptTag(scripts[0], { is: false, code, });
+}else if(head) {
+	//console.log(head);
+	setScriptTag(head.firstChild, { is: false, code, });
+}else if(first) {
+	//console.log(first);
+	setScriptTag(first, { is: false, code, });
+}
+setScripts(scripts);*/
+
 export default (options={}) => {
 	//return new Promise((resolve, reject) => {
 		const defaults = { // 기본 설정값
