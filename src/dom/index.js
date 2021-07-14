@@ -2111,6 +2111,8 @@ export class DOM {
 		let key, property;
 		let scroll;
 		const getBrowserScroll = function() {
+			// https://developer.mozilla.org/ko/docs/Web/API/Window/scrollY
+			// 브라우저간 호환성을 위해서는 window.scrollY 대신 window.pageYOffset을 사용하세요
 			if('scrollX' in window && 'scrollY' in window) { 
 				return {'left': window.scrollX, 'top': window.scrollY};
 			}else if('pageXOffset' in window && 'pageYOffset' in window) { 
@@ -2127,6 +2129,15 @@ export class DOM {
 		if(max) {
 			if(this.elements[0] === window || this.elements[0].nodeType === 9) {
 				// window, document
+				/*
+				window.scroll
+				// https://developer.mozilla.org/en-US/docs/Web/API/Window/scroll
+				window.scroll({
+					top: 100,
+					left: 100,
+					behavior: 'smooth'
+				});
+				*/
 				scroll = getBrowserScroll();
 				if('left' in parameter || 'top' in parameter) {
 					window.scrollTo((typeof parameter.left !== 'undefined' ? parameter.left : (scroll.left || 0)), (typeof parameter.top !== 'undefined' ? parameter.top : (scroll.top || 0)));
