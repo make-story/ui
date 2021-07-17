@@ -2,8 +2,20 @@
  * app 연동
  */
 
-// user Agent
-// https://github.com/naver/egjs-agent/tree/master/src
+
+/*
+-
+user Agent
+https://github.com/naver/egjs-agent/tree/master/src
+
+const userAgent = navigator.userAgent;
+// check Mac
+const isMac = userAgent.indexOf("Mac") > -1;
+// check iOS
+const isIOS = (isMac || userAgent.indexOf("iPhone") > -1 || userAgent.indexOf("iPad") > -1) && !!navigator.maxTouchPoints && navigator.maxTouchPoints > 0;
+// check Chrome
+const isChrome = userAgent.indexOf("Chrome") > -1;  
+*/
 const BROWSER_PRESETS = [
     {
         test: "phantomjs",
@@ -53,7 +65,6 @@ const BROWSER_PRESETS = [
         versionTest: "version",
     },
 ];
-
 // chromium's engine(blink) is based on applewebkit 537.36.
 const CHROMIUM_PRESETS = [
     {
@@ -267,41 +278,16 @@ function agent(userAgent) {
 }
 
 
+
 /*
 -
-아이폰 앱 실행
+웹에서 아이폰 앱 실행
 앱이 있을 때는 바로 실행 가능하지만, 없을 때는 javascript timer를 사용해 일정 시간 후 appstore로 분기시키는 방법을 사용
-
--
-Webview -> iOS Native 데이터 교환
-UIWebView : 보이지 않는 iframe 생성하여 src="전달정보" 로 데이터 교환
-WKWebview : window.webkit.messageHandlers[YOUR_HANDLER_NAME].postMessage(PARAMS) 로 데이터 교환 
-
-iOS Native -> Webview 데이터 교환
-iOS 와 자바스크립트간 약속된 funcName 함수로 호출
-window.{funcName} = ({parameter}) => {
-	// Function 내용
-};
-
 
 -
 안드로이드 앱 실행
 안드로이드도 아이폰과 동일한 방식으로 앱 미설치 시 예외 처리를 할 수 있으나, 시스템 에러 메시지를 숨기기 위한 iframe 처리 등이 필요할 수 있습니다.
 <a id="applink" href="intent://qmenu=voicerecg&version=1#Intent;scheme=naversearchapp;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.nhn.android.search;end">App실행</a>
-
--
-Webview -> 안드로이드 Native 데이터 교환
-https://developer.android.com/guide/webapps/webview#EnablingJavaScript
-window[YOUR_HANDLER_NAME][YOUR_METHOD_NAME](PARAMS) 로 데이터 교환
-
-
--
-참고
-https://developer.mozilla.org/ko/docs/Web/API/Window/postMessage
-https://developers.naver.com/docs/utils/mobileapp/
-https://developers.kakao.com/sdk/js/kakao.js
-https://naitas.tistory.com/entry/WKWebview%EC%97%90%EC%84%9C-%EC%9E%90%EB%B0%94%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8-%ED%98%B8%EC%B6%9C
-https://yoogomja.tistory.com/entry/%ED%95%98%EC%9D%B4%EB%B8%8C%EB%A6%AC%EB%93%9C-%EC%95%B1%EC%97%90%EC%84%9C%EC%9D%98-%ED%95%A8%EC%88%98-%EC%8B%A4%ED%96%89
 */
 export const app = (url="appscheme://search?qmenu=voicerecg&version=1") => {
 	let clickedAt = +new Date;
@@ -313,8 +299,8 @@ export const app = (url="appscheme://search?qmenu=voicerecg&version=1") => {
 	}, 1500);
 	location.href = url;
 }
-
 const createHiddenIframe = (id) => {
+    // iframe 생성 (숨긴 상태로 생성)
 	let iframe = document.createElement('iframe');
 	iframe.id = id;
 	iframe.style.border = 'none';
@@ -338,28 +324,61 @@ const launchAppViaHiddenIframe = (urlScheme) => {
 	}, 100);
 }
 
-/**
- * App <-> WebView 정보 교환
- * 
- * navigator.userAgent 기본적 확인가능 정보 : 브라우저정보(종류, 버전), OS정보(종류, 버전), App여부(ios && safari 또는 android && inapp || app)
- * 앱에서 userAgent 에 추가(필요정보) : xxxApp=true,serviceversion=0.0.0,servicebuildversion=0.0.0,appname(예: naver, daum, nate)
- * 
- */
+
 /*
-const userAgent = navigator.userAgent;
-// check Mac
-const isMac = userAgent.indexOf("Mac") > -1;
-// check iOS
-const isIOS = (isMac || userAgent.indexOf("iPhone") > -1 || userAgent.indexOf("iPad") > -1) && !!navigator.maxTouchPoints && navigator.maxTouchPoints > 0;
-// check Chrome
-const isChrome = userAgent.indexOf("Chrome") > -1;  
+-
+자사 앱의 웹뷰여부 판단 방법
+앱에서 userAgent 에 추가(필요정보) : xxxApp=true,serviceversion=0.0.0,servicebuildversion=0.0.0,appname(예: naver, daum, nate)
+
+
+-
+IOS
+Webview -> iOS Native 데이터 교환
+UIWebView : 보이지 않는 iframe 생성하여 src="전달정보" 로 데이터 교환
+WKWebview : window.webkit.messageHandlers[YOUR_HANDLER_NAME].postMessage(PARAMS) 로 데이터 교환 
+
+iOS Native -> Webview 데이터 교환
+iOS 와 자바스크립트간 약속된 funcName 함수로 호출
+window.{funcName} = ({parameter}) => {
+	// Function 내용
+};
+
+
+-
+Webview -> 안드로이드 Native 데이터 교환
+https://developer.android.com/guide/webapps/webview#EnablingJavaScript
+window[YOUR_HANDLER_NAME][YOUR_METHOD_NAME](PARAMS) 로 데이터 교환
+
+
+-
+참고
+https://developer.mozilla.org/ko/docs/Web/API/Window/postMessage
+https://developers.naver.com/docs/utils/mobileapp/
+https://developers.kakao.com/sdk/js/kakao.js
+https://naitas.tistory.com/entry/WKWebview%EC%97%90%EC%84%9C-%EC%9E%90%EB%B0%94%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8-%ED%98%B8%EC%B6%9C
+https://yoogomja.tistory.com/entry/%ED%95%98%EC%9D%B4%EB%B8%8C%EB%A6%AC%EB%93%9C-%EC%95%B1%EC%97%90%EC%84%9C%EC%9D%98-%ED%95%A8%EC%88%98-%EC%8B%A4%ED%96%89
 */
 
-// 약속된 네이밍
+// 앱과 정보 교환을 위한 약속된 네이밍
 export const preset = 'abcapp';
-export const appEventType = {
+export const APP_EVENT_TYPE = {
     TEST: 'testTest',
 };
+if(!window[preset] || typeof window[preset] !== 'object') {
+	window[preset] = {};
+}
+if(!window[preset].APP_EVENT_TYPE) {
+	window[preset].APP_EVENT_TYPE = {
+		...APP_EVENT_TYPE
+	};
+}
+/*
+const call = () => {
+    console.log('앱에서 넘어오는 정보');
+};
+appEventOn(APP_EVENT_TYPE.TEST, call);
+appEventOff(APP_EVENT_TYPE.TEST, call);
+*/
 export const appEventOn = (type, listener, options=false) => {
     //console.log('appEventOn', type);
     //console.log(listener);
@@ -371,18 +390,8 @@ export const appEventOff = (type, listener, options=false) => {
     document.removeEventListener(type, listener, options);
 };
 
-if(!window[preset] || typeof window[preset] !== 'object') {
-	window[preset] = {};
-}
-if(!window[preset].EVENT) {
-    // 앱과 약속된 이벤트 상수(키)!
-	window[preset].EVENT = {
-		...appEventType
-	};
-}
-
 // 1. 웹뷰 -> 앱
-export const appSendMessage = (name, param) => {
+export const appSendMessage = (bridge=preset, name, param) => {
 	/*
 	User-Agent Client Hints 를 지원하는 브라우저의 경우
 	- navigator.userAgentData.brands: 브라우저의 이름과 메이저 버전, Chromium 정보
@@ -396,21 +405,9 @@ export const appSendMessage = (name, param) => {
 		}
 		
 		if (isIOS) {
-            /**
-             * ios
-             * abcapp://appapi/goToMain?encodeURIComponent({"":""})
-             * 
-             * 또는
-             * 
-             * webkit.messageHandlers.NAME.postMessage("");
-             */
-			// https://sesang06.tistory.com/170
+            // IOS UIWebView / 스키마 방식
 			const iframe = document.createElement('iframe');
-			let	scheme = `${preset}://appapi/`;
-
-			if (typeof name === 'string') {
-				scheme += name;
-			}
+			let	scheme = `${bridge}://${name}`;
 			if (typeof param === 'string') {
 				scheme += '?' + encodeURIComponent(param);
 			}
@@ -418,17 +415,20 @@ export const appSendMessage = (name, param) => {
 			document.documentElement.appendChild(iframe);
 			iframe.parentNode.removeChild(iframe);
 			iframe = null;
+
+            // IOS WKWebview / postMessage 방식
+            window.webkit.messageHandlers[name].postMessage(param);
 		} else { 
             /**
              * android
              * window.abcapp.goToMain(encodeURIComponent({"":""}))
              */
 			// https://black-jin0427.tistory.com/272
-			if (window[preset] && window[preset][name]) { // window.[함수는 안드로이드 APP에서 만든다.]
+			if (window[bridge] && window[bridge][name]) { // window.[함수는 안드로이드 APP에서 만든다.]
 				if (param === undefined) {
-					window[preset][name].apply(window[preset], []);
+					window[bridge][name].apply(window[bridge], []);
 				} else {
-					window[preset][name].apply(window[preset], [param]);
+					window[bridge][name].apply(window[bridge], [param]);
 				}
 			}
 		}
@@ -437,20 +437,13 @@ export const appSendMessage = (name, param) => {
 
 // 2. 맵 -> 웹뷰
 /*
-웹뷰에서 이벤트 대기
-document.addEventListener(window[preset].EVENT.TEST, function(event) { 
-	event.detail; // 앱에서 넘어오는 데이터
-});
-이벤트 디스패치
-document.dispatchEvent(new CustomEvent(window[preset].EVENT.TEST, { detail: '앱에서 넘어오는 데이터!' }));
-
-
 앱에서 호출 시 
 window[preset].appTriggerMessage(window[preset].EVENT.TEST, '{"name": "test value"}')
 */
 if(typeof window[preset].appTriggerMessage !== 'function') {
-	window[preset].appTriggerMessage = (name, data) => {
-        console.log('appTriggerMessage', name, data);
-		document.dispatchEvent(new CustomEvent(name, { detail: data }));
+	window[preset].appTriggerMessage = (name, ...detail) => {
+        // name 은 APP_EVENT_TYPE 타입 중 하나
+        console.log('appTriggerMessage', name, detail);
+		document.dispatchEvent(new CustomEvent(name, { detail }));
 	}
 }
