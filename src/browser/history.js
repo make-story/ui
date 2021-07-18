@@ -21,9 +21,9 @@
 /**
  * 스크롤 위치 복원 기능 값 설정
  */
-export const setScrollRestoration = (value: 'manual' | 'auto' = 'manual') => {
+export const setScrollRestoration = (value='manual') => {
 	if(history.scrollRestoration) {
-		window.history.scrollRestoration = value;
+		window.history.scrollRestoration = value; // 'manual' | 'auto'
 	}
 };
 
