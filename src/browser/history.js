@@ -22,7 +22,7 @@
  * 스크롤 위치 복원 기능 값 설정
  */
 export const setScrollRestoration = (value='manual') => {
-	if(history.scrollRestoration) {
+	if(typeof window !== 'undefined' && history.scrollRestoration) {
 		window.history.scrollRestoration = value; // 'manual' | 'auto'
 	}
 };
@@ -44,16 +44,21 @@ export const getHistoryWindowScroll = () => {
 		return { left: 0, top: 0 };
 	}
 };
+const BF_CACHE_STORAGE_KEY = 'BF_CACHE_HISTORY';
+const setHistoryBFCache = (is) => {
+	window.sessionStorage.setItem(BF_CACHE_STORAGE_KEY, is);
+};
+const getHistoryBFCache = () => {
+	return window.sessionStorage.getItem(BF_CACHE_STORAGE_KEY);
+};
 if(typeof window !== 'undefined') {
 	window.addEventListener('beforeunload', (event) => {
 		//console.log('beforeunload');
-		// 스크롤 위치 저장
-		setHistoryWindowScroll();
+		setHistoryWindowScroll(); // 스크롤 위치 저장
 	});
 	window.addEventListener('pagehide', (event) => {
 		//console.log('pagehide');
-		// 스크롤 위치 저장
-		setHistoryWindowScroll();
+		setHistoryWindowScroll(); // 스크롤 위치 저장
 	});
 }
 
@@ -63,16 +68,21 @@ if(typeof window !== 'undefined') {
  * https://developer.mozilla.org/en-US/docs/Web/Events/pagehide
  * https://developer.mozilla.org/en-US/docs/Web/Events/pageshow
  */
-const BF_CACHE_EVENT_TYPE = 'amoreBFCache';
+const BF_CACHE_EVENT_TYPE = 'BF_CACHE_EVENT_TYPE';
+const BF_CACHE_CHECK_EVENT_TYPE = 'BF_CACHE_CHECK_EVENT_TYPE';
 if(typeof window !== 'undefined') {
 	window.onpageshow = function (event) {
 		//console.log('event', event);
 		//console.log('referrer', document.referrer);
 		if(event.persisted) {
 			//console.log('BFCache');
+			//setHistoryBFCache(true);
+			document.dispatchEvent(new CustomEvent(BF_CACHE_CHECK_EVENT_TYPE, { detail: true }));
 			document.dispatchEvent(new CustomEvent(BF_CACHE_EVENT_TYPE, { detail: event }));
 		}else {
 			//console.log('새로 진입');
+			//setHistoryBFCache(false);
+			document.dispatchEvent(new CustomEvent(BF_CACHE_CHECK_EVENT_TYPE, { detail: false }));
 		}
 	};
 }
@@ -91,34 +101,51 @@ export const bfCacheEventOn = (listener, options={ capture: false }) => {
 export const bfCacheEventOff = (listener, options={ capture: false }) => {
 	typeof window !== 'undefined' && document.removeEventListener(BF_CACHE_EVENT_TYPE, listener, options);
 };
+export const bfCacheCheckEventOn = (listener, options={ capture: false }) => {
+	typeof window !== 'undefined' && document.addEventListener(BF_CACHE_CHECK_EVENT_TYPE, listener, options);
+};
+export const bfCacheCheckEventOff = (listener, options={ capture: false }) => {
+	typeof window !== 'undefined' && document.removeEventListener(BF_CACHE_CHECK_EVENT_TYPE, listener, options);
+};
 
 /**
  * 페이지 진입 방식 확인
  * window.performance.navigation 스팩아웃 (Level 2 스팩 사용 권장)
  * https://www.w3.org/TR/navigation-timing-2/#sec-performance-navigation-types
  */
-export const getNavigationType = () => {
-	let type = '';
- 
-	if(typeof window.performance?.getEntriesByType === 'function') {
-		const timing = window.performance.getEntriesByType('navigation')[0] || {};
-		type = timing?.type || ''; // 'navigate' | 'reload' | 'back_forward' | 'prerender'
-	}else {
-		switch (window.performance?.navigation?.type) {
-			case 0:
-				type = 'navigate';
-				break;
-			case 1:
-				type = 'reload';
-				break;
-			case 2:
-				type = 'back_forward';
-				break;
-			default:
-				type = '';
-				break;
+export const getNavigationType = (callback) => {
+	const isBFCache = getHistoryBFCache();
+	const getType = () => {
+		if(typeof window.performance?.getEntriesByType === 'function') {
+			const timing = window.performance.getEntriesByType('navigation')[0] || {};
+			type = timing?.type || ''; // 'navigate' | 'reload' | 'back_forward' | 'prerender'
+		}else {
+			switch (window.performance?.navigation?.type) {
+				case 0:
+					type = 'navigate';
+					break;
+				case 1:
+					type = 'reload';
+					break;
+				case 2:
+					type = 'back_forward';
+					break;
+				default:
+					type = '';
+					break;
+			}
 		}
+		return type;
+	};
+
+	// callback 에 따른 분기
+	if(typeof callback === 'function') {
+		const listener = ({ detail }) => {
+			callback(detail ? 'bfcache' : getType());
+		};
+		bfCacheCheckEventOff(listener);
+		bfCacheCheckEventOn(listener);
+	}else {
+		return getType();
 	}
- 
-	return type;
 };
