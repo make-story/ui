@@ -4,6 +4,8 @@
  * IOS 등에서 터치(플리킹)로 뒤로가기를 했을 경우 BFCache 활용됨 
  * (IOS nitro엔진 WKWebview는 히스토리백시 BFCache를 사용)
  */
+let isBFCache = null;
+const callbackListBFCache = [];
 
 /**
  * popstate 이벤트
@@ -44,13 +46,6 @@ export const getHistoryWindowScroll = () => {
 		return { left: 0, top: 0 };
 	}
 };
-const BF_CACHE_STORAGE_KEY = 'BF_CACHE_HISTORY';
-const setHistoryBFCache = (is) => {
-	window.sessionStorage.setItem(BF_CACHE_STORAGE_KEY, is);
-};
-const getHistoryBFCache = () => {
-	return window.sessionStorage.getItem(BF_CACHE_STORAGE_KEY);
-};
 if(typeof window !== 'undefined') {
 	window.addEventListener('beforeunload', (event) => {
 		//console.log('beforeunload');
@@ -70,22 +65,45 @@ if(typeof window !== 'undefined') {
  */
 const BF_CACHE_EVENT_TYPE = 'BF_CACHE_EVENT_TYPE';
 const BF_CACHE_CHECK_EVENT_TYPE = 'BF_CACHE_CHECK_EVENT_TYPE';
+const BF_CACHE_STORAGE_KEY = 'BF_CACHE_HISTORY';
+const setHistoryBFCache = (is) => {
+	window.sessionStorage.setItem(BF_CACHE_STORAGE_KEY, is);
+};
+const getHistoryBFCache = () => {
+	return window.sessionStorage.getItem(BF_CACHE_STORAGE_KEY);
+};
+const setCallbackListBFCache = () => {
+	while(callbackListBFCache.length) {
+		callbackListBFCache.shift()(isBFCache);
+	}
+};
 if(typeof window !== 'undefined') {
 	window.onpageshow = function (event) {
 		//console.log('event', event);
 		//console.log('referrer', document.referrer);
 		if(event.persisted) {
 			//console.log('BFCache');
-			//setHistoryBFCache(true);
-			document.dispatchEvent(new CustomEvent(BF_CACHE_CHECK_EVENT_TYPE, { detail: true }));
-			document.dispatchEvent(new CustomEvent(BF_CACHE_EVENT_TYPE, { detail: event }));
+			isBFCache = true;
+			//document.dispatchEvent(new CustomEvent(BF_CACHE_CHECK_EVENT_TYPE, { detail: true }));
+			//document.dispatchEvent(new CustomEvent(BF_CACHE_EVENT_TYPE, { detail: event }));
 		}else {
 			//console.log('새로 진입');
-			//setHistoryBFCache(false);
-			document.dispatchEvent(new CustomEvent(BF_CACHE_CHECK_EVENT_TYPE, { detail: false }));
+			isBFCache = false;
+			//document.dispatchEvent(new CustomEvent(BF_CACHE_CHECK_EVENT_TYPE, { detail: false }));
 		}
+		setCallbackListBFCache();
 	};
 }
+export const isBFCacheCallback = (callback) => {
+	if(typeof callback !== 'function') {
+		return;
+	}
+	if(typeof isBFCache === 'boolean') {
+		callback(isBFCache);
+	}else {
+		callbackBFCache.push(callback);
+	}
+};
 /*
 사용 예:
 const serReload = () => {
@@ -95,7 +113,7 @@ const serReload = () => {
 bfCacheEventOn(serReload); // on
 //bfCacheEventOff(serReload); // off
 */
-export const bfCacheEventOn = (listener, options={ capture: false }) => {
+/*export const bfCacheEventOn = (listener, options={ capture: false }) => {
 	typeof window !== 'undefined' && document.addEventListener(BF_CACHE_EVENT_TYPE, listener, options);
 };
 export const bfCacheEventOff = (listener, options={ capture: false }) => {
@@ -106,7 +124,7 @@ export const bfCacheCheckEventOn = (listener, options={ capture: false }) => {
 };
 export const bfCacheCheckEventOff = (listener, options={ capture: false }) => {
 	typeof window !== 'undefined' && document.removeEventListener(BF_CACHE_CHECK_EVENT_TYPE, listener, options);
-};
+};*/
 
 /**
  * 페이지 진입 방식 확인
@@ -114,7 +132,6 @@ export const bfCacheCheckEventOff = (listener, options={ capture: false }) => {
  * https://www.w3.org/TR/navigation-timing-2/#sec-performance-navigation-types
  */
 export const getNavigationType = (callback) => {
-	const isBFCache = getHistoryBFCache();
 	const getType = () => {
 		if(typeof window.performance?.getEntriesByType === 'function') {
 			const timing = window.performance.getEntriesByType('navigation')[0] || {};
@@ -140,11 +157,9 @@ export const getNavigationType = (callback) => {
 
 	// callback 에 따른 분기
 	if(typeof callback === 'function') {
-		const listener = ({ detail }) => {
-			callback(detail ? 'bfcache' : getType());
-		};
-		bfCacheCheckEventOff(listener);
-		bfCacheCheckEventOn(listener);
+		isBFCacheCallback(isBFCache => {
+			callback(isBFCache ? 'bfcache' : getType());
+		});
 	}else {
 		return getType();
 	}
