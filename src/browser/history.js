@@ -157,9 +157,7 @@ export const getNavigationType = (callback) => {
 
 	// callback 에 따른 분기
 	if(typeof callback === 'function') {
-		isBFCacheCallback(isBFCache => {
-			callback(isBFCache ? 'bfcache' : getType());
-		});
+		isBFCacheCallback(isBFCache => callback(isBFCache ? 'bfcache' : getType()));
 	}else {
 		return getType();
 	}
