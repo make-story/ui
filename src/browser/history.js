@@ -48,11 +48,11 @@ export const getHistoryWindowScroll = () => {
 };
 if(typeof window !== 'undefined') {
 	window.addEventListener('beforeunload', (event) => {
-		//console.log('beforeunload');
+		console.log('history > beforeunload');
 		setHistoryWindowScroll(); // 스크롤 위치 저장
 	});
 	window.addEventListener('pagehide', (event) => {
-		//console.log('pagehide');
+		console.log('history > pagehide');
 		setHistoryWindowScroll(); // 스크롤 위치 저장
 	});
 }
@@ -73,9 +73,12 @@ const getHistoryBFCache = () => {
 	return window.sessionStorage.getItem(BF_CACHE_STORAGE_KEY);
 };
 const setCallbackListBFCache = () => {
-	while(callbackListBFCache.length) {
+	/*while (callbackListBFCache.length) { // callback 을 비워버릴 경우, BFCache 때 callbackListBFCache 배열이 빈배열상태 그대로 있음.
 		callbackListBFCache.shift()(isBFCache);
-	}
+	}*/
+	callbackListBFCache.forEach((callback) => {
+		callback(isBFCache);
+	});
 };
 if(typeof window !== 'undefined') {
 	window.onpageshow = function (event) {
