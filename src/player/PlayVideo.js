@@ -108,7 +108,7 @@ video.addEventListener('leavepictureinpicture', () => {
 	button.textContent = 'Enter Picture-in-Picture';
 });
 */
-import { getKey, extend, is, } from '../util';
+import { getKey, extend, isElement, isUrl, isBoolean, isObject, isString, isNumber, isArray, isNullOrUndefined, } from '../util';
 
 // pollyfill
 // source: https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent/CustomEvent
@@ -265,7 +265,7 @@ const triggerEvent = (element, type, bubbles, properties) => {
 	}
 
 	// Default bubbles to false
-	if(!is.boolean(bubbles)) {
+	if(!isBoolean(bubbles)) {
 		bubbles = false;
 	}
 
@@ -452,7 +452,7 @@ export default class Video {
 		
 		// 생성한 html5 video element (추후 audio 추가를 위해 네임을 media로 함)
 		this.player = null; 
-		this.elements = {
+		thisElements = {
 			target,
 		};
 
@@ -515,7 +515,7 @@ export default class Video {
 		const setPoster = () => { // video 속성이 아닌, div background 형태로 생성하여 삽입 
 			let poster = document.createElement('div'); 
 
-			if(is.url(this.settings.poster)) {
+			if(isUrl(this.settings.poster)) {
 				poster.style.cssText = `background-image: url(${this.settings.poster});`;
 			}
 
@@ -530,7 +530,7 @@ export default class Video {
 			video.setAttribute('allowsInlineMediaPlayback', 'YES'); // IOS UIWebView 인라인 플레이 
 			video.setAttribute('webkit-playsinline', ''); // IOS 인라인 플레이
 			video.setAttribute('playsinline', ''); // IOS 인라인 플레이
-			if(is.url(this.settings.poster)) {
+			if(isUrl(this.settings.poster)) {
 				video.setAttribute('poster', this.settings.poster);
 			}
 			if(this.settings.crossorigin) {
@@ -545,7 +545,7 @@ export default class Video {
 			if(this.settings.loop) {
 				video.setAttribute('loop', '');
 			}
-			if(is.object(this.settings.attributes)) { // 사용자가 설정한 속성 리스트 
+			if(isObject(this.settings.attributes)) { // 사용자가 설정한 속성 리스트 
 				(() => {
 					let key;
 					for(key in this.settings.attributes) {
@@ -555,19 +555,19 @@ export default class Video {
 			}
 
 			// source 
-			if(is.string(this.settings.source)) {
+			if(isString(this.settings.source)) {
 				// {source: 'url'}
 				video.setAttribute('src', this.settings.source);
-			}else if(is.object(this.settings.source)) {
+			}else if(isObject(this.settings.source)) {
 				// {source: [{src: 'url', type: 'file type'}]}
-				if(!is.array(this.settings.source)) {
+				if(!isArray(this.settings.source)) {
 					this.settings.source = [this.settings.source];
 				}
 				(() => {
 					let i, max;
 					let source; // <source src="" type="" size="">
 					for(i=0, max=this.settings.source.length; i<max; i++) {
-						if(!is.object(this.settings.source[i]) || !this.settings.source[i].src) {
+						if(!isObject(this.settings.source[i]) || !this.settings.source[i].src) {
 							continue;
 						}
 						source = document.createElement('source');
@@ -590,13 +590,13 @@ export default class Video {
 		const setTemplate = () => {
 			let fragment = document.createDocumentFragment(); // fragment 가 document에 렌더링(삽입)되기 전에, 셀렉터로 fragment 내부 element 검색이 가능하다.
 
-			if(is.element(this.settings.template)) {
+			if(isElement(this.settings.template)) {
 				// element
 				fragment.appendChild(this.settings.template);
-			}else if(is.object(this.settings.template) && !is.nullOrUndefined(jQuery) && is.object(jQuery) && this.settings.template instanceof jQuery && this.settings.template.length) {
+			}else if(isObject(this.settings.template) && !isNullOrUndefined(jQuery) && isObject(jQuery) && this.settings.template instanceof jQuery && this.settings.template.length) {
 				// jQuery
 				fragment.appendChild(this.settings.template[0]);
-			}else if(is.string(this.settings.template)) {
+			}else if(isString(this.settings.template)) {
 				// html
 				(() => {
 					let temp = document.createElement('template'); // IE 미지원
@@ -612,11 +612,11 @@ export default class Video {
 			}
 		};
 		const setOverlay = () => { // controls
-			// 오버레이가 html string 타입이라면, fragment 를 만들고, 생성된 video element 와 함께 this.elements.target에 삽입한다.
-			if(is.object(this.settings.overlay) && !is.nullOrUndefined(jQuery) && is.object(jQuery) && this.settings.overlay instanceof jQuery && this.settings.overlay.length) {
+			// 오버레이가 html string 타입이라면, fragment 를 만들고, 생성된 video element 와 함께 thisElements.target에 삽입한다.
+			if(isObject(this.settings.overlay) && !isNullOrUndefined(jQuery) && isObject(jQuery) && this.settings.overlay instanceof jQuery && this.settings.overlay.length) {
 				// jQuery
 				this.settings.overlay = this.settings.overlay[0];
-			}else if(is.string(this.settings.overlay)) {
+			}else if(isString(this.settings.overlay)) {
 				// html
 				(() => {
 					let fragment = document.createDocumentFragment(); // fragment 가 document에 렌더링(삽입)되기 전에, 셀렉터로 fragment 내부 element 검색이 가능하다.
@@ -629,12 +629,12 @@ export default class Video {
 					while(child = temp.firstChild) { // temp.firstElementChild (textnode 제외)
 						fragment.appendChild(child);
 					}*/
-					this.elements.target.appendChild(fragment);
-					this.settings.overlay = this.elements.target;
+					thisElements.target.appendChild(fragment);
+					this.settings.overlay = thisElements.target;
 				})();
 			}
 
-			if(is.element(this.settings.overlay)) {
+			if(isElement(this.settings.overlay)) {
 				return this.settings.overlay;
 			}else {
 				return null;
@@ -887,22 +887,22 @@ export default class Video {
 		let overlay;
 		
 		// 생성 
-		this.elements.container = document.createElement('div'); 
+		thisElements.container = document.createElement('div'); 
 		if(this.settings.template) {
 			// 사용자 템플릿 
 			template = setTemplate();
 		}
 		if(template) {
-			this.elements.container.appendChild(template);
+			thisElements.container.appendChild(template);
 		}else {
 			// wrapper
-			this.elements.controlsWrapper = document.createElement('div'); // 오버레이 wrapper
-			this.elements.playerWrapper = document.createElement('div'); // video wrapper
+			thisElements.controlsWrapper = document.createElement('div'); // 오버레이 wrapper
+			thisElements.playerWrapper = document.createElement('div'); // video wrapper
 
 			// video
-			this.elements.playerWrapper.appendChild(this.player = setVideo());
-			this.elements.playerWrapper.appendChild(this.elements.poster = setPoster());
-			this.elements.container.appendChild(this.elements.playerWrapper);
+			thisElements.playerWrapper.appendChild(this.player = setVideo());
+			thisElements.playerWrapper.appendChild(thisElements.poster = setPoster());
+			thisElements.container.appendChild(thisElements.playerWrapper);
 			this.setToggleNativeControls(false);
 
 			// controls
@@ -911,14 +911,14 @@ export default class Video {
 				overlay = setOverlay();
 			}
 			if(overlay) {
-				this.elements.controlsWrapper.appendChild(overlay);
+				thisElements.controlsWrapper.appendChild(overlay);
 			}else {
 				// 자체 제공 컨트롤러 
 				if(!document.querySelectorAll('style[data-player]').length) { // style
 					(document.head || document.getElementsByTagName('head')[0]).appendChild(setStyle());
 				}
-				this.elements.container.appendChild(setSVG());
-				this.elements.container.appendChild((() => { // 화면중앙 play / pause
+				thisElements.container.appendChild(setSVG());
+				thisElements.container.appendChild((() => { // 화면중앙 play / pause
 					let fragment = document.createDocumentFragment();
 					let temp = document.createElement('template');
 					let html = [];
@@ -934,77 +934,77 @@ export default class Video {
 					fragment.appendChild(temp.content);
 					return fragment;
 				})());
-				this.elements.controlsWrapper.appendChild(setControls()); // 화면 하단 컨트롤러 
+				thisElements.controlsWrapper.appendChild(setControls()); // 화면 하단 컨트롤러 
 			}
-			this.elements.container.appendChild(this.elements.controlsWrapper);
+			thisElements.container.appendChild(thisElements.controlsWrapper);
 		}
-		this.elements.target.appendChild(this.elements.container);
+		thisElements.target.appendChild(thisElements.container);
 	}
 
 	// elements find 
 	setElements() {
 		const getElements = (selector) => { // Find all elements
-			return this.elements.target.querySelectorAll(selector);
+			return thisElements.target.querySelectorAll(selector);
 		};
 		const getElement = (selector) => { // Find a single element
 			return getElements(selector)[0];
 		};
 
 		/*
-		this.elements.seek.progressBuffer.text 처럼,
-		this.settings.selectors 인터페이스와 this.elements 인터페이스가 일치하는 것은 아니다.
+		thisElements.seek.progressBuffer.text 처럼,
+		this.settings.selectors 인터페이스와 thisElements 인터페이스가 일치하는 것은 아니다.
 		*/
 
 		try {
 			// media (video) - 라이브러리에서 생성하지 않은 것은 selectors 값을 참조해 찾는다.
-			if(!this.elements.controlsWrapper) {
-				this.elements.controlsWrapper = getElement(this.settings.selectors.controlsWrapper);
+			if(!thisElements.controlsWrapper) {
+				thisElements.controlsWrapper = getElement(this.settings.selectors.controlsWrapper);
 			}
-			if(!this.elements.playerWrapper) {
-				this.elements.playerWrapper = getElement(this.settings.selectors.playerWrapper);
+			if(!thisElements.playerWrapper) {
+				thisElements.playerWrapper = getElement(this.settings.selectors.playerWrapper);
 			}
 			if(!this.player) {
 				this.player = getElement(this.settings.selectors.player);
 			}
-			if(!this.elements.poster) {
-				this.elements.poster = getElement(this.settings.selectors.poster);
+			if(!thisElements.poster) {
+				thisElements.poster = getElement(this.settings.selectors.poster);
 			}
 
 			// buttons
-			this.elements.buttons = {};
-			this.elements.buttons.playOverlay = getElements(this.settings.selectors.buttons.playOverlay);
-			this.elements.buttons.pauseOverlay = getElements(this.settings.selectors.buttons.pauseOverlay);
-			this.elements.buttons.reset = getElements(this.settings.selectors.buttons.reset);
-			this.elements.buttons.play = getElements(this.settings.selectors.buttons.play);
-			this.elements.buttons.pause = getElement(this.settings.selectors.buttons.pause);
-			this.elements.buttons.rewind = getElement(this.settings.selectors.buttons.rewind);
-			this.elements.buttons.forward = getElement(this.settings.selectors.buttons.forward);
-			this.elements.buttons.mute = getElement(this.settings.selectors.buttons.mute);
-			//this.elements.buttons.captions = getElement(this.settings.selectors.buttons.captions);
-			this.elements.buttons.fullscreen = getElement(this.settings.selectors.buttons.fullscreen);
-			this.elements.buttons.pip = getElement(this.settings.selectors.buttons.pip);
+			thisElements.buttons = {};
+			thisElements.buttons.playOverlay = getElements(this.settings.selectors.buttons.playOverlay);
+			thisElements.buttons.pauseOverlay = getElements(this.settings.selectors.buttons.pauseOverlay);
+			thisElements.buttons.reset = getElements(this.settings.selectors.buttons.reset);
+			thisElements.buttons.play = getElements(this.settings.selectors.buttons.play);
+			thisElements.buttons.pause = getElement(this.settings.selectors.buttons.pause);
+			thisElements.buttons.rewind = getElement(this.settings.selectors.buttons.rewind);
+			thisElements.buttons.forward = getElement(this.settings.selectors.buttons.forward);
+			thisElements.buttons.mute = getElement(this.settings.selectors.buttons.mute);
+			//thisElements.buttons.captions = getElement(this.settings.selectors.buttons.captions);
+			thisElements.buttons.fullscreen = getElement(this.settings.selectors.buttons.fullscreen);
+			thisElements.buttons.pip = getElement(this.settings.selectors.buttons.pip);
 			
 			// seek
-			this.elements.seek = {};
-			this.elements.seek.container = getElement(this.settings.selectors.seek.container); // seek wrapper
-			this.elements.seek.range = getElement(this.settings.selectors.seek.range); // seek btton
-			this.elements.seek.progressPlayed = getElement(this.settings.selectors.seek.progressPlayed);
-			this.elements.seek.progressBuffer = {};
-			this.elements.seek.progressBuffer.bar = getElement(this.settings.selectors.seek.progressBuffer);
-			this.elements.seek.progressBuffer.text = this.elements.seek.progressBuffer.bar && this.elements.seek.progressBuffer.bar.getElementsByTagName('span')[0];
-			this.elements.seek.tooltip = getElement(this.settings.selectors.seek.tooltip);
+			thisElements.seek = {};
+			thisElements.seek.container = getElement(this.settings.selectors.seek.container); // seek wrapper
+			thisElements.seek.range = getElement(this.settings.selectors.seek.range); // seek btton
+			thisElements.seek.progressPlayed = getElement(this.settings.selectors.seek.progressPlayed);
+			thisElements.seek.progressBuffer = {};
+			thisElements.seek.progressBuffer.bar = getElement(this.settings.selectors.seek.progressBuffer);
+			thisElements.seek.progressBuffer.text = thisElements.seek.progressBuffer.bar && thisElements.seek.progressBuffer.bar.getElementsByTagName('span')[0];
+			thisElements.seek.tooltip = getElement(this.settings.selectors.seek.tooltip);
 
 			// volume
-			this.elements.volume = {};
-			this.elements.volume.container = getElement(this.settings.selectors.volume.container); // volume wrapper
-			this.elements.volume.range = getElement(this.settings.selectors.volume.range);
-			this.elements.volume.progress = getElement(this.settings.selectors.volume.progress);
+			thisElements.volume = {};
+			thisElements.volume.container = getElement(this.settings.selectors.volume.container); // volume wrapper
+			thisElements.volume.range = getElement(this.settings.selectors.volume.range);
+			thisElements.volume.progress = getElement(this.settings.selectors.volume.progress);
 
 			// timing
-			this.elements.duration = getElement(this.settings.selectors.duration);
-			this.elements.currentTime = getElement(this.settings.selectors.currentTime);
+			thisElements.duration = getElement(this.settings.selectors.duration);
+			thisElements.currentTime = getElement(this.settings.selectors.currentTime);
 
-			console.log('elements', this.elements);
+			console.log('elements', thisElements);
 
 			return true;
 		}catch(e) {
@@ -1034,40 +1034,40 @@ export default class Video {
 		};
 
 		// media (video)
-		toggleClass(this.elements.container, this.settings.classes.container, true);
-		toggleClass(this.elements.controlsWrapper, this.settings.classes.controlsWrapper, true);
-		toggleClass(this.elements.playerWrapper, this.settings.classes.playerWrapper, true);
+		toggleClass(thisElements.container, this.settings.classes.container, true);
+		toggleClass(thisElements.controlsWrapper, this.settings.classes.controlsWrapper, true);
+		toggleClass(thisElements.playerWrapper, this.settings.classes.playerWrapper, true);
 		toggleClass(this.player, this.settings.classes.player, true);
-		toggleClass(this.elements.poster, this.settings.classes.poster, true);
+		toggleClass(thisElements.poster, this.settings.classes.poster, true);
 
 		// buttons
-		toggleClass(this.elements.buttons.playOverlay, this.settings.classes.buttons.playOverlay, true);
-		toggleClass(this.elements.buttons.pauseOverlay, this.settings.classes.buttons.pauseOverlay, true);
-		toggleClass(this.elements.buttons.reset, this.settings.classes.buttons.reset, true);
-		toggleClass(this.elements.buttons.play, this.settings.classes.buttons.play, true);
-		toggleClass(this.elements.buttons.pause, this.settings.classes.buttons.pause, true);
-		toggleClass(this.elements.buttons.rewind, this.settings.classes.buttons.rewind, true);
-		toggleClass(this.elements.buttons.forward, this.settings.classes.buttons.forward, true);
-		toggleClass(this.elements.buttons.mute, this.settings.classes.buttons.mute, true);
-		//toggleClass(this.elements.buttons.captions, this.settings.classes.buttons.captions, true);
-		toggleClass(this.elements.buttons.fullscreen, this.settings.classes.buttons.fullscreen, true);
-		toggleClass(this.elements.buttons.pip, this.settings.classes.buttons.pip, true);
+		toggleClass(thisElements.buttons.playOverlay, this.settings.classes.buttons.playOverlay, true);
+		toggleClass(thisElements.buttons.pauseOverlay, this.settings.classes.buttons.pauseOverlay, true);
+		toggleClass(thisElements.buttons.reset, this.settings.classes.buttons.reset, true);
+		toggleClass(thisElements.buttons.play, this.settings.classes.buttons.play, true);
+		toggleClass(thisElements.buttons.pause, this.settings.classes.buttons.pause, true);
+		toggleClass(thisElements.buttons.rewind, this.settings.classes.buttons.rewind, true);
+		toggleClass(thisElements.buttons.forward, this.settings.classes.buttons.forward, true);
+		toggleClass(thisElements.buttons.mute, this.settings.classes.buttons.mute, true);
+		//toggleClass(thisElements.buttons.captions, this.settings.classes.buttons.captions, true);
+		toggleClass(thisElements.buttons.fullscreen, this.settings.classes.buttons.fullscreen, true);
+		toggleClass(thisElements.buttons.pip, this.settings.classes.buttons.pip, true);
 
 		// seek
-		toggleClass(this.elements.seek.container, this.settings.classes.seek.container, true);
-		toggleClass(this.elements.seek.range, this.settings.classes.seek.range, true);
-		toggleClass(this.elements.seek.progressPlayed, this.settings.classes.seek.progressPlayed, true);
-		toggleClass(this.elements.seek.progressBuffer.bar, this.settings.classes.seek.progressBuffer, true);
-		toggleClass(this.elements.seek.tooltip, this.settings.classes.seek.tooltip, true);
+		toggleClass(thisElements.seek.container, this.settings.classes.seek.container, true);
+		toggleClass(thisElements.seek.range, this.settings.classes.seek.range, true);
+		toggleClass(thisElements.seek.progressPlayed, this.settings.classes.seek.progressPlayed, true);
+		toggleClass(thisElements.seek.progressBuffer.bar, this.settings.classes.seek.progressBuffer, true);
+		toggleClass(thisElements.seek.tooltip, this.settings.classes.seek.tooltip, true);
 
 		// volume
-		toggleClass(this.elements.volume.container, this.settings.classes.volume.container, true);
-		toggleClass(this.elements.volume.range, this.settings.classes.volume.range, true);
-		toggleClass(this.elements.volume.progress, this.settings.classes.volume.progress, true);
+		toggleClass(thisElements.volume.container, this.settings.classes.volume.container, true);
+		toggleClass(thisElements.volume.range, this.settings.classes.volume.range, true);
+		toggleClass(thisElements.volume.progress, this.settings.classes.volume.progress, true);
 
 		// timing
-		toggleClass(this.elements.duration, this.settings.classes.duration, true);
-		toggleClass(this.elements.currentTime, this.settings.classes.currentTime, true);
+		toggleClass(thisElements.duration, this.settings.classes.duration, true);
+		toggleClass(thisElements.currentTime, this.settings.classes.currentTime, true);
 	}
 
 	// 이벤트 
@@ -1107,7 +1107,7 @@ export default class Video {
 			}
 
 			// options
-			if(!is.object(options) && !is.boolean(options)) {
+			if(!isObject(options) && !isBoolean(options)) {
 				options = false; // useCapture
 			}
 
@@ -1157,7 +1157,7 @@ export default class Video {
 			if(isSupport) {
 				if(event && event.type === fullscreen.fullScreenEventName) { // 풀스크린 상태 변경 이벤트 
 					// 현재 fullscreen 상태 확인 
-					isFullscreen = fullscreen.isFullScreen(this.elements.container);
+					isFullscreen = fullscreen.isFullScreen(thisElements.container);
 
 					// Restore scroll position
 					if(!isFullscreen) {
@@ -1182,7 +1182,7 @@ export default class Video {
 			let value = 0;
 			let duration = this.getDuration();
 
-			if(!is.object(event)) {
+			if(!isObject(event)) {
 				return;
 			}else if(event.type === 'timeupdate' && this.player.seeking) {
 				return;
@@ -1193,18 +1193,18 @@ export default class Video {
 				// progress / seek
 				case 'timeupdate':
 				case 'seeking':
-					progress = this.elements.seek.progressPlayed;
+					progress = thisElements.seek.progressPlayed;
 					value = getPercentage(this.player.currentTime, duration);
 
-					if(type === 'timeupdate' && this.elements.seek.range) {
-						this.elements.seek.range.value = value;
+					if(type === 'timeupdate' && thisElements.seek.range) {
+						thisElements.seek.range.value = value;
 					}
 					break;
 
 				// buffer
 				case 'playing':
 				case 'progress':
-					progress = this.elements.seek.progressBuffer;
+					progress = thisElements.seek.progressBuffer;
 					value = (() => {
 						let buffered = this.player.buffered;
 						if(buffered && buffered.length) {
@@ -1256,7 +1256,7 @@ export default class Video {
 			console.log('loadeddata', event);
 
 			// 오버레이 제거 
-			toggleClass(this.elements.poster, this.settings.classes.hidden, true);
+			toggleClass(thisElements.poster, this.settings.classes.hidden, true);
 		});
 
 		// 최소한 두 프레임 동안 미디어를 재생할 수있을만큼 충분한 데이터가 사용 가능할 때
@@ -1270,7 +1270,7 @@ export default class Video {
 			console.log('timeupdate seeking', event);
 
 			// Duration
-			this.setTime(this.player.currentTime, this.elements.currentTime);
+			this.setTime(this.player.currentTime, thisElements.currentTime);
 
 			// progress
 			updateProgress(event);
@@ -1314,21 +1314,21 @@ export default class Video {
 			let volume = muted ? 0 : (this.player.volume * this.settings.volumeMax);
 
 			// element
-			if(this.elements.volume.range) {
-				this.elements.volume.range.value = volume;
+			if(thisElements.volume.range) {
+				thisElements.volume.range.value = volume;
 			}
-			if(this.elements.volume.progress) {
-				this.elements.volume.progress.value = volume;
+			if(thisElements.volume.progress) {
+				thisElements.volume.progress.value = volume;
 			}
 
 			// class
-			if(this.elements.buttons.mute) {
+			if(thisElements.buttons.mute) {
 				if(volume === 0) {
-					toggleClass(this.elements.buttons.mute.querySelector('.volume'), this.settings.classes.hidden, true);
-					toggleClass(this.elements.buttons.mute.querySelector('.muted'), this.settings.classes.hidden, false);
+					toggleClass(thisElements.buttons.mute.querySelector('.volume'), this.settings.classes.hidden, true);
+					toggleClass(thisElements.buttons.mute.querySelector('.muted'), this.settings.classes.hidden, false);
 				}else {
-					toggleClass(this.elements.buttons.mute.querySelector('.muted'), this.settings.classes.hidden, true);
-					toggleClass(this.elements.buttons.mute.querySelector('.volume'), this.settings.classes.hidden, false);
+					toggleClass(thisElements.buttons.mute.querySelector('.muted'), this.settings.classes.hidden, true);
+					toggleClass(thisElements.buttons.mute.querySelector('.volume'), this.settings.classes.hidden, false);
 				}
 			}
 		});
@@ -1340,13 +1340,13 @@ export default class Video {
 			// 현재 플레이어 상태에 따라 오버레이/컨트롤 등 제어!
 			switch(event.type) {
 				case 'play':
-					toggleClass(this.elements.buttons.playOverlay, this.settings.classes.hidden, true);
-					toggleClass(this.elements.buttons.pauseOverlay, this.settings.classes.hidden, true);
+					toggleClass(thisElements.buttons.playOverlay, this.settings.classes.hidden, true);
+					toggleClass(thisElements.buttons.pauseOverlay, this.settings.classes.hidden, true);
 					break;
 				case 'pause':
 				case 'ended':
-					toggleClass(this.elements.buttons.playOverlay, this.settings.classes.hidden, false);
-					toggleClass(this.elements.buttons.pauseOverlay, this.settings.classes.hidden, true);
+					toggleClass(thisElements.buttons.playOverlay, this.settings.classes.hidden, false);
+					toggleClass(thisElements.buttons.pauseOverlay, this.settings.classes.hidden, true);
 					break;
 			}
 		});
@@ -1374,25 +1374,25 @@ export default class Video {
 		// Toggle controls visibility based on mouse movement
 		/*if(this.settings.autoHideControls) {
 			// Toggle controls on mouse events and entering fullscreen
-			eventListener(this.elements.container, 'mouseenter mouseleave mousemove touchstart touchend touchcancel touchmove enterfullscreen', (event) => {
+			eventListener(thisElements.container, 'mouseenter mouseleave mousemove touchstart touchend touchcancel touchmove enterfullscreen', (event) => {
 				this.setToggleControls(event);
 			});
 			// Watch for cursor over controls so they don't hide when trying to interact
-			eventListener(this.elements.controlsWrapper, 'mouseenter mouseleave', (event) => {
-				this.elements.controlsWrapper.hover = event.type === 'mouseenter';
+			eventListener(thisElements.controlsWrapper, 'mouseenter mouseleave', (event) => {
+				thisElements.controlsWrapper.hover = event.type === 'mouseenter';
 			});
-			eventListener(this.elements.controlsWrapper, 'mousedown mouseup touchstart touchend touchcancel', (event) => {
-				this.elements.controlsWrapper.pressed = ['mousedown', 'touchstart'].includes(event.type);
+			eventListener(thisElements.controlsWrapper, 'mousedown mouseup touchstart touchend touchcancel', (event) => {
+				thisElements.controlsWrapper.pressed = ['mousedown', 'touchstart'].includes(event.type);
 			});
 			// Focus in/out on controls
-			eventListener(this.elements.controlsWrapper, 'focus blur', (event) => {
+			eventListener(thisElements.controlsWrapper, 'focus blur', (event) => {
 				this.setToggleControls(event);
 			}, true);
 		}*/
 
 		// 비디오 화면내 터치 이벤트 
 		(() => {
-			let rect = this.elements.playerWrapper.getBoundingClientRect();
+			let rect = thisElements.playerWrapper.getBoundingClientRect();
 			let width = parseInt(rect.width * 50 / 100); // 가로 기준값 (화면대비 *% 픽셀값)
 			let height = parseInt(rect.height * 60 / 100); // 세로 기준값 (화면대비 *% 픽셀값)
 			let radius = { // 기능작동을 위한 터치(마우스) 이동 범위
@@ -1407,7 +1407,7 @@ export default class Video {
 			console.log('width', width);
 			console.log('height', height);
 
-			eventListener(this.elements.playerWrapper, 'mousedown mousemove mouseup touchstart touchmove touchend touchcancel', (event) => {
+			eventListener(thisElements.playerWrapper, 'mousedown mousemove mouseup touchstart touchmove touchend touchcancel', (event) => {
 				let target; // event.target
 				let touch;
 
@@ -1437,7 +1437,7 @@ export default class Video {
 						end = {};
 
 						// 위치값
-						if(is.object(touch) && is.object(touch[0]) && 'screenX' in touch[0] && 'screenY' in touch[0]) {
+						if(isObject(touch) && isObject(touch[0]) && 'screenX' in touch[0] && 'screenY' in touch[0]) {
 							start.x = touch[0].screenX;
 							start.y = touch[0].screenY;
 							end.x = touch[0].screenX;
@@ -1458,9 +1458,9 @@ export default class Video {
 						break;
 					case 'mousemove':
 					case 'touchmove':
-						if(is.object(start) && is.object(end) && 'x' in start && 'x' in end && 'y' in start && 'y' in end) {
+						if(isObject(start) && isObject(end) && 'x' in start && 'x' in end && 'y' in start && 'y' in end) {
 							// 위치값
-							if(is.object(touch) && is.object(touch[0]) && 'screenX' in touch[0] && 'screenY' in touch[0]) {
+							if(isObject(touch) && isObject(touch[0]) && 'screenX' in touch[0] && 'screenY' in touch[0]) {
 								end.x = touch[0].screenX;
 								end.y = touch[0].screenY;
 							}else if('screenX' in event && 'screenY' in event) {
@@ -1469,7 +1469,7 @@ export default class Video {
 							}
 
 							// 볼륨조절
-							if(this.settings.swipeVolume === true && radius.volume < Math.abs(start.y - end.y) && is.number(volume)) {
+							if(this.settings.swipeVolume === true && radius.volume < Math.abs(start.y - end.y) && isNumber(volume)) {
 								event.preventDefault();
 								event.stopPropagation(); // 전파중단 
 								event.stopImmediatePropagation(); // 현재 레벨 다른 이벤트 중단 
@@ -1494,7 +1494,7 @@ export default class Video {
 					case 'mouseup':
 					case 'touchend':
 					//case 'touchcancel':
-						if(is.object(start) && is.object(end) && 'x' in start && 'x' in end && 'y' in start && 'y' in end) {
+						if(isObject(start) && isObject(end) && 'x' in start && 'x' in end && 'y' in start && 'y' in end) {
 							end.time = new Date().getTime();
 							if(Math.abs(start.x - end.x) < radius.overlay && Math.abs(start.y - end.y) < radius.overlay) {
 								if(Number(end.time) - Number(start.time) <= 180) {
@@ -1543,49 +1543,49 @@ export default class Video {
 		*/
 
 		// Reset / Replay / Restart
-		proxyListener(this.elements.buttons.reset, 'click', (event) => {
+		proxyListener(thisElements.buttons.reset, 'click', (event) => {
 			//this.setSeek();
 			this.reset();
 		},
 		this.settings.listeners.reset);
 
 		// Play
-		proxyListener(this.elements.buttons.playOverlay, 'click', (event) => {
+		proxyListener(thisElements.buttons.playOverlay, 'click', (event) => {
 			this.setTogglePlayPause(true);
 		},
 		this.settings.listeners.play);
-		proxyListener(this.elements.buttons.play, 'click', (event) => {
+		proxyListener(thisElements.buttons.play, 'click', (event) => {
 			this.setTogglePlayPause(true);
 		},
 		this.settings.listeners.play);
 
 		// Pause
-		proxyListener(this.elements.buttons.pauseOverlay, 'click', (event) => {
+		proxyListener(thisElements.buttons.pauseOverlay, 'click', (event) => {
 			this.setTogglePlayPause(false);
 		},
 		this.settings.listeners.pause);
-		proxyListener(this.elements.buttons.pause, 'click', (event) => {
+		proxyListener(thisElements.buttons.pause, 'click', (event) => {
 			this.setTogglePlayPause(false);
 		},
 		this.settings.listeners.pause);
 
 		// Rewind
-		proxyListener(this.elements.buttons.rewind, 'click', (event) => {
+		proxyListener(thisElements.buttons.rewind, 'click', (event) => {
 			this.rewind();
 		},
 		this.settings.listeners.rewind);
 
 		// Fast forward
-		proxyListener(this.elements.buttons.forward, 'click', (event) => {
+		proxyListener(thisElements.buttons.forward, 'click', (event) => {
 			this.forward();
 		},
 		this.settings.listeners.forward);
 
 		// Seek
-		proxyListener(this.elements.seek.range, browser.isIE ? 'change' : 'input', (event) => {
+		proxyListener(thisElements.seek.range, browser.isIE ? 'change' : 'input', (event) => {
 			let duration = this.getDuration();
 			let targetTime = 0;
-			if(is.object(event) && ['input', 'change'].includes(event.type)) {
+			if(isObject(event) && ['input', 'change'].includes(event.type)) {
 				targetTime = ((event.target.value / event.target.max) * duration);
 			}
 			this.setSeek(targetTime);
@@ -1593,19 +1593,19 @@ export default class Video {
 		this.settings.listeners.seek);
 
 		// Set volume
-		proxyListener(this.elements.volume.range, browser.isIE ? 'change' : 'input', (event) => {
-			this.setVolume(this.elements.volume.range.value);
+		proxyListener(thisElements.volume.range, browser.isIE ? 'change' : 'input', (event) => {
+			this.setVolume(thisElements.volume.range.value);
 		},
 		this.settings.listeners.volume);
 
 		// Mute
-		proxyListener(this.elements.buttons.mute, 'click', (event) => {
+		proxyListener(thisElements.buttons.mute, 'click', (event) => {
 			this.setToggleMute();
 		},
 		this.settings.listeners.mute);
 
 		// Fullscreen 실행/취소 이벤트 
-		proxyListener(this.elements.buttons.fullscreen, 'click', toggleFullscreen, this.settings.listeners.fullscreen);
+		proxyListener(thisElements.buttons.fullscreen, 'click', toggleFullscreen, this.settings.listeners.fullscreen);
 		if(fullscreen.supportsFullScreen) {
 			// Fullscreen 상태변경 (fullscreenchange) 이벤트 
 			eventListener(document, fullscreen.fullScreenEventName, toggleFullscreen);
@@ -1616,21 +1616,21 @@ export default class Video {
 		}
 
 		// Captions
-		/*eventListener(this.elements.buttons.captions, 'click', () => {
+		/*eventListener(thisElements.buttons.captions, 'click', () => {
 			this.setToggleCaptions();
 		});*/
 
 		// Seek tooltip (시간)
-		eventListener(this.elements.seek.container, 'mouseenter mouseleave mousemove', (event) => {
+		eventListener(thisElements.seek.container, 'mouseenter mouseleave mousemove', (event) => {
 			let duration = this.getDuration();
 			let clientRect = {};
 			let percent = 0;
 			let toggle = false;
 
-			if(!is.number(duration) || duration === 0) {
+			if(!isNumber(duration) || duration === 0) {
 				return false;
 			}
-			clientRect = this.elements.seek.container.getBoundingClientRect();
+			clientRect = thisElements.seek.container.getBoundingClientRect();
 			percent = ((100 / clientRect.width) * (event.pageX - clientRect.left));
 			this.setSeekTooltip(percent);
 
@@ -1641,7 +1641,7 @@ export default class Video {
 		});
 
 		// pip
-		eventListener(this.elements.buttons.pip, 'click', (event) => {
+		eventListener(thisElements.buttons.pip, 'click', (event) => {
 			if(document.pictureInPictureElement) {
 				document.exitPictureInPicture();
 			}else {
@@ -1758,11 +1758,11 @@ export default class Video {
 	setDuration() {	
 		let duration = this.getDuration() || 0;
 
-		if(!this.elements.duration && this.player.paused) {
-			this.setTime(duration, this.elements.currentTime);
+		if(!thisElements.duration && this.player.paused) {
+			this.setTime(duration, thisElements.currentTime);
 		}
-		if(this.elements.duration) {
-			this.setTime(duration, this.elements.duration);
+		if(thisElements.duration) {
+			this.setTime(duration, thisElements.duration);
 		}
 
 		//this.setSeekTooltip();
@@ -1790,8 +1790,8 @@ export default class Video {
 		this.player.volume = parseFloat(volume / max);
 
 		// element 
-		if(this.elements.volume.progress) {
-			this.elements.volume.progress.value = volume;
+		if(thisElements.volume.progress) {
+			thisElements.volume.progress.value = volume;
 		}
 
 		// Toggle muted state
@@ -1807,7 +1807,7 @@ export default class Video {
 	setIncreaseVolume(step) {	
 		let volume = this.player.muted ? 0 : (this.player.volume * this.settings.volumeMax);
 
-		if(!is.number(step)) {
+		if(!isNumber(step)) {
 			step = this.settings.volumeStep;
 		}
 
@@ -1818,7 +1818,7 @@ export default class Video {
 	setDecreaseVolume(step) {	
 		let volume = this.player.muted ? 0 : (this.player.volume * this.settings.volumeMax);
 
-		if(!is.number(step)) {
+		if(!isNumber(step)) {
 			step = this.settings.volumeStep;
 		}
 
@@ -1827,19 +1827,19 @@ export default class Video {
 
 	// progress 값 설정 (timeupdate/seeking 또는 playing/progress)
 	setProgress(progress, value) {
-		if(is.nullOrUndefined(value)) {
+		if(isNullOrUndefined(value)) {
 			value = 0;
 		}
 
-		if(is.nullOrUndefined(progress)) {
-			if(this.elements.seek && this.elements.seek.progressBuffer) {
-				progress = this.elements.seek.progressBuffer;
+		if(isNullOrUndefined(progress)) {
+			if(thisElements.seek && thisElements.seek.progressBuffer) {
+				progress = thisElements.seek.progressBuffer;
 			}else {
 				return;
 			}
 		}
 
-		if(is.element(progress)) {
+		if(isElement(progress)) {
 			progress.value = value;
 		}else if(progress) {
 			if(progress.bar) {
@@ -1856,18 +1856,18 @@ export default class Video {
 	/*setTimeProgress(startDate, endDate) {
 		// startDate: "20200313102500" 데이터 -> new Date()
 		// endDate: "20200313113500" 데이터 -> new Date()
-		let progress = this.elements.seek.progressPlayed;
+		let progress = thisElements.seek.progressPlayed;
 		let percent = 0;
 
 		// 시간기준 프로그래스바 
-		if(is.object(startDate) && is.object(endDate)) {
+		if(isObject(startDate) && isObject(endDate)) {
 			// 현재 시간 기준
 			percent = ((Number(new Date()) - startDate.getTime()) / (endDate.getTime() - startDate.getTime())) * 100;
 			this.progress(progress, percent);
 		}
 		
 		// 프로그래스바 종료
-		if(!is.number(percent) || 100 <= percent) {
+		if(!isNumber(percent) || 100 <= percent) {
 			// 타이머 인터벌 종료 
 		}
 	}*/
@@ -1878,7 +1878,7 @@ export default class Video {
 		let duration = this.getDuration(); // 재생시간
 		let value;
 		
-		if(!is.number(targetTime)) {
+		if(!isNumber(targetTime)) {
 			targetTime = 0;
 		}
 
@@ -1891,11 +1891,11 @@ export default class Video {
 
 		// range / progress 화면 수정 
 		value = getPercentage(targetTime, duration);
-		if(this.elements.seek.progressPlayed) {
-			this.elements.seek.progressPlayed.value = value;
+		if(thisElements.seek.progressPlayed) {
+			thisElements.seek.progressPlayed.value = value;
 		}
-		if(this.elements.seek.range) {
-			this.elements.seek.range.value = value;
+		if(thisElements.seek.range) {
+			thisElements.seek.range.value = value;
 		}
 
 		//
@@ -1912,12 +1912,12 @@ export default class Video {
 	setSeekTooltip(percent) {	
 		let duration = this.getDuration();
 
-		if(!this.elements.seek.container || !this.elements.seek.tooltip || duration === 0) {
+		if(!thisElements.seek.container || !thisElements.seek.tooltip || duration === 0) {
 			return;
 		}
 
-		if(is.nullOrUndefined(percent)) {
-			percent = this.elements.seek.tooltip.style.left.replace('%', '');
+		if(isNullOrUndefined(percent)) {
+			percent = thisElements.seek.tooltip.style.left.replace('%', '');
 		}
 
 		if(percent < 0) {
@@ -1927,15 +1927,15 @@ export default class Video {
 		}
 
 		// time
-		this.setTime(((duration / 100) * percent), this.elements.seek.tooltip);
+		this.setTime(((duration / 100) * percent), thisElements.seek.tooltip);
 
 		// left
-		this.elements.seek.tooltip.style.left = percent + "%";
+		thisElements.seek.tooltip.style.left = percent + "%";
 	}
 
 	setToggleSeekTooltip(toggle) {
-		if(is.boolean(toggle)) {
-			toggleClass(this.elements.seek.tooltip, this.settings.classes.hidden, toggle);
+		if(isBoolean(toggle)) {
+			toggleClass(thisElements.seek.tooltip, this.settings.classes.hidden, toggle);
 		}
 	}
 
@@ -1947,7 +1947,7 @@ export default class Video {
 		// Timer to prevent flicker when seeking
 		this.time.loading = setTimeout(() => {
 			// 로딩 보이기 / 숨기기 
-			toggleClass(this.elements.container, this.settings.classes.loading, loading); 
+			toggleClass(thisElements.container, this.settings.classes.loading, loading); 
 
 			// 컨트롤러 보이기 / 숨기기 
 			//this.setToggleControls(loading);
@@ -1958,7 +1958,7 @@ export default class Video {
 
 	// Mute (음소거)
 	setToggleMute(muted) {
-		if(!is.boolean(muted)) {
+		if(!isBoolean(muted)) {
 			muted = !this.player.muted;
 		}
 
@@ -1974,10 +1974,10 @@ export default class Video {
 		let delay = 0;
 		let isEnterFullscreen = false;
 		let show = toggle;
-		let loading = hasClass(this.elements.container, this.settings.classes.loading); // 로딩중 여부 
+		let loading = hasClass(thisElements.container, this.settings.classes.loading); // 로딩중 여부 
 
 		// event object
-		if(!is.boolean(toggle)) { 
+		if(!isBoolean(toggle)) { 
 			if(toggle && toggle.type) {
 				// 풀스크린 이벤트 여부 
 				isEnterFullscreen = (toggle.type === 'enterfullscreen');
@@ -1993,14 +1993,14 @@ export default class Video {
 				}
 			}else {
 				// 현재 숨겨진 상태인지 확인 
-				show = hasClass(this.elements.controlsWrapper, this.settings.classes.hidden);
+				show = hasClass(thisElements.controlsWrapper, this.settings.classes.hidden);
 			}
 		}
 
 		window.clearTimeout(this.time.toggleControls);
 
 		if(show || this.player.paused || loading) {
-			toggleClass(this.elements.controlsWrapper, this.settings.classes.hidden, false); // 컨트롤 보이기/숨기기
+			toggleClass(thisElements.controlsWrapper, this.settings.classes.hidden, false); // 컨트롤 보이기/숨기기
 
 			// Always show controls when paused or if touch
 			if(this.player.paused || loading) {
@@ -2015,29 +2015,29 @@ export default class Video {
 
 		if(!show || !this.player.paused) {
 			this.time.toggleControls = window.setTimeout(() => {
-				if((this.elements.controlsWrapper.pressed || this.elements.controlsWrapper.hover) && !isEnterFullscreen) {
+				if((thisElements.controlsWrapper.pressed || thisElements.controlsWrapper.hover) && !isEnterFullscreen) {
 					return;
 				}
 
-				toggleClass(this.elements.controlsWrapper, this.settings.classes.hidden, true); // 컨트롤 보이기/숨기기
+				toggleClass(thisElements.controlsWrapper, this.settings.classes.hidden, true); // 컨트롤 보이기/숨기기
 			}, delay);
 		}
 	}
 
 	// 재생 / 일시정지 
 	setTogglePlayPause(toggle) {
-		if(!is.boolean(toggle)) {
+		if(!isBoolean(toggle)) {
 			toggle = this.player.paused;
 		}
 		
 		if(toggle) {
 			this.player.play();
-			toggleClass(this.elements.buttons.play, this.settings.classes.hidden, true);
-			toggleClass(this.elements.buttons.pause, this.settings.classes.hidden, false);
+			toggleClass(thisElements.buttons.play, this.settings.classes.hidden, true);
+			toggleClass(thisElements.buttons.pause, this.settings.classes.hidden, false);
 		}else {
 			this.player.pause();
-			toggleClass(this.elements.buttons.pause, this.settings.classes.hidden, true);
-			toggleClass(this.elements.buttons.play, this.settings.classes.hidden, false);
+			toggleClass(thisElements.buttons.pause, this.settings.classes.hidden, true);
+			toggleClass(thisElements.buttons.play, this.settings.classes.hidden, false);
 		}
 
 		return toggle;
@@ -2053,7 +2053,7 @@ export default class Video {
 
 		// native 지원여부에 따른 작동
 		if(isSupport) {
-			isFullscreen = fullscreen.isFullScreen(this.elements.container);
+			isFullscreen = fullscreen.isFullScreen(thisElements.container);
 			console.log('isFullscreen', isFullscreen);
 			console.log('toggle', toggle);
 			if(isFullscreen || toggle === false) {
@@ -2064,7 +2064,7 @@ export default class Video {
 					x: window.pageXOffset || 0,
 					y: window.pageYOffset || 0
 				};
-				fullscreen.requestFullScreen(this.elements.container);
+				fullscreen.requestFullScreen(thisElements.container);
 			}
 		}else if(isIOSSupport) {
 			isFullscreen = this.player.webkitDisplayingFullscreen;
@@ -2084,15 +2084,15 @@ export default class Video {
 		}
 
 		// class
-		if(this.elements.buttons.fullscreen) {
+		if(thisElements.buttons.fullscreen) {
 			if(isFullscreen || toggle === false) {
-				toggleClass(this.elements.container, this.settings.classes.fullscreen, false);
-				toggleClass(this.elements.buttons.fullscreen.querySelector('.exit'), this.settings.classes.hidden, true);
-				toggleClass(this.elements.buttons.fullscreen.querySelector('.enter'), this.settings.classes.hidden, false);
+				toggleClass(thisElements.container, this.settings.classes.fullscreen, false);
+				toggleClass(thisElements.buttons.fullscreen.querySelector('.exit'), this.settings.classes.hidden, true);
+				toggleClass(thisElements.buttons.fullscreen.querySelector('.enter'), this.settings.classes.hidden, false);
 			}else if(!isFullscreen || toggle == true) {
-				toggleClass(this.elements.container, this.settings.classes.fullscreen, true);
-				toggleClass(this.elements.buttons.fullscreen.querySelector('.enter'), this.settings.classes.hidden, true);
-				toggleClass(this.elements.buttons.fullscreen.querySelector('.exit'), this.settings.classes.hidden, false);
+				toggleClass(thisElements.container, this.settings.classes.fullscreen, true);
+				toggleClass(thisElements.buttons.fullscreen.querySelector('.enter'), this.settings.classes.hidden, true);
+				toggleClass(thisElements.buttons.fullscreen.querySelector('.exit'), this.settings.classes.hidden, false);
 			}
 		}
 	}
@@ -2100,8 +2100,8 @@ export default class Video {
 	// 초기상태 
 	// restart, replay
 	reset() {
-		if(this.elements.poster && hasClass(this.elements.poster, this.settings.classes.hidden)) {
-			toggleClass(this.elements.poster, this.settings.classes.hidden, false);
+		if(thisElements.poster && hasClass(thisElements.poster, this.settings.classes.hidden)) {
+			toggleClass(thisElements.poster, this.settings.classes.hidden, false);
 		}
 		this.setTogglePlayPause(false);
 		this.setSeek();
@@ -2143,7 +2143,7 @@ export default class Video {
 
 	// 되감기
 	rewind(seekTime) {
-		if(!is.number(seekTime)) {
+		if(!isNumber(seekTime)) {
 			seekTime = this.settings.seekTime;
 		}
 		this.setSeek(this.player.currentTime - seekTime);
@@ -2151,7 +2151,7 @@ export default class Video {
 
 	// 빨리감기
 	forward(seekTime) {
-		if(!is.number(seekTime)) {
+		if(!isNumber(seekTime)) {
 			seekTime = this.settings.seekTime;
 		}
 		this.setSeek(this.player.currentTime + seekTime);
@@ -2165,7 +2165,7 @@ export default class Video {
 
 	// poster
 	poster(source) {
-		if(is.url(source)) {
+		if(isUrl(source)) {
 			this.player.setAttribute('poster', source);
 		}
 	}

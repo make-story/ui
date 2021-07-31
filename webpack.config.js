@@ -20,7 +20,7 @@ const defaultConfigs = {
 	cache: false,
 	resolve: {
 		alias: {
-			'@src': path.resolve(__dirname, '../src/'),
+			'@src': path.resolve(__dirname, './src/'),
 		},
 	},
 	module: {

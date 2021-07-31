@@ -18,7 +18,9 @@ import demoXHR from './xhr/demo';
 
 import demoEvent from './event/demo';
 
+// 테스트 (임시)
 import './test/index';
+import './browser/device';
 
 //demoAnimate();
 //demoBrowser();

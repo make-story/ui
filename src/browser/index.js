@@ -32,7 +32,7 @@ https://www.quirksmode.org/mobile/viewports2.html
 export * from './history';
 export * from './location';
 export * from './storage';
-export { default as browserHistory } from './history';
+export * from './history';
 export { default as browserLocation } from './location';
 export { default as browserStorage } from './storage';
 

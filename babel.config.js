@@ -7,8 +7,12 @@ module.exports = api => {
 				'@babel/preset-env',
 				{
 					modules: env === 'test' ? 'commonjs' : false,
-					loose: true
-				}
+					loose: true,
+					// https://github.com/babel/babel/issues/9849
+					targets: {
+						esmodules: true,
+					},
+				},
 			]
 		],
 		plugins: ['@babel/plugin-proposal-class-properties'],

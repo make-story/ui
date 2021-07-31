@@ -1,7 +1,7 @@
 /**
  * element
  */
- import { isElement, isTextNode, isString } from './is';
+ import { isElement, isElementList, isTextNode, isString } from './is';
 
  const FIND_ZWB = /\u200B/g;
  
