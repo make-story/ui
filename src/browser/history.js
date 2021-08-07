@@ -32,14 +32,20 @@ export const setScrollRestoration = (value='manual') => {
 /**
  * page change
  */
-const SCROLL_STORAGE_KEY = 'SCROLL_HISTORY';
-export const setHistoryWindowScroll = ({ left = window.pageXOffset || window.scrollX, top = window.pageYOffset || window.scrollY, } = {}) => {
+const HISTORY_SCROLL = 'HISTORY_SCROLL';
+export const getScroll = (element) => {
+	return {
+	  left: window.pageXOffset || window.scrollX,
+	  top: window.pageYOffset || window.scrollY,
+	};
+  };
+export const setHistoryWindowScroll = ({ left, top } = getScroll()) => {
 	//console.log(`scroll left: ${left}, top: ${top}`);
-	window.sessionStorage.setItem(SCROLL_STORAGE_KEY, JSON.stringify({ left, top }));
+	window.sessionStorage.setItem(HISTORY_SCROLL, JSON.stringify({ left, top }));
 };
 export const getHistoryWindowScroll = () => {
 	//window.pageYOffset || window.scrollY || document.documentElement.scrollTop
-	const scroll = window.sessionStorage.getItem(SCROLL_STORAGE_KEY);
+	const scroll = window.sessionStorage.getItem(HISTORY_SCROLL);
 	if(scroll) {
 		return JSON.parse(scroll);
 	}else {
@@ -135,8 +141,9 @@ export const bfCacheCheckEventOff = (listener, options={ capture: false }) => {
  * https://www.w3.org/TR/navigation-timing-2/#sec-performance-navigation-types
  */
 export const getNavigationType = (callback) => {
+	// navigation
 	const getType = () => {
-		if(typeof window.performance?.getEntriesByType === 'function') {
+		if(typeof window.performance?.getEntriesByType === 'function' && window.performance.getEntriesByType('navigation')?.length) {
 			const timing = window.performance.getEntriesByType('navigation')[0] || {};
 			type = timing?.type || ''; // 'navigate' | 'reload' | 'back_forward' | 'prerender'
 		}else {
@@ -161,7 +168,7 @@ export const getNavigationType = (callback) => {
 	// callback 에 따른 분기
 	if(typeof callback === 'function') {
 		isBFCacheCallback(isBFCache => callback(isBFCache ? 'bfcache' : getType()));
-	}else {
-		return getType();
 	}
+
+	return getType();
 };
