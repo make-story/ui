@@ -112,6 +112,7 @@ export const isBFCacheCallback = (callback) => {
 	if(typeof isBFCache === 'boolean') {
 		callback(isBFCache);
 	}else {
+		// [()=>{}, ()=>{}].includes(()=>{}) : false
 		!callbackListBFCache.includes(callback) && callbackListBFCache.push(callback);
 	}
 };
