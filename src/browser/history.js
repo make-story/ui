@@ -1,8 +1,10 @@
 /**
- * history
+ * 히스토리 관련
  * IE10 이상이면 history.replaceState 저장, 이하이면 IE8 이상 지원하는 sessionStorage 저장 
  * IOS 등에서 터치(플리킹)로 뒤로가기를 했을 경우 BFCache 활용됨 
  * (IOS nitro엔진 WKWebview는 히스토리백시 BFCache를 사용)
+ * 
+ * onpageshow 이벤트를 통해 BFCache 여부를 알 수 있다하더라도, BFCache 된 상태에서 페이지이동, 다시 뒤로가기로 BFCache 캐시 이력이 있던 페이지로 오면 onpageshow 이벤트도 안먹는 상태가 된다.
  */
 let isBFCache = null;
 const callbackListBFCache = [];
