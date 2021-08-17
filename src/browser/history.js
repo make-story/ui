@@ -110,7 +110,7 @@ export const isBFCacheCallback = (callback) => {
 	if(typeof isBFCache === 'boolean') {
 		callback(isBFCache);
 	}else {
-		callbackListBFCache.push(callback);
+		!callbackListBFCache.includes(callback) && callbackListBFCache.push(callback);
 	}
 };
 /*
