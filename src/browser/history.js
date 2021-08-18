@@ -11,6 +11,13 @@
 let isBFCache = null;
 const callbackListBFCache = [];
 
+/*export const setBFCacheOn = (callback) => {
+	!callbackListBFCache.includes(callback) && callbackListBFCache.push(callback);
+};
+export const setBFCacheOff = (callback) => {
+	callbackListBFCache.splice(callbackListBFCache.indexOf(callback), 1);
+};*/
+
 /**
  * popstate 이벤트
  * popstate 이벤트는 브라우저의 백 버튼이나 (history.back() 호출) 등을 통해서만 발생 (history.pushState, history.replaceState 의해 추가/변경된 state 값 확인)
@@ -37,6 +44,7 @@ export const setScrollRestoration = (value='manual') => {
  * page change
  */
 const HISTORY_SCROLL = 'HISTORY_SCROLL';
+const HISTORY_BFCACHE = 'HISTORY_BFCACHE';
 export const getScroll = (element) => {
 	return {
 	  left: window.pageXOffset || window.scrollX,
@@ -56,14 +64,26 @@ export const getHistoryWindowScroll = () => {
 		return { left: 0, top: 0 };
 	}
 };
+const setHistoryBFCache = (isBFCache) => {
+	window.sessionStorage.setItem(HISTORY_BFCACHE, String(isBFCache));
+};
+const getHistoryBFCache = () => {
+	return window.sessionStorage.getItem(HISTORY_BFCACHE);
+};
 if(typeof window !== 'undefined') {
 	window.addEventListener('beforeunload', (event) => {
 		console.log('history > beforeunload');
-		setHistoryWindowScroll(); // 스크롤 위치 저장
+		// 스크롤 위치 저장
+		setHistoryWindowScroll();
+		// BFCache reload 여부 확인용
+		setHistoryBFCache(isBFCache);
 	});
 	window.addEventListener('pagehide', (event) => {
 		console.log('history > pagehide');
-		setHistoryWindowScroll(); // 스크롤 위치 저장
+		// 스크롤 위치 저장
+		setHistoryWindowScroll();
+		// BFCache reload 여부 확인용
+		setHistoryBFCache(isBFCache);
 	});
 }
 
@@ -75,13 +95,6 @@ if(typeof window !== 'undefined') {
  */
 const BF_CACHE_EVENT_TYPE = 'BF_CACHE_EVENT_TYPE';
 const BF_CACHE_CHECK_EVENT_TYPE = 'BF_CACHE_CHECK_EVENT_TYPE';
-const BF_CACHE_STORAGE_KEY = 'BF_CACHE_HISTORY';
-const setHistoryBFCache = (is) => {
-	window.sessionStorage.setItem(BF_CACHE_STORAGE_KEY, is);
-};
-const getHistoryBFCache = () => {
-	return window.sessionStorage.getItem(BF_CACHE_STORAGE_KEY);
-};
 const setCallbackListBFCache = () => {
 	/*while (callbackListBFCache.length) { // callback 을 비워버릴 경우, BFCache 때 callbackListBFCache 배열이 빈배열상태 그대로 있음.
 		callbackListBFCache.shift()(isBFCache);
@@ -91,7 +104,7 @@ const setCallbackListBFCache = () => {
 	});
 };
 if(typeof window !== 'undefined') {
-	window.onpageshow = function (event) {
+	window.addEventListener('pageshow', (event) => {
 		//console.log('event', event);
 		//console.log('referrer', document.referrer);
 		if(event.persisted) {
@@ -105,7 +118,7 @@ if(typeof window !== 'undefined') {
 			//document.dispatchEvent(new CustomEvent(BF_CACHE_CHECK_EVENT_TYPE, { detail: false }));
 		}
 		setCallbackListBFCache();
-	};
+	});
 }
 export const isBFCacheCallback = (callback) => {
 	if(typeof callback !== 'function') {
@@ -144,6 +157,8 @@ export const bfCacheCheckEventOff = (listener, options={ capture: false }) => {
  * 페이지 진입 방식 확인
  * window.performance.navigation 스팩아웃 (Level 2 스팩 사용 권장)
  * https://www.w3.org/TR/navigation-timing-2/#sec-performance-navigation-types
+ * 
+ * 'navigate' | 'reload' | 'back_forward' | 'prerender' | 'bfcache' | 'reload_bfcache' | ''
  */
 export const getNavigationType = (callback) => {
 	// navigation
@@ -171,9 +186,17 @@ export const getNavigationType = (callback) => {
 	};
 
 	// callback 에 따른 분기
-	if(typeof callback === 'function') {
-		isBFCacheCallback(isBFCache => callback(isBFCache ? 'bfcache' : getType()));
-	}
+	if (typeof callback === 'function') {
+		isBFCacheCallback((isBFCache) => {
+		  let type = getType();
+		  if (isBFCache) {
+			type = 'bfcache';
+		  } else if (type === 'reload' && getHistoryBFCache() === 'true') {
+			type = 'reload_bfcache';
+		  }
+		  callback(type);
+		});
+	  }
 
 	return getType();
 };
