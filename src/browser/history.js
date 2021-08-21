@@ -4,6 +4,9 @@
  * IOS 등에서 터치(플리킹)로 뒤로가기를 했을 경우 BFCache 활용됨 
  * (IOS nitro엔진 WKWebview는 히스토리백시 BFCache를 사용)
  * 
+ * BF Cache
+ * https://web.dev/bfcache/
+ * 비활성화 Cache-Control: no-store
  * onpageshow 이벤트를 통해 BFCache 여부를 알 수 있다하더라도, 
  * 페이지이동 -> 뒤로가기로 BFCache 페이지 진입 -> 다시 페이지 이동 -> 뒤로가기로 BFCache 이력이 있던 페이지 진입 
  * onpageshow 이벤트도 실행되지 않는다. (즉, BFCache 를 onpageshow 이벤트로 두번이상 부터는 알 수 없다.)
