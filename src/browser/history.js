@@ -71,15 +71,18 @@ const getHistoryBFCache = () => {
 	return window.sessionStorage.getItem(HISTORY_BFCACHE);
 };
 if(typeof window !== 'undefined') {
+	window.addEventListener('hashchange', (event) => {
+		console.log('history > hashchange', event);
+	});
 	window.addEventListener('beforeunload', (event) => {
-		console.log('history > beforeunload');
+		console.log('history > beforeunload', event);
 		// 스크롤 위치 저장
 		setHistoryWindowScroll();
 		// BFCache reload 여부 확인용
 		setHistoryBFCache(isBFCache);
 	});
 	window.addEventListener('pagehide', (event) => {
-		console.log('history > pagehide');
+		console.log('history > pagehide', event);
 		// 스크롤 위치 저장
 		setHistoryWindowScroll();
 		// BFCache reload 여부 확인용
