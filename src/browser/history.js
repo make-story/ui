@@ -200,19 +200,19 @@ export const getNavigationType = (callback) => {
 					break;
 			}
 		}
+
+		// BFCache 에 따른 새로고침
+		if (['navigate', 'reload'].includes(type) && getHistoryBFCache() === 'true') {
+			type = 'reload_bfcache';
+		}
+
 		return type;
 	};
 
 	// callback 에 따른 분기
 	if (typeof callback === 'function') {
 		isPageShowCallback((isBFCache) => {
-		  let type = getType();
-		  if (isBFCache) {
-			type = 'bfcache';
-		  } else if (['navigate', 'reload'].includes(type) && getHistoryBFCache() === 'true') {
-			type = 'reload_bfcache';
-		  }
-		  callback(type);
+			callback(isBFCache ? 'bfcache' : getType());
 		});
 	  }
 
