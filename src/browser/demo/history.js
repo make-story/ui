@@ -14,8 +14,11 @@ const setWindowScroll = navigationType => {
   let top = 0;
   if (navigationType === "reload_bfcache") {
     top = getHistoryBFCacheScroll().top;
-  } else if (["reload", "back_forward"].includes(navigationType)) {
+  //} else if (["reload", "back_forward"].includes(navigationType)) {
+  } else if (navigationType === 'back_forward') {
     top = getHistoryWindowScroll().top;
+  } else {
+    return;
   }
   console.log("setWindowScroll", navigationType, top);
   window.scrollTo({ top: Number(top) || 0, behavior: "auto" });
@@ -71,6 +74,8 @@ const setPageshowCallback = () => {
 
 // 히스토리
 const setHistoryCheck = (browserName = "") => {
+  console.log('setHistoryCheck', browserName);
+  
   // 브라우저 단위 분기 처리 - 사파리(BFCache)
   const isSafari =
     browserName && -1 < browserName.toLowerCase().indexOf("safari");
