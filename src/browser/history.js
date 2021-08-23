@@ -12,7 +12,8 @@
  * onpageshow 이벤트도 실행되지 않는다. (즉, BFCache 를 onpageshow 이벤트로 두번이상 부터는 알 수 없다.)
  */
 let isBFCache = null;
-const callbackListBFCache = [];
+const callbackListPageShow = [];
+const callbackListDOMReady = [];
 
 /**
  * popstate 이벤트
@@ -42,13 +43,11 @@ export const setScrollRestoration = (value='manual') => {
  * https://developer.mozilla.org/en-US/docs/Web/Events/pagehide
  * https://developer.mozilla.org/en-US/docs/Web/Events/pageshow
  */
-const BF_CACHE_EVENT_TYPE = 'BF_CACHE_EVENT_TYPE';
-const BF_CACHE_CHECK_EVENT_TYPE = 'BF_CACHE_CHECK_EVENT_TYPE';
-const setCallbackListBFCache = () => {
-	/*while (callbackListBFCache.length) { // callback 을 비워버릴 경우, BFCache 때 callbackListBFCache 배열이 빈배열상태 그대로 있음.
-		callbackListBFCache.shift()(isBFCache);
+const setCallbackListPageShow = () => {
+	/*while (callbackListPageShow.length) { 
+		callbackListPageShow.shift()(isBFCache);
 	}*/
-	callbackListBFCache.forEach((callback) => {
+	callbackListPageShow.forEach((callback) => {
 		callback(isBFCache);
 	});
 };
@@ -66,10 +65,10 @@ if(typeof window !== 'undefined') {
 			isBFCache = false;
 			//document.dispatchEvent(new CustomEvent(BF_CACHE_CHECK_EVENT_TYPE, { detail: false }));
 		}
-		setCallbackListBFCache();
+		setCallbackListPageShow();
 	});
 }
-export const isBFCacheCallback = (callback) => {
+export const isPageShowCallback = (callback) => {
 	if(typeof callback !== 'function') {
 		return;
 	}
@@ -77,36 +76,49 @@ export const isBFCacheCallback = (callback) => {
 		callback(isBFCache);
 	}else {
 		// [()=>{}, ()=>{}].includes(()=>{}) : false
-		!callbackListBFCache.includes(callback) && callbackListBFCache.push(callback);
+		!callbackListPageShow.includes(callback) && callbackListPageShow.push(callback);
 	}
 };
-export const isBFCacheCallbackCancel = (callback) => {
-	callbackListBFCache.splice(callbackListBFCache.indexOf(callback), 1);
+export const isPageShowCallbackCancel = (callback) => {
+	callbackListPageShow.splice(callbackListPageShow.indexOf(callback), 1);
 };
-export const isBFCacheCallbackClear = () => {
-	callbackListBFCache.splice(0, callbackListBFCache.length);
+export const isPageShowCallbackClear = () => {
+	callbackListPageShow.splice(0, callbackListPageShow.length);
+};
+
+/**
+ * DOM Ready
+ */
+ const setCallbackListDOMReady = () => {
+	callbackListDOMReady.forEach((callback) => {
+	  callback();
+	});
   };
-/*
-사용 예:
-const serReload = () => {
-	console.log('BFCache');
-	window.location.reload();
-};
-bfCacheEventOn(serReload); // on
-//bfCacheEventOff(serReload); // off
-*/
-/*export const bfCacheEventOn = (listener, options={ capture: false }) => {
-	typeof window !== 'undefined' && document.addEventListener(BF_CACHE_EVENT_TYPE, listener, options);
-};
-export const bfCacheEventOff = (listener, options={ capture: false }) => {
-	typeof window !== 'undefined' && document.removeEventListener(BF_CACHE_EVENT_TYPE, listener, options);
-};
-export const bfCacheCheckEventOn = (listener, options={ capture: false }) => {
-	typeof window !== 'undefined' && document.addEventListener(BF_CACHE_CHECK_EVENT_TYPE, listener, options);
-};
-export const bfCacheCheckEventOff = (listener, options={ capture: false }) => {
-	typeof window !== 'undefined' && document.removeEventListener(BF_CACHE_CHECK_EVENT_TYPE, listener, options);
-};*/
+  if (typeof window !== 'undefined') {
+	document.addEventListener('DOMContentLoaded', (event) => {
+	  setCallbackListDOMReady();
+	});
+  }
+  export const isDOMReadyCallback = (callback) => {
+	if (typeof window === 'undefined' || typeof callback !== 'function') {
+	  return;
+	}
+	if (document.readyState === 'interactive' || document.readyState === 'complete') {
+	  // IE8 등에서 window.setTimeout 파라미터로 바로 함수값을 넣으면 오류가 난다.
+	  // 그러므로 function() {} 무명함수로 해당 함수를 실행시킨다.
+	  window.setTimeout(() => {
+		callback();
+	  });
+	} else {
+	  !callbackListDOMReady.includes(callback) && callbackListDOMReady.push(callback);
+	}
+  };
+  export const isDOMReadyCallbackCancel = (callback) => {
+	callbackListDOMReady.splice(callbackListDOMReady.indexOf(callback), 1);
+  };
+  export const isDOMReadyCallbackClear = () => {
+	callbackListDOMReady.splice(0, callbackListDOMReady.length);
+  };
 
 /**
  * page change
@@ -148,14 +160,14 @@ if(typeof window !== 'undefined') {
 		// BFCache reload 여부 확인용
 		setHistoryBFCache(isBFCache);
 		// 콜백 초기화
-		isBFCacheCallbackClear();
+		isPageShowCallbackClear();
 	});
 	window.addEventListener('pagehide', (event) => {
 		console.log('history > pagehide', event);
 		// BFCache reload 여부 확인용
 		setHistoryBFCache(isBFCache);
 		// 콜백 초기화
-		isBFCacheCallbackClear();
+		isPageShowCallbackClear();
 	});
 }
 
@@ -193,7 +205,7 @@ export const getNavigationType = (callback) => {
 
 	// callback 에 따른 분기
 	if (typeof callback === 'function') {
-		isBFCacheCallback((isBFCache) => {
+		isPageShowCallback((isBFCache) => {
 		  let type = getType();
 		  if (isBFCache) {
 			type = 'bfcache';
