@@ -63,9 +63,11 @@ const setUserTouchWatch = (listener) => {
 };
 
 // 히스토리
-const setHistoryPageListener = (() => {
+const getBrowserName = () => {
+  return 'safari'.toLowerCase();
+};
+const setHistoryPageListener = ((browserName) => {
   // 클로저 - node js 에서 메모리 누수에 주의!
-  const browserName = 'safari';
   const isSafari = browserName && -1 < browserName.toLowerCase().indexOf('safari');
   let timeHistoryPageInterval = 0;
   return (event) => {
@@ -82,7 +84,7 @@ const setHistoryPageListener = (() => {
       });
     }
   };
-})();
+})(getBrowserName());
 const setHistoryPage = (listener) => {
   // 사용자가 페이지를 떠날 때
   window.removeEventListener('beforeunload', listener);
@@ -106,7 +108,6 @@ const setHistoryCheck = (browserName) => {
   }
 };
 const setHistoryRouter = (path) => {
-    const browserName = 'safari';
-    setHistoryCheck(browserName);
+    setHistoryCheck(getBrowserName());
     setHistoryPage(setHistoryPageListener);
 };
