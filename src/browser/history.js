@@ -14,13 +14,6 @@
 let isBFCache = null;
 const callbackListBFCache = [];
 
-/*export const setBFCacheOn = (callback) => {
-	!callbackListBFCache.includes(callback) && callbackListBFCache.push(callback);
-};
-export const setBFCacheOff = (callback) => {
-	callbackListBFCache.splice(callbackListBFCache.indexOf(callback), 1);
-};*/
-
 /**
  * popstate 이벤트
  * popstate 이벤트는 브라우저의 백 버튼이나 (history.back() 호출) 등을 통해서만 발생 (history.pushState, history.replaceState 의해 추가/변경된 state 값 확인)
@@ -54,15 +47,16 @@ export const getScroll = (element) => {
 	  top: window.pageYOffset || window.scrollY,
 	};
   };
-export const setHistoryWindowScroll = ({ left, top } = getScroll()) => {
+export const setHistoryWindowScroll = (key=HISTORY_SCROLL,  { left, top }=getScroll()) => {
 	//console.log(`scroll left: ${left}, top: ${top}`);
-	window.sessionStorage.setItem(HISTORY_SCROLL, JSON.stringify({ left, top }));
+	window.sessionStorage.setItem(key, JSON.stringify({ left, top }));
 };
-export const getHistoryWindowScroll = () => {
+export const getHistoryWindowScroll = (key=HISTORY_SCROLL) => {
 	//window.pageYOffset || window.scrollY || document.documentElement.scrollTop
-	const scroll = window.sessionStorage.getItem(HISTORY_SCROLL);
+	let scroll = window.sessionStorage.getItem(key);
 	if(scroll) {
-		return JSON.parse(scroll);
+		scroll = JSON.parse(scroll) || {};
+		return { left: Number(scroll.left) || 0, top: Number(scroll.top) || 0 };
 	}else {
 		return { left: 0, top: 0 };
 	}
@@ -79,15 +73,11 @@ if(typeof window !== 'undefined') {
 	});
 	window.addEventListener('beforeunload', (event) => {
 		console.log('history > beforeunload', event);
-		// 스크롤 위치 저장
-		setHistoryWindowScroll();
 		// BFCache reload 여부 확인용
 		setHistoryBFCache(isBFCache);
 	});
 	window.addEventListener('pagehide', (event) => {
 		console.log('history > pagehide', event);
-		// 스크롤 위치 저장
-		setHistoryWindowScroll();
 		// BFCache reload 여부 확인용
 		setHistoryBFCache(isBFCache);
 	});
@@ -136,6 +126,9 @@ export const isBFCacheCallback = (callback) => {
 		// [()=>{}, ()=>{}].includes(()=>{}) : false
 		!callbackListBFCache.includes(callback) && callbackListBFCache.push(callback);
 	}
+};
+export const isBFCacheCallbackCancel = (callback) => {
+	callbackListBFCache.splice(callbackListBFCache.indexOf(callback), 1);
 };
 /*
 사용 예:
@@ -197,7 +190,7 @@ export const getNavigationType = (callback) => {
 		  let type = getType();
 		  if (isBFCache) {
 			type = 'bfcache';
-		  } else if (type === 'reload' && getHistoryBFCache() === 'true') {
+		  } else if (['navigate', 'reload'].includes(type) && getHistoryBFCache() === 'true') {
 			type = 'reload_bfcache';
 		  }
 		  callback(type);
