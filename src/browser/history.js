@@ -37,53 +37,6 @@ export const setScrollRestoration = (value='manual') => {
 };
 
 /**
- * page change
- */
-const HISTORY_SCROLL = 'HISTORY_SCROLL';
-const HISTORY_BFCACHE = 'HISTORY_BFCACHE';
-export const getScroll = (element) => {
-	return {
-	  left: window.pageXOffset || window.scrollX,
-	  top: window.pageYOffset || window.scrollY,
-	};
-  };
-export const setHistoryWindowScroll = (key=HISTORY_SCROLL,  { left, top }=getScroll()) => {
-	//console.log(`scroll left: ${left}, top: ${top}`);
-	window.sessionStorage.setItem(key, JSON.stringify({ left, top }));
-};
-export const getHistoryWindowScroll = (key=HISTORY_SCROLL) => {
-	//window.pageYOffset || window.scrollY || document.documentElement.scrollTop
-	let scroll = window.sessionStorage.getItem(key);
-	if(scroll) {
-		scroll = JSON.parse(scroll) || {};
-		return { left: Number(scroll.left) || 0, top: Number(scroll.top) || 0 };
-	}else {
-		return { left: 0, top: 0 };
-	}
-};
-const setHistoryBFCache = (isBFCache) => {
-	window.sessionStorage.setItem(HISTORY_BFCACHE, String(isBFCache));
-};
-const getHistoryBFCache = () => {
-	return window.sessionStorage.getItem(HISTORY_BFCACHE);
-};
-if(typeof window !== 'undefined') {
-	window.addEventListener('hashchange', (event) => {
-		console.log('history > hashchange', event);
-	});
-	window.addEventListener('beforeunload', (event) => {
-		console.log('history > beforeunload', event);
-		// BFCache reload 여부 확인용
-		setHistoryBFCache(isBFCache);
-	});
-	window.addEventListener('pagehide', (event) => {
-		console.log('history > pagehide', event);
-		// BFCache reload 여부 확인용
-		setHistoryBFCache(isBFCache);
-	});
-}
-
-/**
  * BFCache
  * pageshow, pagebeforeshow, pagebeforehide, pagehide 이벤트
  * https://developer.mozilla.org/en-US/docs/Web/Events/pagehide
@@ -130,11 +83,14 @@ export const isBFCacheCallback = (callback) => {
 export const isBFCacheCallbackCancel = (callback) => {
 	callbackListBFCache.splice(callbackListBFCache.indexOf(callback), 1);
 };
+export const isBFCacheCallbackClear = () => {
+	callbackListBFCache.splice(0, callbackListBFCache.length);
+  };
 /*
 사용 예:
 const serReload = () => {
-  console.log('BFCache');
-  window.location.reload();
+	console.log('BFCache');
+	window.location.reload();
 };
 bfCacheEventOn(serReload); // on
 //bfCacheEventOff(serReload); // off
@@ -151,6 +107,57 @@ export const bfCacheCheckEventOn = (listener, options={ capture: false }) => {
 export const bfCacheCheckEventOff = (listener, options={ capture: false }) => {
 	typeof window !== 'undefined' && document.removeEventListener(BF_CACHE_CHECK_EVENT_TYPE, listener, options);
 };*/
+
+/**
+ * page change
+ */
+const HISTORY_SCROLL = 'HISTORY_SCROLL';
+const HISTORY_BFCACHE = 'HISTORY_BFCACHE';
+export const getScroll = (element) => {
+	return {
+	  left: window.pageXOffset || window.scrollX,
+	  top: window.pageYOffset || window.scrollY,
+	};
+  };
+export const setHistoryWindowScroll = (key=HISTORY_SCROLL,  { left, top }=getScroll()) => {
+	//console.log(`scroll left: ${left}, top: ${top}`);
+	window.sessionStorage.setItem(key, JSON.stringify({ left, top }));
+};
+export const getHistoryWindowScroll = (key=HISTORY_SCROLL) => {
+	//window.pageYOffset || window.scrollY || document.documentElement.scrollTop
+	let scroll = window.sessionStorage.getItem(key);
+	if(scroll) {
+		scroll = JSON.parse(scroll) || {};
+		return { left: Number(scroll.left) || 0, top: Number(scroll.top) || 0 };
+	}else {
+		return { left: 0, top: 0 };
+	}
+};
+const setHistoryBFCache = (isBFCache) => {
+	window.sessionStorage.setItem(HISTORY_BFCACHE, String(isBFCache));
+};
+const getHistoryBFCache = () => {
+	return window.sessionStorage.getItem(HISTORY_BFCACHE);
+};
+if(typeof window !== 'undefined') {
+	window.addEventListener('hashchange', (event) => {
+		console.log('history > hashchange', event);
+	});
+	window.addEventListener('beforeunload', (event) => {
+		console.log('history > beforeunload', event);
+		// BFCache reload 여부 확인용
+		setHistoryBFCache(isBFCache);
+		// 콜백 초기화
+		isBFCacheCallbackClear();
+	});
+	window.addEventListener('pagehide', (event) => {
+		console.log('history > pagehide', event);
+		// BFCache reload 여부 확인용
+		setHistoryBFCache(isBFCache);
+		// 콜백 초기화
+		isBFCacheCallbackClear();
+	});
+}
 
 /**
  * 페이지 진입 방식 확인
