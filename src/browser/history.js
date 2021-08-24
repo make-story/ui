@@ -145,11 +145,13 @@ export const getHistoryWindowScroll = (key=HISTORY_SCROLL) => {
 		return { left: 0, top: 0 };
 	}
 };
-const setHistoryBFCache = (isBFCache) => {
-	window.sessionStorage.setItem(HISTORY_BFCACHE, String(isBFCache));
+export const setHistoryBFCache = (isBFCache) => {
+	// 현재 페이지 BFCache 된 페이지 였는지 이력 저장
+	window.sessionStorage.setItem(HISTORY_AMORE_BFCACHE, String(isBFCache));
 };
-const getHistoryBFCache = () => {
-	return window.sessionStorage.getItem(HISTORY_BFCACHE);
+export const getHistoryBFCache = () => {
+	// BFCache 페이지 이력 가져오기
+	return window.sessionStorage.getItem(HISTORY_AMORE_BFCACHE);
 };
 if(typeof window !== 'undefined') {
 	window.addEventListener('hashchange', (event) => {
