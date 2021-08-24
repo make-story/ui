@@ -18,6 +18,15 @@ import {
 // 브라우저 스크롤 제어 수동으로 설정
 setScrollRestoration('manual');
 
+// BFCache 에 따른 새로고침 전 스크롤값 저장
+const HISTORY_BFCACHE_SCROLL = 'HISTORY_BFCACHE_SCROLL';
+const setHistoryBFCacheScroll = (key = HISTORY_BFCACHE_SCROLL) => {
+  window.sessionStorage.setItem(key, JSON.stringify(getHistoryWindowScroll()));
+};
+const getHistoryBFCacheScroll = () => {
+  return JSON.parse(window.sessionStorage.getItem(HISTORY_BFCACHE_SCROLL) || '{}');
+};
+
 // 브라우저 스크롤 이동
 const setWindowScroll = (navigationType) => {
   let top = 0;
@@ -33,14 +42,7 @@ const setWindowScroll = (navigationType) => {
   window.scrollTo({ top: Number(top) || 0, behavior: 'auto' });
 };
 
-// BFCache 에 따른 새로고침 전 스크롤값 저장
-const HISTORY_BFCACHE_SCROLL = 'HISTORY_BFCACHE_SCROLL';
-const setHistoryBFCacheScroll = (key = HISTORY_BFCACHE_SCROLL) => {
-  window.sessionStorage.setItem(key, JSON.stringify(getHistoryWindowScroll()));
-};
-const getHistoryBFCacheScroll = () => {
-  return JSON.parse(window.sessionStorage.getItem(HISTORY_BFCACHE_SCROLL) || '{}');
-};
+// pageshow 콜백
 const setPageShowCallback = (navigationType) => {
   console.log('setPageShowCallback', navigationType);
   if (navigationType === 'bfcache') {
@@ -50,6 +52,7 @@ const setPageShowCallback = (navigationType) => {
     setWindowScroll(navigationType);
   }
 };
+
 // 사용자 터치가 발생하면, 히스토리 스크롤 이동 정지
 const setUserTouchListener = (event) => {
   //console.log(event);
