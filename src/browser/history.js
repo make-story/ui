@@ -4,6 +4,9 @@
  * IOS 등에서 터치(플리킹)로 뒤로가기를 했을 경우 BFCache 활용됨 
  * (IOS nitro엔진 WKWebview는 히스토리백시 BFCache를 사용)
  * 
+ * Page Lifecycle
+ * https://developers.google.com/web/updates/2018/07/page-lifecycle-api
+ * 
  * BF Cache
  * https://web.dev/bfcache/
  * 비활성화 Cache-Control: no-store
@@ -156,8 +159,8 @@ if(typeof window !== 'undefined') {
 	window.addEventListener('hashchange', (event) => {
 		console.log('history > hashchange', event);
 	});
-	// 브라우저는 페이지에 unload 이벤트 리스너가 추가되어 있는 경우 bfcache에 적합하지 않은 페이지로 판단하는 경우가 많다.
-	/*window.addEventListener('beforeunload', (event) => {
+	// beforeunload
+	/*window.addEventListener('beforeunload', (event) => { // 취소 가능한 이벤트 (사용자 페이지 이탈을 막을 수 있음)
 		console.log('history > beforeunload', event);
 		// BFCache reload 여부 확인용
 		setHistoryBFCache(isBFCache);
@@ -165,6 +168,7 @@ if(typeof window !== 'undefined') {
 		isPageShowCallbackClear();
 	});*/
 	// pagehide
+	// unload (beforeunload 이벤트는 제외) 사용하지 않은 이유 : 브라우저는 페이지에 unload 이벤트 리스너가 추가되어 있는 경우, bfcache에 적합하지 않은 페이지로 판단하는 경우가 많다.
 	window.addEventListener('pagehide', (event) => {
 		console.log('history > pagehide', event);
 		// BFCache reload 여부 확인용

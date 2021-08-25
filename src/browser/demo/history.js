@@ -126,9 +126,8 @@ const setHistoryPageListener = ((browserName) => {
 })(getBrowserName());
 const setHistoryPage = (listener) => {
   // 사용자가 페이지를 떠날 때
-  //window.removeEventListener('beforeunload', listener);
+  // unload (beforeunload 이벤트는 제외) 사용하지 않은 이유 : 브라우저는 페이지에 unload 이벤트 리스너가 추가되어 있는 경우, bfcache에 적합하지 않은 페이지로 판단하는 경우가 많다.
   window.removeEventListener('pagehide', listener);
-  //window.addEventListener('beforeunload', listener, { once: true });
   window.addEventListener('pagehide', listener), { once: true };
 };
 const setHistoryCheck = (browserName) => {
