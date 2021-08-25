@@ -132,13 +132,13 @@ export const getScroll = (element) => {
 	  top: window.pageYOffset || window.scrollY,
 	};
   };
-export const setHistoryWindowScroll = (key=HISTORY_SCROLL,  { left, top }=getScroll()) => {
+export const setHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.location.href.split('?')?.shift() || ''/*페이지 단위 구분*/, { left, top }=getScroll()) => {
 	//console.log(`scroll left: ${left}, top: ${top}`);
-	window.sessionStorage.setItem(key, JSON.stringify({ left, top }));
+	window.sessionStorage.setItem(`${prefix}_${page}`, JSON.stringify({ left, top }));
 };
-export const getHistoryWindowScroll = (key=HISTORY_SCROLL) => {
+export const getHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.location.href.split('?')?.shift() || ''/*페이지 단위 구분*/) => {
 	//window.pageYOffset || window.scrollY || document.documentElement.scrollTop
-	let scroll = window.sessionStorage.getItem(key);
+	let scroll = window.sessionStorage.getItem(`${prefix}_${page}`);
 	if(scroll) {
 		scroll = JSON.parse(scroll) || {};
 		return { left: Number(scroll.left) || 0, top: Number(scroll.top) || 0 };

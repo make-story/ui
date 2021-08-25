@@ -33,13 +33,20 @@ const getHistoryBFCacheScroll = () => {
   return JSON.parse(window.sessionStorage.getItem(HISTORY_BFCACHE_SCROLL) || '{}');
 };
 
-// 페이지정보 저장
+// 페이지정보 저장 (IOS 14 버전이상에서 뒤로가기/앞으로가기 후 자동 새로고침 이슈 대응하기 위함)
 const HISTORY_LOCATION = 'HISTORY_LOCATION';
 const setHistoryLocation = (key = HISTORY_LOCATION) => {
   window.sessionStorage.setItem(key, window.location.href);
 };
 const getHistoryLocation = (key = HISTORY_LOCATION) => {
   return window.sessionStorage.getItem(key);
+};
+const HISTORY_RELOAD_SCROLL = 'HISTORY_RELOAD_SCROLL';
+const setHistoryReloadScroll = (key = HISTORY_RELOAD_SCROLL) => {
+  window.sessionStorage.setItem(key, JSON.stringify(getHistoryWindowScroll()));
+};
+const getHistoryReloadScroll = (key = HISTORY_RELOAD_SCROLL) => {
+  return JSON.parse(window.sessionStorage.getItem(key) || '{}');
 };
 
 // 브라우저 스크롤 이동
@@ -48,14 +55,13 @@ const setWindowScroll = (navigationType) => {
   if (window.history.scrollRestoration && window.history.scrollRestoration !== 'manual') {
     // 브라우저 히스토리 스크롤 수동제어 모드가 아닌 경우
     return;
+  } else if (navigationType === 'back_forward') {
+    top = Number(getHistoryWindowScroll().top) || 0;
   } else if (navigationType === 'reload_bfcache') {
     top = Number(getHistoryBFCacheScroll().top) || 0;
-  } else if (
-    navigationType === 'back_forward' ||
-    (navigationType === 'navigate' &&
-      window.location.href === getHistoryLocation()) /* safari 에서 새로고침되는 이슈 때문에 조건삽입 */
-  ) {
-    top = Number(getHistoryWindowScroll().top) || 0;
+  } else if (navigationType === 'navigate' && window.location.href === getHistoryLocation()) {
+    // safari 에서 새로고침되는 이슈 때문에 조건삽입
+    top = Number(getHistoryReloadScroll().top) || 0;
   }
   if (0 < top) {
     console.log('setWindowScroll', navigationType, top);
@@ -109,12 +115,13 @@ const setHistoryPageListener = ((browserName) => {
   const isSafari = browserName && -1 < browserName.toLowerCase().indexOf('safari');
   let timeHistoryPageInterval = 0;
   return (event) => {
-    // 브라우저 스크롤값 저장
-    setHistoryWindowScroll();
+    console.log('display > pagehide');
     // 사파리에서는 BFCache 에 기존 JavaScript 코드가 실행되지 않는다.
-    // 페이지 떠나기 전 인터벌 실행이 캐쉬되도록 한다.
     if (isSafari) {
+      // 일부 브라우저 자동 새로고침 이슈 때문에 기존 스크롤 값 저장
+      setHistoryReloadScroll();
       setHistoryLocation();
+      // 페이지 떠나기 전 인터벌 실행이 캐쉬되도록 한다.
       window.clearInterval(timeHistoryPageInterval);
       timeHistoryPageInterval = window.setInterval(() => {
         console.log('display history interval!!!!!');
@@ -122,6 +129,8 @@ const setHistoryPageListener = ((browserName) => {
         getNavigationType(setPageShowCallback);
       });
     }
+    // 브라우저 스크롤값 저장
+    setHistoryWindowScroll();
   };
 })(getBrowserName());
 const setHistoryPage = (listener) => {
@@ -132,14 +141,16 @@ const setHistoryPage = (listener) => {
 };
 const setHistoryCheck = (browserName) => {
   console.log('setHistoryCheck', browserName);
-  const isSafari = browserName && -1 < browserName.toLowerCase().indexOf('safari');
-  if (isSafari) {
+  //const isSafari = browserName && -1 < browserName.toLowerCase().indexOf('safari');
+  /*if (isSafari) {
     // safari BFCache 확인 - 콜백
     getNavigationType(setPageShowCallback);
   } else {
     // 일반 브라우저 확인
     isDOMReadyCallback(setDOMReadyCallback);
-  }
+  }*/
+  getNavigationType(setPageShowCallback);
+  
   // 사용자 터치 감시
   setUserTouchWatch(setUserTouchListener);
 };
