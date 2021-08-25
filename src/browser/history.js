@@ -58,13 +58,11 @@ if(typeof window !== 'undefined') {
 		if(event.persisted) {
 			//console.log('BFCache');
 			isBFCache = true;
-			//document.dispatchEvent(new CustomEvent(BF_CACHE_CHECK_EVENT_TYPE, { detail: true }));
-			//document.dispatchEvent(new CustomEvent(BF_CACHE_EVENT_TYPE, { detail: event }));
 		}else {
 			//console.log('새로 진입');
 			isBFCache = false;
-			//document.dispatchEvent(new CustomEvent(BF_CACHE_CHECK_EVENT_TYPE, { detail: false }));
 		}
+		console.log('history > BFCache', isBFCache);
 		setCallbackListPageShow();
 	});
 }
@@ -154,16 +152,19 @@ export const getHistoryBFCache = () => {
 	return window.sessionStorage.getItem(HISTORY_AMORE_BFCACHE);
 };
 if(typeof window !== 'undefined') {
+	// hashchange
 	window.addEventListener('hashchange', (event) => {
 		console.log('history > hashchange', event);
 	});
-	window.addEventListener('beforeunload', (event) => {
+	// 브라우저는 페이지에 unload 이벤트 리스너가 추가되어 있는 경우 bfcache에 적합하지 않은 페이지로 판단하는 경우가 많다.
+	/*window.addEventListener('beforeunload', (event) => {
 		console.log('history > beforeunload', event);
 		// BFCache reload 여부 확인용
 		setHistoryBFCache(isBFCache);
 		// 콜백 초기화
 		isPageShowCallbackClear();
-	});
+	});*/
+	// pagehide
 	window.addEventListener('pagehide', (event) => {
 		console.log('history > pagehide', event);
 		// BFCache reload 여부 확인용

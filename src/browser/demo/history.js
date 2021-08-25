@@ -33,19 +33,34 @@ const getHistoryBFCacheScroll = () => {
   return JSON.parse(window.sessionStorage.getItem(HISTORY_BFCACHE_SCROLL) || '{}');
 };
 
+// 페이지정보 저장
+const HISTORY_LOCATION = 'HISTORY_LOCATION';
+const setHistoryLocation = (key = HISTORY_LOCATION) => {
+  window.sessionStorage.setItem(key, window.location.href);
+};
+const getHistoryLocation = (key = HISTORY_LOCATION) => {
+  return window.sessionStorage.getItem(key);
+};
+
 // 브라우저 스크롤 이동
 const setWindowScroll = (navigationType) => {
   let top = 0;
-  if (navigationType === 'reload_bfcache') {
-    top = getHistoryBFCacheScroll().top;
-  } else if (navigationType === 'back_forward') {
-    // ['reload', 'back_forward'].includes(navigationType)
-    top = getHistoryWindowScroll().top;
-  } else {
+  if (window.history.scrollRestoration && window.history.scrollRestoration !== 'manual') {
+    // 브라우저 히스토리 스크롤 수동제어 모드가 아닌 경우
     return;
+  } else if (navigationType === 'reload_bfcache') {
+    top = Number(getHistoryBFCacheScroll().top) || 0;
+  } else if (
+    navigationType === 'back_forward' ||
+    (navigationType === 'navigate' &&
+      window.location.href === getHistoryLocation()) /* safari 에서 새로고침되는 이슈 때문에 조건삽입 */
+  ) {
+    top = Number(getHistoryWindowScroll().top) || 0;
   }
-  console.log('setWindowScroll', navigationType, top);
-  window.scrollTo({ top: Number(top) || 0, behavior: 'auto' });
+  if (0 < top) {
+    console.log('setWindowScroll', navigationType, top);
+    window.scrollTo({ top, behavior: 'auto' });
+  }
 };
 
 // pageshow 콜백
@@ -70,10 +85,16 @@ const setPageShowCallback = ((browserName) => {
   };
 })(getBrowserName());
 
+// DOM Ready 콜백
+const setDOMReadyCallback = () => {
+  setWindowScroll(getNavigationType());
+};
+
 // 사용자 터치가 발생하면, 히스토리 스크롤 이동 정지
 const setUserTouchListener = (event) => {
   //console.log(event);
   isPageShowCallbackCancel(setPageShowCallback);
+  isDOMReadyCallbackCancel(setDOMReadyCallback);
 };
 const setUserTouchWatch = (listener) => {
   window.document?.body?.removeEventListener('touchstart', listener);
@@ -93,6 +114,7 @@ const setHistoryPageListener = ((browserName) => {
     // 사파리에서는 BFCache 에 기존 JavaScript 코드가 실행되지 않는다.
     // 페이지 떠나기 전 인터벌 실행이 캐쉬되도록 한다.
     if (isSafari) {
+      setHistoryLocation();
       window.clearInterval(timeHistoryPageInterval);
       timeHistoryPageInterval = window.setInterval(() => {
         console.log('display history interval!!!!!');
@@ -104,25 +126,22 @@ const setHistoryPageListener = ((browserName) => {
 })(getBrowserName());
 const setHistoryPage = (listener) => {
   // 사용자가 페이지를 떠날 때
-  window.removeEventListener('beforeunload', listener);
+  //window.removeEventListener('beforeunload', listener);
   window.removeEventListener('pagehide', listener);
-  window.addEventListener('beforeunload', listener, { once: true });
+  //window.addEventListener('beforeunload', listener, { once: true });
   window.addEventListener('pagehide', listener), { once: true };
 };
 const setHistoryCheck = (browserName) => {
   console.log('setHistoryCheck', browserName);
-  //const isSafari = browserName && -1 < browserName.toLowerCase().indexOf('safari');
-  /*if (isSafari) {
+  const isSafari = browserName && -1 < browserName.toLowerCase().indexOf('safari');
+  if (isSafari) {
     // safari BFCache 확인 - 콜백
     getNavigationType(setPageShowCallback);
-    setUserTouchWatch(setUserTouchListener);
   } else {
     // 일반 브라우저 확인
-    isDOMReadyCallback(() => {
-      setWindowScroll(getNavigationType());
-    });
-  }*/
-  getNavigationType(setPageShowCallback);
+    isDOMReadyCallback(setDOMReadyCallback);
+  }
+  // 사용자 터치 감시
   setUserTouchWatch(setUserTouchListener);
 };
 const setHistoryRouter = (path=window.location.href?.split('?')?.shift()?.split('/')?.pop() || '') => {
