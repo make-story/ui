@@ -29,8 +29,8 @@ const HISTORY_BFCACHE_SCROLL = 'HISTORY_BFCACHE_SCROLL';
 const setHistoryBFCacheScroll = (key = HISTORY_BFCACHE_SCROLL) => { // 공통
   window.sessionStorage.setItem(key, JSON.stringify(getHistoryWindowScroll()));
 };
-const getHistoryBFCacheScroll = () => { // 공통
-  return JSON.parse(window.sessionStorage.getItem(HISTORY_BFCACHE_SCROLL) || '{}');
+const getHistoryBFCacheScroll = (key = HISTORY_BFCACHE_SCROLL) => { // 공통
+  return JSON.parse(window.sessionStorage.getItem(key) || '{}');
 };
 
 // 페이지정보 저장 (IOS 14 버전이상에서 뒤로가기/앞으로가기 후 자동 새로고침 이슈 대응하기 위함)
@@ -78,7 +78,7 @@ const setPageShowCallback = ((browserName) => { // 내부적 사용
     window.clearTimeout(timePageShowTimeout);
     if (navigationType === 'bfcache') {
       setHistoryBFCache(true); // BFCache 여부 상태값
-      setHistoryBFCacheScroll(); // BFCache 상태의 스크롤값
+      setHistoryBFCacheScroll(); // BFCache 상태의 스크롤값 (새로고침 전 이전 스크롤값 저장)
       window.location.reload();
     } else {
       timePageShowTimeout = window.setTimeout(
