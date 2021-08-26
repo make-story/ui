@@ -77,8 +77,8 @@ const setPageShowCallback = ((browserName) => { // 내부적 사용
     console.log('setPageShowCallback', navigationType);
     window.clearTimeout(timePageShowTimeout);
     if (navigationType === 'bfcache') {
-      setHistoryBFCache(true);
-      setHistoryBFCacheScroll();
+      setHistoryBFCache(true); // BFCache 여부 상태값
+      setHistoryBFCacheScroll(); // BFCache 상태의 스크롤값
       window.location.reload();
     } else {
       timePageShowTimeout = window.setTimeout(
@@ -111,11 +111,10 @@ const setUserTouchWatch = (listener) => { // 공통
 
 // 히스토리
 const setHistoryPageListener = ((browserName) => { // 내부적 사용
-  // 클로저 - node js 에서 메모리 누수에 주의!
   const isSafari = browserName && -1 < browserName.toLowerCase().indexOf('safari');
   let timeHistoryPageInterval = 0;
   return (event) => {
-    console.log('display > pagehide');
+    console.log('setHistoryPageListener > pagehide');
     // 사파리에서는 BFCache 에 기존 JavaScript 코드가 실행되지 않는다.
     if (isSafari) {
       // 일부 브라우저 자동 새로고침 이슈 때문에 기존 스크롤 값 저장
@@ -124,7 +123,7 @@ const setHistoryPageListener = ((browserName) => { // 내부적 사용
       // 페이지 떠나기 전 인터벌 실행이 캐쉬되도록 한다.
       window.clearInterval(timeHistoryPageInterval);
       timeHistoryPageInterval = window.setInterval(() => {
-        console.log('display history interval!!!!!');
+        console.log('safari history interval!!!!!');
         window.clearInterval(timeHistoryPageInterval);
         getNavigationType(setPageShowCallback);
       });
