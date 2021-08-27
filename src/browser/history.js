@@ -19,19 +19,6 @@ const callbackListPageShow = [];
 const callbackListDOMReady = [];
 
 /**
- * popstate 이벤트
- * popstate 이벤트는 브라우저의 백 버튼이나 (history.back() 호출) 등을 통해서만 발생 (history.pushState, history.replaceState 의해 추가/변경된 state 값 확인)
- * popstate 이벤트의 state 속성은 히스토리 엔트리 state 객체의 복사본을 갖게 됩니다.
- * state 객체의 직렬화 결과 크기는 최대 640k로 제한됩니다.
- * 브라우저는 popstate 이벤트를 페이지 로딩시에 다르게 처리합니다. Chrome(v34 이전버전) 와 Safari는 popstate 이벤트를 페이지 로딩시에 발생시킵니다. 하지만 Firefox 는 그렇지 않습니다.
- * https://developer.mozilla.org/ko/docs/Web/API/History_API
- */
-/*window.onpopstate = function(event) {
-	console.log("location: ", document.location);
-	console.log("state: ", event.state);
-};*/
-
-/**
  * 스크롤 위치 복원 기능 값 설정
  */
 export const setScrollRestoration = (value='manual') => {
@@ -66,6 +53,7 @@ if(typeof window !== 'undefined') {
 			isBFCache = false;
 		}
 		console.log('history > BFCache', isBFCache);
+		console.log('history > referrer', document?.referrer);
 		setCallbackListPageShow();
 	});
 }
@@ -125,7 +113,6 @@ export const isPageShowCallbackClear = () => {
  * page change
  */
 const HISTORY_SCROLL = 'HISTORY_SCROLL';
-const HISTORY_BFCACHE = 'HISTORY_BFCACHE';
 export const getScroll = (element) => {
 	return {
 	  left: window.pageXOffset || window.scrollX,
@@ -146,13 +133,14 @@ export const getHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.locati
 		return { left: 0, top: 0 };
 	}
 };
-export const setHistoryBFCache = (isBFCache) => {
+const HISTORY_BFCACHE = 'HISTORY_BFCACHE';
+export const setHistoryBFCache = (isBFCache=false) => {
 	// 현재 페이지 BFCache 된 페이지 였는지 이력 저장
-	window.sessionStorage.setItem(HISTORY_AMORE_BFCACHE, String(isBFCache));
+	window.sessionStorage.setItem(HISTORY_BFCACHE, String(isBFCache));
 };
 export const getHistoryBFCache = () => {
 	// BFCache 페이지 이력 가져오기
-	return window.sessionStorage.getItem(HISTORY_AMORE_BFCACHE);
+	return window.sessionStorage.getItem(HISTORY_BFCACHE);
 };
 if(typeof window !== 'undefined') {
 	// hashchange
@@ -177,6 +165,32 @@ if(typeof window !== 'undefined') {
 		isPageShowCallbackClear();
 	});
 }
+export const setHistoryPageEvent = (listener) => {
+	// 사용자가 페이지를 떠날 때
+	// unload (beforeunload 이벤트는 제외) 사용하지 않은 이유 : 브라우저는 페이지에 unload 이벤트 리스너가 추가되어 있는 경우, bfcache에 적합하지 않은 페이지로 판단하는 경우가 많다.
+	window.removeEventListener('pagehide', listener);
+	window.addEventListener('pagehide', listener), { once: true };
+};
+export const setUserTouchEvent = (listener) => {
+	// 사용자 터치가 발생하면, 히스토리 스크롤 이동 등 정지
+	window.document?.body?.removeEventListener('touchstart', listener);
+	window.document?.body?.removeEventListener('touchmove', listener);
+	window.document?.body?.addEventListener('touchstart', listener, { once: true });
+	window.document?.body?.addEventListener('touchmove', listener, { once: true });
+};
+
+/**
+ * popstate 이벤트
+ * popstate 이벤트는 브라우저의 백 버튼이나 (history.back() 호출) 등을 통해서만 발생 (history.pushState, history.replaceState 의해 추가/변경된 state 값 확인)
+ * popstate 이벤트의 state 속성은 히스토리 엔트리 state 객체의 복사본을 갖게 됩니다.
+ * state 객체의 직렬화 결과 크기는 최대 640k로 제한됩니다.
+ * 브라우저는 popstate 이벤트를 페이지 로딩시에 다르게 처리합니다. Chrome(v34 이전버전) 와 Safari는 popstate 이벤트를 페이지 로딩시에 발생시킵니다. 하지만 Firefox 는 그렇지 않습니다.
+ * https://developer.mozilla.org/ko/docs/Web/API/History_API
+ */
+/*window.onpopstate = function(event) {
+	console.log("location: ", document.location);
+	console.log("state: ", event.state);
+};*/
 
 /**
  * 페이지 진입 방식 확인
@@ -208,20 +222,22 @@ export const getNavigationType = (callback) => {
 			}
 		}
 
-		// BFCache 에 따른 새로고침
-		if (['navigate', 'reload'].includes(type) && getHistoryBFCache() === 'true') {
-			type = 'reload_bfcache';
+		// BFCache, referrer 확인
+		if (['navigate', 'reload'].includes(type)) {
+			if (getHistoryBFCache() === 'true') {
+				type = 'reload_bfcache';
+			} else if (document?.referrer && document?.referrer?.split('?')?.shift()?.split('/')?.pop() === 'login') {
+				type = 'referrer_login';
+			}
 		}
 
 		return type;
 	};
 
-	// callback 에 따른 분기
+	// callback 에 따른 분기 (bfcache 여부)
 	if (typeof callback === 'function') {
-		isPageShowCallback((isBFCache) => {
-			callback(isBFCache ? 'bfcache' : getType());
-		});
-	  }
+		isPageShowCallback((isBFCache) => callback(isBFCache ? 'bfcache' : getType()));
+	}
 
 	return getType();
 };

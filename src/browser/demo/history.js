@@ -102,7 +102,7 @@ const setUserTouchListener = (event) => { // 내부적 사용
   isPageShowCallbackCancel(setPageShowCallback);
   isDOMReadyCallbackCancel(setDOMReadyCallback);
 };
-const setUserTouchWatch = (listener) => { // 공통
+const setUserTouchEvent = (listener) => { // 공통
   window.document?.body?.removeEventListener('touchstart', listener);
   window.document?.body?.removeEventListener('touchmove', listener);
   window.document?.body?.addEventListener('touchstart', listener, { once: true });
@@ -132,7 +132,7 @@ const setHistoryPageListener = ((browserName) => { // 내부적 사용
     setHistoryWindowScroll();
   };
 })(getBrowserName());
-const setHistoryPage = (listener) => { // 내부적 사용
+const setHistoryPageEvent = (listener) => { // 내부적 사용
   // 사용자가 페이지를 떠날 때
   // unload (beforeunload 이벤트는 제외) 사용하지 않은 이유 : 브라우저는 페이지에 unload 이벤트 리스너가 추가되어 있는 경우, bfcache에 적합하지 않은 페이지로 판단하는 경우가 많다.
   window.removeEventListener('pagehide', listener);
@@ -151,11 +151,11 @@ const setHistoryCheck = (browserName) => { // 내부적 사용
   getNavigationType(setPageShowCallback);
   
   // 사용자 터치 감시
-  setUserTouchWatch(setUserTouchListener);
+  setUserTouchEvent(setUserTouchListener);
 };
 const setHistoryRouter = (path=window.location.href?.split('?')?.shift()?.split('/')?.pop() || '') => {
     setHistoryCheck(getBrowserName());
-    setHistoryPage(setHistoryPageListener);
+    setHistoryPageEvent(setHistoryPageListener);
 };
 
 //
