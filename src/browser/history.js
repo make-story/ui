@@ -157,6 +157,26 @@ if(typeof window !== 'undefined') {
 	});*/
 	// pagehide
 	// unload (beforeunload 이벤트는 제외) 사용하지 않은 이유 : 브라우저는 페이지에 unload 이벤트 리스너가 추가되어 있는 경우, bfcache에 적합하지 않은 페이지로 판단하는 경우가 많다.
+	/*window.addEventListener('pagehide', (() => {
+		let timeHistoryPageInterval = 0;
+		return (event) => {
+			console.log('history > pagehide', event);
+			// BFCache reload 여부 확인용
+			setHistoryBFCache(isBFCache);
+			// 콜백 초기화
+			isPageShowCallbackClear();
+			// 사파리에서는 BFCache 에 기존 JavaScript 코드가 실행되지 않는다.
+			if (isSafari) {
+				// 페이지 떠나기 전 인터벌 실행이 캐쉬되도록 한다.
+				window.clearInterval(timeHistoryPageInterval);
+				timeHistoryPageInterval = window.setInterval(() => {
+					console.log('safari history interval!!!!!');
+					window.clearInterval(timeHistoryPageInterval);
+					// 
+				});
+			}
+		};
+	})());*/
 	window.addEventListener('pagehide', (event) => {
 		console.log('history > pagehide', event);
 		// BFCache reload 여부 확인용
