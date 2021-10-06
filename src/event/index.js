@@ -22,50 +22,76 @@
 	window.CustomEvent = CustomEvent;
 })();
 
-/**
- * 신규 이벤트 생성
- */
+// 이벤트 타입
+export const EVENT_TYPE = {
+    EVENT_TEST: 'EVENT_TEST', // test
+};
 // https://developer.mozilla.org/ko/docs/Web/Guide/Events/Creating_and_triggering_events
 // https://ko.javascript.info/dispatch-events
 // https://www.w3.org/TR/uievents/
 // https://jeongah-story.tistory.com/157
-export const createCustomEvent = (type='', options={}) => { // 커스텀(사용자데이터 추가) 이벤트
-	/*
-	-
-	커스텀 이벤트 버블링 예시
-	const form = document.querySelector('form');
-	const textarea = document.querySelector('textarea');
+/*
+-
+커스텀 이벤트 버블링 예시
+const form = document.querySelector('form');
+const textarea = document.querySelector('textarea');
 
-	// 새로운 이벤트를 생성하고, 버블링을 허용하며, "details" 프로퍼티로 전달할 데이터를 제공합니다
-	const eventAwesome = new CustomEvent('awesome', {
-		bubbles: true,
-		detail: { text: () => textarea.value }
-	});
+// 새로운 이벤트를 생성하고, 버블링을 허용하며, "details" 프로퍼티로 전달할 데이터를 제공합니다
+const eventAwesome = new CustomEvent('awesome', {
+	bubbles: true,
+	detail: { text: () => textarea.value }
+});
 
-	// form 엘리먼트는 커스텀 "awesome" 이벤트를 리슨한 후 전달된 text() 메소드의 결과를 콘솔에 출력합니다
-	form.addEventListener('awesome', e => console.log(e.detail.text()));
+// form 엘리먼트는 커스텀 "awesome" 이벤트를 리슨한 후 전달된 text() 메소드의 결과를 콘솔에 출력합니다
+form.addEventListener('awesome', e => console.log(e.detail.text()));
 
-	// 사용자가 입력한대로, form 내의 textarea 는 이벤트를 디스패치/트리거하여 시작점으로 사용합니다
-	textarea.addEventListener('input', e => e.target.dispatchEvent(eventAwesome));
+// 사용자가 입력한대로, form 내의 textarea 는 이벤트를 디스패치/트리거하여 시작점으로 사용합니다
+textarea.addEventListener('input', e => e.target.dispatchEvent(eventAwesome));
 
 
-	-
-	이벤트를 동적으로 생성하고 디스패칭하기
-	const form = document.querySelector('form');
-	const textarea = document.querySelector('textarea');
+-
+이벤트를 동적으로 생성하고 디스패칭하기
+const form = document.querySelector('form');
+const textarea = document.querySelector('textarea');
 
-	form.addEventListener('awesome', e => console.log(e.detail.text()));
+form.addEventListener('awesome', e => console.log(e.detail.text()));
 
-	textarea.addEventListener('input', function() {
-		// 이벤트 즉시 생성 및 디스패치/트리거
-		// 노트: 선택적으로, 우리는 "함수 표현"("화살표 함수 표현" 대신)을 사용하므로 "this"는 엘리먼트를 나타냅니다
-		this.dispatchEvent(new CustomEvent('awesome', { bubbles: true, detail: { text: () => textarea.value } }))
-	});
-	*/
-	const event = new CustomEvent(type, options);
+textarea.addEventListener('input', function() {
+	// 이벤트 즉시 생성 및 디스패치/트리거
+	// 노트: 선택적으로, 우리는 "함수 표현"("화살표 함수 표현" 대신)을 사용하므로 "this"는 엘리먼트를 나타냅니다
+	this.dispatchEvent(new CustomEvent('awesome', { bubbles: true, detail: { text: () => textarea.value } }))
+});
+*/
+
+// 이벤트 추가
+export const addCustomEventListener = (type, listener, options=false) => {
+    if(Object.values(EVENT_TYPE).includes(type)) {
+        document.addEventListener(type, listener, options);
+    }else {
+        throw 'event type error';
+    }
 };
 
-export const createEvent = (type='', options={}) => { // 기본적 사용자 이벤트
+// 이벤트 제거
+export const removeCustomEventListener = (type, listener, options=false) => {
+    if(Object.values(EVENT_TYPE).includes(type)) {
+        document.removeEventListener(type, listener, options);
+    }else {
+        throw 'event type error';
+    }
+};
+
+// 이벤트 디스패치
+export const dispatchCustomEvent = (type, ...detail) => {
+    if(Object.values(EVENT_TYPE).includes(type)) {
+        document.dispatchEvent(new CustomEvent(type, { detail }));
+    }else {
+        throw 'event type error';
+    }
+};
+
+// 기본적 사용자 이벤트
+export const createEvent = (type='', options={}) => { 
 	let { detail={}, } = options;
 	/*
 	-
@@ -99,6 +125,7 @@ export const createEvent = (type='', options={}) => { // 기본적 사용자 이
 	}
 }
 
+// mouse 등 UI 이벤트
 export const createUIEvent = () => {
 	/*
 	UIEvent, FocusEvent, MouseEvent, WheelEvent, KeyboardEvent, ...

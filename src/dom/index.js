@@ -483,6 +483,7 @@ export class DOM {
 	// parent node search
 	// [주의!] element 를 반환하는 것이 아닌, DOM 인스턴스 내부 element 리스트롤 변경한다.
 	closest(selector="", context=document.documentElement/*documentElement: <html />*/) {
+		// x.closest("#div-02"); // IE미지원
 		// document.querySelector(x); // IE8이상 사용가능 ('.testClass + p' selector 형태는 IE9이상 사용가능)
 		// x.parentNode; // 표준
 		// document.querySelector('p').closest('div'); // IE 미지원
@@ -555,6 +556,7 @@ export class DOM {
 		// x.hasChildNodes(); // 표준
 		// x.firstChild;
 		// x.lastChild;
+		// x.lastElementChild;
 		// x.childNodes[1]; // IE9이상 사용가능 (IE8이하 부분지원), TextNode 까지 검색
 		// x.children[1]; // IE9이상 사용가능 (IE8이하 부분지원)
 		// getElementsByTagName('*'); // 폴리필
@@ -1477,6 +1479,7 @@ export class DOM {
 		// x.insertBefore(y,z); // 표준
 		// x.firstChild; // IE9이상 사용가능 (TextNode 포함)
 		// x.lastChild;
+		// x.lastElementChild;
 		// x.firstElementChild // TextNode 제외
 		/*
 		IE8+
