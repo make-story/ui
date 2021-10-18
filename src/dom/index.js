@@ -27,8 +27,11 @@ scrollLeft/scrollTop, scrollWidth/scrollHeight
 
 -
 렌더링된 크기
-x.getBoundingClientRect(); // top, bottom, left, right, [width, height (IE9 이상)] - 문서의 스크롤값 미포함 (정확한 계산을 위해 스크롤값 'window.pageYOffset' 또는 'window.scrollY' 을 더해줘야 한다.)
+x.getBoundingClientRect(); // top, bottom, left, right, [width, height (IE9 이상)]
+문서의 스크롤값 미포함 (정확한 계산을 위해 스크롤값 'window.pageYOffset' 또는 'window.scrollY' 을 더해줘야 한다. 일부 오래된 브라우저는 scrollY 대신 pageYOffset만 지원하는 경우가 있지만, 노후 환경을 신경쓰지 않아도 된다면 둘 중 아무거나 사용해도 괜찮습니다.)
 
+-
+getBoundingClientRect() 와 offsetWidth, offsetHeight 차이
 대부분의 경우엔 getBoundingClientRect()은 offsetWidth, offsetHeight와 거의 같은 값을 리턴한다.
 하지만, transform이 적용되어 있다면 조금 달라진다.
 
