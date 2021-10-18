@@ -52,6 +52,11 @@ offsetWidth 뿐 아니라, 위에서 언급한, clientWidth, scrollWidth 모두 
 screenX/screenY : screen in device pixels. (모니터 화면 기준)
 pageX/pageY : <html> element in CSS pixels. (html 기준 스크롤값 포함 위치)
 clientX/clientY : viewport in CSS pixels. (브라우저 기준 스크롤값 제외 위치)
+
+-
+미디어쿼리
+window.matchMedia
+window.matchMedia('(min-width: 760px)').matches // true or false
 */
 import regexp from '../util/regexp';
 import { isNumeric, numberUnit, numberReturn, } from '../util/number';
