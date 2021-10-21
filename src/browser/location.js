@@ -58,6 +58,9 @@ export default {
 			//console.log('hash', hash);
 			if(hash) {
 				// '#' 제거
+				/*if(hash.indexOf('#') === 0) {
+					hash = hash.substring(1);
+				}*/
 				hash = hash.replace('#', '');
 				
 				// hash 에서 json 형태 추출 
