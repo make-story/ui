@@ -62,7 +62,11 @@ export const urlHash = {
 		return new URLSearchParams(json).toString();
 		*/
 		return Object.keys(json).map(function (key) {
-			return encodeURIComponent(key) + '=' + encodeURIComponent(json[key]);
+			if (json[key]) {
+				return encodeURIComponent(key) + '=' + encodeURIComponent(json[key]);
+			} else {
+				return encodeURIComponent(key);
+			}
 		}).join('&');
 	},
   
