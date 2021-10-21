@@ -50,3 +50,137 @@ url.searchParams.append('x', 42);
 // If your expected result is "http://foo.bar/?x=42&y=2"
 url.searchParams.set('x', 42);
 */
+
+
+// hash 제어
+export const urlHash = {
+	// { abc: 'foo', def: '[asf]', xyz: '5', foo: 'b=ar' }
+	// abc=foo&def=%5Basf%5D&xyz=5&foo=b%3Dar
+	convertJsonToQueryString(json = {}) {
+		/*
+		// URLSearchParams 활용
+		return new URLSearchParams(json).toString();
+		*/
+		return Object.keys(json).map(function (key) {
+			return encodeURIComponent(key) + '=' + encodeURIComponent(json[key]);
+		}).join('&');
+	},
+  
+	// abc=foo&def=%5Basf%5D&xyz=5&foo=b%3Dar
+	// {abc: 'foo', def: '[asf]', xyz: '5', foo: 'b=ar'}
+	convertQueryStringToJson(query = '') {
+		/*
+		// URLSearchParams 활용
+		const params = new URLSearchParams(query); 
+		return Object.fromEntries(params);
+		*/
+		//return JSON.parse('{"' + decodeURI(query).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g, '":"') + '"}');
+		return query.split('&').reduce((accumulator, item, index, list) => {
+			const split = item.split('=');
+			const key = split.shift();
+			const value = split.shift() || '';
+			if (key) {
+				accumulator[key] = decodeURIComponent(value);
+			}
+			return accumulator;
+		}, {});
+	},
+  
+	// 해쉬값 불러오기
+	get(key = '', { hash = window.location.hash } = {}) {
+		let criteria = {};
+		let result;
+  
+		// hash
+		if (!hash) {
+			hash = window.location.href.replace(/^[^#]*#?(.*)$/, '$1');
+		}
+  
+		// '#' 제거
+		/*if (hash.indexOf('#') === 0) {
+			hash = hash.substring(1);
+		}*/
+		hash = hash.replace('#', '');
+  
+		try {
+			criteria = this.convertQueryStringToJson(hash);
+		} catch (error) {
+			console.log(error);
+		}
+  
+		if (criteria && typeof criteria === 'object') {
+			if (!key) {
+				result = criteria;
+			} else if (key in criteria) {
+				result = criteria[key];
+			}
+		}
+  
+		return result;
+	},
+  
+	// 해쉬값 추가
+	// 웹킷엔진은 location.hash -> location.href 값
+	set(key = '', value = '') {
+		const criteria = this.get() || {};
+		let query;
+  
+		// 유효성 검사
+		if (!key) {
+			return;
+		}
+  
+		// set
+		try {
+			criteria[key] = value;
+			query = this.convertJsonToQueryString(criteria);
+		} catch (error) {
+			console.log(error);
+		}
+  
+		if (query) {
+			window.location.hash = '#' + query;
+			//window.location.href = '#' + query;
+		}
+  
+		return query;
+	},
+  
+	// 해쉬 제거
+	del(key = '') {
+		const criteria = this.get() || {};
+		let query;
+  
+		// 유효성 검사
+		if (!key || !criteria || typeof criteria !== 'object') {
+			return;
+		}
+  
+		// delete
+		try {
+			if (key in criteria) {
+				delete criteria[key]; // key 에 따른 데이터 제거
+			}
+			query = this.convertJsonToQueryString(criteria);
+		} catch (error) {
+			console.log(error);
+		}
+		window.location.hash = '#' + query;
+		//window.location.href = '#' + query;
+  
+		return query;
+	},
+  
+	// 해쉬값 존재여부
+	has(key = '') {
+		const criteria = this.get() || {};
+		let is = false;
+  
+		// is
+		if (key && criteria && typeof criteria === 'object' && key in criteria) {
+			is = true;
+		}
+  
+		return is;
+	},
+};
