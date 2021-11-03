@@ -75,16 +75,14 @@ const setScriptAppend = function(element, options) {
 const setScriptLoad = (src='') => {
     // complete 또는 uninitialized 배열에 이미 존재하는지 확인
     if(uninitialized.includes(src)) {
-        return new Promise((resolve, reject) => reject());
+        return Promise.reject();
     }else if(complete.includes(src)) {
-        return new Promise((resolve, reject) => resolve());
+        return Promise.resolve();
     }
     
     // 신규 element 생성
     const promise = new Promise((resolve, reject) => queue.push({ src, resolve, reject }));
     const element = setScriptAppend(setScriptCreate({ src }));
-    //element.src = src;
-    //setScriptAppend(element);
     const handlers = function(event) {
         const list = queue.filter(item => item.src === src);
         console.log(element.readyState);
