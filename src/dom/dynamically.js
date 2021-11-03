@@ -105,3 +105,53 @@ const setScriptLoad = (src='') => {
 };
 
 setScriptAppend(setScriptLoad('test.js'));
+
+
+
+/**
+ * 
+ */
+ function requireXhr(file, callback) {
+	// object initialization
+	const xhr = new XMLHttpRequest();
+  
+	// subscribe to request events
+	xhr.onreadystatechange = function () {
+		// readyState:
+		// 0 UNSENT Client has been created. open() not called yet.
+		// 1 OPENED open() has been called.
+		// 2 HEADERS_RECEIVED send() has been called, and headers and status are available.
+		// 3 LOADING Downloading; responseText holds partial data.
+		// 4 DONE The operation is complete.
+  
+		// when not done, return
+		if (xhr.readyState !== 4) {
+			return;
+		}
+  
+		// done, check status code
+		if (xhr.status !== 200) {
+		  // 200 = OK
+			return;
+		}
+  
+		// now the file is loaded,
+		// go and execute the script
+		eval(xhr.responseText);
+  
+		// notify caller
+		if (callback) {
+			callback();
+		}
+	};
+  
+	// open connection to file
+	xhr.open("GET", file, true);
+  
+	// send the request
+	xhr.send();
+}
+  
+requireXhr("remote.js", function () {
+	console.log("Mohammad");
+});
