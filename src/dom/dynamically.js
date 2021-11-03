@@ -109,7 +109,7 @@ setScriptAppend(setScriptLoad('test.js'));
 
 
 /**
- * 
+ * https://www.codeproject.com/Articles/5310336/Dynamically-Loading-a-JavaScript-File
  */
  function requireXhr(file, callback) {
 	// object initialization
