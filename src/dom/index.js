@@ -26,6 +26,23 @@ scrollLeft/scrollTop, scrollWidth/scrollHeight
 보이는 것과 상관 없이 실제 컨텐츠 영역 (전체 스크롤바를 사용하게 되어 숨겨진 영역까지 포함)
 
 -
+window(브라우저)
+window.innerWidth || document.documentElement.clientWidth;
+window.innerHeight || document.documentElement.clientHeight;
+
+document(body)
+Math.max(
+	document.body.scrollWidth, document.documentElement.scrollWidth,
+	document.body.offsetWidth, document.documentElement.offsetWidth,
+	document.documentElement.clientWidth
+);
+Math.max(
+	document.body.scrollHeight, document.documentElement.scrollHeight,
+	document.body.offsetHeight, document.documentElement.offsetHeight,
+	document.documentElement.clientHeight
+);
+
+-
 렌더링된 크기
 x.getBoundingClientRect(); // top, bottom, left, right, [width, height (IE9 이상)]
 문서의 스크롤값 미포함 (정확한 계산을 위해 스크롤값 'window.pageYOffset' 또는 'window.scrollY' 을 더해줘야 한다. 일부 오래된 브라우저는 scrollY 대신 pageYOffset만 지원하는 경우가 있지만, 노후 환경을 신경쓰지 않아도 된다면 둘 중 아무거나 사용해도 괜찮습니다.)
