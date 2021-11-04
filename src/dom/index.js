@@ -29,6 +29,14 @@ scrollLeft/scrollTop, scrollWidth/scrollHeight
 렌더링된 크기
 x.getBoundingClientRect(); // top, bottom, left, right, [width, height (IE9 이상)]
 문서의 스크롤값 미포함 (정확한 계산을 위해 스크롤값 'window.pageYOffset' 또는 'window.scrollY' 을 더해줘야 한다. 일부 오래된 브라우저는 scrollY 대신 pageYOffset만 지원하는 경우가 있지만, 노후 환경을 신경쓰지 않아도 된다면 둘 중 아무거나 사용해도 괜찮습니다.)
+document.documentElement; // <html> element // 표준
+
+-
+브라우저 스크롤 값
+https://developer.mozilla.org/ko/docs/Web/API/Window/scrollY
+브라우저간 호환성을 위해서는 window.scrollY 대신 window.pageYOffset을 사용하세요
+(window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
+(window.pageXOffset || document.documentElement.scrollLeft) - (document.documentElement.clientLeft || 0);
 
 -
 getBoundingClientRect() 와 offsetWidth, offsetHeight 차이
@@ -57,6 +65,10 @@ clientX/clientY : viewport in CSS pixels. (브라우저 기준 스크롤값 제�
 미디어쿼리
 window.matchMedia
 window.matchMedia('(min-width: 760px)').matches // true or false
+
+-
+elementFromPoint(x, y)
+document.elementFromPoint(x, y)을 호출하면 창 기준 좌표 (x, y)에서 가장 가까운 중첩 요소를 반환
 */
 import regexp from '../util/regexp';
 import { isNumeric, numberUnit, numberReturn, } from '../util/number';
