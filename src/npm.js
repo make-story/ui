@@ -1,5 +1,5 @@
 /**
- * npm 배포
+ * npm 배포 명령 실행
  */
 const execSync = require('child_process').execSync;
 

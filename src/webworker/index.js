@@ -3,8 +3,8 @@
  */
 import { getKey } from '../util/index';
 
-const order = []; // 순서가 보장되어야 한다.
-const queue = {}; // 빠르게 값을 찾아야 한다. (order 첫번째 배열의 값을 찾아야 한다.)
+const order = []; // 배열 : 순서가 보장되어야 한다.
+const queue = {}; // 객체 : 빠르게 값을 찾아야 한다. (order 첫번째 배열의 값을 찾아야 한다.)
 const setResolve = ({ key, action, isSync, payload, resolve, reject, }/*order 배열 아이템*/, result/*worker 에서 반환되는 값*/) => { 
     resolve({ action, isSync, payload, result });
 };
