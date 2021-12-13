@@ -2,6 +2,7 @@ node_modules
 package-lock.json
 .npmrc
 
+참고
 test*
 demo.json
 index.css
