@@ -75,6 +75,13 @@ export const stripHTML = (source) => {
 	return source.replace(/<[^>]*>?/gm, '');
 }
 
+// 특정 태그 삭제
+export const stripTag = (tag, source) => {
+	//const pattern = /<style[^>]*>((\n|\r|.)*?)<\/style>/gim;
+	const pattern = new RegExp('<' + tag + '[^>]*>((\n|\r|.)*?)</' + tag + '>', 'gim');
+    return (source || '').replace(pattern, '');
+}
+
 // 개행문자 줄바꿈 <br /> 변경
 // text = text.replace(/(?:\r\n|\r|\n)/g, '<br />');
 export const lineAlignment = (text='', max=2) => {
