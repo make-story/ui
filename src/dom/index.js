@@ -352,17 +352,7 @@ export class DOM {
 
 	// document ready
 	// new DOM().ready(() => { ... });
-	ready = (function() {
-		/*
-		IE9+
-		function ready(callback) {
-			if(document.readyState !== 'loading') {
-				callback();
-			}else {
-				document.addEventListener('DOMContentLoaded', callback);
-			}
-		}
-		*/
+	/*ready = (function() {	
 		// readyState: IE8에서는 Only supports 'complete'
 		if(document.readyState === "interactive" || document.readyState === "complete") {
 			// IE8 등에서 window.setTimeout 파라미터로 바로 함수값을 넣으면 오류가 난다.
@@ -378,7 +368,30 @@ export class DOM {
 				document.addEventListener("DOMContentLoaded", callback, false);
 			};
 		}
-	})()
+	})()*/
+	ready(callback) {
+		/*
+		IE9+
+		function ready(callback) {
+			if(document.readyState !== 'loading') {
+				callback();
+			}else {
+				document.addEventListener('DOMContentLoaded', callback);
+			}
+		}
+		*/
+		// readyState: IE8 에서는 Only supports 'complete'
+		if(document.readyState === "interactive" || document.readyState === "complete") {
+			// IE8 등에서 window.setTimeout 파라미터로 바로 함수값을 넣으면 오류가 난다.
+			// 그러므로 function() {} 무명함수로 해당 함수를 실행시킨다.
+			window.setTimeout(function() {
+				callback();
+			});
+		}else {
+			// IE9 이상
+			document.addEventListener("DOMContentLoaded", callback, false);
+		}
+	}
 
 	// activeElement
 	focusElement() {
@@ -2052,26 +2065,7 @@ export class DOM {
 	}
 
 	// event trigger
-	trigger = (function() {
-		/*
-		Trigger Custom
-		IE9+
-		let event;
-		if(window.CustomEvent && typeof window.CustomEvent === 'function') {
-			event = new CustomEvent('my-event', {detail: {some: 'data'}});
-		}else {
-			event = document.createEvent('CustomEvent');
-			event.initCustomEvent('my-event', true, true, {some: 'data'});
-		}
-		element.dispatchEvent(event); // $(element).trigger('my-event', {some: 'data'});
-
-		Trigger Native
-		IE9+
-		// For a full list of event types: https://developer.mozilla.org/en-US/docs/Web/API/document.createEvent
-		let event = document.createEvent('HTMLEvents');
-		event.initEvent('change', true, false);
-		element.dispatchEvent(event); // $(element).trigger('change');
-		*/
+	/*trigger = (function() {
 		if(document.createEvent) {
 			return function(events) {
 				let obj = document.createEvent('MouseEvents');
@@ -2089,22 +2083,46 @@ export class DOM {
 				});
 			};
 		}
-	})()
+	})()*/
+	trigger(events) {
+		/*
+		-
+		Trigger Custom
+		IE9+
+		let event;
+		if(window.CustomEvent && typeof window.CustomEvent === 'function') {
+			event = new CustomEvent('my-event', {detail: {some: 'data'}});
+		}else {
+			event = document.createEvent('CustomEvent');
+			event.initCustomEvent('my-event', true, true, {some: 'data'});
+		}
+		element.dispatchEvent(event); // $(element).trigger('my-event', {some: 'data'});
+
+		-
+		Trigger Native
+		IE9+
+		// For a full list of event types: https://developer.mozilla.org/en-US/docs/Web/API/document.createEvent
+		let event = document.createEvent('HTMLEvents');
+		event.initEvent('change', true, false);
+		element.dispatchEvent(event); // $(element).trigger('change');
+		*/
+		if(document.createEvent) {
+			let obj = document.createEvent('MouseEvents');
+			obj.initEvent(events, true, false);
+			this.each(function() {
+				this.dispatchEvent(obj);
+			});
+		}else if(document.createEventObject) { 
+			// IE
+			let obj = document.createEventObject();
+			this.each(function() {
+				this.fireEvent('on' + events, obj);
+			});
+		}
+	}
 
 	// data 
-	data = (function() {
-		// x.dataset; // IE11이상 사용가능
-		// IE 10 이하를 지원하기 위해서는 getAttribute()를 통해 데이터 속성을 접근 (JS 데이터 저장소에 저장하는 것과 비교해서 데이터 속성 읽기의 성능은 저조, https://jsperf.com/data-dataset)
-
-		/*
-		! 주의
-		data-* 속성값에서 두번째 -(hyphen) 다음의 첫글자는 무조건 대문자로 들어가야 한다.
-		https://developer.mozilla.org/ko/docs/Learn/HTML/Howto/%EB%8D%B0%EC%9D%B4%ED%84%B0_%EC%86%8D%EC%84%B1_%EC%82%AC%EC%9A%A9%ED%95%98%EA%B8%B0
-		
-		[data-index-number="12314"] 속성을 JavaScript 에서 접근할 경우 element.dataset.indexNumber; // "12314"
-		[data-columns="3"] -> element.dataset.columns // "3"
-		[data-parent="cars"] -> element.dataset.parent // "cars"
-		*/
+	/*data = (function() {
 		const setTheFirstLetter = function(value) {
 			if(typeof value === 'string') {
 				return value.replace(/-([a-z])/g, function(value) {
@@ -2143,7 +2161,56 @@ export class DOM {
 
 			return this;
 		};
-	})()
+	})()*/
+	data(parameter) {
+		// x.dataset; // IE11이상 사용가능
+		// x.setAttribute(y, z); // IE8이상 사용가능
+		// IE 10 이하를 지원하기 위해서는 getAttribute()를 통해 데이터 속성을 접근 (JS 데이터 저장소에 저장하는 것과 비교해서 데이터 속성 읽기의 성능은 저조, https://jsperf.com/data-dataset)
+		/*
+		! 주의
+		data-* 속성값에서 두번째 -(hyphen) 다음의 첫글자는 무조건 대문자로 들어가야 한다.
+		https://developer.mozilla.org/ko/docs/Learn/HTML/Howto/%EB%8D%B0%EC%9D%B4%ED%84%B0_%EC%86%8D%EC%84%B1_%EC%82%AC%EC%9A%A9%ED%95%98%EA%B8%B0
+		
+		[data-index-number="12314"] 속성을 JavaScript 에서 접근할 경우 element.dataset.indexNumber; // "12314"
+		[data-columns="3"] -> element.dataset.columns // "3"
+		[data-parent="cars"] -> element.dataset.parent // "cars"
+		*/
+		const setTheFirstLetter = function(value) {
+			if(typeof value === 'string') {
+				return value.replace(/-([a-z])/g, function(value) {
+					return value[1].toUpperCase();
+				});
+			}
+		};
+
+		// svg 대응 가능
+		let key;
+		let i, max = (this.elements && this.elements.length) || 0;
+
+		if(!max) {
+			return this;
+			//return false;
+		}else if(typeof parameter === 'string') { // get
+			if('dataset' in this.elements[0]) {
+				return this.elements[0].dataset[setTheFirstLetter(parameter)];
+			}else {
+				return this.attr('data-' + parameter);
+			}
+		}else if(typeof parameter === 'object') { // set
+			for(i=0; i<max; i++) {
+				for(key in parameter) {
+					// 초기화 시점분기 패턴을 사용하지 않고, if문으로 확인하는 이유는 $(selector) 리스트에 svg 등이 들어있을 가능성 때문이다.
+					if('dataset' in this.elements[i]) {
+						this.elements[i].dataset[setTheFirstLetter(key)] = parameter[key];
+					}else if('setAttribute' in this.elements[i]) {
+						this.elements[i].setAttribute('data-' + key, parameter[key]);
+					}
+				}
+			}
+		}
+
+		return this;
+	}
 
 	// scroll 정보 / 설정
 	scroll(parameter={}) {
