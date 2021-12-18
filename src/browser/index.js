@@ -29,12 +29,14 @@ https://bokand.github.io/viewport/index.html
 https://www.quirksmode.org/mobile/viewports2.html
 */
 // 모듈 조합
-export * from './history';
 export * from './location';
-export * from './storage';
-export * from './history';
 export { default as browserLocation } from './location';
+export * from './storage';
 export { default as browserStorage } from './storage';
+export * from './history';
+export { default as browserHistory } from './history';
+//export * from './device';
+//export { default as browserDevice } from './history';
 
 // window, document, browser 사이즈
 export const windowDocumentSize = () => {
