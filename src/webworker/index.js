@@ -3,6 +3,11 @@
  */
 import { getKey } from '../util/index';
 
+// order 에 요청 객체 정보를 넣음
+// worker 응답이 오면 order[0] 고유값과 응답 고유값 비교
+// [0] 값과 응답값이 다르면 대기열에 추가
+// [0] 값과 응답값이 같으면 응답 데이터 관련 기능 실행
+// 요청과 응답이 발생할 때마다 대기열과 order 비교
 const order = []; // 배열 : 순서가 보장되어야 한다.
 const queue = {}; // 객체 : 빠르게 값을 찾아야 한다. (order 첫번째 배열의 값을 찾아야 한다.)
 const setResolve = ({ key, action, isSync, payload, resolve, reject, }/*order 배열 아이템*/, result/*worker 에서 반환되는 값*/) => { 
