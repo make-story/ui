@@ -1,19 +1,28 @@
 /**
  * 히스토리 관련
- * IE10 이상이면 history.replaceState 저장, 이하이면 IE8 이상 지원하는 sessionStorage 저장 
- * IOS 등에서 터치(플리킹)로 뒤로가기를 했을 경우 BFCache 활용됨 
+ * IE10 이상이면 history.replaceState 저장, 이하이면 IE8 이상 지원하는 sessionStorage 저장
+ * IOS 등에서 터치(플리킹)로 뒤로가기를 했을 경우 BFCache 활용됨
  * (IOS nitro엔진 WKWebview는 히스토리백시 BFCache를 사용)
- * 
+ *
  * Page Lifecycle
  * https://developers.google.com/web/updates/2018/07/page-lifecycle-api
- * 
+ *
  * BF Cache
  * https://web.dev/bfcache/
  * 비활성화 Cache-Control: no-store
- * onpageshow 이벤트를 통해 BFCache 여부를 알 수 있다하더라도, 
- * 페이지이동 -> 뒤로가기로 BFCache 페이지 진입 -> 다시 페이지 이동 -> 뒤로가기로 BFCache 이력이 있던 페이지 진입 
+ * onpageshow 이벤트를 통해 BFCache 여부를 알 수 있다하더라도,
+ * 페이지이동 -> 뒤로가기로 BFCache 페이지 진입 -> 다시 페이지 이동 -> 뒤로가기로 BFCache 이력이 있던 페이지 진입
  * onpageshow 이벤트도 실행되지 않는다. (즉, BFCache 를 onpageshow 이벤트로 두번이상 부터는 알 수 없다.)
  */
+/*
+// 일반적 방식
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    //console.log('BFCache');
+    window.location.reload();  
+  }
+};
+*/
 let isBFCache = null;
 const callbackListPageShow = [];
 const callbackListDOMReady = [];
@@ -57,6 +66,7 @@ if(typeof window !== 'undefined') {
 		setCallbackListPageShow();
 	});
 }
+// pageshow 이벤트 콜백 추가
 export const isPageShowCallback = (callback) => {
 	if(typeof callback !== 'function') {
 		return;
@@ -68,61 +78,81 @@ export const isPageShowCallback = (callback) => {
 		!callbackListPageShow.includes(callback) && callbackListPageShow.push(callback);
 	}
 };
+// pageshow 이벤트 콜백 제거
 export const isPageShowCallbackCancel = (callback) => {
 	callbackListPageShow.splice(callbackListPageShow.indexOf(callback), 1);
 };
+// pageshow 이벤트 콜백 초기화
 export const isPageShowCallbackClear = () => {
 	callbackListPageShow.splice(0, callbackListPageShow.length);
+};
+
+const HISTORY_BFCACHE = 'HISTORY_BFCACHE';
+export const setHistoryBFCache = (isBFCache=false) => {
+	// 현재 페이지 BFCache 된 페이지 였는지 이력 저장
+	window.sessionStorage.setItem(HISTORY_BFCACHE, String(isBFCache));
+};
+export const getHistoryBFCache = () => {
+	// BFCache 페이지 이력 가져오기
+	return window.sessionStorage.getItem(HISTORY_BFCACHE);
 };
 
 /**
  * DOM Ready
  */
- const setCallbackListDOMReady = () => {
+// DOMContentLoaded 이벤트 콜백 리스트 실행
+const setCallbackListDOMReady = () => {
 	callbackListDOMReady.forEach((callback) => {
-	  callback();
+		callback();
 	});
-  };
-  if (typeof window !== 'undefined') {
+};
+if (typeof window !== 'undefined') {
 	document.addEventListener('DOMContentLoaded', (event) => {
-	  setCallbackListDOMReady();
+		setCallbackListDOMReady();
 	});
-  }
-  export const isDOMReadyCallback = (callback) => {
+}
+// DOM Ready 이벤트 콜백 추가
+export const isDOMReadyCallback = (callback) => {
 	if (typeof window === 'undefined' || typeof callback !== 'function') {
-	  return;
+		return;
 	}
 	if (document.readyState === 'interactive' || document.readyState === 'complete') {
-	  // IE8 등에서 window.setTimeout 파라미터로 바로 함수값을 넣으면 오류가 난다.
-	  // 그러므로 function() {} 무명함수로 해당 함수를 실행시킨다.
-	  window.setTimeout(() => {
+		// IE8 등에서 window.setTimeout 파라미터로 바로 함수값을 넣으면 오류가 난다.
+		// 그러므로 function() {} 무명함수로 해당 함수를 실행시킨다.
+		window.setTimeout(() => {
 		callback();
-	  });
+		});
 	} else {
-	  !callbackListDOMReady.includes(callback) && callbackListDOMReady.push(callback);
+		!callbackListDOMReady.includes(callback) && callbackListDOMReady.push(callback);
 	}
-  };
-  export const isDOMReadyCallbackCancel = (callback) => {
+};
+// DOM Ready 이벤트 콜백 제거
+export const isDOMReadyCallbackCancel = (callback) => {
 	callbackListDOMReady.splice(callbackListDOMReady.indexOf(callback), 1);
-  };
-  export const isDOMReadyCallbackClear = () => {
+};
+// DOM Ready 이벤트 콜백 초기화
+export const isDOMReadyCallbackClear = () => {
 	callbackListDOMReady.splice(0, callbackListDOMReady.length);
-  };
+};
 
 /**
  * page change
  */
 const HISTORY_SCROLL = 'HISTORY_SCROLL';
+// window 스크롤 값 반환
+// TODO: 오버플로우 스크롤 설정된 element 의 경우 대응필요
 export const getScroll = (element) => {
 	return {
-	  left: window.pageXOffset || window.scrollX,
-	  top: window.pageYOffset || window.scrollY,
+		left: window.pageXOffset || window.scrollX,
+		top: window.pageYOffset || window.scrollY,
 	};
-  };
+};
+// window 스크롤 값 브라우저 스토리지에 저장
 export const setHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.location.href.split('?')?.shift() || ''/*페이지 단위 구분*/, { left, top }=getScroll()) => {
 	//console.log(`scroll left: ${left}, top: ${top}`);
 	window.sessionStorage.setItem(`${prefix}_${page}`, JSON.stringify({ left, top }));
 };
+// window 스크롤 값 브라우저 스토리지에서 불러오기
 export const getHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.location.href.split('?')?.shift() || ''/*페이지 단위 구분*/) => {
 	//window.pageYOffset || window.scrollY || document.documentElement.scrollTop
 	let scroll = window.sessionStorage.getItem(`${prefix}_${page}`);
@@ -133,15 +163,10 @@ export const getHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.locati
 		return { left: 0, top: 0 };
 	}
 };
-const HISTORY_BFCACHE = 'HISTORY_BFCACHE';
-export const setHistoryBFCache = (isBFCache=false) => {
-	// 현재 페이지 BFCache 된 페이지 였는지 이력 저장
-	window.sessionStorage.setItem(HISTORY_BFCACHE, String(isBFCache));
-};
-export const getHistoryBFCache = () => {
-	// BFCache 페이지 이력 가져오기
-	return window.sessionStorage.getItem(HISTORY_BFCACHE);
-};
+
+/**
+ * window 이벤트 리스너
+ */
 if(typeof window !== 'undefined') {
 	// hashchange
 	window.addEventListener('hashchange', (event) => {
@@ -185,14 +210,16 @@ if(typeof window !== 'undefined') {
 		isPageShowCallbackClear();
 	});
 }
+
+// 사용자가 페이지를 떠날 때
 export const setHistoryPageEvent = (listener) => {
-	// 사용자가 페이지를 떠날 때
 	// unload (beforeunload 이벤트는 제외) 사용하지 않은 이유 : 브라우저는 페이지에 unload 이벤트 리스너가 추가되어 있는 경우, bfcache에 적합하지 않은 페이지로 판단하는 경우가 많다.
 	window.removeEventListener('pagehide', listener);
 	window.addEventListener('pagehide', listener), { once: true };
 };
+
+// 사용자 터치가 발생하면, 히스토리 스크롤 이동 등 정지
 export const setUserTouchEvent = (listener) => {
-	// 사용자 터치가 발생하면, 히스토리 스크롤 이동 등 정지
 	window.document?.body?.removeEventListener('touchstart', listener);
 	window.document?.body?.removeEventListener('touchmove', listener);
 	window.document?.body?.addEventListener('touchstart', listener, { once: true });
