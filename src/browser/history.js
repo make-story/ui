@@ -87,15 +87,17 @@ export const isPageShowCallbackClear = () => {
 	callbackListPageShow.splice(0, callbackListPageShow.length);
 };
 
+// 현재 페이지 BFCache 이력 여부
 const HISTORY_BFCACHE = 'HISTORY_BFCACHE';
+// BFCache 된 페이지 였는지 이력 저장
 export const setHistoryBFCache = (isBFCache=false) => {
-	// 현재 페이지 BFCache 된 페이지 였는지 이력 저장
 	window.sessionStorage.setItem(HISTORY_BFCACHE, String(isBFCache));
 };
+// BFCache 페이지 이력 가져오기
 export const getHistoryBFCache = () => {
-	// BFCache 페이지 이력 가져오기
 	return window.sessionStorage.getItem(HISTORY_BFCACHE);
 };
+
 
 /**
  * DOM Ready
