@@ -6,6 +6,11 @@
  *
  * Page Lifecycle
  * https://developers.google.com/web/updates/2018/07/page-lifecycle-api
+ * 
+ * pageshow / pagehide 캐시 사용여부 확인
+ * event.persisted
+ * https://developer.mozilla.org/en-US/docs/Web/API/PageTransitionEvent/persisted
+ * 
  *
  * BF Cache
  * https://web.dev/bfcache/
