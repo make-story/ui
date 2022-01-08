@@ -67,7 +67,7 @@ if(typeof window !== 'undefined') {
 			isBFCache = false;
 		}
 		console.log('history > BFCache', isBFCache);
-		console.log('history > referrer', document?.referrer);
+		console.log('history > referrer', document.referrer);
 		setCallbackListPageShow();
 	});
 }
@@ -155,12 +155,12 @@ export const getScroll = (element) => {
 	};
 };
 // window 스크롤 값 브라우저 스토리지에 저장
-export const setHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.location.href.split('?')?.shift() || ''/*페이지 단위 구분*/, { left, top }=getScroll()) => {
+export const setHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.location.href.split('?').shift() || ''/*페이지 단위 구분*/, { left, top }=getScroll()) => {
 	//console.log(`scroll left: ${left}, top: ${top}`);
 	window.sessionStorage.setItem(`${prefix}_${page}`, JSON.stringify({ left, top }));
 };
 // window 스크롤 값 브라우저 스토리지에서 불러오기
-export const getHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.location.href.split('?')?.shift() || ''/*페이지 단위 구분*/) => {
+export const getHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.location.href.split('?').shift() || ''/*페이지 단위 구분*/) => {
 	//window.pageYOffset || window.scrollY || document.documentElement.scrollTop
 	let scroll = window.sessionStorage.getItem(`${prefix}_${page}`);
 	if(scroll) {
@@ -227,10 +227,10 @@ export const setHistoryPageEvent = (listener) => {
 
 // 사용자 터치가 발생하면, 히스토리 스크롤 이동 등 정지
 export const setUserTouchEvent = (listener) => {
-	window.document?.body?.removeEventListener('touchstart', listener);
-	window.document?.body?.removeEventListener('touchmove', listener);
-	window.document?.body?.addEventListener('touchstart', listener, { once: true });
-	window.document?.body?.addEventListener('touchmove', listener, { once: true });
+	window.document.body.removeEventListener('touchstart', listener);
+	window.document.body.removeEventListener('touchmove', listener);
+	window.document.body.addEventListener('touchstart', listener, { once: true });
+	window.document.body.addEventListener('touchmove', listener, { once: true });
 };
 
 /**
@@ -256,11 +256,11 @@ export const setUserTouchEvent = (listener) => {
 export const getNavigationType = (callback) => {
 	// navigation
 	const getType = () => {
-		if(typeof window.performance?.getEntriesByType === 'function' && window.performance.getEntriesByType('navigation')?.length) {
+		if(typeof window.performance.getEntriesByType === 'function' && window.performance.getEntriesByType('navigation').length) {
 			const timing = window.performance.getEntriesByType('navigation')[0] || {};
-			type = timing?.type || ''; // 'navigate' | 'reload' | 'back_forward' | 'prerender'
+			type = timing.type || ''; // 'navigate' | 'reload' | 'back_forward' | 'prerender'
 		}else {
-			switch (window.performance?.navigation?.type) {
+			switch (window.performance.navigation.type) {
 				case 0:
 					type = 'navigate';
 					break;
@@ -280,7 +280,7 @@ export const getNavigationType = (callback) => {
 		if (['navigate', 'reload'].includes(type)) {
 			if (getHistoryBFCache() === 'true') {
 				type = 'reload_bfcache';
-			} else if (document?.referrer && document?.referrer?.split('?')?.shift()?.split('/')?.pop() === 'login') {
+			} else if (document.referrer && document.referrer.split('?').shift().split('/').pop() === 'login') {
 				type = 'referrer_login';
 			}
 		}
@@ -294,4 +294,11 @@ export const getNavigationType = (callback) => {
 	}
 
 	return getType();
+};
+
+/**
+ * default
+ */
+export default () => {
+	// ...
 };

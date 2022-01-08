@@ -36,7 +36,7 @@ export { default as browserStorage } from './storage';
 export * from './history';
 export { default as browserHistory } from './history';
 //export * from './device';
-//export { default as browserDevice } from './history';
+//export { default as browserDevice } from './device';
 
 // window, document, browser 사이즈
 export const windowDocumentSize = () => {
