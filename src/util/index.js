@@ -33,7 +33,10 @@ export * from './regexp';
 export * from './string';
 //export * from './url';
 
-// key (일반적인 고유값)
+
+/**
+ * key (일반적인 고유값)
+ */
 /*
 -
 랜덤, 날짜 결합
@@ -53,13 +56,19 @@ timestamp : new Date().getTime()
 */
 export const getKey = () => ['key', new Date().getTime(), 'T', (Math.random() * (1 << 30)).toString(16).replace('.', '')].join('').substr(0, 24);
 
-// 대기 - 예: sleep(10000);
+
+/**
+ * 대기 - 예: sleep(10000);
+ */
 export const sleep = (milliSeconds) => {
 	const startTime = new Date().getTime(); 
 	while(new Date().getTime() < startTime + milliSeconds);
 }
 
-// 페이징 계산 
+
+/**
+ * 페이징 계산 
+ */
 export const pager = (totalCount, currentPage=1, listSize=20, pageSize=10) => {
 	/*
 	totalCount : 데이터 전체개수(select count(*) from 테이블)
