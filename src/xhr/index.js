@@ -76,7 +76,8 @@ const setScriptCodeLoad = (node) => {
 	instance.onload = function(event) { 
 		let code;
 		if(instance.status == 200) {
-			code = instance.response || instance.responseText || instance.responseXML; // XMLHttpRequest Level 2
+			// instance.responseType
+			code = instance.response || instance.responseText || instance.responseXML || null; // XMLHttpRequest Level 2
 			setScriptTag(node, { code, });
 		}
 	};
@@ -425,7 +426,12 @@ export default (options={}) => {
 				//this.getResponseHeader("Last-Modified")
 				//this.getResponseHeader("Content-Type")
 				if(instance.status == 200) {
-					data = instance.response || instance.responseText || instance.responseXML; // XMLHttpRequest Level 2
+					// instance.responseType
+					if(typeof instance.responseType === 'string' && instance.responseType === 'text') {
+						data = instance.response || instance.responseText || '';
+					}else {
+						data = instance.response || instance.responseText || instance.responseXML || null; 
+					}
 					if(typeof data === 'string' && settings.dataType.toLowerCase() === 'json') {
 						data = JSON.parse(data);
 					}
