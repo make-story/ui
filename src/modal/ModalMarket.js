@@ -1,13 +1,13 @@
 /**
  * market
  */
- import browser, { windowDocumentSize, browserScroll, } from '@src/browser';
- import $ from '@src/dom';
- import { getKey, extend, elementPosition, fragmentHtml, } from '@src/util';
- import xhr from '@src/xhr';
- import webworker from '@src/webworker';
- import ModalBase from '@src/modal/ModalBase';
- import ModalState, { modalState } from "@src/modal/ModalState";
+ import browser, { windowDocumentSize, browserScroll, } from '../browser';
+ import $ from '../dom';
+ import { getKey, extend, elementPosition, fragmentHtml, } from '../util';
+ import xhr from '../xhr';
+ import webworker from '../webworker';
+ import ModalBase from './ModalBase';
+ import ModalState, { modalState } from "./ModalState";
  
  const EVENT_CLICK_CLOSE = 'EVENT_CLICK_CLOSE';
  const EVENT_CLICK_MARKET_GET = 'EVENT_CLICK_MARKET_GET';

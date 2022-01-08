@@ -1,11 +1,11 @@
 /**
  * Rect (기준점 위치에 출력)
  */
-import browser, { windowDocumentSize, browserScroll, } from '@src/browser';
-import $ from '@src/dom';
-import { getKey, extend, elementPosition, } from '@src/util';
-import ModalBase from '@src/modal/ModalBase';
-import ModalState, { modalState } from "@src/modal/ModalState";
+import browser, { windowDocumentSize, browserScroll, } from '../browser';
+import $ from '../dom';
+import { getKey, extend, elementPosition, } from '../util';
+import ModalBase from './ModalBase';
+import ModalState, { modalState } from "./ModalState";
 
 const EVENT_CLICK_CLOSE = 'EVENT_CLICK_CLOSE';
 const EVENT_RESIZE = 'EVENT_RESIZE';

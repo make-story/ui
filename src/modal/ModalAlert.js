@@ -1,11 +1,11 @@
 /**
  * alert
  */
-import browser, { windowDocumentSize, browserScroll, } from '@src/browser';
-import $ from '@src/dom';
-import { getKey, extend, elementPosition, } from '@src/util';
-import ModalBase from '@src/modal/ModalBase';
-import ModalState, { modalState } from "@src/modal/ModalState";
+import browser, { windowDocumentSize, browserScroll, } from '../browser';
+import $ from '../dom';
+import { getKey, extend, elementPosition, } from '../util';
+import ModalBase from './ModalBase';
+import ModalState, { modalState } from "./ModalState";
 
 const EVENT_CLICK_OK = 'EVENT_CLICK_OK';
 const EVENT_MOUSEDOWN = 'EVENT_MOUSEDOWN';

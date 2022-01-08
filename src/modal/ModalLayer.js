@@ -1,11 +1,11 @@
 /**
  * 레이어
  */
-import browser, { windowDocumentSize, browserScroll, } from '@src/browser';
-import $ from '@src/dom';
-import { getKey, extend, elementPosition, } from '@src/util';
-import ModalBase from '@src/modal/ModalBase';
-import ModalState, { modalState } from "@src/modal/ModalState";
+import browser, { windowDocumentSize, browserScroll, } from '../browser';
+import $ from '../dom';
+import { getKey, extend, elementPosition, } from '../util';
+import ModalBase from './ModalBase';
+import ModalState, { modalState } from "./ModalState";
 
 const isIOS = /(iphone|ipad|ipod)/i.test((window.navigator.userAgent || window.navigator.vendor || window.opera).toLowerCase());
 

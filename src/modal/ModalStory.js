@@ -2,12 +2,12 @@
  * 스토리
  * iFrame 또는 ShadowDOM 기반 켄텐츠 출력
  */
- import browser, { windowDocumentSize, browserScroll, } from '@src/browser';
- import $ from '@src/dom';
- import { getKey, extend, elementPosition, } from '@src/util';
- import xhr from '@src/xhr';
- import ModalBase from '@src/modal/ModalBase';
- import ModalState, { modalState } from "@src/modal/ModalState";
+ import browser, { windowDocumentSize, browserScroll, } from '../browser';
+ import $ from '../dom';
+ import { getKey, extend, elementPosition, } from '../util';
+ import xhr from '../xhr';
+ import ModalBase from './ModalBase';
+ import ModalState, { modalState } from "./ModalState";
  import renderMobile from './story/mobile';
  import renderPC from './story/pc';
  

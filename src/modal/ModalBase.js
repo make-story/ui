@@ -1,10 +1,10 @@
 /**
  * 
  */
-import browser, { windowDocumentSize, browserScroll, } from '@src/browser';
-import $ from '@src/dom';
-import { getKey, extend, elementPosition, } from '@src/util';
-import ModalState, { modalState } from "@src/modal/ModalState";
+import browser, { windowDocumentSize, browserScroll, } from '../browser';
+import $ from '../dom';
+import { getKey, extend, elementPosition, } from '../util';
+import ModalState, { modalState } from "./ModalState";
 
 export default class ModalBase {
     constructor() {
