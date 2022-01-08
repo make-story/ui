@@ -1,10 +1,10 @@
 /**
  * 
  */
-import browser, { windowDocumentSize, browserScroll, } from '../browser';
-import $ from '../dom';
-import { getKey, extend, elementPosition, } from '../util';
-import ModalState, { modalState } from "./ModalState";
+import browser, { windowDocumentSize, browserScroll, } from '../../browser';
+import $ from '../../dom';
+import { getKey, extend, elementPosition, } from '../../util';
+import ModalState, { modalState } from "../ModalState";
 
 const EVENT_MOUSEDOWN_POPUP_STORY_REFRESH = 'EVENT_MOUSEDOWN_POPUP_STORY_REFRESH';
 const EVENT_MOUSEDOWN_POPUP_STORY_HIDDEN = 'EVENT_MOUSEDOWN_POPUP_STORY_HIDDEN';
