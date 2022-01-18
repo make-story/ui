@@ -32,6 +32,7 @@ let isBFCache = null;
 const callbackListPageShow = [];
 const callbackListDOMReady = [];
 
+
 /**
  * 스크롤 위치 복원 기능 값 설정
  */
@@ -40,6 +41,7 @@ export const setScrollRestoration = (value='manual') => {
 		window.history.scrollRestoration = value; // 'manual' | 'auto'
 	}
 };
+
 
 /**
  * BFCache
@@ -72,7 +74,7 @@ if(typeof window !== 'undefined') {
 	});
 }
 // pageshow 이벤트 콜백 추가
-export const isPageShowCallback = (callback) => {
+export const setPageShowCallback = (callback) => {
 	if(typeof callback !== 'function') {
 		return;
 	}
@@ -84,23 +86,12 @@ export const isPageShowCallback = (callback) => {
 	}
 };
 // pageshow 이벤트 콜백 제거
-export const isPageShowCallbackCancel = (callback) => {
+export const setPageShowCallbackCancel = (callback) => {
 	callbackListPageShow.splice(callbackListPageShow.indexOf(callback), 1);
 };
 // pageshow 이벤트 콜백 초기화
-export const isPageShowCallbackClear = () => {
+export const setPageShowCallbackClear = () => {
 	callbackListPageShow.splice(0, callbackListPageShow.length);
-};
-
-// 현재 페이지 BFCache 이력 여부
-const HISTORY_BFCACHE = 'HISTORY_BFCACHE';
-// BFCache 된 페이지 였는지 이력 저장
-export const setHistoryBFCache = (isBFCache=false) => {
-	window.sessionStorage.setItem(HISTORY_BFCACHE, String(isBFCache));
-};
-// BFCache 페이지 이력 가져오기
-export const getHistoryBFCache = () => {
-	return window.sessionStorage.getItem(HISTORY_BFCACHE);
 };
 
 
@@ -119,7 +110,7 @@ if (typeof window !== 'undefined') {
 	});
 }
 // DOM Ready 이벤트 콜백 추가
-export const isDOMReadyCallback = (callback) => {
+export const setDOMReadyCallback = (callback) => {
 	if (typeof window === 'undefined' || typeof callback !== 'function') {
 		return;
 	}
@@ -134,17 +125,22 @@ export const isDOMReadyCallback = (callback) => {
 	}
 };
 // DOM Ready 이벤트 콜백 제거
-export const isDOMReadyCallbackCancel = (callback) => {
+export const setDOMReadyCallbackCancel = (callback) => {
 	callbackListDOMReady.splice(callbackListDOMReady.indexOf(callback), 1);
 };
 // DOM Ready 이벤트 콜백 초기화
-export const isDOMReadyCallbackClear = () => {
+export const setDOMReadyCallbackClear = () => {
 	callbackListDOMReady.splice(0, callbackListDOMReady.length);
 };
+
 
 /**
  * page change
  */
+// 현재 페이지 URL 정보
+const getPageURL = () => {
+	return window.location.href.split('?')?.shift() || '';
+};
 const HISTORY_SCROLL = 'HISTORY_SCROLL';
 // window 스크롤 값 반환
 // TODO: 오버플로우 스크롤 설정된 element 의 경우 대응필요
@@ -155,14 +151,14 @@ export const getScroll = (element) => {
 	};
 };
 // window 스크롤 값 브라우저 스토리지에 저장
-export const setHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.location.href.split('?').shift() || ''/*페이지 단위 구분*/, { left, top }=getScroll()) => {
+export const setHistoryWindowScroll = ({ left, top }=getScroll(), { key=`${HISTORY_SCROLL}_${getPageURL()}`/*페이지 단위 구분*/ } = {}) => {
 	//console.log(`scroll left: ${left}, top: ${top}`);
-	window.sessionStorage.setItem(`${prefix}_${page}`, JSON.stringify({ left, top }));
+	window.sessionStorage.setItem(key, JSON.stringify({ left, top }));
 };
 // window 스크롤 값 브라우저 스토리지에서 불러오기
-export const getHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.location.href.split('?').shift() || ''/*페이지 단위 구분*/) => {
+export const getHistoryWindowScroll = ({ key=`${HISTORY_SCROLL}_${getPageURL()}`/*페이지 단위 구분*/ } = {}) => {
 	//window.pageYOffset || window.scrollY || document.documentElement.scrollTop
-	let scroll = window.sessionStorage.getItem(`${prefix}_${page}`);
+	let scroll = window.sessionStorage.getItem(key);
 	if(scroll) {
 		scroll = JSON.parse(scroll) || {};
 		return { left: Number(scroll.left) || 0, top: Number(scroll.top) || 0 };
@@ -170,6 +166,18 @@ export const getHistoryWindowScroll = (prefix=HISTORY_SCROLL, page=window.locati
 		return { left: 0, top: 0 };
 	}
 };
+
+// 현재 페이지 BFCache 이력
+const HISTORY_BFCACHE = 'HISTORY_BFCACHE';
+// BFCache 된 페이지 였는지 이력 브라우저 스토리지에 저장
+const setHistoryBFCache = (isBFCache=false, { key=`${HISTORY_BFCACHE}_${getPageURL()}`/*페이지 단위 구분*/ } = {}) => {
+	window.sessionStorage.setItem(key, String(isBFCache));
+};
+// BFCache 페이지 이력 브라우저 스토리지에서 불러오기
+const getHistoryBFCache = ({ key=`${HISTORY_BFCACHE}_${getPageURL()}`/*페이지 단위 구분*/ } = {}) => {
+	return window.sessionStorage.getItem(key);
+};
+
 
 /**
  * window 이벤트 리스너
@@ -185,7 +193,7 @@ if(typeof window !== 'undefined') {
 		// BFCache reload 여부 확인용
 		setHistoryBFCache(isBFCache);
 		// 콜백 초기화
-		isPageShowCallbackClear();
+		setPageShowCallbackClear();
 	});*/
 	// pagehide
 	// unload (beforeunload 이벤트는 제외) 사용하지 않은 이유 : 브라우저는 페이지에 unload 이벤트 리스너가 추가되어 있는 경우, bfcache에 적합하지 않은 페이지로 판단하는 경우가 많다.
@@ -196,7 +204,7 @@ if(typeof window !== 'undefined') {
 			// BFCache reload 여부 확인용
 			setHistoryBFCache(isBFCache);
 			// 콜백 초기화
-			isPageShowCallbackClear();
+			setPageShowCallbackClear();
 			// 사파리에서는 BFCache 에 기존 JavaScript 코드가 실행되지 않는다.
 			if (isSafari) {
 				// 페이지 떠나기 전 인터벌 실행이 캐쉬되도록 한다.
@@ -214,12 +222,12 @@ if(typeof window !== 'undefined') {
 		// BFCache reload 여부 확인용
 		setHistoryBFCache(isBFCache);
 		// 콜백 초기화
-		isPageShowCallbackClear();
+		setPageShowCallbackClear();
 	});
 }
 
 // 사용자가 페이지를 떠날 때
-export const setHistoryPageEvent = (listener) => {
+export const setPageHideEvent = (listener) => {
 	// unload (beforeunload 이벤트는 제외) 사용하지 않은 이유 : 브라우저는 페이지에 unload 이벤트 리스너가 추가되어 있는 경우, bfcache에 적합하지 않은 페이지로 판단하는 경우가 많다.
 	window.removeEventListener('pagehide', listener);
 	window.addEventListener('pagehide', listener), { once: true };
@@ -233,6 +241,7 @@ export const setUserTouchEvent = (listener) => {
 	window.document.body.addEventListener('touchmove', listener, { once: true });
 };
 
+
 /**
  * popstate 이벤트
  * popstate 이벤트는 브라우저의 백 버튼이나 (history.back() 호출) 등을 통해서만 발생 (history.pushState, history.replaceState 의해 추가/변경된 state 값 확인)
@@ -245,6 +254,7 @@ export const setUserTouchEvent = (listener) => {
 	console.log("location: ", document.location);
 	console.log("state: ", event.state);
 };*/
+
 
 /**
  * 페이지 진입 방식 확인
@@ -279,7 +289,7 @@ export const getNavigationType = (callback) => {
 		// BFCache, referrer 확인
 		if (['navigate', 'reload'].includes(type)) {
 			if (getHistoryBFCache() === 'true') {
-				type = 'reload_bfcache';
+				type = 'reload_bfcache'; // 이전 BFCache 상태에서 페이지 새로고침 됨
 			} else if (document.referrer && document.referrer.split('?').shift().split('/').pop() === 'login') {
 				type = 'referrer_login';
 			}
@@ -290,11 +300,12 @@ export const getNavigationType = (callback) => {
 
 	// callback 에 따른 분기 (bfcache 여부)
 	if (typeof callback === 'function') {
-		isPageShowCallback((isBFCache) => callback(isBFCache ? 'bfcache' : getType()));
+		setPageShowCallback((isBFCache) => callback(isBFCache ? 'bfcache' : getType()));
 	}
 
 	return getType();
 };
+
 
 /**
  * default

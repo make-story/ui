@@ -3,15 +3,14 @@ import {
   setScrollRestoration,
   setHistoryWindowScroll,
   getHistoryWindowScroll,
-  setHistoryBFCache,
-  isPageShowCallbackCancel,
-  isDOMReadyCallback,
-  isDOMReadyCallbackCancel,
+  setPageHideEvent,
+  setUserTouchEvent,
+  setPageShowCallbackCancel,
 } from "../history";
 
 
 // BFCache 경우 페이지 새로고침
-/*isPageShowCallback((isBFCache: boolean) => {
+/*setPageShowCallback((isBFCache: boolean) => {
   console.log('display > BFCache', isBFCache);
   isBFCache && window.location.reload();
 });*/
@@ -77,7 +76,6 @@ const setPageShowCallback = ((browserName) => { // 내부적 사용
     console.log('setPageShowCallback', navigationType);
     window.clearTimeout(timePageShowTimeout);
     if (navigationType === 'bfcache') {
-      setHistoryBFCache(true); // BFCache 여부 상태값
       setHistoryBFCacheScroll(); // BFCache 상태의 스크롤값 (새로고침 전 이전 스크롤값 저장)
       window.location.reload();
     } else {
@@ -97,30 +95,24 @@ const setDOMReadyCallback = () => { // 내부적 사용
 };
 
 // 사용자 터치가 발생하면, 히스토리 스크롤 이동 정지
-const setUserTouchListener = (event) => { // 내부적 사용
+const setUserTouchHandler = (event) => { // 내부적 사용
   //console.log(event);
-  isPageShowCallbackCancel(setPageShowCallback);
-  isDOMReadyCallbackCancel(setDOMReadyCallback);
-};
-const setUserTouchEvent = (listener) => { // 공통
-  window.document?.body?.removeEventListener('touchstart', listener);
-  window.document?.body?.removeEventListener('touchmove', listener);
-  window.document?.body?.addEventListener('touchstart', listener, { once: true });
-  window.document?.body?.addEventListener('touchmove', listener, { once: true });
+  setPageShowCallbackCancel(setPageShowCallback);
+  setDOMReadyCallbackCancel(setDOMReadyCallback);
 };
 
 // 히스토리
-const setHistoryPageListener = ((browserName) => { // 내부적 사용
+const setPageHideHandler = ((browserName) => { // 내부적 사용
   const isSafari = browserName && -1 < browserName.toLowerCase().indexOf('safari');
   let timeHistoryPageInterval = 0;
   return (event) => {
-    console.log('setHistoryPageListener > pagehide');
+    console.log('setPageHideHandler > pagehide');
     // 사파리에서는 BFCache 에 기존 JavaScript 코드가 실행되지 않는다.
     if (isSafari) {
       // 일부 브라우저 자동 새로고침 이슈 때문에 기존 스크롤 값 저장
       setHistoryReloadScroll();
       setHistoryLocation();
-      // 페이지 떠나기 전 인터벌 실행이 캐쉬되도록 한다.
+      // 페이지 떠나기 전 인터벌 실행이 캐쉬되도록 한다. (해당 페이지를 BFCache 작동상태로 돌아왔을 때, 히스토리 확인 코드가 작동되도록 하기위함)
       window.clearInterval(timeHistoryPageInterval);
       timeHistoryPageInterval = window.setInterval(() => {
         console.log('safari history interval!!!!!');
@@ -132,12 +124,6 @@ const setHistoryPageListener = ((browserName) => { // 내부적 사용
     setHistoryWindowScroll();
   };
 })(getBrowserName());
-const setHistoryPageEvent = (listener) => { // 내부적 사용
-  // 사용자가 페이지를 떠날 때
-  // unload (beforeunload 이벤트는 제외) 사용하지 않은 이유 : 브라우저는 페이지에 unload 이벤트 리스너가 추가되어 있는 경우, bfcache에 적합하지 않은 페이지로 판단하는 경우가 많다.
-  window.removeEventListener('pagehide', listener);
-  window.addEventListener('pagehide', listener), { once: true };
-};
 const setHistoryCheck = (browserName) => { // 내부적 사용
   console.log('setHistoryCheck', browserName);
   //const isSafari = browserName && -1 < browserName.toLowerCase().indexOf('safari');
@@ -146,16 +132,14 @@ const setHistoryCheck = (browserName) => { // 내부적 사용
     getNavigationType(setPageShowCallback);
   } else {
     // 일반 브라우저 확인
-    isDOMReadyCallback(setDOMReadyCallback);
+    setDOMReadyCallback(setDOMReadyCallback);
   }*/
   getNavigationType(setPageShowCallback);
-  
-  // 사용자 터치 감시
-  setUserTouchEvent(setUserTouchListener);
+  setUserTouchEvent(setUserTouchHandler); // 사용자 터치 감시
 };
 const setHistoryRouter = (path=window.location.href?.split('?')?.shift()?.split('/')?.pop() || '') => {
     setHistoryCheck(getBrowserName());
-    setHistoryPageEvent(setHistoryPageListener);
+    setPageHideEvent(setPageHideHandler);
 };
 
 //
