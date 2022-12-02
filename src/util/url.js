@@ -188,3 +188,11 @@ export const urlHash = {
 		return is;
 	},
 };
+
+/**
+ * URL에 프로토콜 존재 여부
+ * 
+ * const url = new URL('https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol');
+ * console.log(url.protocol); // Logs "https:"
+ */
+export const isProtocol = (url = '') => /^(http(s)?:)?\/\//.test(url);
