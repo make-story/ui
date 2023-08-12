@@ -65,6 +65,7 @@ export const windowDocumentSize = () => {
 }
 
 // 스크롤 위치
+// @TODO: 브라우저 지원 환경을 한번만 확인해도 되므로, 즉시 실행함수 활용도 고민해야 한다.
 export const browserScroll = () => {
 	if('pageXOffset' in window && 'pageYOffset' in window) {
 		return {
