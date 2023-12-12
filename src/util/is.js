@@ -22,6 +22,21 @@
  export const isObject = (value) => getConstructor(value) === Object || (!isNull(value) && typeof value === 'object');
  export const isJSON = (value) => isObject(value) && (isArray(value) || /^{.*}$|^\[.*\]$/.test(JSON.stringify(value)));
  
+/*
+isJSON
+try {
+	JSON.parse(str);
+	return true;
+} catch (e) {
+	return false;
+}
+
+또는 
+
+const jsonStringRegex = /^\s*{\s*".+":.+}\s*$/;
+return jsonStringRegex.test(str);
+*/
+
  /*
  nodeType
  1 : Element 노드를 의미

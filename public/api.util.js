@@ -774,6 +774,14 @@ Dual licensed under the MIT and GPL licenses.
 		},
 		// json 데이터 여부
 		isJSON: function(value) {
+			/*try {
+				JSON.parse(str);
+				return true;
+			} catch (e) {
+				return false;
+			}*/
+			//const jsonStringRegex = /^\s*{\s*".+":.+}\s*$/;
+  			//return jsonStringRegex.test(str);
 			return value && typeof value === 'object' && value !== null && (/*Array.isArray(value)*/Object.prototype.toString.call(value) === "[object Array]" || /^{.*}$|^\[.*\]$/.test(JSON.stringify(value)));
 		},
 		// 온라인 / 오프라인 여부
